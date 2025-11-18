@@ -20,6 +20,33 @@
   display: flex;
   justify-content: center;
   box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.auction-root::before,
+.auction-root::after {
+  content: "";
+  position: absolute;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+}
+
+.auction-root::before {
+  background: rgba(109, 125, 255, 0.6);
+  top: -140px;
+  left: -120px;
+}
+
+.auction-root::after {
+  background: rgba(51, 195, 240, 0.5);
+  bottom: -160px;
+  right: -120px;
 }
 
 .auction-header {
@@ -317,6 +344,20 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
+  padding: 12px 0;
+  position: relative;
+  isolation: isolate;
+}
+
+.auction-lot-core::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 28px;
+  background: radial-gradient(circle, rgba(109, 125, 255, 0.25), transparent 65%);
+  filter: blur(10px);
+  z-index: -1;
+  animation: glowPulse 6s ease-in-out infinite;
 }
 
 .auction-lot-type {
@@ -416,7 +457,9 @@
   gap: 4px;
   font-size: 10px;
   color: var(--auction-muted);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .auction-player-chip:active {
@@ -437,9 +480,29 @@
   z-index: 6;
 }
 
+.auction-player-chip::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(109, 125, 255, 0.4), rgba(51, 195, 240, 0.4));
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  z-index: 0;
+}
+
+.auction-player-chip > * {
+  position: relative;
+  z-index: 1;
+}
+
 .auction-player-chip.selected {
-  border-color: var(--auction-accent);
-  box-shadow: 0 0 12px rgba(109, 125, 255, 0.4);
+  border-color: transparent;
+  box-shadow: 0 0 18px rgba(109, 125, 255, 0.45);
+}
+
+.auction-player-chip.selected::before {
+  opacity: 1;
 }
 
 .auction-player-chip.ready {
@@ -461,6 +524,7 @@
   font-weight: 700;
   color: var(--auction-text);
   overflow: hidden;
+  animation: floatPulse 6s ease-in-out infinite;
 }
 
 .chip-avatar img {
@@ -489,6 +553,7 @@
   background: rgba(0, 0, 0, 0.85);
   color: #fff;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
 }
 
 .auction-card.muted {
@@ -557,6 +622,31 @@
 
 .auction-player-meta.small {
   font-size: 11px;
+}
+
+@keyframes glowPulse {
+  0% {
+    opacity: 0.45;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 0.45;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes floatPulse {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
 }
 
 @media (max-width: 420px) {

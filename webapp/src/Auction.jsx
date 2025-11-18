@@ -1,11 +1,11 @@
-// src/Auction.jsx
+﻿// src/Auction.jsx
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import io from "socket.io-client";
 import "./Auction.css";
 
 const INITIAL_MONEY = 1_000_000;
 
-// такой же алфавит для кода комнаты, как в мафии (без 0/1/O/I)
+// С‚Р°РєРѕР№ Р¶Рµ Р°Р»С„Р°РІРёС‚ РґР»СЏ РєРѕРґР° РєРѕРјРЅР°С‚С‹, РєР°Рє РІ РјР°С„РёРё (Р±РµР· 0/1/O/I)
 const CODE_ALPHABET_RE = /[^A-HJKMNPQRSTUVWXYZ23456789]/g;
 
 export default function Auction({
@@ -21,11 +21,11 @@ export default function Auction({
   const [connecting, setConnecting] = useState(true);
 
   const [room, setRoom] = useState(null); // { code, ownerId, ... }
-  const [players, setPlayers] = useState([]); // из room:state
+  const [players, setPlayers] = useState([]); // РёР· room:state
   const [selfInfo, setSelfInfo] = useState(null); // private:self { roomPlayerId, userId, ... }
-  const [auctionState, setAuctionState] = useState(null); // из auction:state
+  const [auctionState, setAuctionState] = useState(null); // РёР· auction:state
 
-  // локальный дедлайн активного слота (по серверному timeLeftMs), чтобы анимировать таймер без частого трафика
+  // Р»РѕРєР°Р»СЊРЅС‹Р№ РґРµРґР»Р°Р№РЅ Р°РєС‚РёРІРЅРѕРіРѕ СЃР»РѕС‚Р° (РїРѕ СЃРµСЂРІРµСЂРЅРѕРјСѓ timeLeftMs), С‡С‚РѕР±С‹ Р°РЅРёРјРёСЂРѕРІР°С‚СЊ С‚Р°Р№РјРµСЂ Р±РµР· С‡Р°СЃС‚РѕРіРѕ С‚СЂР°С„РёРєР°
   const deadlineAtRef = useRef(null);
   const [nowTick, setNowTick] = useState(0);
 
@@ -43,7 +43,7 @@ export default function Auction({
   const lastSubscribedCodeRef = useRef(null);
   const lastSubscriptionSocketIdRef = useRef(null);
 
-  // конфиг (хост, лобби)
+  // РєРѕРЅС„РёРі (С…РѕСЃС‚, Р»РѕР±Р±Рё)
   const [cfgOpen, setCfgOpen] = useState(false);
   const [cfgRules, setCfgRules] = useState({
     timePerSlotSec: 9,
@@ -80,14 +80,14 @@ export default function Auction({
   const phase = auctionState?.phase || "lobby";
   const currentSlot = auctionState?.currentSlot || null;
 
-  // мои данные по текущему раунду
+  // РјРѕРё РґР°РЅРЅС‹Рµ РїРѕ С‚РµРєСѓС‰РµРјСѓ СЂР°СѓРЅРґСѓ
   const myRoundBid = useMemo(() => {
     if (!selfInfo) return null;
     const v = auctionState?.currentBids?.[selfInfo.roomPlayerId];
     return typeof v === "number" ? v : null;
   }, [auctionState, selfInfo]);
 
-  // тиканье таймера (локально), сервер присылает timeLeftMs
+  // С‚РёРєР°РЅСЊРµ С‚Р°Р№РјРµСЂР° (Р»РѕРєР°Р»СЊРЅРѕ), СЃРµСЂРІРµСЂ РїСЂРёСЃС‹Р»Р°РµС‚ timeLeftMs
   useEffect(() => {
     const ms = auctionState?.timeLeftMs;
     if (ms == null) {
@@ -120,7 +120,7 @@ export default function Auction({
     return Math.min(100, Math.round((spent / timePerSlot) * 100));
   }, [secsLeft, timePerSlot]);
 
-  // крупный счёт 3-2-1 по ~треть таймера
+  // РєСЂСѓРїРЅС‹Р№ СЃС‡С‘С‚ 3-2-1 РїРѕ ~С‚СЂРµС‚СЊ С‚Р°Р№РјРµСЂР°
   const countdownStep = useMemo(() => {
     if (secsLeft == null || !timePerSlot) return null;
     const slice = Math.max(1, Math.round(timePerSlot / 3));
@@ -133,7 +133,7 @@ export default function Auction({
   const playerNameById = useMemo(() => {
     const map = new Map();
     players.forEach((p) => {
-      const name = p.user?.first_name || p.user?.username || `Игрок ${p.id}`;
+      const name = p.user?.first_name || p.user?.username || `РРіСЂРѕРє ${p.id}`;
       map.set(p.id, name);
     });
     if (auctionState?.players) {
@@ -144,7 +144,7 @@ export default function Auction({
     return map;
   }, [players, auctionState]);
 
-  // Мини-стата по победам
+  // РњРёРЅРё-СЃС‚Р°С‚Р° РїРѕ РїРѕР±РµРґР°Рј
   const winsCountByPlayerId = useMemo(() => {
     const map = new Map();
     if (!auctionState?.history) return map;
@@ -155,11 +155,11 @@ export default function Auction({
     return map;
   }, [auctionState]);
 
-  // корзины игроков (отдаёт сервер)
+  // РєРѕСЂР·РёРЅС‹ РёРіСЂРѕРєРѕРІ (РѕС‚РґР°С‘С‚ СЃРµСЂРІРµСЂ)
   const basketByPlayerId = auctionState?.baskets || {};
   const basketTotals = auctionState?.basketTotals || {};
 
-  // кого показываем в панели корзины: выбранного или себя
+  // РєРѕРіРѕ РїРѕРєР°Р·С‹РІР°РµРј РІ РїР°РЅРµР»Рё РєРѕСЂР·РёРЅС‹: РІС‹Р±СЂР°РЅРЅРѕРіРѕ РёР»Рё СЃРµР±СЏ
   const selectedPlayerIdEffective = useMemo(() => {
     if (selectedPlayerId != null) return selectedPlayerId;
     return selfInfo?.roomPlayerId ?? null;
@@ -229,14 +229,14 @@ export default function Auction({
 
     s.on("connect_error", (err) => {
       setConnecting(false);
-      setError(`Не удалось подключиться: ${err.message}`);
+      setError(`РќРµ СѓРґР°Р»РѕСЃСЊ РїРѕРґРєР»СЋС‡РёС‚СЊСЃСЏ: ${err.message}`);
     });
 
     s.on("toast", (payload) => {
       if (!payload?.text) return;
       lastToastRef.current = payload;
       setToast(payload);
-      // если явная ошибка — покажем ещё и в error
+      // РµСЃР»Рё СЏРІРЅР°СЏ РѕС€РёР±РєР° вЂ” РїРѕРєР°Р¶РµРј РµС‰С‘ Рё РІ error
       if (payload.type === "error") {
         setError(payload.text);
       }
@@ -292,7 +292,7 @@ export default function Auction({
     };
   }, [socket, subscribeToRoom]);
 
-  // авто-скрытие тоста
+  // Р°РІС‚Рѕ-СЃРєСЂС‹С‚РёРµ С‚РѕСЃС‚Р°
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => {
@@ -303,7 +303,7 @@ export default function Auction({
     return () => clearTimeout(t);
   }, [toast]);
 
-  // --------- BackButton из Telegram ---------
+  // --------- BackButton РёР· Telegram ---------
   useEffect(() => {
     if (!setBackHandler) return;
     const handler = () => {
@@ -314,7 +314,7 @@ export default function Auction({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setBackHandler, room, socket, initData]);
 
-  // --------- авто-join по инвайт-коду ---------
+  // --------- Р°РІС‚Рѕ-join РїРѕ РёРЅРІР°Р№С‚-РєРѕРґСѓ ---------
   useEffect(() => {
     if (!socket) return;
     if (!autoJoinCode) return;
@@ -322,7 +322,7 @@ export default function Auction({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket]);
 
-  // --------- начисление прогресса при завершении ---------
+  // --------- РЅР°С‡РёСЃР»РµРЅРёРµ РїСЂРѕРіСЂРµСЃСЃР° РїСЂРё Р·Р°РІРµСЂС€РµРЅРёРё ---------
   useEffect(() => {
     if (!auctionState || auctionState.phase !== "finished") return;
     if (progressSentRef.current) return;
@@ -343,7 +343,7 @@ export default function Auction({
 
   async function createRoom() {
     if (!initData) {
-      setError("Нет initData от Telegram");
+      setError("РќРµС‚ initData РѕС‚ Telegram");
       return;
     }
     setError("");
@@ -362,8 +362,8 @@ export default function Auction({
         const code = data?.error || "failed";
         const msg =
           code === "code_already_in_use"
-            ? "Код комнаты уже занят"
-            : "Не удалось создать комнату";
+            ? "РљРѕРґ РєРѕРјРЅР°С‚С‹ СѓР¶Рµ Р·Р°РЅСЏС‚"
+            : "РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕР·РґР°С‚СЊ РєРѕРјРЅР°С‚Сѓ";
         setError(msg);
         return;
       }
@@ -374,7 +374,7 @@ export default function Auction({
       }
       setCodeInput(data.room?.code || "");
     } catch (e) {
-      setError("Ошибка сети при создании комнаты");
+      setError("РћС€РёР±РєР° СЃРµС‚Рё РїСЂРё СЃРѕР·РґР°РЅРёРё РєРѕРјРЅР°С‚С‹");
     } finally {
       setCreating(false);
     }
@@ -382,12 +382,12 @@ export default function Auction({
 
   async function joinRoom(rawCode, options = {}) {
     if (!initData) {
-      setError("Нет initData от Telegram");
+      setError("РќРµС‚ initData РѕС‚ Telegram");
       return;
     }
     const code = String(rawCode || "").trim().toUpperCase();
     if (!code) {
-      setError("Введите код комнаты");
+      setError("Р’РІРµРґРёС‚Рµ РєРѕРґ РєРѕРјРЅР°С‚С‹");
       return;
     }
     setError("");
@@ -405,11 +405,11 @@ export default function Auction({
       if (!resp.ok) {
         const codeErr = data?.error || "failed";
         const msgMap = {
-          room_not_found: "Комната не найдена",
-          room_full: "Комната заполнена",
-          game_in_progress: "Игра уже началась",
+          room_not_found: "РљРѕРјРЅР°С‚Р° РЅРµ РЅР°Р№РґРµРЅР°",
+          room_full: "РљРѕРјРЅР°С‚Р° Р·Р°РїРѕР»РЅРµРЅР°",
+          game_in_progress: "РРіСЂР° СѓР¶Рµ РЅР°С‡Р°Р»Р°СЃСЊ",
         };
-        setError(msgMap[codeErr] || "Не удалось войти в комнату");
+        setError(msgMap[codeErr] || "РќРµ СѓРґР°Р»РѕСЃСЊ РІРѕР№С‚Рё РІ РєРѕРјРЅР°С‚Сѓ");
         return;
       }
 
@@ -427,7 +427,7 @@ export default function Auction({
         }
       }
     } catch (e) {
-      setError("Ошибка сети при входе в комнату");
+      setError("РћС€РёР±РєР° СЃРµС‚Рё РїСЂРё РІС…РѕРґРµ РІ РєРѕРјРЅР°С‚Сѓ");
     } finally {
       setJoining(false);
     }
@@ -435,14 +435,14 @@ export default function Auction({
 
   function toggleReady() {
     if (!socket || !room || !selfInfo) return;
-    if (isOwner) return; // владелец не отмечает «Готов»
+    if (isOwner) return; // РІР»Р°РґРµР»РµС† РЅРµ РѕС‚РјРµС‡Р°РµС‚ В«Р“РѕС‚РѕРІВ»
     const isReady = !!currentPlayer?.ready;
     socket.emit(
       "ready:set",
       { code: room.code, ready: !isReady },
       (resp) => {
         if (!resp || !resp.ok) {
-          setError("Не удалось изменить статус «Готов»");
+          setError("РќРµ СѓРґР°Р»РѕСЃСЊ РёР·РјРµРЅРёС‚СЊ СЃС‚Р°С‚СѓСЃ В«Р“РѕС‚РѕРІВ»");
         }
       }
     );
@@ -458,23 +458,23 @@ export default function Auction({
         if (!resp || !resp.ok) {
           const code = resp?.error || "failed";
           const map = {
-            room_not_found: "Комната не найдена",
-            forbidden_not_owner: "Только владелец может начать аукцион",
-            need_at_least_2_players: "Нужно минимум 2 игрока",
+            room_not_found: "РљРѕРјРЅР°С‚Р° РЅРµ РЅР°Р№РґРµРЅР°",
+            forbidden_not_owner: "РўРѕР»СЊРєРѕ РІР»Р°РґРµР»РµС† РјРѕР¶РµС‚ РЅР°С‡Р°С‚СЊ Р°СѓРєС†РёРѕРЅ",
+            need_at_least_2_players: "РќСѓР¶РЅРѕ РјРёРЅРёРјСѓРј 2 РёРіСЂРѕРєР°",
             need_ready_players:
-              "Нужно, чтобы все (кроме владельца) нажали «Готов»",
-            already_started: "Аукцион уже запущен",
+              "РќСѓР¶РЅРѕ, С‡С‚РѕР±С‹ РІСЃРµ (РєСЂРѕРјРµ РІР»Р°РґРµР»СЊС†Р°) РЅР°Р¶Р°Р»Рё В«Р“РѕС‚РѕРІВ»",
+            already_started: "РђСѓРєС†РёРѕРЅ СѓР¶Рµ Р·Р°РїСѓС‰РµРЅ",
           };
-          setError(map[code] || "Не удалось запустить аукцион");
+          setError(map[code] || "РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РїСѓСЃС‚РёС‚СЊ Р°СѓРєС†РёРѕРЅ");
         }
       }
     );
   }
 
   function parseSlotsFromText(text) {
-    // Формат: каждая строка — "Название | цена | тип"
-    // тип: lot | lootbox; если не указан — lot
-    // цена опциональна (если нет — возьмём базовую генерацию сервера)
+    // Р¤РѕСЂРјР°С‚: РєР°Р¶РґР°СЏ СЃС‚СЂРѕРєР° вЂ” "РќР°Р·РІР°РЅРёРµ | С†РµРЅР° | С‚РёРї"
+    // С‚РёРї: lot | lootbox; РµСЃР»Рё РЅРµ СѓРєР°Р·Р°РЅ вЂ” lot
+    // С†РµРЅР° РѕРїС†РёРѕРЅР°Р»СЊРЅР° (РµСЃР»Рё РЅРµС‚ вЂ” РІРѕР·СЊРјС‘Рј Р±Р°Р·РѕРІСѓСЋ РіРµРЅРµСЂР°С†РёСЋ СЃРµСЂРІРµСЂР°)
     return String(text || "")
       .split(/\r?\n/g)
       .map((raw) => raw.trim())
@@ -515,12 +515,12 @@ export default function Auction({
       },
       (resp) => {
         if (!resp || !resp.ok) {
-          setError(resp?.errorText || "Не удалось применить настройки");
+          setError(resp?.errorText || "РќРµ СѓРґР°Р»РѕСЃСЊ РїСЂРёРјРµРЅРёС‚СЊ РЅР°СЃС‚СЂРѕР№РєРё");
         } else {
           setError("");
           lastToastRef.current = {
             type: "info",
-            text: "Настройки применены",
+            text: "РќР°СЃС‚СЂРѕР№РєРё РїСЂРёРјРµРЅРµРЅС‹",
           };
           setToast(lastToastRef.current);
         }
@@ -559,7 +559,7 @@ export default function Auction({
 
   function sendPass() {
     setMyBid("0");
-    // для совместимости используем тот же канал bid с amount: 0
+    // РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё РёСЃРїРѕР»СЊР·СѓРµРј С‚РѕС‚ Р¶Рµ РєР°РЅР°Р» bid СЃ amount: 0
     sendBid(0);
   }
 
@@ -573,11 +573,11 @@ export default function Auction({
         : String(myBid || "").replace(/\s/g, "");
     const n = raw === "" ? 0 : Number(raw);
     if (!Number.isFinite(n) || n < 0) {
-      setError("Введите неотрицательное число");
+      setError("Р’РІРµРґРёС‚Рµ РЅРµРѕС‚СЂРёС†Р°С‚РµР»СЊРЅРѕРµ С‡РёСЃР»Рѕ");
       return;
     }
     if (myBalance != null && n > myBalance) {
-      setError("Ставка больше, чем ваши деньги");
+      setError("РЎС‚Р°РІРєР° Р±РѕР»СЊС€Рµ, С‡РµРј РІР°С€Рё РґРµРЅСЊРіРё");
       return;
     }
 
@@ -590,15 +590,15 @@ export default function Auction({
         if (!resp || !resp.ok) {
           const code = resp?.error || "failed";
           const map = {
-            room_not_found: "Комната не найдена",
-            not_running: "Аукцион ещё не запущен",
-            not_player: "Вы не в этой комнате",
-            not_participant: "Вы не участвуете в аукционе",
-            bad_amount: "Неверная сумма ставки",
-            not_enough_money: "Недостаточно денег",
-            paused: "Аукцион на паузе",
+            room_not_found: "РљРѕРјРЅР°С‚Р° РЅРµ РЅР°Р№РґРµРЅР°",
+            not_running: "РђСѓРєС†РёРѕРЅ РµС‰С‘ РЅРµ Р·Р°РїСѓС‰РµРЅ",
+            not_player: "Р’С‹ РЅРµ РІ СЌС‚РѕР№ РєРѕРјРЅР°С‚Рµ",
+            not_participant: "Р’С‹ РЅРµ СѓС‡Р°СЃС‚РІСѓРµС‚Рµ РІ Р°СѓРєС†РёРѕРЅРµ",
+            bad_amount: "РќРµРІРµСЂРЅР°СЏ СЃСѓРјРјР° СЃС‚Р°РІРєРё",
+            not_enough_money: "РќРµРґРѕСЃС‚Р°С‚РѕС‡РЅРѕ РґРµРЅРµРі",
+            paused: "РђСѓРєС†РёРѕРЅ РЅР° РїР°СѓР·Рµ",
           };
-          setError(map[code] || "Не удалось принять ставку");
+          setError(map[code] || "РќРµ СѓРґР°Р»РѕСЃСЊ РїСЂРёРЅСЏС‚СЊ СЃС‚Р°РІРєСѓ");
         } else {
           setMyBid("");
           setError("");
@@ -653,11 +653,11 @@ export default function Auction({
       ) {
         await navigator.clipboard.writeText(room.code);
       }
-      const payload = { type: "info", text: "Код комнаты скопирован" };
+      const payload = { type: "info", text: "РљРѕРґ РєРѕРјРЅР°С‚С‹ СЃРєРѕРїРёСЂРѕРІР°РЅ" };
       lastToastRef.current = payload;
       setToast(payload);
     } catch {
-      const payload = { type: "error", text: "Не удалось скопировать код" };
+      const payload = { type: "error", text: "РќРµ СѓРґР°Р»РѕСЃСЊ СЃРєРѕРїРёСЂРѕРІР°С‚СЊ РєРѕРґ" };
       lastToastRef.current = payload;
       setToast(payload);
     }
@@ -702,15 +702,15 @@ export default function Auction({
           <section className="auction-status-card">
             <div className="auction-status-grid">
               <div className="auction-stat">
-                <span>Баланс</span>
+                <span>Р‘Р°Р»Р°РЅСЃ</span>
                 <strong>
                   {myBalance != null
                     ? `${moneyFormatter.format(myBalance)}$`
-                    : "—"}
+                    : "вЂ”"}
                 </strong>
               </div>
               <div className="auction-stat">
-                <span>Слоты</span>
+                <span>РЎР»РѕС‚С‹</span>
                 <strong>
                   {auctionState?.currentSlotIndex != null
                     ? `${(auctionState.currentSlotIndex || 0) + 1}/${
@@ -723,8 +723,8 @@ export default function Auction({
             <div className="auction-top-meta">
               {showGame ? (
                 <div className="auction-timer" role="timer" aria-live="polite">
-                  <span className="auction-timer-label">До завершения</span>
-                  <strong>{countdownStep != null ? countdownStep : "∞"}</strong>
+                  <span className="auction-timer-label">Р”Рѕ Р·Р°РІРµСЂС€РµРЅРёСЏ</span>
+                  <strong>{countdownStep != null ? countdownStep : "в€ћ"}</strong>
                   {secsLeft != null && (
                     <span className="auction-timer-secondary">({secsLeft}s)</span>
                   )}
@@ -734,14 +734,14 @@ export default function Auction({
                     </div>
                   )}
                   {auctionState?.paused && (
-                    <span className="auction-chip gray">Пауза</span>
+                    <span className="auction-chip gray">РџР°СѓР·Р°</span>
                   )}
                 </div>
               ) : (
                 <div className="auction-hint">
                   {showLobby
-                    ? "Ждём всех игроков. Нажмите «Готов», когда будете на связи."
-                    : "Раунд завершён. Смотрите результаты ниже."}
+                    ? "Р–РґС‘Рј РІСЃРµС… РёРіСЂРѕРєРѕРІ. РќР°Р¶РјРёС‚Рµ В«Р“РѕС‚РѕРІВ», РєРѕРіРґР° Р±СѓРґРµС‚Рµ РЅР° СЃРІСЏР·Рё."
+                    : "Р Р°СѓРЅРґ Р·Р°РІРµСЂС€С‘РЅ. РЎРјРѕС‚СЂРёС‚Рµ СЂРµР·СѓР»СЊС‚Р°С‚С‹ РЅРёР¶Рµ."}
                 </div>
               )}
             </div>
@@ -752,7 +752,7 @@ export default function Auction({
                   onClick={toggleReady}
                   disabled={!currentPlayer}
                 >
-                  {currentPlayer?.ready ? "Готов" : "Я готов"}
+                  {currentPlayer?.ready ? "Р“РѕС‚РѕРІ" : "РЇ РіРѕС‚РѕРІ"}
                 </button>
               )}
               {isOwner && (
@@ -761,7 +761,7 @@ export default function Auction({
                   onClick={handleStartAuction}
                   disabled={!everyoneReadyExceptOwner}
                 >
-                  {everyoneReadyExceptOwner ? "Запустить" : "Ждём готовность"}
+                  {everyoneReadyExceptOwner ? "Р—Р°РїСѓСЃС‚РёС‚СЊ" : "Р–РґС‘Рј РіРѕС‚РѕРІРЅРѕСЃС‚СЊ"}
                 </button>
               )}
             </div>
@@ -774,7 +774,7 @@ export default function Auction({
                   aria-expanded={cfgOpen ? "true" : "false"}
                   aria-controls="auction-config-panel"
                 >
-                  {cfgOpen ? "Скрыть настройки" : "Настроить слоты"}
+                  {cfgOpen ? "РЎРєСЂС‹С‚СЊ РЅР°СЃС‚СЂРѕР№РєРё" : "РќР°СЃС‚СЂРѕРёС‚СЊ СЃР»РѕС‚С‹"}
                 </button>
                 {cfgOpen && (
                   <div id="auction-config-panel" className="auction-config-panel">
@@ -783,8 +783,8 @@ export default function Auction({
                         className="auction-input"
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        aria-label="Время на слот, секунды"
-                        placeholder="Время на слот (5-120)"
+                        aria-label="Р’СЂРµРјСЏ РЅР° СЃР»РѕС‚, СЃРµРєСѓРЅРґС‹"
+                        placeholder="Р’СЂРµРјСЏ РЅР° СЃР»РѕС‚ (5-120)"
                         value={cfgRules.timePerSlotSec}
                         onChange={(e) =>
                           setCfgRules((r) => ({
@@ -797,8 +797,8 @@ export default function Auction({
                         className="auction-input"
                         inputMode="numeric"
                         pattern="[0-9]*"
-                        aria-label="Количество слотов"
-                        placeholder="Слотов (1-60)"
+                        aria-label="РљРѕР»РёС‡РµСЃС‚РІРѕ СЃР»РѕС‚РѕРІ"
+                        placeholder="РЎР»РѕС‚РѕРІ (1-60)"
                         value={cfgRules.maxSlots}
                         onChange={(e) =>
                           setCfgRules((r) => ({
@@ -812,12 +812,12 @@ export default function Auction({
                         type="button"
                         onClick={configureAuction}
                       >
-                        Применить
+                        РџСЂРёРјРµРЅРёС‚СЊ
                       </button>
                     </div>
                     <textarea
                       className="auction-textarea"
-                      placeholder={`Название | 120000 | lot`}
+                      placeholder={`РќР°Р·РІР°РЅРёРµ | 120000 | lot`}
                       value={cfgSlotsText}
                       onChange={(e) => setCfgSlotsText(e.target.value)}
                       rows={4}
@@ -837,16 +837,16 @@ export default function Auction({
                 <>
                   <div className="auction-lot-core">
                     <div className="auction-lot-type">
-                      {currentSlot.type === "lootbox" ? "Лутбокс" : "Лот"}
+                      {currentSlot.type === "lootbox" ? "Р›СѓС‚Р±РѕРєСЃ" : "Р›РѕС‚"}
                     </div>
                     <div className="auction-lot-name">
-                      {currentSlot.name || "Без названия"}
+                      {currentSlot.name || "Р‘РµР· РЅР°Р·РІР°РЅРёСЏ"}
                     </div>
                     <div className="auction-lot-meta">
-                      База: {moneyFormatter.format(currentSlot.basePrice || 0)}$
+                      Р‘Р°Р·Р°: {moneyFormatter.format(currentSlot.basePrice || 0)}$
                     </div>
                     <div className="auction-lot-meta">
-                      Слот {(auctionState?.slotsPlayed ?? 0) + 1} из {auctionState?.maxSlots}
+                      РЎР»РѕС‚ {(auctionState?.slotsPlayed ?? 0) + 1} РёР· {auctionState?.maxSlots}
                     </div>
                   </div>
                   <div className="auction-bid-panel">
@@ -858,14 +858,14 @@ export default function Auction({
                       onChange={(e) =>
                         setMyBid(e.target.value.replace(/[^\d]/g, ""))
                       }
-                      placeholder="Введите ставку"
+                      placeholder="Р’РІРµРґРёС‚Рµ СЃС‚Р°РІРєСѓ"
                     />
                     <button
                       className="auction-btn primary"
                       onClick={() => sendBid()}
                       disabled={busyBid || myBalance == null || myBalance <= 0}
                     >
-                      {busyBid ? "Ставим..." : "Сделать ставку"}
+                      {busyBid ? "РЎС‚Р°РІРёРј..." : "РЎРґРµР»Р°С‚СЊ СЃС‚Р°РІРєСѓ"}
                     </button>
                     <div className="auction-quick-row">
                       <button
@@ -897,36 +897,36 @@ export default function Auction({
                         All-in
                       </button>
                       <button className="auction-btn small ghost" onClick={sendPass}>
-                        Пас
+                        РџР°СЃ
                       </button>
                     </div>
                     <div className="auction-hint">
-                      Баланс: {myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "—"}
-                      {" · "}
+                      Р‘Р°Р»Р°РЅСЃ: {myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "вЂ”"}
+                      {" В· "}
                       {typeof myRoundBid === "number"
-                        ? `Текущая ставка: ${moneyFormatter.format(myRoundBid)}$`
-                        : "Ставка ещё не сделана"}
+                        ? `РўРµРєСѓС‰Р°СЏ СЃС‚Р°РІРєР°: ${moneyFormatter.format(myRoundBid)}$`
+                        : "РЎС‚Р°РІРєР° РµС‰С‘ РЅРµ СЃРґРµР»Р°РЅР°"}
                     </div>
                   </div>
                   {isOwner && (
                     <div className="auction-live-owner">
                       {!auctionState?.paused ? (
                         <button className="auction-btn" onClick={pauseAuction}>
-                          Пауза
+                          РџР°СѓР·Р°
                         </button>
                       ) : (
                         <button className="auction-btn" onClick={resumeAuction}>
-                          Продолжить
+                          РџСЂРѕРґРѕР»Р¶РёС‚СЊ
                         </button>
                       )}
                       <button className="auction-btn ghost" onClick={forceNext}>
-                        Следующий лот
+                        РЎР»РµРґСѓСЋС‰РёР№ Р»РѕС‚
                       </button>
                     </div>
                   )}
                 </>
               ) : (
-                <div className="auction-hint">Лот появится через мгновение…</div>
+                <div className="auction-hint">Р›РѕС‚ РїРѕСЏРІРёС‚СЃСЏ С‡РµСЂРµР· РјРіРЅРѕРІРµРЅРёРµвЂ¦</div>
               )}
               {error && showGame && <div className="auction-error">{error}</div>}
             </section>
@@ -934,15 +934,15 @@ export default function Auction({
 
           {!showGame && showLobby && (
             <section className="auction-card muted floating-hint">
-              �?�?�?��?�>�� ��?�?�? ��?�?�?��?�? ��-�� ������, ��?�?��?�?�? ����?
+              Rally the squad, tap ready, and launch the show when everyone is synced.
             </section>
           )}
 
           {showResult && (
             <section className="auction-result-card">
-              <div className="auction-card-title">Финиш</div>
+              <div className="auction-card-title">Р¤РёРЅРёС€</div>
               <div className="auction-hint">
-                Победители по балансу показаны ниже. Можно начать новый раунд.
+                РџРѕР±РµРґРёС‚РµР»Рё РїРѕ Р±Р°Р»Р°РЅСЃСѓ РїРѕРєР°Р·Р°РЅС‹ РЅРёР¶Рµ. РњРѕР¶РЅРѕ РЅР°С‡Р°С‚СЊ РЅРѕРІС‹Р№ СЂР°СѓРЅРґ.
               </div>
               <div className="auction-result-grid">
                 {players
@@ -959,7 +959,7 @@ export default function Auction({
                     const name =
                       p.user?.first_name ||
                       p.user?.username ||
-                      `Игрок ${p.id}`;
+                      `РРіСЂРѕРє ${p.id}`;
                     const avatarUrl = p.user?.photo_url || p.user?.avatar || null;
                     return (
                       <div
@@ -979,13 +979,13 @@ export default function Auction({
                           <div className="auction-player-text">
                             <div className="auction-player-name">
                               {name}
-                              {isWinner && " 👑"}
+                              {isWinner && " рџ‘‘"}
                             </div>
                             <div className="auction-player-meta">
-                              Баланс: {moneyFormatter.format(balance)}$
+                              Р‘Р°Р»Р°РЅСЃ: {moneyFormatter.format(balance)}$
                             </div>
                             <div className="auction-player-meta small">
-                              Коллекция: {moneyFormatter.format(basketValue)}$
+                              РљРѕР»Р»РµРєС†РёСЏ: {moneyFormatter.format(basketValue)}$
                             </div>
                           </div>
                         </div>
@@ -996,11 +996,11 @@ export default function Auction({
               <div className="auction-row">
                 {isOwner && (
                   <button className="auction-btn primary" onClick={handleStartAuction}>
-                    Новый раунд
+                    РќРѕРІС‹Р№ СЂР°СѓРЅРґ
                   </button>
                 )}
                 <button className="auction-btn" onClick={handleExit}>
-                  Выйти в меню
+                  Р’С‹Р№С‚Рё РІ РјРµРЅСЋ
                 </button>
               </div>
             </section>
@@ -1008,7 +1008,7 @@ export default function Auction({
 
           {auctionState?.history?.length > 0 && (
             <section className="auction-history-card">
-              <div className="auction-card-title">Хронология лотов</div>
+              <div className="auction-card-title">РҐСЂРѕРЅРѕР»РѕРіРёСЏ Р»РѕС‚РѕРІ</div>
               <div className="auction-history">
                 {auctionState.history.map((h) => {
                   const winnerName =
@@ -1027,15 +1027,15 @@ export default function Auction({
                   return (
                     <div key={h.index} className="auction-history-item">
                       <div className="auction-history-title">
-                        #{h.index + 1} · {h.type === "lootbox" ? "Лутбокс" : "Лот"} — {h.name}
+                        #{h.index + 1} В· {h.type === "lootbox" ? "Р›СѓС‚Р±РѕРєСЃ" : "Р›РѕС‚"} вЂ” {h.name}
                       </div>
                       {winnerName ? (
                         <div className="auction-history-meta">
-                          Победитель: {winnerName} за {moneyFormatter.format(h.winBid || 0)}$
+                          РџРѕР±РµРґРёС‚РµР»СЊ: {winnerName} Р·Р° {moneyFormatter.format(h.winBid || 0)}$
                           {effectText && <span> ({effectText})</span>}
                         </div>
                       ) : (
-                        <div className="auction-history-meta">Ставок не было</div>
+                        <div className="auction-history-meta">РЎС‚Р°РІРѕРє РЅРµ Р±С‹Р»Рѕ</div>
                       )}
                     </div>
                   );
@@ -1047,24 +1047,24 @@ export default function Auction({
           {selectedPlayer && (
             <section className="auction-basket-card">
               <div className="auction-card-title">
-                Коллекция {selectedPlayer.user?.first_name ||
+                РљРѕР»Р»РµРєС†РёСЏ {selectedPlayer.user?.first_name ||
                   selectedPlayer.user?.username ||
-                  `Игрок ${selectedPlayer.id}`}
+                  `РРіСЂРѕРє ${selectedPlayer.id}`}
               </div>
               <div className="auction-hint">
-                Всего предметов: {selectedBasket.length} · Ценность {moneyFormatter.format(selectedBasketTotal || 0)}$
+                Р’СЃРµРіРѕ РїСЂРµРґРјРµС‚РѕРІ: {selectedBasket.length} В· Р¦РµРЅРЅРѕСЃС‚СЊ {moneyFormatter.format(selectedBasketTotal || 0)}$
               </div>
               {selectedBasket.length === 0 ? (
-                <div className="auction-hint">Пока пусто — выигрывайте лоты!</div>
+                <div className="auction-hint">РџРѕРєР° РїСѓСЃС‚Рѕ вЂ” РІС‹РёРіСЂС‹РІР°Р№С‚Рµ Р»РѕС‚С‹!</div>
               ) : (
                 <div className="auction-history">
                   {selectedBasket.map((item) => (
                     <div key={item.index} className="auction-history-item">
                       <div className="auction-history-title">
-                        #{(item.index ?? 0) + 1} · {item.type === "lootbox" ? "Лутбокс" : "Лот"} — {item.name}
+                        #{(item.index ?? 0) + 1} В· {item.type === "lootbox" ? "Р›СѓС‚Р±РѕРєСЃ" : "Р›РѕС‚"} вЂ” {item.name}
                       </div>
                       <div className="auction-history-meta">
-                        Куплено за {moneyFormatter.format(item.paid || 0)}$ · Стоимость {moneyFormatter.format(item.value || 0)}$
+                        РљСѓРїР»РµРЅРѕ Р·Р° {moneyFormatter.format(item.paid || 0)}$ В· РЎС‚РѕРёРјРѕСЃС‚СЊ {moneyFormatter.format(item.value || 0)}$
                       </div>
                     </div>
                   ))}
@@ -1082,7 +1082,7 @@ export default function Auction({
         </div>
 
         <section className="auction-players-section dock">
-          <div className="auction-card-title">�?�?�?�?���</div>
+          <div className="auction-card-title">пїЅ?пїЅ?пїЅ?пїЅ?пїЅпїЅпїЅ</div>
           <div className="auction-players-grid">
             {players.map((p) => {
               const isMe = p.id === selfInfo?.roomPlayerId;
@@ -1091,7 +1091,7 @@ export default function Auction({
               const name =
                 p.user?.first_name ||
                 p.user?.username ||
-                `�?�?�?�?�� ${p.id}`;
+                `пїЅ?пїЅ?пїЅ?пїЅ?пїЅпїЅ ${p.id}`;
               const avatarUrl = p.user?.photo_url || p.user?.avatar || null;
               const balance = auctionState?.balances?.[p.id] ?? null;
               return (
@@ -1110,10 +1110,10 @@ export default function Auction({
                   </span>
                   <span className="chip-name">
                     {name}
-                    {isHost && " �?:"}
+                    {isHost && " пїЅ?:"}
                   </span>
                   <span className="chip-meta">
-                    {balance != null ? `${moneyFormatter.format(balance)}$` : "�?""}
+                    {balance != null ? `${moneyFormatter.format(balance)}$` : "пїЅ?""}
                   </span>
                 </button>
               );
@@ -1131,7 +1131,7 @@ export default function Auction({
 
         <div className="auction-card muted">
 
-          <div className="auction-hint">Подключаемся к серверу…</div>
+          <div className="auction-hint">РџРѕРґРєР»СЋС‡Р°РµРјСЃСЏ Рє СЃРµСЂРІРµСЂСѓвЂ¦</div>
         </div>
 
       )}
@@ -1144,48 +1144,48 @@ export default function Auction({
 
           className="mf-menu v2 auction-menu"
 
-          aria-label="Меню подключения к комнатам"
+          aria-label="РњРµРЅСЋ РїРѕРґРєР»СЋС‡РµРЅРёСЏ Рє РєРѕРјРЅР°С‚Р°Рј"
 
         >
 
-          {/* hero �?" reuse mafia-hero, �?�? �? �'���?�'�?�? ���?�? ���?��Ő�?�? */}
+          {/* hero пїЅ?" reuse mafia-hero, пїЅ?пїЅ? пїЅ? пїЅ'пїЅпїЅпїЅ?пїЅ'пїЅ?пїЅ? пїЅпїЅпїЅ?пїЅ? пїЅпїЅпїЅ?пїЅпїЅЕђпїЅ?пїЅ? */}
 
           <header className="mf-menu-hero" role="banner">
             <button
               type="button"
               className="mf-icon-button mf-menu-close"
               onClick={handleExit}
-              aria-label="Закрыть игру"
+              aria-label="Р—Р°РєСЂС‹С‚СЊ РёРіСЂСѓ"
             >
-              ✕
+              вњ•
             </button>
 
             <div className="mf-menu-logo">AUCTION</div>
             <p className="mf-menu-tagline">
-              Раздай игроков по командам через честный аукцион
+              Р Р°Р·РґР°Р№ РёРіСЂРѕРєРѕРІ РїРѕ РєРѕРјР°РЅРґР°Рј С‡РµСЂРµР· С‡РµСЃС‚РЅС‹Р№ Р°СѓРєС†РёРѕРЅ
             </p>
           </header>
 
-          {/* действия: войти по коду / создать комнату */}
+          {/* РґРµР№СЃС‚РІРёСЏ: РІРѕР№С‚Рё РїРѕ РєРѕРґСѓ / СЃРѕР·РґР°С‚СЊ РєРѕРјРЅР°С‚Сѓ */}
           <div
             className="mf-menu-actions"
             role="group"
-            aria-label="Создание или вход в комнату"
+            aria-label="РЎРѕР·РґР°РЅРёРµ РёР»Рё РІС…РѕРґ РІ РєРѕРјРЅР°С‚Сѓ"
           >
             {/* inline join */}
             <div className="mf-join-inline">
               <label htmlFor="auction-join-code" className="sr-only">
-                Код комнаты
+                РљРѕРґ РєРѕРјРЅР°С‚С‹
               </label>
               <input
                 id="auction-join-code"
                 className="mf-input big"
-                placeholder="Код комнаты"
+                placeholder="РљРѕРґ РєРѕРјРЅР°С‚С‹"
                 inputMode="text"
                 maxLength={8}
-                // такой же pattern, как в мафии
+                // С‚Р°РєРѕР№ Р¶Рµ pattern, РєР°Рє РІ РјР°С„РёРё
                 pattern="[A-HJKMNPQRSTUVWXYZ23456789]{4,8}"
-                title="4–8 символов: A-H J K M N P Q R S T U V W X Y Z 2–9"
+                title="4вЂ“8 СЃРёРјРІРѕР»РѕРІ: A-H J K M N P Q R S T U V W X Y Z 2вЂ“9"
                 aria-invalid={error ? "true" : "false"}
                 value={(codeInput || "")
                   .toUpperCase()
@@ -1217,9 +1217,9 @@ export default function Auction({
                   joinRoom(normalized);
                 }}
                 disabled={creating || joining}
-                aria-label="Войти по коду"
+                aria-label="Р’РѕР№С‚Рё РїРѕ РєРѕРґСѓ"
               >
-                🔑 Вступить
+                рџ”‘ Р’СЃС‚СѓРїРёС‚СЊ
               </button>
             </div>
 
@@ -1235,53 +1235,53 @@ export default function Auction({
               type="button"
               onClick={createRoom}
               disabled={creating || joining}
-              aria-label="Создать комнату"
-              title="Создать новую комнату"
+              aria-label="РЎРѕР·РґР°С‚СЊ РєРѕРјРЅР°С‚Сѓ"
+              title="РЎРѕР·РґР°С‚СЊ РЅРѕРІСѓСЋ РєРѕРјРЅР°С‚Сѓ"
             >
-              📦 Создать комнату
+              рџ“¦ РЎРѕР·РґР°С‚СЊ РєРѕРјРЅР°С‚Сѓ
             </button>
           </div>
 
-          {/* маленький «гайд», как в мафии, но под аукцион */}
+          {/* РјР°Р»РµРЅСЊРєРёР№ В«РіР°Р№РґВ», РєР°Рє РІ РјР°С„РёРё, РЅРѕ РїРѕРґ Р°СѓРєС†РёРѕРЅ */}
           <section
             className="mf-menu-cards"
-            aria-label="Как работает аукцион"
+            aria-label="РљР°Рє СЂР°Р±РѕС‚Р°РµС‚ Р°СѓРєС†РёРѕРЅ"
           >
             <article className="mf-menu-card">
               <div className="ico" aria-hidden="true">
-                🎯
+                рџЋЇ
               </div>
-              <div className="title">Выбираем игроков</div>
+              <div className="title">Р’С‹Р±РёСЂР°РµРј РёРіСЂРѕРєРѕРІ</div>
               <p className="text">
-                Создатель комнаты заранее подготавливает список игроков
-                или слотов, которые разыграем.
+                РЎРѕР·РґР°С‚РµР»СЊ РєРѕРјРЅР°С‚С‹ Р·Р°СЂР°РЅРµРµ РїРѕРґРіРѕС‚Р°РІР»РёРІР°РµС‚ СЃРїРёСЃРѕРє РёРіСЂРѕРєРѕРІ
+                РёР»Рё СЃР»РѕС‚РѕРІ, РєРѕС‚РѕСЂС‹Рµ СЂР°Р·С‹РіСЂР°РµРј.
               </p>
             </article>
             <article className="mf-menu-card">
               <div className="ico" aria-hidden="true">
-                💰
+                рџ’°
               </div>
-              <div className="title">Делаем ставки</div>
+              <div className="title">Р”РµР»Р°РµРј СЃС‚Р°РІРєРё</div>
               <p className="text">
-                На каждый лот у всех одинаковый капитал. Побеждает
-                максимальная ставка, деньги списываются с баланса.
+                РќР° РєР°Р¶РґС‹Р№ Р»РѕС‚ Сѓ РІСЃРµС… РѕРґРёРЅР°РєРѕРІС‹Р№ РєР°РїРёС‚Р°Р». РџРѕР±РµР¶РґР°РµС‚
+                РјР°РєСЃРёРјР°Р»СЊРЅР°СЏ СЃС‚Р°РІРєР°, РґРµРЅСЊРіРё СЃРїРёСЃС‹РІР°СЋС‚СЃСЏ СЃ Р±Р°Р»Р°РЅСЃР°.
               </p>
             </article>
             <article className="mf-menu-card">
               <div className="ico" aria-hidden="true">
-                🧩
+                рџ§©
               </div>
-              <div className="title">Собираем команды</div>
+              <div className="title">РЎРѕР±РёСЂР°РµРј РєРѕРјР°РЅРґС‹</div>
               <p className="text">
-                По итогам аукциона получаем прозрачные, живые и
-                сбалансированные составы.
+                РџРѕ РёС‚РѕРіР°Рј Р°СѓРєС†РёРѕРЅР° РїРѕР»СѓС‡Р°РµРј РїСЂРѕР·СЂР°С‡РЅС‹Рµ, Р¶РёРІС‹Рµ Рё
+                СЃР±Р°Р»Р°РЅСЃРёСЂРѕРІР°РЅРЅС‹Рµ СЃРѕСЃС‚Р°РІС‹.
               </p>
             </article>
           </section>
         </section>
       )}
 
-      {/* Список игроков + деньги */}
+      {/* РЎРїРёСЃРѕРє РёРіСЂРѕРєРѕРІ + РґРµРЅСЊРіРё */}
           <section className="auction-section">{toast && (
         <div
           className={`auction-toast ${toast.type || "info"}`}
@@ -1294,3 +1294,4 @@ export default function Auction({
     </div>
   );
 }
+
