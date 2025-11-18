@@ -40,6 +40,8 @@ export default function Auction({
   const [toast, setToast] = useState(null);
   const lastToastRef = useRef(null);
   const progressSentRef = useRef(false);
+  const lastSubscribedCodeRef = useRef(null);
+  const lastSubscriptionSocketIdRef = useRef(null);
 
   // конфиг (хост, лобби)
   const [cfgOpen, setCfgOpen] = useState(false);
@@ -185,6 +187,36 @@ export default function Auction({
         0
       : 0;
 
+  const subscribeToRoom = useCallback(
+    (code, options = {}) => {
+      if (!code) return;
+      const force = options.force ?? false;
+      const currentSocketId = socket?.id ?? null;
+      const alreadySame =
+        lastSubscribedCodeRef.current === code &&
+        lastSubscriptionSocketIdRef.current === currentSocketId &&
+        currentSocketId != null;
+      lastSubscribedCodeRef.current = code;
+      if (!socket) return;
+      if (!force && alreadySame) return;
+      socket.emit("room:subscribe", { code });
+      socket.emit("auction:sync", { code });
+      if (currentSocketId != null) {
+        lastSubscriptionSocketIdRef.current = currentSocketId;
+      }
+    },
+    [socket]
+  );
+
+  useEffect(() => {
+    if (!room?.code) {
+      lastSubscribedCodeRef.current = null;
+      lastSubscriptionSocketIdRef.current = null;
+      return;
+    }
+    subscribeToRoom(room.code);
+  }, [room?.code, subscribeToRoom]);
+
   // --------- socket init ---------
   useEffect(() => {
     if (!apiBase) return;
@@ -194,10 +226,6 @@ export default function Auction({
     });
 
     setSocket(s);
-
-    s.on("connect", () => {
-      setConnecting(false);
-    });
 
     s.on("connect_error", (err) => {
       setConnecting(false);
@@ -244,6 +272,26 @@ export default function Auction({
     };
   }, [apiBase, initData]);
 
+  useEffect(() => {
+    if (!socket) return;
+    const handleConnect = () => {
+      setConnecting(false);
+      if (lastSubscribedCodeRef.current) {
+        subscribeToRoom(lastSubscribedCodeRef.current, { force: true });
+      }
+    };
+    const handleDisconnect = () => {
+      setConnecting(true);
+      lastSubscriptionSocketIdRef.current = null;
+    };
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+    };
+  }, [socket, subscribeToRoom]);
+
   // авто-скрытие тоста
   useEffect(() => {
     if (!toast) return;
@@ -286,6 +334,11 @@ export default function Auction({
     }
   }, [auctionState, onProgress]);
 
+  useEffect(() => {
+    if (!auctionState || auctionState.phase === "finished") return;
+    progressSentRef.current = false;
+  }, [auctionState?.phase, room?.code]);
+
   // ===================== API helpers =====================
 
   async function createRoom() {
@@ -316,9 +369,8 @@ export default function Auction({
       }
       setRoom(data.room || null);
       setPlayers(data.players || []);
-      if (socket && data.room?.code) {
-        socket.emit("room:subscribe", { code: data.room.code });
-        socket.emit("auction:sync", { code: data.room.code });
+      if (data.room?.code) {
+        subscribeToRoom(data.room.code, { force: true });
       }
       setCodeInput(data.room?.code || "");
     } catch (e) {
@@ -365,10 +417,7 @@ export default function Auction({
       setPlayers(data.players || []);
       setCodeInput(code);
 
-      if (socket) {
-        socket.emit("room:subscribe", { code });
-        socket.emit("auction:sync", { code });
-      }
+      subscribeToRoom(code, { force: true });
 
       if (options.fromInvite && onInviteConsumed) {
         try {
@@ -582,6 +631,9 @@ export default function Auction({
     setPlayers([]);
     setAuctionState(null);
     setSelfInfo(null);
+    lastSubscribedCodeRef.current = null;
+    lastSubscriptionSocketIdRef.current = null;
+    progressSentRef.current = false;
   }
 
   async function handleExit() {
