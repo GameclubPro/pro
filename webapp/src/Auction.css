@@ -277,68 +277,69 @@ textarea.text-input {
   margin-bottom: 12px;
 }
 
-.roster {
-  gap: 12px;
-  flex-wrap: wrap;
+.players-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
 }
 
-.roster.collapsed {
+.players-grid.collapsed {
   max-height: 0;
   overflow: hidden;
   padding-top: 0;
 }
 
-.player-chip {
-  flex: 1 1 calc(50% - 10px);
-  min-width: 150px;
-  border-radius: 22px;
-  padding: 12px;
+.player-tile {
+  border-radius: 18px;
+  padding: 10px 6px 12px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid transparent;
   display: flex;
-  gap: 12px;
+  flex-direction: column;
   align-items: center;
-  text-align: left;
+  gap: 4px;
 }
 
-.player-chip.host {
-  border-color: rgba(255, 255, 255, 0.18);
-}
-
-.player-chip.ready {
+.player-tile.ready {
   background: rgba(87, 232, 186, 0.12);
 }
 
-.player-chip.selected {
-  box-shadow: 0 0 0 2px rgba(123, 109, 255, 0.6);
+.player-tile.selected {
+  border-color: rgba(124, 109, 255, 0.6);
 }
 
-.chip-avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.1);
+.player-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.12);
   display: grid;
   place-items: center;
   font-weight: 700;
   overflow: hidden;
 }
 
-.chip-avatar img {
+.player-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.chip-body {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+.player-name {
+  font-size: 12px;
+  text-align: center;
 }
 
-.chip-tags {
-  gap: 6px;
-  flex-wrap: wrap;
+.player-balance {
+  font-size: 11px;
+  color: var(--auction-muted);
+}
+
+.player-pill {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .host-config {
@@ -354,10 +355,33 @@ textarea.text-input {
   gap: 6px;
 }
 
-.lot-type {
-  font-size: 15px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+.lot-hero {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.lot-name {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.lot-icon {
+  width: 140px;
+  height: 140px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15), transparent 55%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  place-items: center;
+  font-size: 60px;
+}
+
+.lot-base {
+  font-size: 13px;
   color: var(--auction-muted);
 }
 
@@ -371,6 +395,10 @@ textarea.text-input {
 .timer-value {
   font-size: 26px;
   font-weight: 700;
+}
+
+.muted.small {
+  font-size: 12px;
 }
 
 .timer-bar {

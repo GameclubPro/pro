@@ -8,24 +8,6 @@ const INITIAL_BANK = 1_000_000;
 const CODE_ALPHABET_RE = /[^A-HJKMNPQRSTUVWXYZ23456789]/g;
 const BID_PRESETS = [1_000, 5_000, 10_000, 25_000, 50_000];
 
-const LANDING_CARDS = [
-  {
-    icon: "🚀",
-    title: "Мгновенный старт",
-    text: "Создай комнату и поделись кодом — друзья подключатся за секунды.",
-  },
-  {
-    icon: "💰",
-    title: "Честный аукцион",
-    text: "У всех один банк. Важны стратегия, координация и скорость реакции.",
-  },
-  {
-    icon: "🎯",
-    title: "Балансированные составы",
-    text: "Проверяй корзины игроков и собирай идеальные команды на вечер.",
-  },
-];
-
 const PHASE_LABEL = {
   lobby: "Лобби",
   in_progress: "Идёт игра",
@@ -70,14 +52,6 @@ function playerDisplayName(player) {
   return player.user?.first_name || player.user?.username || `Игрок ${player.id}`;
 }
 
-function plural(value, one, few, many) {
-  const v = Math.abs(value) % 100;
-  const last = v % 10;
-  if (v > 10 && v < 20) return many;
-  if (last > 1 && last < 5) return few;
-  if (last === 1) return one;
-  return many;
-}
 export default function Auction({
   apiBase,
   initData,
@@ -128,6 +102,7 @@ export default function Auction({
   const myBalance = myPlayerId != null ? balances[myPlayerId] ?? null : null;
 
   const currentSlot = auctionState?.currentSlot || null;
+  const baseBid = currentSlot?.basePrice || 0;
   const myRoundBid = useMemo(() => {
     if (myPlayerId == null) return null;
     const value = auctionState?.currentBids?.[myPlayerId];
@@ -200,6 +175,18 @@ export default function Auction({
         basketTotals[String(selectedPlayerIdEffective)] ??
         0
       : 0;
+
+  useEffect(() => {
+    if (!currentSlot) {
+      setMyBid("");
+      return;
+    }
+    setMyBid(
+      currentSlot.basePrice && currentSlot.basePrice > 0
+        ? String(currentSlot.basePrice)
+        : ""
+    );
+  }, [currentSlot?.index]);
   useEffect(() => {
     if (!auctionState?.timeLeftMs) {
       deadlineAtRef.current = null;
@@ -567,11 +554,18 @@ export default function Auction({
     socket.emit("auction:next", { code: room.code }, () => {});
   }, [socket, room, isOwner]);
 
-  function setBidRelative(delta) {
+  function setBidRelative(delta = 0) {
     setMyBid((prev) => {
-      const current = Number(String(prev).replace(/\s/g, "")) || 0;
+      const numericPrev = Number(String(prev).replace(/\s/g, "")) || 0;
+      const baseline =
+        numericPrev > 0
+          ? numericPrev
+          : baseBid > 0
+          ? baseBid
+          : 0;
       const max = myBalance ?? INITIAL_BANK;
-      return String(clamp(current + delta, 0, max));
+      const next = delta === 0 ? baseline : baseline + delta;
+      return String(clamp(next, 0, max));
     });
   }
 
@@ -596,6 +590,12 @@ export default function Auction({
     }
     if (myBalance != null && amount > myBalance) {
       setError("Ставка превышает ваш баланс");
+      return;
+    }
+    if (amount > 0 && baseBid > 0 && amount < baseBid) {
+      setError(
+        `Минимальная ставка ${moneyFormatter.format(baseBid)}$`
+      );
       return;
     }
 
@@ -716,9 +716,7 @@ export default function Auction({
             <span className="badge ghost">{connecting ? "подключаемся…" : "онлайн"}</span>
           </div>
           <h1>Собери идеальную команду</h1>
-          <p className="muted">
-            Прозрачные ставки, быстрый темп и красивый интерфейс для вечеринок и турниров.
-          </p>
+          <p className="muted">Стартуй комнату и раздай игроков через честный аукцион.</p>
           <div className="hero-actions">
             <button
               type="button"
@@ -752,17 +750,6 @@ export default function Auction({
               </button>
             </div>
           </div>
-        </section>
-        <section className="auction-card landing-grid">
-          {LANDING_CARDS.map((card) => (
-            <article key={card.title} className="landing-card">
-              <div className="landing-icon" aria-hidden="true">
-                {card.icon}
-              </div>
-              <h3>{card.title}</h3>
-              <p>{card.text}</p>
-            </article>
-          ))}
         </section>
         {error && <div className="auction-error prominent">{error}</div>}
       </div>
@@ -830,7 +817,7 @@ export default function Auction({
         <header className="section-head">
           <div>
             <span className="label">Состав</span>
-            <h3>Экипаж комнаты</h3>
+            <h3>Игроки комнаты</h3>
           </div>
           <button
             type="button"
@@ -840,12 +827,12 @@ export default function Auction({
             {playersPanelOpen ? "Скрыть" : "Показать"}
           </button>
         </header>
-        <div className={`roster ${playersPanelOpen ? "open" : "collapsed"}`}>
+        <div className={`players-grid ${playersPanelOpen ? "open" : "collapsed"}`}>
           {players.map((p) => {
             const name = playerDisplayName(p);
             const balance = balances[p.id] ?? null;
-            const wins = winsByPlayerId.get(p.id) || 0;
             const avatarUrl = p.user?.photo_url || p.user?.avatar || null;
+            const wins = winsByPlayerId.get(p.id) || 0;
             const isSelected = selectedPlayerIdEffective === p.id;
             const isHost = p.user?.id === room.ownerId;
             return (
@@ -853,35 +840,27 @@ export default function Auction({
                 key={p.id}
                 type="button"
                 className={
-                  "player-chip" +
-                  (p.ready ? " ready" : "") +
-                  (isHost ? " host" : "") +
-                  (isSelected ? " selected" : "")
+                  "player-tile" +
+                  (isSelected ? " selected" : "") +
+                  (p.ready ? " ready" : "")
                 }
                 onClick={() => setSelectedPlayerId(p.id)}
               >
-                <div className="chip-avatar">
+                <div className="player-thumb">
                   {avatarUrl ? (
                     <img src={avatarUrl} alt={name} />
                   ) : (
                     name.slice(0, 1).toUpperCase()
                   )}
                 </div>
-                <div className="chip-body">
-                  <strong>{name}</strong>
-                  <span className="muted">
-                    {balance != null ? `${moneyFormatter.format(balance)}$` : "ожидаем…"}
-                  </span>
-                  <div className="chip-tags">
-                    {isHost && <span className="badge ghost">хост</span>}
-                    {p.ready ? (
-                      <span className="badge success">готов</span>
-                    ) : (
-                      <span className="badge ghost">не готов</span>
-                    )}
-                    {wins > 0 && <span className="badge ghost">🏆 {wins}</span>}
-                  </div>
+                <div className="player-name">
+                  {name}
+                  {isHost && " ★"}
                 </div>
+                <div className="player-balance">
+                  {balance != null ? `${moneyFormatter.format(balance)}$` : "…"}
+                </div>
+                {wins > 0 && <div className="player-pill">🏆 {wins}</div>}
               </button>
             );
           })}
@@ -973,40 +952,35 @@ export default function Auction({
             )}
           </>
         )}
-        <p className="muted">
-          Каждый получает {moneyFormatter.format(INITIAL_BANK)}$. Побеждает игрок с максимальным
-          остатком после {maxSlots} {plural(maxSlots, "слота", "слотов", "слотов")} или раньше,
-          если закончится банк.
-        </p>
       </section>
     );
   }
   function renderLive() {
     if (!showGame) return null;
+    const lotIcon = currentSlot?.type === "lootbox" ? "🎁" : "📦";
     return (
       <section className="auction-card live-card">
         <header className="section-head">
           <div>
             <span className="label">Текущий лот</span>
-            <h3>{currentSlot?.name || "Ожидание следующего слота"}</h3>
           </div>
           {auctionState?.paused && <span className="badge ghost">пауза</span>}
         </header>
         {currentSlot ? (
           <>
-            <div className="lot-type">
-              {currentSlot.type === "lootbox" ? "🎁 Скрытый лот" : "📦 Обычный лот"}
-            </div>
-            <p className="muted">
-              База: {moneyFormatter.format(currentSlot.basePrice || 0)}$ · Слот {(
-                auctionState.slotsPlayed ?? 0
-              ) + 1} из {auctionState.maxSlots}
-            </p>
-            <div className="timer">
-              <div className="timer-value">
-                ⏳ {countdownStep != null ? countdownStep : "—"}
-                {secsLeft != null && <span className="muted"> ({secsLeft} c)</span>}
+            <div className="lot-hero">
+              <div className="lot-name">{currentSlot.name}</div>
+              <div className="lot-icon" aria-hidden="true">
+                {lotIcon}
               </div>
+              <div className="lot-base">
+                от {moneyFormatter.format(baseBid || 0)}$ · слот{" "}
+                {(auctionState.slotsPlayed ?? 0) + 1}/{auctionState.maxSlots}
+              </div>
+            </div>
+            <div className="timer">
+              <div className="timer-value">{countdownStep != null ? countdownStep : "—"}</div>
+              {secsLeft != null && <div className="muted small">осталось {secsLeft} с</div>}
               {progressPct != null && (
                 <div className="timer-bar" aria-hidden="true">
                   <div style={{ width: `${progressPct}%` }} />
@@ -1015,7 +989,7 @@ export default function Auction({
             </div>
             <div className="bid-panel">
               <label className="field">
-                <span>Ваша ставка</span>
+                <span>Ставка</span>
                 <input
                   className="text-input"
                   inputMode="numeric"
@@ -1057,10 +1031,10 @@ export default function Auction({
                 {busyBid ? "Отправляем…" : "Сделать ставку"}
               </button>
             </div>
-            <p className="muted">
+            <div className="muted">
               Баланс: {myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "—"} · Текущая
               ставка: {typeof myRoundBid === "number" ? `${moneyFormatter.format(myRoundBid)}$` : "—"}
-            </p>
+            </div>
             {isOwner && (
               <div className="owner-actions">
                 {auctionState?.paused ? (
