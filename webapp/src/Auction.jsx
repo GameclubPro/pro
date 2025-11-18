@@ -682,7 +682,7 @@ export default function Auction({
   }, [players, room]);
 
   const playedSlots = auctionState?.slotsPlayed ?? 0;
-  const maxSlots = auctionState?.maxSlots ?? Number(cfgRules.maxSlots) || 30;
+  const maxSlots = (auctionState?.maxSlots ?? Number(cfgRules.maxSlots)) || 30;
 
   const showLobby = phase === "lobby";
   const showGame = phase === "in_progress";
