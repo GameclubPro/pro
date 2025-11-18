@@ -1282,16 +1282,19 @@ export default function Auction({
       )}
 
       {/* РЎРїРёСЃРѕРє РёРіСЂРѕРєРѕРІ + РґРµРЅСЊРіРё */}
-          <section className="auction-section">{toast && (
-        <div
-          className={`auction-toast ${toast.type || "info"}`}
-          role="status"
-          aria-live="polite"
-        >
-          {toast.text}
-        </div>
-      )}
+      <section className="auction-section">
+        {toast && (
+          <div
+            className={`auction-toast ${toast.type || "info"}`}
+            role="status"
+            aria-live="polite"
+          >
+            {toast.text}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
+
 
