@@ -673,57 +673,483 @@ export default function Auction({
     <div className="auction-root">
       {/* TOP BAR */}
       {room && (
-        <div
-          className="auction-header"
-          role="region"
-          aria-label="Панель комнаты"
-        >
-          <div className="auction-room-info">
-            <div className="auction-title">AUCTION</div>
-            <div className="auction-room-code">
-              Код:{" "}
-              <span className="auction-room-code-value">{room.code}</span>
-              <button
-                type="button"
-                className="auction-btn small ghost"
-                onClick={copyRoomCode}
-                aria-label="Скопировать код комнаты"
-              >
-                📋 Копировать
-              </button>
+        <div className="auction-main">
+          <header className="auction-header">
+            <button
+              type="button"
+              className="auction-icon-button"
+              onClick={handleExit}
+              aria-label="Leave room"
+            >
+              Back
+            </button>
+            <div className="auction-room-info">
+              <div className="auction-title">AUCTION</div>
+              <div className="auction-room-code">
+                Code
+                <span className="auction-room-code-value">{room.code}</span>
+              </div>
             </div>
-          </div>
+            <button
+              type="button"
+              className="auction-icon-button ghost"
+              onClick={copyRoomCode}
+              aria-label="Copy code"
+            >
+              Copy
+            </button>
+          </header>
+          <section className="auction-status-card">
+            <div className="auction-status-grid">
+              <div className="auction-stat">
+                <span>Баланс</span>
+                <strong>
+                  {myBalance != null
+                    ? `${moneyFormatter.format(myBalance)}$`
+                    : "—"}
+                </strong>
+              </div>
+              <div className="auction-stat">
+                <span>Слоты</span>
+                <strong>
+                  {auctionState?.currentSlotIndex != null
+                    ? `${(auctionState.currentSlotIndex || 0) + 1}/${
+                        auctionState?.maxSlots || cfgRules.maxSlots || 0
+                      }`
+                    : `${auctionState?.maxSlots || cfgRules.maxSlots || 0}`}
+                </strong>
+              </div>
+            </div>
+            <div className="auction-top-meta">
+              {showGame ? (
+                <div className="auction-timer" role="timer" aria-live="polite">
+                  <span className="auction-timer-label">До завершения</span>
+                  <strong>{countdownStep != null ? countdownStep : "∞"}</strong>
+                  {secsLeft != null && (
+                    <span className="auction-timer-secondary">({secsLeft}s)</span>
+                  )}
+                  {progressPct != null && (
+                    <div className="auction-timer-bar">
+                      <div className="fill" style={{ width: `${progressPct}%` }} />
+                    </div>
+                  )}
+                  {auctionState?.paused && (
+                    <span className="auction-chip gray">Пауза</span>
+                  )}
+                </div>
+              ) : (
+                <div className="auction-hint">
+                  {showLobby
+                    ? "Ждём всех игроков. Нажмите «Готов», когда будете на связи."
+                    : "Раунд завершён. Смотрите результаты ниже."}
+                </div>
+              )}
+            </div>
+            <div className="auction-status-actions">
+              {!isOwner && (
+                <button
+                  className="auction-btn primary"
+                  onClick={toggleReady}
+                  disabled={!currentPlayer}
+                >
+                  {currentPlayer?.ready ? "Готов" : "Я готов"}
+                </button>
+              )}
+              {isOwner && (
+                <button
+                  className="auction-btn primary"
+                  onClick={handleStartAuction}
+                  disabled={!everyoneReadyExceptOwner}
+                >
+                  {everyoneReadyExceptOwner ? "Запустить" : "Ждём готовность"}
+                </button>
+              )}
+            </div>
+            {isOwner && (
+              <div className="auction-config modern">
+                <button
+                  className="auction-btn small ghost"
+                  type="button"
+                  onClick={() => setCfgOpen((v) => !v)}
+                  aria-expanded={cfgOpen ? "true" : "false"}
+                  aria-controls="auction-config-panel"
+                >
+                  {cfgOpen ? "Скрыть настройки" : "Настроить слоты"}
+                </button>
+                {cfgOpen && (
+                  <div id="auction-config-panel" className="auction-config-panel">
+                    <div className="auction-row">
+                      <input
+                        className="auction-input"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        aria-label="Время на слот, секунды"
+                        placeholder="Время на слот (5-120)"
+                        value={cfgRules.timePerSlotSec}
+                        onChange={(e) =>
+                          setCfgRules((r) => ({
+                            ...r,
+                            timePerSlotSec: e.target.value.replace(/[^\d]/g, ""),
+                          }))
+                        }
+                      />
+                      <input
+                        className="auction-input"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        aria-label="Количество слотов"
+                        placeholder="Слотов (1-60)"
+                        value={cfgRules.maxSlots}
+                        onChange={(e) =>
+                          setCfgRules((r) => ({
+                            ...r,
+                            maxSlots: e.target.value.replace(/[^\d]/g, ""),
+                          }))
+                        }
+                      />
+                      <button
+                        className="auction-btn"
+                        type="button"
+                        onClick={configureAuction}
+                      >
+                        Применить
+                      </button>
+                    </div>
+                    <textarea
+                      className="auction-textarea"
+                      placeholder={`Название | 120000 | lot`}
+                      value={cfgSlotsText}
+                      onChange={(e) => setCfgSlotsText(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          {error && showLobby && <div className="auction-error">{error}</div>}
+        </section>
 
-          {myBalance != null && (
-            <div className="auction-header-balance" aria-live="polite">
-              Баланс:{" "}
-              <strong>{moneyFormatter.format(myBalance)}$</strong>
-            </div>
+        <div className="auction-stage">
+          <div className="auction-stage-scroll">
+          {showGame && (
+            <section className="auction-live-card">
+              {currentSlot ? (
+                <>
+                  <div className="auction-lot-core">
+                    <div className="auction-lot-type">
+                      {currentSlot.type === "lootbox" ? "Лутбокс" : "Лот"}
+                    </div>
+                    <div className="auction-lot-name">
+                      {currentSlot.name || "Без названия"}
+                    </div>
+                    <div className="auction-lot-meta">
+                      База: {moneyFormatter.format(currentSlot.basePrice || 0)}$
+                    </div>
+                    <div className="auction-lot-meta">
+                      Слот {(auctionState?.slotsPlayed ?? 0) + 1} из {auctionState?.maxSlots}
+                    </div>
+                  </div>
+                  <div className="auction-bid-panel">
+                    <input
+                      className="auction-input"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={myBid}
+                      onChange={(e) =>
+                        setMyBid(e.target.value.replace(/[^\d]/g, ""))
+                      }
+                      placeholder="Введите ставку"
+                    />
+                    <button
+                      className="auction-btn primary"
+                      onClick={() => sendBid()}
+                      disabled={busyBid || myBalance == null || myBalance <= 0}
+                    >
+                      {busyBid ? "Ставим..." : "Сделать ставку"}
+                    </button>
+                    <div className="auction-quick-row">
+                      <button
+                        className="auction-btn small"
+                        onClick={() => setBidRelative(1_000)}
+                        disabled={myBalance == null || myBalance <= 0}
+                      >
+                        +1k
+                      </button>
+                      <button
+                        className="auction-btn small"
+                        onClick={() => setBidRelative(5_000)}
+                        disabled={myBalance == null || myBalance <= 0}
+                      >
+                        +5k
+                      </button>
+                      <button
+                        className="auction-btn small"
+                        onClick={() => setBidRelative(10_000)}
+                        disabled={myBalance == null || myBalance <= 0}
+                      >
+                        +10k
+                      </button>
+                      <button
+                        className="auction-btn small"
+                        onClick={() => sendBid(myBalance || 0)}
+                        disabled={myBalance == null || myBalance <= 0}
+                      >
+                        All-in
+                      </button>
+                      <button className="auction-btn small ghost" onClick={sendPass}>
+                        Пас
+                      </button>
+                    </div>
+                    <div className="auction-hint">
+                      Баланс: {myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "—"}
+                      {" · "}
+                      {typeof myRoundBid === "number"
+                        ? `Текущая ставка: ${moneyFormatter.format(myRoundBid)}$`
+                        : "Ставка ещё не сделана"}
+                    </div>
+                  </div>
+                  {isOwner && (
+                    <div className="auction-live-owner">
+                      {!auctionState?.paused ? (
+                        <button className="auction-btn" onClick={pauseAuction}>
+                          Пауза
+                        </button>
+                      ) : (
+                        <button className="auction-btn" onClick={resumeAuction}>
+                          Продолжить
+                        </button>
+                      )}
+                      <button className="auction-btn ghost" onClick={forceNext}>
+                        Следующий лот
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="auction-hint">Лот появится через мгновение…</div>
+              )}
+              {error && showGame && <div className="auction-error">{error}</div>}
+            </section>
           )}
 
-          <button
-            className="auction-btn back"
-            type="button"
-            onClick={handleExit}
-            aria-label="Выйти в меню"
-          >
-            Выйти
-          </button>
+          {!showGame && showLobby && (
+            <section className="auction-card muted floating-hint">
+              �?�?�?��?�>�� ��?�?�? ��?�?�?��?�? ��-�� ������, ��?�?��?�?�? ����?
+            </section>
+          )}
+
+          {showResult && (
+            <section className="auction-result-card">
+              <div className="auction-card-title">Финиш</div>
+              <div className="auction-hint">
+                Победители по балансу показаны ниже. Можно начать новый раунд.
+              </div>
+              <div className="auction-result-grid">
+                {players
+                  .slice()
+                  .sort((a, b) => {
+                    const av = auctionState?.balances?.[a.id] ?? 0;
+                    const bv = auctionState?.balances?.[b.id] ?? 0;
+                    return bv - av;
+                  })
+                  .map((p) => {
+                    const balance = auctionState?.balances?.[p.id] ?? 0;
+                    const basketValue = basketTotals[p.id] || 0;
+                    const isWinner = auctionState?.winners?.includes(p.id);
+                    const name =
+                      p.user?.first_name ||
+                      p.user?.username ||
+                      `Игрок ${p.id}`;
+                    const avatarUrl = p.user?.photo_url || p.user?.avatar || null;
+                    return (
+                      <div
+                        key={p.id}
+                        className={`auction-player-card result${isWinner ? " winner" : ""}`}
+                      >
+                        <div className="auction-player-left">
+                          <div className="auction-player-avatar">
+                            {avatarUrl ? (
+                              <img src={avatarUrl} alt={name} />
+                            ) : (
+                              <div className="auction-player-avatar-fallback">
+                                {name?.[0]?.toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <div className="auction-player-text">
+                            <div className="auction-player-name">
+                              {name}
+                              {isWinner && " 👑"}
+                            </div>
+                            <div className="auction-player-meta">
+                              Баланс: {moneyFormatter.format(balance)}$
+                            </div>
+                            <div className="auction-player-meta small">
+                              Коллекция: {moneyFormatter.format(basketValue)}$
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+              <div className="auction-row">
+                {isOwner && (
+                  <button className="auction-btn primary" onClick={handleStartAuction}>
+                    Новый раунд
+                  </button>
+                )}
+                <button className="auction-btn" onClick={handleExit}>
+                  Выйти в меню
+                </button>
+              </div>
+            </section>
+          )}
+
+          {auctionState?.history?.length > 0 && (
+            <section className="auction-history-card">
+              <div className="auction-card-title">Хронология лотов</div>
+              <div className="auction-history">
+                {auctionState.history.map((h) => {
+                  const winnerName =
+                    h.winnerPlayerId != null
+                      ? playerNameById.get(h.winnerPlayerId)
+                      : null;
+                  let effectText = "";
+                  if (h.effect) {
+                    const d = h.effect.delta || 0;
+                    if (h.effect.kind === "money" && d > 0) {
+                      effectText = ` +${moneyFormatter.format(d)}$`;
+                    } else if (h.effect.kind === "penalty" && d < 0) {
+                      effectText = ` ${moneyFormatter.format(d)}$`;
+                    }
+                  }
+                  return (
+                    <div key={h.index} className="auction-history-item">
+                      <div className="auction-history-title">
+                        #{h.index + 1} · {h.type === "lootbox" ? "Лутбокс" : "Лот"} — {h.name}
+                      </div>
+                      {winnerName ? (
+                        <div className="auction-history-meta">
+                          Победитель: {winnerName} за {moneyFormatter.format(h.winBid || 0)}$
+                          {effectText && <span> ({effectText})</span>}
+                        </div>
+                      ) : (
+                        <div className="auction-history-meta">Ставок не было</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {selectedPlayer && (
+            <section className="auction-basket-card">
+              <div className="auction-card-title">
+                Коллекция {selectedPlayer.user?.first_name ||
+                  selectedPlayer.user?.username ||
+                  `Игрок ${selectedPlayer.id}`}
+              </div>
+              <div className="auction-hint">
+                Всего предметов: {selectedBasket.length} · Ценность {moneyFormatter.format(selectedBasketTotal || 0)}$
+              </div>
+              {selectedBasket.length === 0 ? (
+                <div className="auction-hint">Пока пусто — выигрывайте лоты!</div>
+              ) : (
+                <div className="auction-history">
+                  {selectedBasket.map((item) => (
+                    <div key={item.index} className="auction-history-item">
+                      <div className="auction-history-title">
+                        #{(item.index ?? 0) + 1} · {item.type === "lootbox" ? "Лутбокс" : "Лот"} — {item.name}
+                      </div>
+                      <div className="auction-history-meta">
+                        Куплено за {moneyFormatter.format(item.paid || 0)}$ · Стоимость {moneyFormatter.format(item.value || 0)}$
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {error && !showGame && !showLobby && (
+
+            <div className="auction-error sticky">{error}</div>
+
+          )}
+
         </div>
+
+        <section className="auction-players-section dock">
+          <div className="auction-card-title">�?�?�?�?���</div>
+          <div className="auction-players-grid">
+            {players.map((p) => {
+              const isMe = p.id === selfInfo?.roomPlayerId;
+              const isHost = p.user?.id === room?.ownerId;
+              const isSelected = selectedPlayerIdEffective === p.id;
+              const name =
+                p.user?.first_name ||
+                p.user?.username ||
+                `�?�?�?�?�� ${p.id}`;
+              const avatarUrl = p.user?.photo_url || p.user?.avatar || null;
+              const balance = auctionState?.balances?.[p.id] ?? null;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={`auction-player-chip${isSelected ? " selected" : ""}${p.ready ? " ready" : ""}${isMe ? " me" : ""}`}
+                  onClick={() => setSelectedPlayerId(p.id)}
+                >
+                  <span className="chip-avatar">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={name} />
+                    ) : (
+                      name?.[0]?.toUpperCase()
+                    )}
+                  </span>
+                  <span className="chip-name">
+                    {name}
+                    {isHost && " �?:"}
+                  </span>
+                  <span className="chip-meta">
+                    {balance != null ? `${moneyFormatter.format(balance)}$` : "�?""}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+      </div>
+
       )}
+
+
 
       {connecting && !room && (
-        <div className="auction-panel">
+
+        <div className="auction-card muted">
+
           <div className="auction-hint">Подключаемся к серверу…</div>
         </div>
+
       )}
 
+
+
       {!room && !connecting && (
+
         <section
+
           className="mf-menu v2 auction-menu"
-          aria-label="Главное меню аукциона"
+
+          aria-label="Меню подключения к комнатам"
+
         >
-          {/* hero — reuse mafia-hero, но с текстом про аукцион */}
+
+          {/* hero �?" reuse mafia-hero, �?�? �? �'���?�'�?�? ���?�? ���?��Ő�?�? */}
+
           <header className="mf-menu-hero" role="banner">
             <button
               type="button"
@@ -855,648 +1281,8 @@ export default function Auction({
         </section>
       )}
 
-      {room && (
-        <div className="auction-main">
-          {/* Список игроков + деньги */}
-          <section className="auction-section">
-            <div className="auction-section-title">Игроки</div>
-            <div className="auction-hint">
-              Нажми на карточку игрока, чтобы увидеть его корзину и
-              общую ценность собранных лотов.
-            </div>
-            <div className="auction-players">
-              {players.map((p) => {
-                const balance =
-                  auctionState?.balances?.[p.id] ?? null;
-                const isMe = p.id === selfInfo?.roomPlayerId;
-                const isHost = p.user?.id === room?.ownerId;
-                const name =
-                  p.user?.first_name ||
-                  p.user?.username ||
-                  `Игрок ${p.id}`;
-                const avatarUrl =
-                  p.user?.photo_url || p.user?.avatar || null;
-                const wins = winsCountByPlayerId.get(p.id) || 0;
-                const basketValue = basketTotals[p.id] || 0;
-
-                return (
-                  <div
-                    key={p.id}
-                    className={
-                      "auction-player-card" +
-                      (isMe ? " me" : "") +
-                      (p.ready ? " ready" : "") +
-                      (selectedPlayerIdEffective === p.id
-                        ? " selected"
-                        : "")
-                    }
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setSelectedPlayerId(p.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setSelectedPlayerId(p.id);
-                      }
-                    }}
-                  >
-                    <div className="auction-player-left">
-                      <div className="auction-player-avatar">
-                        {avatarUrl ? (
-                          <img src={avatarUrl} alt={name} />
-                        ) : (
-                          <div className="auction-player-avatar-fallback">
-                            {name?.[0]?.toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                      <div className="auction-player-text">
-                        <div className="auction-player-name">
-                          {name}
-                          {isMe && " (вы)"}
-                        </div>
-                        <div className="auction-player-meta">
-                          {balance != null ? (
-                            <>💵 {moneyFormatter.format(balance)}$</>
-                          ) : (
-                            "ещё не в аукционе"
-                          )}
-                        </div>
-                        {basketValue > 0 && (
-                          <div className="auction-player-meta small">
-                            Корзина:{" "}
-                            {moneyFormatter.format(basketValue)}$
-                          </div>
-                        )}
-                        {wins > 0 && (
-                          <div className="auction-player-meta small">
-                            Побед: {wins}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="auction-player-tags">
-                      {isHost && (
-                        <div className="auction-chip owner">
-                          хост
-                        </div>
-                      )}
-                      {p.ready ? (
-                        <div className="auction-chip">готов</div>
-                      ) : (
-                        <div className="auction-chip gray">
-                          не готов
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* Панель корзины выбранного игрока */}
-          {selectedPlayer && auctionState?.history?.length > 0 && (
-            <section className="auction-section">
-              <div className="auction-section-title">
-                Корзина игрока{" "}
-                {selectedPlayer.user?.first_name ||
-                  selectedPlayer.user?.username ||
-                  `Игрок ${selectedPlayer.id}`}
-              </div>
-              <div className="auction-hint">
-                Всего предметов: {selectedBasket.length} · Ценность
-                корзины:{" "}
-                {moneyFormatter.format(selectedBasketTotal || 0)}$
-              </div>
-              {selectedBasket.length === 0 ? (
-                <div className="auction-hint">
-                  Этот игрок пока ничего не выиграл.
-                </div>
-              ) : (
-                <div className="auction-history">
-                  {selectedBasket.map((item) => (
-                    <div
-                      key={item.index}
-                      className="auction-history-item"
-                    >
-                      <div className="auction-history-title">
-                        #{(item.index ?? 0) + 1} ·{" "}
-                        {item.type === "lootbox"
-                          ? "🎁 Скрытый лот"
-                          : "📦 Лот"}{" "}
-                        — {item.name}
-                      </div>
-                      <div className="auction-history-meta">
-                        Заплатил:{" "}
-                        {moneyFormatter.format(item.paid || 0)}$ ·
-                        Ценность:{" "}
-                        {moneyFormatter.format(item.value || 0)}$
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
-
-          {/* Лобби (готовность + старт) */}
-          {showLobby && (
-            <section className="auction-section">
-              <div className="auction-section-title">Лобби</div>
-              <div className="auction-row">
-                {!isOwner && (
-                  <button
-                    className="auction-btn primary"
-                    onClick={toggleReady}
-                    disabled={!currentPlayer}
-                  >
-                    {currentPlayer?.ready
-                      ? "Я не готов"
-                      : "Я готов"}
-                  </button>
-                )}
-                {isOwner && (
-                  <button
-                    className="auction-btn primary"
-                    onClick={handleStartAuction}
-                    disabled={!everyoneReadyExceptOwner}
-                  >
-                    {everyoneReadyExceptOwner
-                      ? "Начать аукцион"
-                      : "Ждём остальных…"}
-                  </button>
-                )}
-              </div>
-
-              {isOwner && (
-                <div className="auction-config">
-                  <div className="auction-config-header">
-                    <button
-                      className="auction-btn small"
-                      type="button"
-                      onClick={() => setCfgOpen((v) => !v)}
-                      aria-expanded={cfgOpen ? "true" : "false"}
-                      aria-controls="auction-config-panel"
-                    >
-                      ⚙️ Настройки
-                    </button>
-                    <span className="auction-hint">
-                      Хост может задать время на лот и список слотов
-                      (каждая строка: «Название | цена | тип», тип ={" "}
-                      <code>lot</code> или <code>lootbox</code>)
-                    </span>
-                  </div>
-                  {cfgOpen && (
-                    <div
-                      id="auction-config-panel"
-                      className="auction-config-panel"
-                    >
-                      <div className="auction-row">
-                        <label
-                          className="sr-only"
-                          htmlFor="cfg-time"
-                        >
-                          Время на лот, сек
-                        </label>
-                        <input
-                          id="cfg-time"
-                          className="auction-input"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          placeholder="Время на лот, сек (5–120)"
-                          value={cfgRules.timePerSlotSec}
-                          onChange={(e) =>
-                            setCfgRules((r) => ({
-                              ...r,
-                              timePerSlotSec:
-                                e.target.value.replace(/[^\d]/g, ""),
-                            }))
-                          }
-                        />
-                        <label
-                          className="sr-only"
-                          htmlFor="cfg-max"
-                        >
-                          Максимум слотов
-                        </label>
-                        <input
-                          id="cfg-max"
-                          className="auction-input"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          placeholder="Максимум слотов (1–60)"
-                          value={cfgRules.maxSlots}
-                          onChange={(e) =>
-                            setCfgRules((r) => ({
-                              ...r,
-                              maxSlots:
-                                e.target.value.replace(/[^\d]/g, ""),
-                            }))
-                          }
-                        />
-                        <button
-                          className="auction-btn"
-                          type="button"
-                          onClick={configureAuction}
-                        >
-                          Применить
-                        </button>
-                      </div>
-                      <textarea
-                        className="auction-textarea"
-                        placeholder={`Слоты (по одному на строку), пример:\nИван Иванов | 120000 | lot\nМистический лутбокс | 90000 | lootbox`}
-                        value={cfgSlotsText}
-                        onChange={(e) =>
-                          setCfgSlotsText(e.target.value)
-                        }
-                        rows={6}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="auction-hint">
-                Каждый игрок начинает с{" "}
-                {moneyFormatter.format(INITIAL_MONEY)}$. За раунд
-                разыгрывается один слот — обычный лот или скрытый
-                лутбокс. На каждый лот даётся счёт 3-2-1 (примерно по 3
-                секунды на цифру). Игра идёт до{" "}
-                {auctionState?.maxSlots ?? cfgRules.maxSlots ?? 30}{" "}
-                слотов или пока у всех не кончатся деньги.
-              </div>
-              {error && <div className="auction-error">{error}</div>}
-            </section>
-          )}
-
-          {/* Основная игра */}
-          {showGame && (
-            <section className="auction-section">
-              <div className="auction-section-title">
-                Текущий лот
-              </div>
-              {currentSlot ? (
-                <div className="auction-lot-card">
-                  <div className="auction-lot-type">
-                    {currentSlot.type === "lootbox"
-                      ? "🎁 Скрытый лот"
-                      : "📦 Лот"}
-                  </div>
-                  <div className="auction-lot-name">
-                    {currentSlot.name}
-                  </div>
-                  <div className="auction-lot-meta">
-                    Базовая стоимость:{" "}
-                    {moneyFormatter.format(
-                      currentSlot.basePrice
-                    )}
-                    $
-                  </div>
-                  <div className="auction-lot-meta">
-                    Слот {(auctionState.slotsPlayed ?? 0) + 1} из{" "}
-                    {auctionState.maxSlots}
-                  </div>
-
-                  <div
-                    className="auction-timer"
-                    role="timer"
-                    aria-live="polite"
-                  >
-                    ⏳ Счёт:{" "}
-                    <strong style={{ fontSize: "1.2em" }}>
-                      {countdownStep != null
-                        ? countdownStep
-                        : "—"}
-                    </strong>
-                    {secsLeft != null && (
-                      <span className="auction-timer-secondary">
-                        {" "}
-                        ({secsLeft}s)
-                      </span>
-                    )}
-                    {progressPct != null && (
-                      <div className="auction-timer-bar">
-                        <div
-                          className="fill"
-                          style={{ width: `${progressPct}%` }}
-                        />
-                      </div>
-                    )}
-                    {auctionState?.paused && (
-                      <span
-                        className="auction-chip gray"
-                        style={{ marginLeft: 8 }}
-                      >
-                        пауза
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="auction-bid-block">
-                    <div className="auction-bid-label">
-                      Ваша ставка (0 — пас)
-                    </div>
-                    <div className="auction-row">
-                      <input
-                        className="auction-input"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={myBid}
-                        onChange={(e) =>
-                          setMyBid(
-                            e.target.value.replace(/[^\d]/g, "")
-                          )
-                        }
-                        placeholder="Сумма"
-                      />
-                      <button
-                        className="auction-btn primary"
-                        onClick={() => sendBid()}
-                        disabled={
-                          busyBid ||
-                          myBalance == null ||
-                          myBalance <= 0
-                        }
-                      >
-                        {busyBid ? "Отправка…" : "Сделать ставку"}
-                      </button>
-                    </div>
-                    <div className="auction-row">
-                      <button
-                        className="auction-btn small"
-                        onClick={() => setBidRelative(1_000)}
-                        disabled={
-                          myBalance == null || myBalance <= 0
-                        }
-                      >
-                        +1k
-                      </button>
-                      <button
-                        className="auction-btn small"
-                        onClick={() => setBidRelative(5_000)}
-                        disabled={
-                          myBalance == null || myBalance <= 0
-                        }
-                      >
-                        +5k
-                      </button>
-                      <button
-                        className="auction-btn small"
-                        onClick={() => setBidRelative(10_000)}
-                        disabled={
-                          myBalance == null || myBalance <= 0
-                        }
-                      >
-                        +10k
-                      </button>
-                      <button
-                        className="auction-btn small"
-                        onClick={() => sendBid(myBalance || 0)}
-                        disabled={
-                          myBalance == null || myBalance <= 0
-                        }
-                      >
-                        All-in
-                      </button>
-                      <button
-                        className="auction-btn small ghost"
-                        onClick={sendPass}
-                      >
-                        Пас
-                      </button>
-                    </div>
-                    <div className="auction-hint">
-                      Ваш баланс:{" "}
-                      {myBalance != null
-                        ? `${moneyFormatter.format(
-                            myBalance
-                          )}$`
-                        : "ещё не участвуете"}
-                      {" · "}
-                      {typeof myRoundBid === "number"
-                        ? `Ваша текущая ставка: ${moneyFormatter.format(
-                            myRoundBid
-                          )}$`
-                        : "ставка не отправлена"}
-                    </div>
-                  </div>
-
-                  {isOwner && (
-                    <div
-                      className="auction-row"
-                      style={{ marginTop: 10 }}
-                    >
-                      {!auctionState?.paused ? (
-                        <button
-                          className="auction-btn"
-                          onClick={pauseAuction}
-                        >
-                          ⏸ Пауза
-                        </button>
-                      ) : (
-                        <button
-                          className="auction-btn"
-                          onClick={resumeAuction}
-                        >
-                          ▶ Продолжить
-                        </button>
-                      )}
-                      <button
-                        className="auction-btn ghost"
-                        onClick={forceNext}
-                      >
-                        ⏭ Следующий лот
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="auction-hint">
-                  Ожидаем следующий слот…
-                </div>
-              )}
-
-              {error && <div className="auction-error">{error}</div>}
-            </section>
-          )}
-
-          {/* Результаты */}
-          {showResult && (
-            <section className="auction-section">
-              <div className="auction-section-title">
-                Результаты аукциона
-              </div>
-              <div className="auction-hint">
-                Игра завершена. Побеждает игрок(и) с максимальной
-                суммой денег.
-              </div>
-              <div className="auction-players">
-                {players
-                  .slice()
-                  .sort((a, b) => {
-                    const av =
-                      auctionState?.balances?.[a.id] ?? 0;
-                    const bv =
-                      auctionState?.balances?.[b.id] ?? 0;
-                    return bv - av;
-                  })
-                  .map((p) => {
-                    const balance =
-                      auctionState?.balances?.[p.id] ?? 0;
-                    const basketValue = basketTotals[p.id] || 0;
-                    const isWinner =
-                      auctionState?.winners?.includes(p.id);
-                    const name =
-                      p.user?.first_name ||
-                      p.user?.username ||
-                      `Игрок ${p.id}`;
-                    const wins =
-                      winsCountByPlayerId.get(p.id) || 0;
-                    const avatarUrl =
-                      p.user?.photo_url || p.user?.avatar || null;
-
-                    return (
-                      <div
-                        key={p.id}
-                        className={
-                          "auction-player-card result" +
-                          (isWinner ? " winner" : "")
-                        }
-                      >
-                        <div className="auction-player-left">
-                          <div className="auction-player-avatar">
-                            {avatarUrl ? (
-                              <img src={avatarUrl} alt={name} />
-                            ) : (
-                              <div className="auction-player-avatar-fallback">
-                                {name?.[0]?.toUpperCase()}
-                              </div>
-                            )}
-                          </div>
-                          <div className="auction-player-text">
-                            <div className="auction-player-name">
-                              {name}
-                              {isWinner && " 🏆"}
-                            </div>
-                            <div className="auction-player-meta">
-                              Итог:{" "}
-                              {moneyFormatter.format(
-                                balance
-                              )}
-                              $
-                            </div>
-                            <div className="auction-player-meta small">
-                              Корзина:{" "}
-                              {moneyFormatter.format(
-                                basketValue
-                              )}
-                              $
-                            </div>
-                            {wins > 0 && (
-                              <div className="auction-player-meta small">
-                                Побед: {wins}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-              <div className="auction-row">
-                {isOwner && (
-                  <button
-                    className="auction-btn primary"
-                    onClick={handleStartAuction}
-                  >
-                    Сыграть ещё раз с теми же игроками
-                  </button>
-                )}
-                <button
-                  className="auction-btn"
-                  onClick={handleExit}
-                >
-                  Выйти в меню
-                </button>
-              </div>
-            </section>
-          )}
-
-          {/* История слотов */}
-          {auctionState?.history?.length > 0 && (
-            <section className="auction-section">
-              <div className="auction-section-title">
-                История слотов
-              </div>
-              <div className="auction-history">
-                {auctionState.history.map((h) => {
-                  const winnerName =
-                    h.winnerPlayerId != null
-                      ? playerNameById.get(h.winnerPlayerId)
-                      : null;
-                  let effectText = "";
-                  if (h.effect) {
-                    const d = h.effect.delta || 0;
-                    if (h.effect.kind === "money" && d > 0) {
-                      effectText = ` +${moneyFormatter.format(
-                        d
-                      )}$`;
-                    } else if (
-                      h.effect.kind === "penalty" &&
-                      d < 0
-                    ) {
-                      effectText = ` ${moneyFormatter.format(
-                        d
-                      )}$`;
-                    }
-                  }
-                  return (
-                    <div
-                      key={h.index}
-                      className="auction-history-item"
-                    >
-                      <div className="auction-history-title">
-                        #{h.index + 1} ·{" "}
-                        {h.type === "lootbox"
-                          ? "🎁 Скрытый лот"
-                          : "📦 Лот"}{" "}
-                        — {h.name}
-                      </div>
-                      {winnerName ? (
-                        <div className="auction-history-meta">
-                          Победил: {winnerName} за{" "}
-                          {moneyFormatter.format(
-                            h.winBid || 0
-                          )}
-                          $
-                          {effectText && (
-                            <span> ({effectText})</span>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="auction-history-meta">
-                          Никто не купил (все пас)
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-
-          {error && !showGame && !showLobby && (
-            <div className="auction-error sticky">
-              {error}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Тосты поверх всего */}
-      {toast && (
+      {/* Список игроков + деньги */}
+          <section className="auction-section">{toast && (
         <div
           className={`auction-toast ${toast.type || "info"}`}
           role="status"
