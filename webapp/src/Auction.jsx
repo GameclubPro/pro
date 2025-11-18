@@ -1,13 +1,83 @@
-﻿// src/Auction.jsx
+﻿
+// src/Auction.jsx
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import io from "socket.io-client";
 import "./Auction.css";
 
-const INITIAL_MONEY = 1_000_000;
-
-// ╤В╨░╨║╨╛╨╣ ╨╢╨╡ ╨░╨╗╤Д╨░╨▓╨╕╤В ╨┤╨╗╤П ╨║╨╛╨┤╨░ ╨║╨╛╨╝╨╜╨░╤В╤Л, ╨║╨░╨║ ╨▓ ╨╝╨░╤Д╨╕╨╕ (╨▒╨╡╨╖ 0/1/O/I)
+const INITIAL_BANK = 1_000_000;
 const CODE_ALPHABET_RE = /[^A-HJKMNPQRSTUVWXYZ23456789]/g;
+const BID_PRESETS = [1_000, 5_000, 10_000, 25_000, 50_000];
 
+const LANDING_CARDS = [
+  {
+    icon: "🚀",
+    title: "Мгновенный старт",
+    text: "Создай комнату и поделись кодом — друзья подключатся за секунды.",
+  },
+  {
+    icon: "💰",
+    title: "Честный аукцион",
+    text: "У всех один банк. Важны стратегия, координация и скорость реакции.",
+  },
+  {
+    icon: "🎯",
+    title: "Балансированные составы",
+    text: "Проверяй корзины игроков и собирай идеальные команды на вечер.",
+  },
+];
+
+const PHASE_LABEL = {
+  lobby: "Лобби",
+  in_progress: "Идёт игра",
+  finished: "Итоги",
+};
+
+const PHASE_DESC = {
+  lobby: "Ждём, пока все отметятся и хост нажмёт «Старт».",
+  in_progress: "Таймер тикает: делай ставку или пасуй.",
+  finished: "Сверь корзины, выбери победителей и запускай реванш.",
+};
+
+function normalizeCode(value = "") {
+  return value.toUpperCase().replace(CODE_ALPHABET_RE, "").slice(0, 6);
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function parseCustomSlots(input) {
+  return String(input || "")
+    .split(/\r?\n/g)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [name, price, typeRaw] = line.split("|").map((part) => part.trim());
+      const slot = {
+        name: name || "Без названия",
+        type: String(typeRaw || "lot").toLowerCase() === "lootbox" ? "lootbox" : "lot",
+      };
+      const base = Number(price);
+      if (Number.isFinite(base) && base > 0) {
+        slot.basePrice = Math.floor(base);
+      }
+      return slot;
+    });
+}
+
+function playerDisplayName(player) {
+  if (!player) return "Игрок";
+  return player.user?.first_name || player.user?.username || `Игрок ${player.id}`;
+}
+
+function plural(value, one, few, many) {
+  const v = Math.abs(value) % 100;
+  const last = v % 10;
+  if (v > 10 && v < 20) return many;
+  if (last > 1 && last < 5) return few;
+  if (last === 1) return one;
+  return many;
+}
 export default function Auction({
   apiBase,
   initData,
@@ -20,41 +90,53 @@ export default function Auction({
   const [socket, setSocket] = useState(null);
   const [connecting, setConnecting] = useState(true);
 
-  const [room, setRoom] = useState(null); // { code, ownerId, ... }
-  const [players, setPlayers] = useState([]); // ╨╕╨╖ room:state
-  const [selfInfo, setSelfInfo] = useState(null); // private:self { roomPlayerId, userId, ... }
-  const [auctionState, setAuctionState] = useState(null); // ╨╕╨╖ auction:state
-
-  // ╨╗╨╛╨║╨░╨╗╤М╨╜╤Л╨╣ ╨┤╨╡╨┤╨╗╨░╨╣╨╜ ╨░╨║╤В╨╕╨▓╨╜╨╛╨│╨╛ ╤Б╨╗╨╛╤В╨░ (╨┐╨╛ ╤Б╨╡╤А╨▓╨╡╤А╨╜╨╛╨╝╤Г timeLeftMs), ╤З╤В╨╛╨▒╤Л ╨░╨╜╨╕╨╝╨╕╤А╨╛╨▓╨░╤В╤М ╤В╨░╨╣╨╝╨╡╤А ╨▒╨╡╨╖ ╤З╨░╤Б╤В╨╛╨│╨╛ ╤В╤А╨░╤Д╨╕╨║╨░
-  const deadlineAtRef = useRef(null);
-  const [nowTick, setNowTick] = useState(0);
+  const [room, setRoom] = useState(null);
+  const [players, setPlayers] = useState([]);
+  const [selfInfo, setSelfInfo] = useState(null);
+  const [auctionState, setAuctionState] = useState(null);
 
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [error, setError] = useState("");
+  const [toast, setToast] = useState(null);
+
   const [busyBid, setBusyBid] = useState(false);
   const [myBid, setMyBid] = useState("");
 
+  const [cfgOpen, setCfgOpen] = useState(false);
+  const [cfgRules, setCfgRules] = useState({ timePerSlotSec: 9, maxSlots: 30 });
+  const [cfgSlotsText, setCfgSlotsText] = useState("");
+
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
-  const [toast, setToast] = useState(null);
+  const [playersPanelOpen, setPlayersPanelOpen] = useState(true);
+
+  const deadlineAtRef = useRef(null);
+  const [nowTick, setNowTick] = useState(0);
   const lastToastRef = useRef(null);
   const progressSentRef = useRef(false);
   const lastSubscribedCodeRef = useRef(null);
   const lastSubscriptionSocketIdRef = useRef(null);
 
-  // ╨║╨╛╨╜╤Д╨╕╨│ (╤Е╨╛╤Б╤В, ╨╗╨╛╨▒╨▒╨╕)
-  const [cfgOpen, setCfgOpen] = useState(false);
-  const [cfgRules, setCfgRules] = useState({
-    timePerSlotSec: 9,
-    maxSlots: 30,
-  });
-  const [cfgSlotsText, setCfgSlotsText] = useState("");
+  const moneyFormatter = useMemo(() => new Intl.NumberFormat("ru-RU"), []);
 
-  // --------- derived ---------
+  const sanitizedAutoCode = useMemo(() => normalizeCode(autoJoinCode || ""), [autoJoinCode]);
+  const phase = auctionState?.phase || "lobby";
+  const myPlayerId = selfInfo?.roomPlayerId ?? null;
+
+  const balances = auctionState?.balances || {};
+  const myBalance = myPlayerId != null ? balances[myPlayerId] ?? null : null;
+
+  const currentSlot = auctionState?.currentSlot || null;
+  const myRoundBid = useMemo(() => {
+    if (myPlayerId == null) return null;
+    const value = auctionState?.currentBids?.[myPlayerId];
+    return typeof value === "number" ? value : null;
+  }, [auctionState, myPlayerId]);
+
   const currentPlayer = useMemo(
-    () => players.find((p) => p.id === selfInfo?.roomPlayerId) || null,
-    [players, selfInfo]
+    () => players.find((p) => p.id === myPlayerId) || null,
+    [players, myPlayerId]
   );
 
   const isOwner = useMemo(() => {
@@ -69,41 +151,70 @@ export default function Auction({
       .every((p) => p.ready);
   }, [room, players]);
 
-  const moneyFormatter = useMemo(() => new Intl.NumberFormat("ru-RU"), []);
+  const playerNameById = useMemo(() => {
+    const map = new Map();
+    players.forEach((p) => map.set(p.id, playerDisplayName(p)));
+    (auctionState?.players || []).forEach((p) => {
+      if (!map.has(p.id)) {
+        map.set(p.id, p.name);
+      }
+    });
+    return map;
+  }, [players, auctionState]);
 
-  const balancesByPlayerId = auctionState?.balances || {};
-  const myBalance =
-    selfInfo && balancesByPlayerId
-      ? balancesByPlayerId[selfInfo.roomPlayerId] ?? null
-      : null;
+  const winsByPlayerId = useMemo(() => {
+    const map = new Map();
+    (auctionState?.history || []).forEach((slot) => {
+      if (slot.winnerPlayerId == null) return;
+      map.set(slot.winnerPlayerId, (map.get(slot.winnerPlayerId) || 0) + 1);
+    });
+    return map;
+  }, [auctionState]);
 
-  const phase = auctionState?.phase || "lobby";
-  const currentSlot = auctionState?.currentSlot || null;
+  const baskets = auctionState?.baskets || {};
+  const basketTotals = auctionState?.basketTotals || {};
 
-  // ╨╝╨╛╨╕ ╨┤╨░╨╜╨╜╤Л╨╡ ╨┐╨╛ ╤В╨╡╨║╤Г╤Й╨╡╨╝╤Г ╤А╨░╤Г╨╜╨┤╤Г
-  const myRoundBid = useMemo(() => {
-    if (!selfInfo) return null;
-    const v = auctionState?.currentBids?.[selfInfo.roomPlayerId];
-    return typeof v === "number" ? v : null;
-  }, [auctionState, selfInfo]);
+  const selectedPlayerIdEffective = useMemo(() => {
+    if (selectedPlayerId != null) return selectedPlayerId;
+    if (myPlayerId != null) return myPlayerId;
+    return players[0]?.id ?? null;
+  }, [selectedPlayerId, myPlayerId, players]);
 
-  // ╤В╨╕╨║╨░╨╜╤М╨╡ ╤В╨░╨╣╨╝╨╡╤А╨░ (╨╗╨╛╨║╨░╨╗╤М╨╜╨╛), ╤Б╨╡╤А╨▓╨╡╤А ╨┐╤А╨╕╤Б╤Л╨╗╨░╨╡╤В timeLeftMs
+  const selectedPlayer = useMemo(
+    () => players.find((p) => p.id === selectedPlayerIdEffective) || null,
+    [players, selectedPlayerIdEffective]
+  );
+
+  const selectedBasket = useMemo(() => {
+    if (selectedPlayerIdEffective == null) return [];
+    const data =
+      baskets[selectedPlayerIdEffective] ||
+      baskets[String(selectedPlayerIdEffective)] ||
+      [];
+    return Array.isArray(data) ? data : [];
+  }, [baskets, selectedPlayerIdEffective]);
+
+  const selectedBasketTotal =
+    selectedPlayerIdEffective != null
+      ? basketTotals[selectedPlayerIdEffective] ??
+        basketTotals[String(selectedPlayerIdEffective)] ??
+        0
+      : 0;
   useEffect(() => {
-    const ms = auctionState?.timeLeftMs;
-    if (ms == null) {
+    if (!auctionState?.timeLeftMs) {
       deadlineAtRef.current = null;
       return;
     }
-    deadlineAtRef.current = Date.now() + Math.max(0, ms);
+    deadlineAtRef.current = Date.now() + Math.max(0, auctionState.timeLeftMs);
   }, [auctionState?.timeLeftMs]);
 
   useEffect(() => {
     if (!deadlineAtRef.current) return;
-    const t = setInterval(
-      () => setNowTick((x) => (x + 1) % 1_000_000),
+    const timer = setInterval(
+      () => setNowTick((tick) => (tick + 1) % 1_000_000),
       250
     );
-    return () => clearInterval(t);
+    return () => clearInterval(timer);
   }, [auctionState?.phase, auctionState?.timeLeftMs]);
 
   const secsLeft = useMemo(() => {
@@ -112,160 +223,97 @@ export default function Auction({
     return Math.max(0, diff);
   }, [nowTick]);
 
-  const timePerSlot =
-    auctionState?.rules?.timePerSlotSec || cfgRules.timePerSlotSec;
+  const timePerSlot = auctionState?.rules?.timePerSlotSec || Number(cfgRules.timePerSlotSec) || 0;
+
   const progressPct = useMemo(() => {
     if (secsLeft == null || !timePerSlot) return null;
     const spent = Math.max(0, timePerSlot - secsLeft);
     return Math.min(100, Math.round((spent / timePerSlot) * 100));
   }, [secsLeft, timePerSlot]);
 
-  // ╨║╤А╤Г╨┐╨╜╤Л╨╣ ╤Б╤З╤С╤В 3-2-1 ╨┐╨╛ ~╤В╤А╨╡╤В╤М ╤В╨░╨╣╨╝╨╡╤А╨░
   const countdownStep = useMemo(() => {
     if (secsLeft == null || !timePerSlot) return null;
     const slice = Math.max(1, Math.round(timePerSlot / 3));
-    if (secsLeft > 2 * slice) return 3;
+    if (secsLeft > slice * 2) return 3;
     if (secsLeft > slice) return 2;
     if (secsLeft >= 0) return 1;
     return null;
   }, [secsLeft, timePerSlot]);
 
-  const playerNameById = useMemo(() => {
-    const map = new Map();
-    players.forEach((p) => {
-      const name = p.user?.first_name || p.user?.username || `╨Ш╨│╤А╨╛╨║ ${p.id}`;
-      map.set(p.id, name);
-    });
-    if (auctionState?.players) {
-      auctionState.players.forEach((p) => {
-        if (!map.has(p.id)) map.set(p.id, p.name);
-      });
-    }
-    return map;
-  }, [players, auctionState]);
-
-  // ╨Ь╨╕╨╜╨╕-╤Б╤В╨░╤В╨░ ╨┐╨╛ ╨┐╨╛╨▒╨╡╨┤╨░╨╝
-  const winsCountByPlayerId = useMemo(() => {
-    const map = new Map();
-    if (!auctionState?.history) return map;
-    for (const h of auctionState.history) {
-      if (h.winnerPlayerId == null) continue;
-      map.set(h.winnerPlayerId, (map.get(h.winnerPlayerId) || 0) + 1);
-    }
-    return map;
-  }, [auctionState]);
-
-  // ╨║╨╛╤А╨╖╨╕╨╜╤Л ╨╕╨│╤А╨╛╨║╨╛╨▓ (╨╛╤В╨┤╨░╤С╤В ╤Б╨╡╤А╨▓╨╡╤А)
-  const basketByPlayerId = auctionState?.baskets || {};
-  const basketTotals = auctionState?.basketTotals || {};
-
-  // ╨║╨╛╨│╨╛ ╨┐╨╛╨║╨░╨╖╤Л╨▓╨░╨╡╨╝ ╨▓ ╨┐╨░╨╜╨╡╨╗╨╕ ╨║╨╛╤А╨╖╨╕╨╜╤Л: ╨▓╤Л╨▒╤А╨░╨╜╨╜╨╛╨│╨╛ ╨╕╨╗╨╕ ╤Б╨╡╨▒╤П
-  const selectedPlayerIdEffective = useMemo(() => {
-    if (selectedPlayerId != null) return selectedPlayerId;
-    return selfInfo?.roomPlayerId ?? null;
-  }, [selectedPlayerId, selfInfo]);
-
-  const selectedPlayer = useMemo(
-    () =>
-      players.find((p) => p.id === selectedPlayerIdEffective) || null,
-    [players, selectedPlayerIdEffective]
-  );
-
-  const selectedBasket = useMemo(() => {
-    if (!selectedPlayerIdEffective) return [];
-    const raw =
-      basketByPlayerId[selectedPlayerIdEffective] ||
-      basketByPlayerId[String(selectedPlayerIdEffective)] ||
-      [];
-    return Array.isArray(raw) ? raw : [];
-  }, [basketByPlayerId, selectedPlayerIdEffective]);
-
-  const selectedBasketTotal =
-    selectedPlayerIdEffective != null
-      ? basketTotals[selectedPlayerIdEffective] ??
-        basketTotals[String(selectedPlayerIdEffective)] ??
-        0
-      : 0;
-
   const subscribeToRoom = useCallback(
-    (code, options = {}) => {
-      if (!code) return;
+    (rawCode, options = {}) => {
+      const code = normalizeCode(rawCode);
+      if (!code || !socket) return;
       const force = options.force ?? false;
-      const currentSocketId = socket?.id ?? null;
+      const currentSocketId = socket.id ?? null;
       const alreadySame =
         lastSubscribedCodeRef.current === code &&
         lastSubscriptionSocketIdRef.current === currentSocketId &&
         currentSocketId != null;
-      lastSubscribedCodeRef.current = code;
-      if (!socket) return;
       if (!force && alreadySame) return;
+      lastSubscribedCodeRef.current = code;
       socket.emit("room:subscribe", { code });
       socket.emit("auction:sync", { code });
-      if (currentSocketId != null) {
+      if (currentSocketId) {
         lastSubscriptionSocketIdRef.current = currentSocketId;
       }
     },
     [socket]
   );
-
   useEffect(() => {
-    if (!room?.code) {
-      lastSubscribedCodeRef.current = null;
-      lastSubscriptionSocketIdRef.current = null;
-      return;
-    }
-    subscribeToRoom(room.code);
+    const code = room?.code;
+    if (!code) return;
+    subscribeToRoom(code);
   }, [room?.code, subscribeToRoom]);
 
-  // --------- socket init ---------
   useEffect(() => {
     if (!apiBase) return;
-    const s = io(apiBase, {
+    const instance = io(apiBase, {
       transports: ["websocket"],
       auth: { initData: initData || "" },
     });
 
-    setSocket(s);
+    setSocket(instance);
 
-    s.on("connect_error", (err) => {
+    instance.on("connect_error", (err) => {
       setConnecting(false);
-      setError(`╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╨┐╨╛╨┤╨║╨╗╤О╤З╨╕╤В╤М╤Б╤П: ${err.message}`);
+      setError(`Не удалось подключиться: ${err.message}`);
     });
 
-    s.on("toast", (payload) => {
+    instance.on("toast", (payload) => {
       if (!payload?.text) return;
       lastToastRef.current = payload;
       setToast(payload);
-      // ╨╡╤Б╨╗╨╕ ╤П╨▓╨╜╨░╤П ╨╛╤И╨╕╨▒╨║╨░ тАФ ╨┐╨╛╨║╨░╨╢╨╡╨╝ ╨╡╤Й╤С ╨╕ ╨▓ error
       if (payload.type === "error") {
         setError(payload.text);
       }
     });
 
-    s.on("room:state", (state) => {
-      if (!state) return;
-      setRoom(state.room || null);
-      setPlayers(state.players || []);
+    instance.on("room:state", (payload) => {
+      if (!payload) return;
+      setRoom(payload.room || null);
+      setPlayers(payload.players || []);
+      setError("");
     });
 
-    s.on("private:self", (payload) => {
+    instance.on("private:self", (payload) => {
       if (!payload) return;
       setSelfInfo(payload);
     });
 
-    s.on("auction:state", (st) => {
-      if (!st) return;
-      setAuctionState(st);
+    instance.on("auction:state", (state) => {
+      if (!state) return;
+      setAuctionState(state);
       setError("");
     });
 
     return () => {
       try {
-        s.off("toast");
-        s.off("room:state");
-        s.off("private:self");
-        s.off("auction:state");
-        s.disconnect();
+        instance.off("toast");
+        instance.off("room:state");
+        instance.off("private:self");
+        instance.off("auction:state");
+        instance.disconnect();
       } catch {
         // ignore
       }
@@ -276,9 +324,8 @@ export default function Auction({
     if (!socket) return;
     const handleConnect = () => {
       setConnecting(false);
-      if (lastSubscribedCodeRef.current) {
-        subscribeToRoom(lastSubscribedCodeRef.current, { force: true });
-      }
+      const code = lastSubscribedCodeRef.current;
+      if (code) subscribeToRoom(code, { force: true });
     };
     const handleDisconnect = () => {
       setConnecting(true);
@@ -292,18 +339,15 @@ export default function Auction({
     };
   }, [socket, subscribeToRoom]);
 
-  // ╨░╨▓╤В╨╛-╤Б╨║╤А╤Л╤В╨╕╨╡ ╤В╨╛╤Б╤В╨░
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => {
+    const timeout = setTimeout(() => {
       if (lastToastRef.current === toast) {
         setToast(null);
       }
-    }, 2500);
-    return () => clearTimeout(t);
+    }, 2600);
+    return () => clearTimeout(timeout);
   }, [toast]);
-
-  // --------- BackButton ╨╕╨╖ Telegram ---------
   useEffect(() => {
     if (!setBackHandler) return;
     const handler = () => {
@@ -312,19 +356,20 @@ export default function Auction({
     setBackHandler(handler);
     return () => setBackHandler(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setBackHandler, room, socket, initData]);
+  }, [setBackHandler, room?.code]);
 
-  // --------- ╨░╨▓╤В╨╛-join ╨┐╨╛ ╨╕╨╜╨▓╨░╨╣╤В-╨║╨╛╨┤╤Г ---------
   useEffect(() => {
     if (!socket) return;
-    if (!autoJoinCode) return;
-    joinRoom(autoJoinCode, { fromInvite: true });
+    if (!sanitizedAutoCode) return;
+    joinRoom(sanitizedAutoCode, { fromInvite: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socket]);
+  }, [socket, sanitizedAutoCode]);
 
-  // --------- ╨╜╨░╤З╨╕╤Б╨╗╨╡╨╜╨╕╨╡ ╨┐╤А╨╛╨│╤А╨╡╤Б╤Б╨░ ╨┐╤А╨╕ ╨╖╨░╨▓╨╡╤А╤И╨╡╨╜╨╕╨╕ ---------
   useEffect(() => {
-    if (!auctionState || auctionState.phase !== "finished") return;
+    if (phase !== "finished") {
+      progressSentRef.current = false;
+      return;
+    }
     if (progressSentRef.current) return;
     progressSentRef.current = true;
     try {
@@ -332,22 +377,39 @@ export default function Auction({
     } catch {
       // ignore
     }
-  }, [auctionState, onProgress]);
+  }, [phase, onProgress]);
 
   useEffect(() => {
-    if (!auctionState || auctionState.phase === "finished") return;
-    progressSentRef.current = false;
-  }, [auctionState?.phase, room?.code]);
-
-  // ===================== API helpers =====================
-
-  async function createRoom() {
-    if (!initData) {
-      setError("╨Э╨╡╤В initData ╨╛╤В Telegram");
+    if (!players.length) {
+      setSelectedPlayerId(null);
       return;
     }
-    setError("");
+    if (
+      selectedPlayerId == null ||
+      !players.some((p) => p.id === selectedPlayerId)
+    ) {
+      setSelectedPlayerId(selfInfo?.roomPlayerId ?? players[0].id);
+    }
+  }, [players, selectedPlayerId, selfInfo?.roomPlayerId]);
+
+  useEffect(() => {
+    if (!room) return;
+    setPlayersPanelOpen(true);
+  }, [room?.code]);
+
+  useEffect(() => {
+    if (!sanitizedAutoCode) return;
+    if (!room && !codeInput) {
+      setCodeInput(sanitizedAutoCode);
+    }
+  }, [sanitizedAutoCode, room, codeInput]);
+  async function createRoom() {
+    if (!initData) {
+      setError("Нет initData от Telegram");
+      return;
+    }
     setCreating(true);
+    setError("");
     try {
       const resp = await fetch(`${apiBase}/api/rooms`, {
         method: "POST",
@@ -360,21 +422,21 @@ export default function Auction({
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
         const code = data?.error || "failed";
-        const msg =
+        const message =
           code === "code_already_in_use"
-            ? "╨Ъ╨╛╨┤ ╨║╨╛╨╝╨╜╨░╤В╤Л ╤Г╨╢╨╡ ╨╖╨░╨╜╤П╤В"
-            : "╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╤Б╨╛╨╖╨┤╨░╤В╤М ╨║╨╛╨╝╨╜╨░╤В╤Г";
-        setError(msg);
+            ? "Код комнаты уже занят"
+            : "Не удалось создать комнату";
+        setError(message);
         return;
       }
       setRoom(data.room || null);
       setPlayers(data.players || []);
       if (data.room?.code) {
+        setCodeInput(data.room.code);
         subscribeToRoom(data.room.code, { force: true });
       }
-      setCodeInput(data.room?.code || "");
-    } catch (e) {
-      setError("╨Ю╤И╨╕╨▒╨║╨░ ╤Б╨╡╤В╨╕ ╨┐╤А╨╕ ╤Б╨╛╨╖╨┤╨░╨╜╨╕╨╕ ╨║╨╛╨╝╨╜╨░╤В╤Л");
+    } catch {
+      setError("Ошибка сети при создании комнаты");
     } finally {
       setCreating(false);
     }
@@ -382,16 +444,16 @@ export default function Auction({
 
   async function joinRoom(rawCode, options = {}) {
     if (!initData) {
-      setError("╨Э╨╡╤В initData ╨╛╤В Telegram");
+      setError("Нет initData от Telegram");
       return;
     }
-    const code = String(rawCode || "").trim().toUpperCase();
+    const code = normalizeCode(rawCode || codeInput);
     if (!code) {
-      setError("╨Т╨▓╨╡╨┤╨╕╤В╨╡ ╨║╨╛╨┤ ╨║╨╛╨╝╨╜╨░╤В╤Л");
+      setError("Введите код комнаты");
       return;
     }
-    setError("");
     setJoining(true);
+    setError("");
     try {
       const resp = await fetch(`${apiBase}/api/rooms/${code}/join`, {
         method: "POST",
@@ -404,21 +466,18 @@ export default function Auction({
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
         const codeErr = data?.error || "failed";
-        const msgMap = {
-          room_not_found: "╨Ъ╨╛╨╝╨╜╨░╤В╨░ ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜╨░",
-          room_full: "╨Ъ╨╛╨╝╨╜╨░╤В╨░ ╨╖╨░╨┐╨╛╨╗╨╜╨╡╨╜╨░",
-          game_in_progress: "╨Ш╨│╤А╨░ ╤Г╨╢╨╡ ╨╜╨░╤З╨░╨╗╨░╤Б╤М",
+        const map = {
+          room_not_found: "Комната не найдена",
+          room_full: "Комната заполнена",
+          game_in_progress: "Игра уже началась",
         };
-        setError(msgMap[codeErr] || "╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╨▓╨╛╨╣╤В╨╕ ╨▓ ╨║╨╛╨╝╨╜╨░╤В╤Г");
+        setError(map[codeErr] || "Не удалось войти");
         return;
       }
-
       setRoom(data.room || null);
       setPlayers(data.players || []);
       setCodeInput(code);
-
       subscribeToRoom(code, { force: true });
-
       if (options.fromInvite && onInviteConsumed) {
         try {
           onInviteConsumed(code);
@@ -426,8 +485,8 @@ export default function Auction({
           // ignore
         }
       }
-    } catch (e) {
-      setError("╨Ю╤И╨╕╨▒╨║╨░ ╤Б╨╡╤В╨╕ ╨┐╤А╨╕ ╨▓╤Е╨╛╨┤╨╡ ╨▓ ╨║╨╛╨╝╨╜╨░╤В╤Г");
+    } catch {
+      setError("Ошибка сети при входе в комнату");
     } finally {
       setJoining(false);
     }
@@ -435,99 +494,64 @@ export default function Auction({
 
   function toggleReady() {
     if (!socket || !room || !selfInfo) return;
-    if (isOwner) return; // ╨▓╨╗╨░╨┤╨╡╨╗╨╡╤Ж ╨╜╨╡ ╨╛╤В╨╝╨╡╤З╨░╨╡╤В ┬л╨У╨╛╤В╨╛╨▓┬╗
-    const isReady = !!currentPlayer?.ready;
+    if (isOwner) return;
+    const ready = !!currentPlayer?.ready;
     socket.emit(
       "ready:set",
-      { code: room.code, ready: !isReady },
+      { code: room.code, ready: !ready },
       (resp) => {
         if (!resp || !resp.ok) {
-          setError("╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╨╕╨╖╨╝╨╡╨╜╨╕╤В╤М ╤Б╤В╨░╤В╤Г╤Б ┬л╨У╨╛╤В╨╛╨▓┬╗");
+          setError("Не удалось изменить статус «Готов»");
         }
       }
     );
   }
 
   function handleStartAuction() {
-    if (!socket || !room) return;
-    if (!isOwner) return;
+    if (!socket || !room || !isOwner) return;
     socket.emit(
       "auction:start",
       { code: room.code },
       (resp) => {
         if (!resp || !resp.ok) {
-          const code = resp?.error || "failed";
           const map = {
-            room_not_found: "╨Ъ╨╛╨╝╨╜╨░╤В╨░ ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜╨░",
-            forbidden_not_owner: "╨в╨╛╨╗╤М╨║╨╛ ╨▓╨╗╨░╨┤╨╡╨╗╨╡╤Ж ╨╝╨╛╨╢╨╡╤В ╨╜╨░╤З╨░╤В╤М ╨░╤Г╨║╤Ж╨╕╨╛╨╜",
-            need_at_least_2_players: "╨Э╤Г╨╢╨╜╨╛ ╨╝╨╕╨╜╨╕╨╝╤Г╨╝ 2 ╨╕╨│╤А╨╛╨║╨░",
-            need_ready_players:
-              "╨Э╤Г╨╢╨╜╨╛, ╤З╤В╨╛╨▒╤Л ╨▓╤Б╨╡ (╨║╤А╨╛╨╝╨╡ ╨▓╨╗╨░╨┤╨╡╨╗╤М╤Ж╨░) ╨╜╨░╨╢╨░╨╗╨╕ ┬л╨У╨╛╤В╨╛╨▓┬╗",
-            already_started: "╨Р╤Г╨║╤Ж╨╕╨╛╨╜ ╤Г╨╢╨╡ ╨╖╨░╨┐╤Г╤Й╨╡╨╜",
+            room_not_found: "Комната не найдена",
+            forbidden_not_owner: "Только владелец может стартовать",
+            need_at_least_2_players: "Нужно минимум два игрока",
+            need_ready_players: "Попроси всех нажать «Готов»",
+            already_started: "Аукцион уже запущен",
           };
-          setError(map[code] || "╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╨╖╨░╨┐╤Г╤Б╤В╨╕╤В╤М ╨░╤Г╨║╤Ж╨╕╨╛╨╜");
+          setError(map[resp?.error] || "Не удалось начать аукцион");
         }
       }
     );
   }
 
-  function parseSlotsFromText(text) {
-    // ╨д╨╛╤А╨╝╨░╤В: ╨║╨░╨╢╨┤╨░╤П ╤Б╤В╤А╨╛╨║╨░ тАФ "╨Э╨░╨╖╨▓╨░╨╜╨╕╨╡ | ╤Ж╨╡╨╜╨░ | ╤В╨╕╨┐"
-    // ╤В╨╕╨┐: lot | lootbox; ╨╡╤Б╨╗╨╕ ╨╜╨╡ ╤Г╨║╨░╨╖╨░╨╜ тАФ lot
-    // ╤Ж╨╡╨╜╨░ ╨╛╨┐╤Ж╨╕╨╛╨╜╨░╨╗╤М╨╜╨░ (╨╡╤Б╨╗╨╕ ╨╜╨╡╤В тАФ ╨▓╨╛╨╖╤М╨╝╤С╨╝ ╨▒╨░╨╖╨╛╨▓╤Г╤О ╨│╨╡╨╜╨╡╤А╨░╤Ж╨╕╤О ╤Б╨╡╤А╨▓╨╡╤А╨░)
-    return String(text || "")
-      .split(/\r?\n/g)
-      .map((raw) => raw.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const parts = line.split("|").map((s) => s.trim());
-        const name = parts[0];
-        const basePrice = Number(parts[1]);
-        const type =
-          (parts[2] || "lot").toLowerCase() === "lootbox"
-            ? "lootbox"
-            : "lot";
-        const obj = { name, type };
-        if (Number.isFinite(basePrice) && basePrice > 0)
-          obj.basePrice = Math.floor(basePrice);
-        return obj;
-      });
-  }
-
   function configureAuction() {
     if (!socket || !room || !isOwner) return;
-    const slots = parseSlotsFromText(cfgSlotsText);
+    const slots = parseCustomSlots(cfgSlotsText);
     socket.emit(
       "auction:configure",
       {
         code: room.code,
         rules: {
-          timePerSlotSec: Math.max(
-            5,
-            Math.min(120, Number(cfgRules.timePerSlotSec) || 25)
-          ),
-          maxSlots: Math.max(
-            1,
-            Math.min(60, Number(cfgRules.maxSlots) || 30)
-          ),
+          timePerSlotSec: clamp(Number(cfgRules.timePerSlotSec) || 25, 5, 120),
+          maxSlots: clamp(Number(cfgRules.maxSlots) || 30, 1, 60),
         },
         slots,
       },
       (resp) => {
         if (!resp || !resp.ok) {
-          setError(resp?.errorText || "╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╨┐╤А╨╕╨╝╨╡╨╜╨╕╤В╤М ╨╜╨░╤Б╤В╤А╨╛╨╣╨║╨╕");
-        } else {
-          setError("");
-          lastToastRef.current = {
-            type: "info",
-            text: "╨Э╨░╤Б╤В╤А╨╛╨╣╨║╨╕ ╨┐╤А╨╕╨╝╨╡╨╜╨╡╨╜╤Л",
-          };
-          setToast(lastToastRef.current);
+          setError(resp?.errorText || "Не удалось сохранить настройки");
+          return;
         }
+        const payload = { type: "info", text: "Настройки обновлены" };
+        lastToastRef.current = payload;
+        setToast(payload);
+        setError("");
       }
     );
   }
-
   const pauseAuction = useCallback(() => {
     if (!socket || !room || !isOwner) return;
     socket.emit("auction:pause", { code: room.code }, () => {});
@@ -544,22 +568,15 @@ export default function Auction({
   }, [socket, room, isOwner]);
 
   function setBidRelative(delta) {
-    setMyBid((prev) =>
-      String(
-        Math.max(
-          0,
-          Math.min(
-            myBalance ?? 0,
-            (Number(String(prev).replace(/\s/g, "")) || 0) + delta
-          )
-        )
-      )
-    );
+    setMyBid((prev) => {
+      const current = Number(String(prev).replace(/\s/g, "")) || 0;
+      const max = myBalance ?? INITIAL_BANK;
+      return String(clamp(current + delta, 0, max));
+    });
   }
 
   function sendPass() {
     setMyBid("0");
-    // ╨┤╨╗╤П ╤Б╨╛╨▓╨╝╨╡╤Б╤В╨╕╨╝╨╛╤Б╤В╨╕ ╨╕╤Б╨┐╨╛╨╗╤М╨╖╤Г╨╡╨╝ ╤В╨╛╤В ╨╢╨╡ ╨║╨░╨╜╨░╨╗ bid ╤Б amount: 0
     sendBid(0);
   }
 
@@ -571,42 +588,41 @@ export default function Auction({
       forcedAmount != null
         ? String(forcedAmount)
         : String(myBid || "").replace(/\s/g, "");
-    const n = raw === "" ? 0 : Number(raw);
-    if (!Number.isFinite(n) || n < 0) {
-      setError("╨Т╨▓╨╡╨┤╨╕╤В╨╡ ╨╜╨╡╨╛╤В╤А╨╕╤Ж╨░╤В╨╡╨╗╤М╨╜╨╛╨╡ ╤З╨╕╤Б╨╗╨╛");
+    const amount = raw === "" ? 0 : Number(raw);
+
+    if (!Number.isFinite(amount) || amount < 0) {
+      setError("Введите корректную сумму");
       return;
     }
-    if (myBalance != null && n > myBalance) {
-      setError("╨б╤В╨░╨▓╨║╨░ ╨▒╨╛╨╗╤М╤И╨╡, ╤З╨╡╨╝ ╨▓╨░╤И╨╕ ╨┤╨╡╨╜╤М╨│╨╕");
+    if (myBalance != null && amount > myBalance) {
+      setError("Ставка превышает ваш баланс");
       return;
     }
 
     setBusyBid(true);
     socket.emit(
       "auction:bid",
-      { code: room.code, amount: n },
+      { code: room.code, amount },
       (resp) => {
         setBusyBid(false);
         if (!resp || !resp.ok) {
-          const code = resp?.error || "failed";
           const map = {
-            room_not_found: "╨Ъ╨╛╨╝╨╜╨░╤В╨░ ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜╨░",
-            not_running: "╨Р╤Г╨║╤Ж╨╕╨╛╨╜ ╨╡╤Й╤С ╨╜╨╡ ╨╖╨░╨┐╤Г╤Й╨╡╨╜",
-            not_player: "╨Т╤Л ╨╜╨╡ ╨▓ ╤Н╤В╨╛╨╣ ╨║╨╛╨╝╨╜╨░╤В╨╡",
-            not_participant: "╨Т╤Л ╨╜╨╡ ╤Г╤З╨░╤Б╤В╨▓╤Г╨╡╤В╨╡ ╨▓ ╨░╤Г╨║╤Ж╨╕╨╛╨╜╨╡",
-            bad_amount: "╨Э╨╡╨▓╨╡╤А╨╜╨░╤П ╤Б╤Г╨╝╨╝╨░ ╤Б╤В╨░╨▓╨║╨╕",
-            not_enough_money: "╨Э╨╡╨┤╨╛╤Б╤В╨░╤В╨╛╤З╨╜╨╛ ╨┤╨╡╨╜╨╡╨│",
-            paused: "╨Р╤Г╨║╤Ж╨╕╨╛╨╜ ╨╜╨░ ╨┐╨░╤Г╨╖╨╡",
+            room_not_found: "Комната не найдена",
+            not_running: "Аукцион ещё не запущен",
+            not_player: "Вы не в комнате",
+            not_participant: "Вы не участвуете",
+            bad_amount: "Неверная сумма",
+            not_enough_money: "Недостаточно денег",
+            paused: "Аукцион на паузе",
           };
-          setError(map[code] || "╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╨┐╤А╨╕╨╜╤П╤В╤М ╤Б╤В╨░╨▓╨║╤Г");
-        } else {
-          setMyBid("");
-          setError("");
+          setError(map[resp?.error] || "Не удалось принять ставку");
+          return;
         }
+        setMyBid("");
+        setError("");
       }
     );
   }
-
   async function leaveRoom() {
     const code = room?.code;
     if (!code) return;
@@ -629,8 +645,8 @@ export default function Auction({
     }
     setRoom(null);
     setPlayers([]);
-    setAuctionState(null);
     setSelfInfo(null);
+    setAuctionState(null);
     lastSubscribedCodeRef.current = null;
     lastSubscriptionSocketIdRef.current = null;
     progressSentRef.current = false;
@@ -647,865 +663,603 @@ export default function Auction({
   async function copyRoomCode() {
     if (!room?.code) return;
     try {
-      if (
-        typeof navigator !== "undefined" &&
-        navigator.clipboard?.writeText
-      ) {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(room.code);
       }
-      const payload = { type: "info", text: "╨Ъ╨╛╨┤ ╨║╨╛╨╝╨╜╨░╤В╤Л ╤Б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╨╜" };
+      const payload = { type: "info", text: "Код скопирован" };
       lastToastRef.current = payload;
       setToast(payload);
     } catch {
-      const payload = { type: "error", text: "╨Э╨╡ ╤Г╨┤╨░╨╗╨╛╤Б╤М ╤Б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╤В╤М ╨║╨╛╨┤" };
+      const payload = { type: "error", text: "Не удалось скопировать" };
       lastToastRef.current = payload;
       setToast(payload);
     }
   }
 
-  // ===================== RENDER =====================
+  const readyCount = useMemo(() => {
+    if (!players.length || !room) return 0;
+    return players.filter((p) => p.ready && p.user?.id !== room.ownerId).length;
+  }, [players, room]);
 
-  const showLobby = !auctionState || auctionState.phase === "lobby";
-  const showGame = auctionState && auctionState.phase === "in_progress";
-  const showResult = auctionState && auctionState.phase === "finished";
+  const playedSlots = auctionState?.slotsPlayed ?? 0;
+  const maxSlots = auctionState?.maxSlots ?? Number(cfgRules.maxSlots) || 30;
 
-  return (
-    <div className="auction-root">
-      {/* TOP BAR */}
-      {room && (
-        <div
-          className="auction-header"
-          role="region"
-          aria-label="╨Я╨░╨╜╨╡╨╗╤М ╨║╨╛╨╝╨╜╨░╤В╤Л"
-        >
-          <div className="auction-room-info">
-            <div className="auction-title">AUCTION</div>
-            <div className="auction-room-code">
-              ╨Ъ╨╛╨┤:{" "}
-              <span className="auction-room-code-value">{room.code}</span>
-              <button
-                type="button"
-                className="auction-btn small ghost"
-                onClick={copyRoomCode}
-                aria-label="╨б╨║╨╛╨┐╨╕╤А╨╛╨▓╨░╤В╤М ╨║╨╛╨┤ ╨║╨╛╨╝╨╜╨░╤В╤Л"
-              >
-                ЁЯУЛ ╨Ъ╨╛╨┐╨╕╤А╨╛╨▓╨░╤В╤М
-              </button>
-            </div>
+  const showLobby = phase === "lobby";
+  const showGame = phase === "in_progress";
+  const showResult = phase === "finished";
+
+  const primaryActionLabel = isOwner
+    ? showLobby
+      ? "Старт"
+      : showGame
+      ? "Следующий"
+      : "Реванш"
+    : currentPlayer?.ready
+    ? "Я не готов"
+    : "Я готов";
+
+  const primaryActionDisabled = isOwner
+    ? showLobby && !everyoneReadyExceptOwner
+    : !currentPlayer;
+
+  const primaryActionHandler = isOwner
+    ? showLobby || showResult
+      ? handleStartAuction
+      : forceNext
+    : toggleReady;
+  function renderLanding() {
+    return (
+      <div className="auction-screen">
+        <section className="auction-card hero-card">
+          <div className="badge-row">
+            <span className="badge">AUCTION</span>
+            <span className="badge ghost">{connecting ? "подключаемся…" : "онлайн"}</span>
           </div>
-
-          {myBalance != null && (
-            <div className="auction-header-balance" aria-live="polite">
-              ╨С╨░╨╗╨░╨╜╤Б:{" "}
-              <strong>{moneyFormatter.format(myBalance)}$</strong>
-            </div>
-          )}
-
-          <button
-            className="auction-btn back"
-            type="button"
-            onClick={handleExit}
-            aria-label="╨Т╤Л╨╣╤В╨╕ ╨▓ ╨╝╨╡╨╜╤О"
-          >
-            ╨Т╤Л╨╣╤В╨╕
-          </button>
-        </div>
-      )}
-
-      {connecting && !room && (
-        <div className="auction-panel">
-          <div className="auction-hint">╨Я╨╛╨┤╨║╨╗╤О╤З╨░╨╡╨╝╤Б╤П ╨║ ╤Б╨╡╤А╨▓╨╡╤А╤ГтАж</div>
-        </div>
-      )}
-
-      {!room && !connecting && (
-        <section
-          className="mf-menu v2 auction-menu"
-          aria-label="╨У╨╗╨░╨▓╨╜╨╛╨╡ ╨╝╨╡╨╜╤О ╨░╤Г╨║╤Ж╨╕╨╛╨╜╨░"
-        >
-          {/* hero тАФ reuse mafia-hero, ╨╜╨╛ ╤Б ╤В╨╡╨║╤Б╤В╨╛╨╝ ╨┐╤А╨╛ ╨░╤Г╨║╤Ж╨╕╨╛╨╜ */}
-          <header className="mf-menu-hero" role="banner">
+          <h1>Собери идеальную команду</h1>
+          <p className="muted">
+            Прозрачные ставки, быстрый темп и красивый интерфейс для вечеринок и турниров.
+          </p>
+          <div className="hero-actions">
             <button
               type="button"
-              className="mf-icon-button mf-menu-close"
-              onClick={handleExit}
-              aria-label="╨Ч╨░╨║╤А╤Л╤В╤М ╨╕╨│╤А╤Г"
+              className="accent-btn xl"
+              onClick={createRoom}
+              disabled={creating}
             >
-              тЬХ
+              {creating ? "Создаём…" : "Создать комнату"}
             </button>
-
-            <div className="mf-menu-logo">AUCTION</div>
-            <p className="mf-menu-tagline">
-              ╨а╨░╨╖╨┤╨░╨╣ ╨╕╨│╤А╨╛╨║╨╛╨▓ ╨┐╨╛ ╨║╨╛╨╝╨░╨╜╨┤╨░╨╝ ╤З╨╡╤А╨╡╨╖ ╤З╨╡╤Б╤В╨╜╤Л╨╣ ╨░╤Г╨║╤Ж╨╕╨╛╨╜
-            </p>
-          </header>
-
-          {/* ╨┤╨╡╨╣╤Б╤В╨▓╨╕╤П: ╨▓╨╛╨╣╤В╨╕ ╨┐╨╛ ╨║╨╛╨┤╤Г / ╤Б╨╛╨╖╨┤╨░╤В╤М ╨║╨╛╨╝╨╜╨░╤В╤Г */}
-          <div
-            className="mf-menu-actions"
-            role="group"
-            aria-label="╨б╨╛╨╖╨┤╨░╨╜╨╕╨╡ ╨╕╨╗╨╕ ╨▓╤Е╨╛╨┤ ╨▓ ╨║╨╛╨╝╨╜╨░╤В╤Г"
-          >
-            {/* inline join */}
-            <div className="mf-join-inline">
+            <div className="join-inline">
               <label htmlFor="auction-join-code" className="sr-only">
-                ╨Ъ╨╛╨┤ ╨║╨╛╨╝╨╜╨░╤В╤Л
+                Код комнаты
               </label>
               <input
                 id="auction-join-code"
-                className="mf-input big"
-                placeholder="╨Ъ╨╛╨┤ ╨║╨╛╨╝╨╜╨░╤В╤Л"
-                inputMode="text"
-                maxLength={8}
-                // ╤В╨░╨║╨╛╨╣ ╨╢╨╡ pattern, ╨║╨░╨║ ╨▓ ╨╝╨░╤Д╨╕╨╕
-                pattern="[A-HJKMNPQRSTUVWXYZ23456789]{4,8}"
-                title="4тАУ8 ╤Б╨╕╨╝╨▓╨╛╨╗╨╛╨▓: A-H J K M N P Q R S T U V W X Y Z 2тАУ9"
-                aria-invalid={error ? "true" : "false"}
-                value={(codeInput || "")
-                  .toUpperCase()
-                  .replace(CODE_ALPHABET_RE, "")
-                  .slice(0, 8)}
-                onChange={(e) => setCodeInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    const normalized = (codeInput || "")
-                      .toUpperCase()
-                      .replace(CODE_ALPHABET_RE, "")
-                      .slice(0, 8);
-                    joinRoom(normalized);
-                  }
-                }}
-                disabled={creating || joining}
+                className="text-input"
+                maxLength={6}
+                placeholder="Ввести код"
+                value={codeInput}
+                onChange={(e) => setCodeInput(normalizeCode(e.target.value))}
+                inputMode="latin"
                 autoCapitalize="characters"
-                autoCorrect="off"
-                spellCheck={false}
               />
               <button
-                className="mf-btn primary big"
                 type="button"
-                onClick={() => {
-                  const normalized = (codeInput || "")
-                    .toUpperCase()
-                    .replace(CODE_ALPHABET_RE, "")
-                    .slice(0, 8);
-                  joinRoom(normalized);
-                }}
-                disabled={creating || joining}
-                aria-label="╨Т╨╛╨╣╤В╨╕ ╨┐╨╛ ╨║╨╛╨┤╤Г"
+                className="ghost-btn"
+                onClick={() => joinRoom(codeInput)}
+                disabled={joining}
               >
-                ЁЯФС ╨Т╤Б╤В╤Г╨┐╨╕╤В╤М
+                {joining ? "Подключаем…" : "Подключиться"}
               </button>
             </div>
-
-            {error && (
-              <div className="mf-form-hint danger" role="alert">
-                {error}
-              </div>
-            )}
-
-            {/* create */}
-            <button
-              className="mf-btn primary xl mf-create-cta"
-              type="button"
-              onClick={createRoom}
-              disabled={creating || joining}
-              aria-label="╨б╨╛╨╖╨┤╨░╤В╤М ╨║╨╛╨╝╨╜╨░╤В╤Г"
-              title="╨б╨╛╨╖╨┤╨░╤В╤М ╨╜╨╛╨▓╤Г╤О ╨║╨╛╨╝╨╜╨░╤В╤Г"
-            >
-              ЁЯУж ╨б╨╛╨╖╨┤╨░╤В╤М ╨║╨╛╨╝╨╜╨░╤В╤Г
-            </button>
           </div>
-
-          {/* ╨╝╨░╨╗╨╡╨╜╤М╨║╨╕╨╣ ┬л╨│╨░╨╣╨┤┬╗, ╨║╨░╨║ ╨▓ ╨╝╨░╤Д╨╕╨╕, ╨╜╨╛ ╨┐╨╛╨┤ ╨░╤Г╨║╤Ж╨╕╨╛╨╜ */}
-          <section
-            className="mf-menu-cards"
-            aria-label="╨Ъ╨░╨║ ╤А╨░╨▒╨╛╤В╨░╨╡╤В ╨░╤Г╨║╤Ж╨╕╨╛╨╜"
-          >
-            <article className="mf-menu-card">
-              <div className="ico" aria-hidden="true">
-                ЁЯОп
-              </div>
-              <div className="title">╨Т╤Л╨▒╨╕╤А╨░╨╡╨╝ ╨╕╨│╤А╨╛╨║╨╛╨▓</div>
-              <p className="text">
-                ╨б╨╛╨╖╨┤╨░╤В╨╡╨╗╤М ╨║╨╛╨╝╨╜╨░╤В╤Л ╨╖╨░╤А╨░╨╜╨╡╨╡ ╨┐╨╛╨┤╨│╨╛╤В╨░╨▓╨╗╨╕╨▓╨░╨╡╤В ╤Б╨┐╨╕╤Б╨╛╨║ ╨╕╨│╤А╨╛╨║╨╛╨▓
-                ╨╕╨╗╨╕ ╤Б╨╗╨╛╤В╨╛╨▓, ╨║╨╛╤В╨╛╤А╤Л╨╡ ╤А╨░╨╖╤Л╨│╤А╨░╨╡╨╝.
-              </p>
-            </article>
-            <article className="mf-menu-card">
-              <div className="ico" aria-hidden="true">
-                ЁЯТ░
-              </div>
-              <div className="title">╨Ф╨╡╨╗╨░╨╡╨╝ ╤Б╤В╨░╨▓╨║╨╕</div>
-              <p className="text">
-                ╨Э╨░ ╨║╨░╨╢╨┤╤Л╨╣ ╨╗╨╛╤В ╤Г ╨▓╤Б╨╡╤Е ╨╛╨┤╨╕╨╜╨░╨║╨╛╨▓╤Л╨╣ ╨║╨░╨┐╨╕╤В╨░╨╗. ╨Я╨╛╨▒╨╡╨╢╨┤╨░╨╡╤В
-                ╨╝╨░╨║╤Б╨╕╨╝╨░╨╗╤М╨╜╨░╤П ╤Б╤В╨░╨▓╨║╨░, ╨┤╨╡╨╜╤М╨│╨╕ ╤Б╨┐╨╕╤Б╤Л╨▓╨░╤О╤В╤Б╤П ╤Б ╨▒╨░╨╗╨░╨╜╤Б╨░.
-              </p>
-            </article>
-            <article className="mf-menu-card">
-              <div className="ico" aria-hidden="true">
-                ЁЯзй
-              </div>
-              <div className="title">╨б╨╛╨▒╨╕╤А╨░╨╡╨╝ ╨║╨╛╨╝╨░╨╜╨┤╤Л</div>
-              <p className="text">
-                ╨Я╨╛ ╨╕╤В╨╛╨│╨░╨╝ ╨░╤Г╨║╤Ж╨╕╨╛╨╜╨░ ╨┐╨╛╨╗╤Г╤З╨░╨╡╨╝ ╨┐╤А╨╛╨╖╤А╨░╤З╨╜╤Л╨╡, ╨╢╨╕╨▓╤Л╨╡ ╨╕
-                ╤Б╨▒╨░╨╗╨░╨╜╤Б╨╕╤А╨╛╨▓╨░╨╜╨╜╤Л╨╡ ╤Б╨╛╤Б╤В╨░╨▓╤Л.
-              </p>
-            </article>
-          </section>
         </section>
-      )}
+        <section className="auction-card landing-grid">
+          {LANDING_CARDS.map((card) => (
+            <article key={card.title} className="landing-card">
+              <div className="landing-icon" aria-hidden="true">
+                {card.icon}
+              </div>
+              <h3>{card.title}</h3>
+              <p>{card.text}</p>
+            </article>
+          ))}
+        </section>
+        {error && <div className="auction-error prominent">{error}</div>}
+      </div>
+    );
+  }
 
-      {room && (
-        <div className="auction-main">
-          {/* ╨б╨┐╨╕╤Б╨╛╨║ ╨╕╨│╤А╨╛╨║╨╛╨▓ + ╨┤╨╡╨╜╤М╨│╨╕ */}
-          <section className="auction-section">
-            <div className="auction-section-title">╨Ш╨│╤А╨╛╨║╨╕</div>
-            <div className="auction-hint">
-              ╨Э╨░╨╢╨╝╨╕ ╨╜╨░ ╨║╨░╤А╤В╨╛╤З╨║╤Г ╨╕╨│╤А╨╛╨║╨░, ╤З╤В╨╛╨▒╤Л ╤Г╨▓╨╕╨┤╨╡╤В╤М ╨╡╨│╨╛ ╨║╨╛╤А╨╖╨╕╨╜╤Г ╨╕
-              ╨╛╨▒╤Й╤Г╤О ╤Ж╨╡╨╜╨╜╨╛╤Б╤В╤М ╤Б╨╛╨▒╤А╨░╨╜╨╜╤Л╤Е ╨╗╨╛╤В╨╛╨▓.
+  function renderHero() {
+    if (!room) return null;
+    return (
+      <section className="auction-card dashboard">
+        <header className="dashboard-top">
+          <div>
+            <span className="badge">Комната</span>
+            <div className="room-code">
+              <strong>{room.code}</strong>
+              <button type="button" className="chip ghost" onClick={copyRoomCode}>
+                Скопировать
+              </button>
             </div>
-            <div className="auction-players">
-              {players.map((p) => {
-                const balance =
-                  auctionState?.balances?.[p.id] ?? null;
-                const isMe = p.id === selfInfo?.roomPlayerId;
-                const isHost = p.user?.id === room?.ownerId;
-                const name =
-                  p.user?.first_name ||
-                  p.user?.username ||
-                  `╨Ш╨│╤А╨╛╨║ ${p.id}`;
-                const avatarUrl =
-                  p.user?.photo_url || p.user?.avatar || null;
-                const wins = winsCountByPlayerId.get(p.id) || 0;
-                const basketValue = basketTotals[p.id] || 0;
-
-                return (
-                  <div
-                    key={p.id}
-                    className={
-                      "auction-player-card" +
-                      (isMe ? " me" : "") +
-                      (p.ready ? " ready" : "") +
-                      (selectedPlayerIdEffective === p.id
-                        ? " selected"
-                        : "")
-                    }
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setSelectedPlayerId(p.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setSelectedPlayerId(p.id);
-                      }
-                    }}
-                  >
-                    <div className="auction-player-left">
-                      <div className="auction-player-avatar">
-                        {avatarUrl ? (
-                          <img src={avatarUrl} alt={name} />
-                        ) : (
-                          <div className="auction-player-avatar-fallback">
-                            {name?.[0]?.toUpperCase()}
-                          </div>
-                        )}
-                      </div>
-                      <div className="auction-player-text">
-                        <div className="auction-player-name">
-                          {name}
-                          {isMe && " (╨▓╤Л)"}
-                        </div>
-                        <div className="auction-player-meta">
-                          {balance != null ? (
-                            <>ЁЯТ╡ {moneyFormatter.format(balance)}$</>
-                          ) : (
-                            "╨╡╤Й╤С ╨╜╨╡ ╨▓ ╨░╤Г╨║╤Ж╨╕╨╛╨╜╨╡"
-                          )}
-                        </div>
-                        {basketValue > 0 && (
-                          <div className="auction-player-meta small">
-                            ╨Ъ╨╛╤А╨╖╨╕╨╜╨░:{" "}
-                            {moneyFormatter.format(basketValue)}$
-                          </div>
-                        )}
-                        {wins > 0 && (
-                          <div className="auction-player-meta small">
-                            ╨Я╨╛╨▒╨╡╨┤: {wins}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="auction-player-tags">
-                      {isHost && (
-                        <div className="auction-chip owner">
-                          ╤Е╨╛╤Б╤В
-                        </div>
-                      )}
-                      {p.ready ? (
-                        <div className="auction-chip">╨│╨╛╤В╨╛╨▓</div>
-                      ) : (
-                        <div className="auction-chip gray">
-                          ╨╜╨╡ ╨│╨╛╤В╨╛╨▓
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          {/* ╨Я╨░╨╜╨╡╨╗╤М ╨║╨╛╤А╨╖╨╕╨╜╤Л ╨▓╤Л╨▒╤А╨░╨╜╨╜╨╛╨│╨╛ ╨╕╨│╤А╨╛╨║╨░ */}
-          {selectedPlayer && auctionState?.history?.length > 0 && (
-            <section className="auction-section">
-              <div className="auction-section-title">
-                ╨Ъ╨╛╤А╨╖╨╕╨╜╨░ ╨╕╨│╤А╨╛╨║╨░{" "}
-                {selectedPlayer.user?.first_name ||
-                  selectedPlayer.user?.username ||
-                  `╨Ш╨│╤А╨╛╨║ ${selectedPlayer.id}`}
-              </div>
-              <div className="auction-hint">
-                ╨Т╤Б╨╡╨│╨╛ ╨┐╤А╨╡╨┤╨╝╨╡╤В╨╛╨▓: {selectedBasket.length} ┬╖ ╨ж╨╡╨╜╨╜╨╛╤Б╤В╤М
-                ╨║╨╛╤А╨╖╨╕╨╜╤Л:{" "}
-                {moneyFormatter.format(selectedBasketTotal || 0)}$
-              </div>
-              {selectedBasket.length === 0 ? (
-                <div className="auction-hint">
-                  ╨н╤В╨╛╤В ╨╕╨│╤А╨╛╨║ ╨┐╨╛╨║╨░ ╨╜╨╕╤З╨╡╨│╨╛ ╨╜╨╡ ╨▓╤Л╨╕╨│╤А╨░╨╗.
-                </div>
-              ) : (
-                <div className="auction-history">
-                  {selectedBasket.map((item) => (
-                    <div
-                      key={item.index}
-                      className="auction-history-item"
-                    >
-                      <div className="auction-history-title">
-                        #{(item.index ?? 0) + 1} ┬╖{" "}
-                        {item.type === "lootbox"
-                          ? "ЁЯОБ ╨б╨║╤А╤Л╤В╤Л╨╣ ╨╗╨╛╤В"
-                          : "ЁЯУж ╨Ы╨╛╤В"}{" "}
-                        тАФ {item.name}
-                      </div>
-                      <div className="auction-history-meta">
-                        ╨Ч╨░╨┐╨╗╨░╤В╨╕╨╗:{" "}
-                        {moneyFormatter.format(item.paid || 0)}$ ┬╖
-                        ╨ж╨╡╨╜╨╜╨╛╤Б╤В╤М:{" "}
-                        {moneyFormatter.format(item.value || 0)}$
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
-
-          {/* ╨Ы╨╛╨▒╨▒╨╕ (╨│╨╛╤В╨╛╨▓╨╜╨╛╤Б╤В╤М + ╤Б╤В╨░╤А╤В) */}
-          {showLobby && (
-            <section className="auction-section">
-              <div className="auction-section-title">╨Ы╨╛╨▒╨▒╨╕</div>
-              <div className="auction-row">
-                {!isOwner && (
-                  <button
-                    className="auction-btn primary"
-                    onClick={toggleReady}
-                    disabled={!currentPlayer}
-                  >
-                    {currentPlayer?.ready
-                      ? "╨п ╨╜╨╡ ╨│╨╛╤В╨╛╨▓"
-                      : "╨п ╨│╨╛╤В╨╛╨▓"}
-                  </button>
-                )}
-                {isOwner && (
-                  <button
-                    className="auction-btn primary"
-                    onClick={handleStartAuction}
-                    disabled={!everyoneReadyExceptOwner}
-                  >
-                    {everyoneReadyExceptOwner
-                      ? "╨Э╨░╤З╨░╤В╤М ╨░╤Г╨║╤Ж╨╕╨╛╨╜"
-                      : "╨Ц╨┤╤С╨╝ ╨╛╤Б╤В╨░╨╗╤М╨╜╤Л╤ЕтАж"}
-                  </button>
-                )}
-              </div>
-
-              {isOwner && (
-                <div className="auction-config">
-                  <div className="auction-config-header">
-                    <button
-                      className="auction-btn small"
-                      type="button"
-                      onClick={() => setCfgOpen((v) => !v)}
-                      aria-expanded={cfgOpen ? "true" : "false"}
-                      aria-controls="auction-config-panel"
-                    >
-                      тЪЩя╕П ╨Э╨░╤Б╤В╤А╨╛╨╣╨║╨╕
-                    </button>
-                    <span className="auction-hint">
-                      ╨е╨╛╤Б╤В ╨╝╨╛╨╢╨╡╤В ╨╖╨░╨┤╨░╤В╤М ╨▓╤А╨╡╨╝╤П ╨╜╨░ ╨╗╨╛╤В ╨╕ ╤Б╨┐╨╕╤Б╨╛╨║ ╤Б╨╗╨╛╤В╨╛╨▓
-                      (╨║╨░╨╢╨┤╨░╤П ╤Б╤В╤А╨╛╨║╨░: ┬л╨Э╨░╨╖╨▓╨░╨╜╨╕╨╡ | ╤Ж╨╡╨╜╨░ | ╤В╨╕╨┐┬╗, ╤В╨╕╨┐ ={" "}
-                      <code>lot</code> ╨╕╨╗╨╕ <code>lootbox</code>)
-                    </span>
-                  </div>
-                  {cfgOpen && (
-                    <div
-                      id="auction-config-panel"
-                      className="auction-config-panel"
-                    >
-                      <div className="auction-row">
-                        <label
-                          className="sr-only"
-                          htmlFor="cfg-time"
-                        >
-                          ╨Т╤А╨╡╨╝╤П ╨╜╨░ ╨╗╨╛╤В, ╤Б╨╡╨║
-                        </label>
-                        <input
-                          id="cfg-time"
-                          className="auction-input"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          placeholder="╨Т╤А╨╡╨╝╤П ╨╜╨░ ╨╗╨╛╤В, ╤Б╨╡╨║ (5тАУ120)"
-                          value={cfgRules.timePerSlotSec}
-                          onChange={(e) =>
-                            setCfgRules((r) => ({
-                              ...r,
-                              timePerSlotSec:
-                                e.target.value.replace(/[^\d]/g, ""),
-                            }))
-                          }
-                        />
-                        <label
-                          className="sr-only"
-                          htmlFor="cfg-max"
-                        >
-                          ╨Ь╨░╨║╤Б╨╕╨╝╤Г╨╝ ╤Б╨╗╨╛╤В╨╛╨▓
-                        </label>
-                        <input
-                          id="cfg-max"
-                          className="auction-input"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          placeholder="╨Ь╨░╨║╤Б╨╕╨╝╤Г╨╝ ╤Б╨╗╨╛╤В╨╛╨▓ (1тАУ60)"
-                          value={cfgRules.maxSlots}
-                          onChange={(e) =>
-                            setCfgRules((r) => ({
-                              ...r,
-                              maxSlots:
-                                e.target.value.replace(/[^\d]/g, ""),
-                            }))
-                          }
-                        />
-                        <button
-                          className="auction-btn"
-                          type="button"
-                          onClick={configureAuction}
-                        >
-                          ╨Я╤А╨╕╨╝╨╡╨╜╨╕╤В╤М
-                        </button>
-                      </div>
-                      <textarea
-                        className="auction-textarea"
-                        placeholder={`╨б╨╗╨╛╤В╤Л (╨┐╨╛ ╨╛╨┤╨╜╨╛╨╝╤Г ╨╜╨░ ╤Б╤В╤А╨╛╨║╤Г), ╨┐╤А╨╕╨╝╨╡╤А:\n╨Ш╨▓╨░╨╜ ╨Ш╨▓╨░╨╜╨╛╨▓ | 120000 | lot\n╨Ь╨╕╤Б╤В╨╕╤З╨╡╤Б╨║╨╕╨╣ ╨╗╤Г╤В╨▒╨╛╨║╤Б | 90000 | lootbox`}
-                        value={cfgSlotsText}
-                        onChange={(e) =>
-                          setCfgSlotsText(e.target.value)
-                        }
-                        rows={6}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="auction-hint">
-                ╨Ъ╨░╨╢╨┤╤Л╨╣ ╨╕╨│╤А╨╛╨║ ╨╜╨░╤З╨╕╨╜╨░╨╡╤В ╤Б{" "}
-                {moneyFormatter.format(INITIAL_MONEY)}$. ╨Ч╨░ ╤А╨░╤Г╨╜╨┤
-                ╤А╨░╨╖╤Л╨│╤А╤Л╨▓╨░╨╡╤В╤Б╤П ╨╛╨┤╨╕╨╜ ╤Б╨╗╨╛╤В тАФ ╨╛╨▒╤Л╤З╨╜╤Л╨╣ ╨╗╨╛╤В ╨╕╨╗╨╕ ╤Б╨║╤А╤Л╤В╤Л╨╣
-                ╨╗╤Г╤В╨▒╨╛╨║╤Б. ╨Э╨░ ╨║╨░╨╢╨┤╤Л╨╣ ╨╗╨╛╤В ╨┤╨░╤С╤В╤Б╤П ╤Б╤З╤С╤В 3-2-1 (╨┐╤А╨╕╨╝╨╡╤А╨╜╨╛ ╨┐╨╛ 3
-                ╤Б╨╡╨║╤Г╨╜╨┤╤Л ╨╜╨░ ╤Ж╨╕╤Д╤А╤Г). ╨Ш╨│╤А╨░ ╨╕╨┤╤С╤В ╨┤╨╛{" "}
-                {auctionState?.maxSlots ?? cfgRules.maxSlots ?? 30}{" "}
-                ╤Б╨╗╨╛╤В╨╛╨▓ ╨╕╨╗╨╕ ╨┐╨╛╨║╨░ ╤Г ╨▓╤Б╨╡╤Е ╨╜╨╡ ╨║╨╛╨╜╤З╨░╤В╤Б╤П ╨┤╨╡╨╜╤М╨│╨╕.
-              </div>
-              {error && <div className="auction-error">{error}</div>}
-            </section>
-          )}
-
-          {/* ╨Ю╤Б╨╜╨╛╨▓╨╜╨░╤П ╨╕╨│╤А╨░ */}
-          {showGame && (
-            <section className="auction-section">
-              <div className="auction-section-title">
-                ╨в╨╡╨║╤Г╤Й╨╕╨╣ ╨╗╨╛╤В
-              </div>
-              {currentSlot ? (
-                <div className="auction-lot-card">
-                  <div className="auction-lot-type">
-                    {currentSlot.type === "lootbox"
-                      ? "ЁЯОБ ╨б╨║╤А╤Л╤В╤Л╨╣ ╨╗╨╛╤В"
-                      : "ЁЯУж ╨Ы╨╛╤В"}
-                  </div>
-                  <div className="auction-lot-name">
-                    {currentSlot.name}
-                  </div>
-                  <div className="auction-lot-meta">
-                    ╨С╨░╨╖╨╛╨▓╨░╤П ╤Б╤В╨╛╨╕╨╝╨╛╤Б╤В╤М:{" "}
-                    {moneyFormatter.format(
-                      currentSlot.basePrice
-                    )}
-                    $
-                  </div>
-                  <div className="auction-lot-meta">
-                    ╨б╨╗╨╛╤В {(auctionState.slotsPlayed ?? 0) + 1} ╨╕╨╖{" "}
-                    {auctionState.maxSlots}
-                  </div>
-
-                  <div
-                    className="auction-timer"
-                    role="timer"
-                    aria-live="polite"
-                  >
-                    тП│ ╨б╤З╤С╤В:{" "}
-                    <strong style={{ fontSize: "1.2em" }}>
-                      {countdownStep != null
-                        ? countdownStep
-                        : "тАФ"}
-                    </strong>
-                    {secsLeft != null && (
-                      <span className="auction-timer-secondary">
-                        {" "}
-                        ({secsLeft}s)
-                      </span>
-                    )}
-                    {progressPct != null && (
-                      <div className="auction-timer-bar">
-                        <div
-                          className="fill"
-                          style={{ width: `${progressPct}%` }}
-                        />
-                      </div>
-                    )}
-                    {auctionState?.paused && (
-                      <span
-                        className="auction-chip gray"
-                        style={{ marginLeft: 8 }}
-                      >
-                        ╨┐╨░╤Г╨╖╨░
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="auction-bid-block">
-                    <div className="auction-bid-label">
-                      ╨Т╨░╤И╨░ ╤Б╤В╨░╨▓╨║╨░ (0 тАФ ╨┐╨░╤Б)
-                    </div>
-                    <div className="auction-row">
-                      <input
-                        className="auction-input"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={myBid}
-                        onChange={(e) =>
-                          setMyBid(
-                            e.target.value.replace(/[^\d]/g, "")
-                          )
-                        }
-                        placeholder="╨б╤Г╨╝╨╝╨░"
-                      />
-                      <button
-                        className="auction-btn primary"
-                        onClick={() => sendBid()}
-                        disabled={
-                          busyBid ||
-                          myBalance == null ||
-                          myBalance <= 0
-                        }
-                      >
-                        {busyBid ? "╨Ю╤В╨┐╤А╨░╨▓╨║╨░тАж" : "╨б╨┤╨╡╨╗╨░╤В╤М ╤Б╤В╨░╨▓╨║╤Г"}
-                      </button>
-                    </div>
-                    <div className="auction-row">
-                      <button
-                        className="auction-btn small"
-                        onClick={() => setBidRelative(1_000)}
-                        disabled={
-                          myBalance == null || myBalance <= 0
-                        }
-                      >
-                        +1k
-                      </button>
-                      <button
-                        className="auction-btn small"
-                        onClick={() => setBidRelative(5_000)}
-                        disabled={
-                          myBalance == null || myBalance <= 0
-                        }
-                      >
-                        +5k
-                      </button>
-                      <button
-                        className="auction-btn small"
-                        onClick={() => setBidRelative(10_000)}
-                        disabled={
-                          myBalance == null || myBalance <= 0
-                        }
-                      >
-                        +10k
-                      </button>
-                      <button
-                        className="auction-btn small"
-                        onClick={() => sendBid(myBalance || 0)}
-                        disabled={
-                          myBalance == null || myBalance <= 0
-                        }
-                      >
-                        All-in
-                      </button>
-                      <button
-                        className="auction-btn small ghost"
-                        onClick={sendPass}
-                      >
-                        ╨Я╨░╤Б
-                      </button>
-                    </div>
-                    <div className="auction-hint">
-                      ╨Т╨░╤И ╨▒╨░╨╗╨░╨╜╤Б:{" "}
-                      {myBalance != null
-                        ? `${moneyFormatter.format(
-                            myBalance
-                          )}$`
-                        : "╨╡╤Й╤С ╨╜╨╡ ╤Г╤З╨░╤Б╤В╨▓╤Г╨╡╤В╨╡"}
-                      {" ┬╖ "}
-                      {typeof myRoundBid === "number"
-                        ? `╨Т╨░╤И╨░ ╤В╨╡╨║╤Г╤Й╨░╤П ╤Б╤В╨░╨▓╨║╨░: ${moneyFormatter.format(
-                            myRoundBid
-                          )}$`
-                        : "╤Б╤В╨░╨▓╨║╨░ ╨╜╨╡ ╨╛╤В╨┐╤А╨░╨▓╨╗╨╡╨╜╨░"}
-                    </div>
-                  </div>
-
-                  {isOwner && (
-                    <div
-                      className="auction-row"
-                      style={{ marginTop: 10 }}
-                    >
-                      {!auctionState?.paused ? (
-                        <button
-                          className="auction-btn"
-                          onClick={pauseAuction}
-                        >
-                          тП╕ ╨Я╨░╤Г╨╖╨░
-                        </button>
-                      ) : (
-                        <button
-                          className="auction-btn"
-                          onClick={resumeAuction}
-                        >
-                          тЦ╢ ╨Я╤А╨╛╨┤╨╛╨╗╨╢╨╕╤В╤М
-                        </button>
-                      )}
-                      <button
-                        className="auction-btn ghost"
-                        onClick={forceNext}
-                      >
-                        тПн ╨б╨╗╨╡╨┤╤Г╤О╤Й╨╕╨╣ ╨╗╨╛╤В
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="auction-hint">
-                  ╨Ю╨╢╨╕╨┤╨░╨╡╨╝ ╤Б╨╗╨╡╨┤╤Г╤О╤Й╨╕╨╣ ╤Б╨╗╨╛╤ВтАж
-                </div>
-              )}
-
-              {error && <div className="auction-error">{error}</div>}
-            </section>
-          )}
-
-          {/* ╨а╨╡╨╖╤Г╨╗╤М╤В╨░╤В╤Л */}
-          {showResult && (
-            <section className="auction-section">
-              <div className="auction-section-title">
-                ╨а╨╡╨╖╤Г╨╗╤М╤В╨░╤В╤Л ╨░╤Г╨║╤Ж╨╕╨╛╨╜╨░
-              </div>
-              <div className="auction-hint">
-                ╨Ш╨│╤А╨░ ╨╖╨░╨▓╨╡╤А╤И╨╡╨╜╨░. ╨Я╨╛╨▒╨╡╨╢╨┤╨░╨╡╤В ╨╕╨│╤А╨╛╨║(╨╕) ╤Б ╨╝╨░╨║╤Б╨╕╨╝╨░╨╗╤М╨╜╨╛╨╣
-                ╤Б╤Г╨╝╨╝╨╛╨╣ ╨┤╨╡╨╜╨╡╨│.
-              </div>
-              <div className="auction-players">
-                {players
-                  .slice()
-                  .sort((a, b) => {
-                    const av =
-                      auctionState?.balances?.[a.id] ?? 0;
-                    const bv =
-                      auctionState?.balances?.[b.id] ?? 0;
-                    return bv - av;
-                  })
-                  .map((p) => {
-                    const balance =
-                      auctionState?.balances?.[p.id] ?? 0;
-                    const basketValue = basketTotals[p.id] || 0;
-                    const isWinner =
-                      auctionState?.winners?.includes(p.id);
-                    const name =
-                      p.user?.first_name ||
-                      p.user?.username ||
-                      `╨Ш╨│╤А╨╛╨║ ${p.id}`;
-                    const wins =
-                      winsCountByPlayerId.get(p.id) || 0;
-                    const avatarUrl =
-                      p.user?.photo_url || p.user?.avatar || null;
-
-                    return (
-                      <div
-                        key={p.id}
-                        className={
-                          "auction-player-card result" +
-                          (isWinner ? " winner" : "")
-                        }
-                      >
-                        <div className="auction-player-left">
-                          <div className="auction-player-avatar">
-                            {avatarUrl ? (
-                              <img src={avatarUrl} alt={name} />
-                            ) : (
-                              <div className="auction-player-avatar-fallback">
-                                {name?.[0]?.toUpperCase()}
-                              </div>
-                            )}
-                          </div>
-                          <div className="auction-player-text">
-                            <div className="auction-player-name">
-                              {name}
-                              {isWinner && " ЁЯПЖ"}
-                            </div>
-                            <div className="auction-player-meta">
-                              ╨Ш╤В╨╛╨│:{" "}
-                              {moneyFormatter.format(
-                                balance
-                              )}
-                              $
-                            </div>
-                            <div className="auction-player-meta small">
-                              ╨Ъ╨╛╤А╨╖╨╕╨╜╨░:{" "}
-                              {moneyFormatter.format(
-                                basketValue
-                              )}
-                              $
-                            </div>
-                            {wins > 0 && (
-                              <div className="auction-player-meta small">
-                                ╨Я╨╛╨▒╨╡╨┤: {wins}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-              <div className="auction-row">
-                {isOwner && (
-                  <button
-                    className="auction-btn primary"
-                    onClick={handleStartAuction}
-                  >
-                    ╨б╤Л╨│╤А╨░╤В╤М ╨╡╤Й╤С ╤А╨░╨╖ ╤Б ╤В╨╡╨╝╨╕ ╨╢╨╡ ╨╕╨│╤А╨╛╨║╨░╨╝╨╕
-                  </button>
-                )}
-                <button
-                  className="auction-btn"
-                  onClick={handleExit}
-                >
-                  ╨Т╤Л╨╣╤В╨╕ ╨▓ ╨╝╨╡╨╜╤О
-                </button>
-              </div>
-            </section>
-          )}
-
-          {/* ╨Ш╤Б╤В╨╛╤А╨╕╤П ╤Б╨╗╨╛╤В╨╛╨▓ */}
-          {auctionState?.history?.length > 0 && (
-            <section className="auction-section">
-              <div className="auction-section-title">
-                ╨Ш╤Б╤В╨╛╤А╨╕╤П ╤Б╨╗╨╛╤В╨╛╨▓
-              </div>
-              <div className="auction-history">
-                {auctionState.history.map((h) => {
-                  const winnerName =
-                    h.winnerPlayerId != null
-                      ? playerNameById.get(h.winnerPlayerId)
-                      : null;
-                  let effectText = "";
-                  if (h.effect) {
-                    const d = h.effect.delta || 0;
-                    if (h.effect.kind === "money" && d > 0) {
-                      effectText = ` +${moneyFormatter.format(
-                        d
-                      )}$`;
-                    } else if (
-                      h.effect.kind === "penalty" &&
-                      d < 0
-                    ) {
-                      effectText = ` ${moneyFormatter.format(
-                        d
-                      )}$`;
-                    }
-                  }
-                  return (
-                    <div
-                      key={h.index}
-                      className="auction-history-item"
-                    >
-                      <div className="auction-history-title">
-                        #{h.index + 1} ┬╖{" "}
-                        {h.type === "lootbox"
-                          ? "ЁЯОБ ╨б╨║╤А╤Л╤В╤Л╨╣ ╨╗╨╛╤В"
-                          : "ЁЯУж ╨Ы╨╛╤В"}{" "}
-                        тАФ {h.name}
-                      </div>
-                      {winnerName ? (
-                        <div className="auction-history-meta">
-                          ╨Я╨╛╨▒╨╡╨┤╨╕╨╗: {winnerName} ╨╖╨░{" "}
-                          {moneyFormatter.format(
-                            h.winBid || 0
-                          )}
-                          $
-                          {effectText && (
-                            <span> ({effectText})</span>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="auction-history-meta">
-                          ╨Э╨╕╨║╤В╨╛ ╨╜╨╡ ╨║╤Г╨┐╨╕╨╗ (╨▓╤Б╨╡ ╨┐╨░╤Б)
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-
-          {error && !showGame && !showLobby && (
-            <div className="auction-error sticky">
-              {error}
+          </div>
+          <button type="button" className="chip ghost danger" onClick={handleExit}>
+            Выйти
+          </button>
+        </header>
+        <div className="phase">
+          <div>
+            <span className="badge ghost">{PHASE_LABEL[phase] || "Аукцион"}</span>
+            <h2>{PHASE_DESC[phase] || ""}</h2>
+          </div>
+          {myBalance != null && (
+            <div className="my-balance">
+              <span>Баланс</span>
+              <strong>{moneyFormatter.format(myBalance)}$</strong>
             </div>
           )}
         </div>
-      )}
+        <div className="stats-grid">
+          <div>
+            <span className="label">Игроки</span>
+            <strong>{players.length}</strong>
+            <p className="muted">
+              Готовы: {readyCount}/{Math.max(players.length - 1, 0)}
+            </p>
+          </div>
+          <div>
+            <span className="label">Слоты</span>
+            <strong>
+              {playedSlots}/{maxSlots}
+            </strong>
+            <p className="muted">Банк: {moneyFormatter.format(INITIAL_BANK)}$</p>
+          </div>
+          <div>
+            <span className="label">Код</span>
+            <strong>{room.code}</strong>
+            <p className="muted">Поделись с друзьями</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+  function renderPlayers() {
+    if (!room) return null;
+    return (
+      <section className="auction-card roster-card">
+        <header className="section-head">
+          <div>
+            <span className="label">Состав</span>
+            <h3>Экипаж комнаты</h3>
+          </div>
+          <button
+            type="button"
+            className="chip ghost"
+            onClick={() => setPlayersPanelOpen((open) => !open)}
+          >
+            {playersPanelOpen ? "Скрыть" : "Показать"}
+          </button>
+        </header>
+        <div className={`roster ${playersPanelOpen ? "open" : "collapsed"}`}>
+          {players.map((p) => {
+            const name = playerDisplayName(p);
+            const balance = balances[p.id] ?? null;
+            const wins = winsByPlayerId.get(p.id) || 0;
+            const avatarUrl = p.user?.photo_url || p.user?.avatar || null;
+            const isSelected = selectedPlayerIdEffective === p.id;
+            const isHost = p.user?.id === room.ownerId;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className={
+                  "player-chip" +
+                  (p.ready ? " ready" : "") +
+                  (isHost ? " host" : "") +
+                  (isSelected ? " selected" : "")
+                }
+                onClick={() => setSelectedPlayerId(p.id)}
+              >
+                <div className="chip-avatar">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt={name} />
+                  ) : (
+                    name.slice(0, 1).toUpperCase()
+                  )}
+                </div>
+                <div className="chip-body">
+                  <strong>{name}</strong>
+                  <span className="muted">
+                    {balance != null ? `${moneyFormatter.format(balance)}$` : "ожидаем…"}
+                  </span>
+                  <div className="chip-tags">
+                    {isHost && <span className="badge ghost">хост</span>}
+                    {p.ready ? (
+                      <span className="badge success">готов</span>
+                    ) : (
+                      <span className="badge ghost">не готов</span>
+                    )}
+                    {wins > 0 && <span className="badge ghost">🏆 {wins}</span>}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
+  function renderLobby() {
+    if (!showLobby || !room) return null;
+    return (
+      <section className="auction-card">
+        <header className="section-head">
+          <div>
+            <span className="label">Лобби</span>
+            <h3>Подготовка к аукциону</h3>
+          </div>
+        </header>
+        {!isOwner && (
+          <button
+            type="button"
+            className="accent-btn"
+            onClick={toggleReady}
+            disabled={!currentPlayer}
+          >
+            {currentPlayer?.ready ? "Я не готов" : "Я готов"}
+          </button>
+        )}
+        {isOwner && (
+          <>
+            <button
+              type="button"
+              className="accent-btn"
+              onClick={handleStartAuction}
+              disabled={!everyoneReadyExceptOwner}
+            >
+              {everyoneReadyExceptOwner ? "Запустить аукцион" : "Ждём остальных…"}
+            </button>
+            <button
+              type="button"
+              className="ghost-btn compact"
+              onClick={() => setCfgOpen((v) => !v)}
+            >
+              ⚙️ Настроить игру
+            </button>
+            {cfgOpen && (
+              <div className="host-config">
+                <label className="field">
+                  <span>Время на лот (сек)</span>
+                  <input
+                    className="text-input"
+                    inputMode="numeric"
+                    value={cfgRules.timePerSlotSec}
+                    onChange={(e) =>
+                      setCfgRules((prev) => ({
+                        ...prev,
+                        timePerSlotSec: e.target.value.replace(/[^\d]/g, ""),
+                      }))
+                    }
+                  />
+                </label>
+                <label className="field">
+                  <span>Количество слотов</span>
+                  <input
+                    className="text-input"
+                    inputMode="numeric"
+                    value={cfgRules.maxSlots}
+                    onChange={(e) =>
+                      setCfgRules((prev) => ({
+                        ...prev,
+                        maxSlots: e.target.value.replace(/[^\d]/g, ""),
+                      }))
+                    }
+                  />
+                </label>
+                <label className="field">
+                  <span>Свои слоты (по одному на строку)</span>
+                  <textarea
+                    className="text-input"
+                    rows={4}
+                    placeholder="Игрок | 90000 | lot"
+                    value={cfgSlotsText}
+                    onChange={(e) => setCfgSlotsText(e.target.value)}
+                  />
+                </label>
+                <button type="button" className="accent-btn" onClick={configureAuction}>
+                  Применить
+                </button>
+              </div>
+            )}
+          </>
+        )}
+        <p className="muted">
+          Каждый получает {moneyFormatter.format(INITIAL_BANK)}$. Побеждает игрок с максимальным
+          остатком после {maxSlots} {plural(maxSlots, "слота", "слотов", "слотов")} или раньше,
+          если закончится банк.
+        </p>
+      </section>
+    );
+  }
+  function renderLive() {
+    if (!showGame) return null;
+    return (
+      <section className="auction-card live-card">
+        <header className="section-head">
+          <div>
+            <span className="label">Текущий лот</span>
+            <h3>{currentSlot?.name || "Ожидание следующего слота"}</h3>
+          </div>
+          {auctionState?.paused && <span className="badge ghost">пауза</span>}
+        </header>
+        {currentSlot ? (
+          <>
+            <div className="lot-type">
+              {currentSlot.type === "lootbox" ? "🎁 Скрытый лот" : "📦 Обычный лот"}
+            </div>
+            <p className="muted">
+              База: {moneyFormatter.format(currentSlot.basePrice || 0)}$ · Слот {(
+                auctionState.slotsPlayed ?? 0
+              ) + 1} из {auctionState.maxSlots}
+            </p>
+            <div className="timer">
+              <div className="timer-value">
+                ⏳ {countdownStep != null ? countdownStep : "—"}
+                {secsLeft != null && <span className="muted"> ({secsLeft} c)</span>}
+              </div>
+              {progressPct != null && (
+                <div className="timer-bar" aria-hidden="true">
+                  <div style={{ width: `${progressPct}%` }} />
+                </div>
+              )}
+            </div>
+            <div className="bid-panel">
+              <label className="field">
+                <span>Ваша ставка</span>
+                <input
+                  className="text-input"
+                  inputMode="numeric"
+                  placeholder="Сумма"
+                  value={myBid}
+                  onChange={(e) => setMyBid(e.target.value.replace(/[^\d]/g, ""))}
+                />
+              </label>
+              <div className="quick-bids">
+                {BID_PRESETS.map((step) => (
+                  <button
+                    key={step}
+                    type="button"
+                    className="chip ghost"
+                    onClick={() => setBidRelative(step)}
+                    disabled={myBalance == null || myBalance <= 0}
+                  >
+                    +{moneyFormatter.format(step)}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="chip ghost"
+                  onClick={() => sendBid(myBalance || 0)}
+                  disabled={myBalance == null || myBalance <= 0}
+                >
+                  All-in
+                </button>
+                <button type="button" className="chip ghost" onClick={sendPass}>
+                  Пас
+                </button>
+              </div>
+              <button
+                type="button"
+                className="accent-btn"
+                onClick={() => sendBid()}
+                disabled={busyBid || myBalance == null}
+              >
+                {busyBid ? "Отправляем…" : "Сделать ставку"}
+              </button>
+            </div>
+            <p className="muted">
+              Баланс: {myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "—"} · Текущая
+              ставка: {typeof myRoundBid === "number" ? `${moneyFormatter.format(myRoundBid)}$` : "—"}
+            </p>
+            {isOwner && (
+              <div className="owner-actions">
+                {auctionState?.paused ? (
+                  <button type="button" className="ghost-btn" onClick={resumeAuction}>
+                    ▶ Продолжить
+                  </button>
+                ) : (
+                  <button type="button" className="ghost-btn" onClick={pauseAuction}>
+                    ⏸ Пауза
+                  </button>
+                )}
+                <button type="button" className="ghost-btn" onClick={forceNext}>
+                  ⏭ Следующий
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="muted">Ожидаем следующий слот…</p>
+        )}
+      </section>
+    );
+  }
+  function renderResults() {
+    if (!showResult) return null;
+    return (
+      <section className="auction-card">
+        <header className="section-head">
+          <div>
+            <span className="label">Финиш</span>
+            <h3>Итоги аукциона</h3>
+          </div>
+        </header>
+        <div className="results">
+          {players
+            .slice()
+            .sort((a, b) => {
+              const av = balances[a.id] ?? 0;
+              const bv = balances[b.id] ?? 0;
+              return bv - av;
+            })
+            .map((p) => {
+              const balance = balances[p.id] ?? 0;
+              const basketTotal = basketTotals[p.id] || 0;
+              const name = playerDisplayName(p);
+              const avatarUrl = p.user?.photo_url || p.user?.avatar || null;
+              const isWinner = auctionState?.winners?.includes(p.id);
+              return (
+                <div key={p.id} className={"result-card" + (isWinner ? " winner" : "")}>
+                  <div className="result-avatar">
+                    {avatarUrl ? <img src={avatarUrl} alt={name} /> : name.slice(0, 1)}
+                  </div>
+                  <div className="result-body">
+                    <strong>
+                      {name} {isWinner && "🏆"}
+                    </strong>
+                    <span className="muted">
+                      Баланс: {moneyFormatter.format(balance)}$ · Корзина: {moneyFormatter.format(basketTotal)}$
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+        <div className="owner-actions">
+          {isOwner && (
+            <button type="button" className="accent-btn" onClick={handleStartAuction}>
+              Сыграть снова с теми же
+            </button>
+          )}
+          <button type="button" className="ghost-btn" onClick={handleExit}>
+            Выйти в меню
+          </button>
+        </div>
+      </section>
+    );
+  }
 
-      {/* ╨в╨╛╤Б╤В╤Л ╨┐╨╛╨▓╨╡╤А╤Е ╨▓╤Б╨╡╨│╨╛ */}
+  function renderBasket() {
+    if (!selectedPlayer) return null;
+    return (
+      <section className="auction-card">
+        <header className="section-head">
+          <div>
+            <span className="label">Корзина</span>
+            <h3>{playerDisplayName(selectedPlayer)}</h3>
+          </div>
+          <div className="badge ghost">
+            {moneyFormatter.format(selectedBasketTotal || 0)}$
+          </div>
+        </header>
+        {selectedBasket.length === 0 ? (
+          <p className="muted">Этот игрок пока ничего не выиграл.</p>
+        ) : (
+          <div className="history">
+            {selectedBasket.map((item) => (
+              <div key={`${item.index}-${item.name}`} className="history-row">
+                <strong>
+                  #{(item.index ?? 0) + 1} · {item.type === "lootbox" ? "🎁 Скрытый лот" : "📦 Лот"}
+                </strong>
+                <span className="muted">{item.name}</span>
+                <span className="muted">
+                  Ставка: {moneyFormatter.format(item.paid || 0)}$ · Ценность: {moneyFormatter.format(item.value || 0)}$
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  }
+  function renderHistory() {
+    if (!auctionState?.history?.length) return null;
+    return (
+      <section className="auction-card">
+        <header className="section-head">
+          <div>
+            <span className="label">История</span>
+            <h3>Все сыгранные слоты</h3>
+          </div>
+        </header>
+        <div className="history">
+          {auctionState.history.map((slot) => {
+            const winner = slot.winnerPlayerId != null ? playerNameById.get(slot.winnerPlayerId) : null;
+            let effectSuffix = "";
+            if (slot.effect) {
+              const delta = slot.effect.delta || 0;
+              if (slot.effect.kind === "money" && delta > 0) {
+                effectSuffix = ` +${moneyFormatter.format(delta)}$`;
+              } else if (slot.effect.kind === "penalty" && delta < 0) {
+                effectSuffix = ` ${moneyFormatter.format(delta)}$`;
+              }
+            }
+            return (
+              <div key={slot.index} className="history-row">
+                <strong>
+                  #{slot.index + 1} · {slot.type === "lootbox" ? "🎁 Скрытый лот" : "📦 Лот"}
+                </strong>
+                <span>{slot.name}</span>
+                {winner ? (
+                  <span className="muted">
+                    Победил {winner} за {moneyFormatter.format(slot.winBid || 0)}$
+                    {effectSuffix && <em>{effectSuffix}</em>}
+                  </span>
+                ) : (
+                  <span className="muted">Все пасовали</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    );
+  }
+  return (
+    <div className="auction-app">
+      <div className="auction-bg" aria-hidden="true" />
+      {!room ? (
+        renderLanding()
+      ) : (
+        <div className="auction-screen">
+          {renderHero()}
+          {renderPlayers()}
+          {renderLobby()}
+          {renderLive()}
+          {renderResults()}
+          {renderBasket()}
+          {renderHistory()}
+          {error && <div className="auction-error">{error}</div>}
+          <nav className="mobile-dock" aria-label="Быстрые действия">
+            <button
+              type="button"
+              className="dock-btn"
+              onClick={() => setPlayersPanelOpen((open) => !open)}
+            >
+              👥
+              <span>{playersPanelOpen ? "Скрыть" : "Игроки"}</span>
+            </button>
+            <button
+              type="button"
+              className="dock-btn primary"
+              onClick={primaryActionHandler}
+              disabled={primaryActionDisabled}
+            >
+              ⚡️
+              <span>{primaryActionLabel}</span>
+            </button>
+            <button type="button" className="dock-btn" onClick={handleExit}>
+              ↩️
+              <span>Меню</span>
+            </button>
+          </nav>
+        </div>
+      )}
       {toast && (
-        <div
-          className={`auction-toast ${toast.type || "info"}`}
-          role="status"
-          aria-live="polite"
-        >
+        <div className={`auction-toast ${toast.type || "info"}`} role="status" aria-live="polite">
           {toast.text}
         </div>
       )}
     </div>
   );
 }
-
