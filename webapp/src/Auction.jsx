@@ -1082,7 +1082,7 @@ export default function Auction({
         </div>
 
         <section className="auction-players-section dock">
-          <div className="auction-card-title">пїЅ?пїЅ?пїЅ?пїЅ?пїЅпїЅпїЅ</div>
+          <div className="auction-card-title">Players</div>
           <div className="auction-players-grid">
             {players.map((p) => {
               const isMe = p.id === selfInfo?.roomPlayerId;
@@ -1091,7 +1091,7 @@ export default function Auction({
               const name =
                 p.user?.first_name ||
                 p.user?.username ||
-                `пїЅ?пїЅ?пїЅ?пїЅ?пїЅпїЅ ${p.id}`;
+                `Player ${p.id}`;
               const avatarUrl = p.user?.photo_url || p.user?.avatar || null;
               const balance = auctionState?.balances?.[p.id] ?? null;
               return (
@@ -1110,10 +1110,10 @@ export default function Auction({
                   </span>
                   <span className="chip-name">
                     {name}
-                    {isHost && " пїЅ?:"}
+                    {isHost && " (host)"}
                   </span>
                   <span className="chip-meta">
-                    {balance != null ? `${moneyFormatter.format(balance)}$` : "пїЅ?""}
+                    {balance != null ? `${moneyFormatter.format(balance)}$` : "--"}
                   </span>
                 </button>
               );
