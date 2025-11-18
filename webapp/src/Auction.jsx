@@ -75,7 +75,8 @@ export default function Auction({
   const [cfgSlotsText, setCfgSlotsText] = useState("");
 
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
-  const [playersPanelOpen, setPlayersPanelOpen] = useState(true);
+  const [playersPanelOpen, setPlayersPanelOpen] = useState(false);
+  const [basketOpen, setBasketOpen] = useState(false);
 
   const deadlineAtRef = useRef(null);
   const [nowTick, setNowTick] = useState(0);
@@ -127,6 +128,19 @@ export default function Auction({
     });
     return map;
   }, [players, auctionState]);
+
+  const openBasketForPlayer = useCallback(
+    (playerId) => {
+      if (playerId == null) return;
+      setSelectedPlayerId(playerId);
+      setBasketOpen(true);
+    },
+    [setSelectedPlayerId]
+  );
+
+  const closeBasket = useCallback(() => {
+    setBasketOpen(false);
+  }, []);
 
   const winsByPlayerId = useMemo(() => {
     const map = new Map();
@@ -385,13 +399,46 @@ export default function Auction({
 
   useEffect(() => {
     if (!room) return;
-    setPlayersPanelOpen(true);
+    const preferExpanded =
+      typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
+    setPlayersPanelOpen(preferExpanded);
   }, [room?.code]);
 
   useEffect(() => {
     if (!sanitizedAutoCode || room || codeInput) return;
     setCodeInput(sanitizedAutoCode);
   }, [sanitizedAutoCode, room, codeInput]);
+
+  useEffect(() => {
+    if (!basketOpen) return;
+    if (selectedPlayerIdEffective == null) {
+      setBasketOpen(false);
+    }
+  }, [basketOpen, selectedPlayerIdEffective]);
+
+  useEffect(() => {
+    if (!basketOpen) return undefined;
+    if (typeof window === "undefined") return undefined;
+    const handler = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeBasket();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [basketOpen, closeBasket]);
+
+  useEffect(() => {
+    if (!basketOpen) return undefined;
+    if (typeof document === "undefined") return undefined;
+    const { style } = document.body;
+    const prev = style.overflow;
+    style.overflow = "hidden";
+    return () => {
+      style.overflow = prev;
+    };
+  }, [basketOpen]);
   async function createRoom() {
     if (!initData) {
       setError("Нет initData от Telegram");
@@ -1007,37 +1054,65 @@ export default function Auction({
     );
   };
 
-  const renderBasketCard = () => {
-    if (!selectedPlayer) return null;
+  const renderBasketSheet = () => {
+    if (!selectedPlayer || !basketOpen) return null;
+    const avatarUrl = selectedPlayer.user?.photo_url || selectedPlayer.user?.avatar || null;
+    const playerBalance = balances[selectedPlayer.id] ?? null;
+    const typeIcon = (slot) => (slot.type === "lootbox" ? "🎁" : "💎");
     return (
-      <section className="panel">
-        <div className="panel-head">
-          <div>
-            <span className="label">Корзина</span>
-            <h3>{playerDisplayName(selectedPlayer)}</h3>
+      <div className="basket-sheet" role="dialog" aria-modal="true">
+        <button
+          type="button"
+          className="basket-sheet__backdrop"
+          aria-label="Закрыть корзину"
+          onClick={closeBasket}
+        />
+        <div className="basket-card">
+          <div className="basket-head">
+            <div className="basket-title">
+              <span className="label">Корзина игрока</span>
+              <h3>{playerDisplayName(selectedPlayer)}</h3>
+            </div>
+            <button type="button" className="icon-btn ghost" onClick={closeBasket} aria-label="Закрыть">
+              ×
+            </button>
           </div>
-          <span className="pill ghost">
-            {moneyFormatter.format(selectedBasketTotal || 0)}$
-          </span>
+          <div className="basket-owner">
+            <div className="basket-avatar">
+              {avatarUrl ? <img src={avatarUrl} alt={playerDisplayName(selectedPlayer)} /> : playerDisplayName(selectedPlayer).slice(0, 1)}
+            </div>
+            <div className="basket-meta">
+              <span>Баланс</span>
+              <strong>{playerBalance != null ? `${moneyFormatter.format(playerBalance)}$` : "-"}</strong>
+            </div>
+            <div className="basket-meta">
+              <span>Итого покупок</span>
+              <strong>{moneyFormatter.format(selectedBasketTotal || 0)}$</strong>
+            </div>
+          </div>
+          {selectedBasket.length === 0 ? (
+            <p className="muted center">Ещё нет выигранных лотов.</p>
+          ) : (
+            <div className="basket-list">
+              {selectedBasket.map((item) => (
+                <div key={`${item.index}-${item.name}`} className="basket-row">
+                  <div className="basket-row-main">
+                    <span className="basket-icon">{typeIcon(item)}</span>
+                    <div>
+                      <strong>{item.name}</strong>
+                      <span className="muted tiny">#{(item.index ?? 0) + 1}</span>
+                    </div>
+                  </div>
+                  <div className="basket-row-value">
+                    <strong>{moneyFormatter.format(item.paid || 0)}$</strong>
+                    <span className="muted tiny">{moneyFormatter.format(item.value || 0)}$</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        {selectedBasket.length === 0 ? (
-          <p className="muted">Без побед.</p>
-        ) : (
-          <div className="history">
-            {selectedBasket.map((item) => (
-              <div key={`${item.index}-${item.name}`} className="history-row">
-                <strong>
-                  #{(item.index ?? 0) + 1} · {item.type === "lootbox" ? "🎁" : "📦"}
-                </strong>
-                <span>{item.name}</span>
-                <span className="muted">
-                  {moneyFormatter.format(item.paid || 0)}$ / {moneyFormatter.format(item.value || 0)}$
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      </div>
     );
   };
 
@@ -1071,63 +1146,62 @@ export default function Auction({
     );
   };
 
-  const renderPlayersPanel = () => (
-    <section className="panel players-panel">
-      <div className="panel-head">
-        <div>
-          <span className="label">Игроки</span>
-          <h3>{players.length}</h3>
+  const renderPlayersPanel = () => {
+    if (!players.length) return null;
+    return (
+      <section className="panel players-panel">
+        <div className="panel-head players-panel-head">
+          <div>
+            <span className="label">Игроки</span>
+            <h3>{players.length}</h3>
+          </div>
+          <button
+            type="button"
+            className="pill ghost"
+            onClick={() => setPlayersPanelOpen((open) => !open)}
+          >
+            {playersPanelOpen ? "Свернуть" : "Показать всех"}
+          </button>
         </div>
-        <button
-          type="button"
-          className="pill ghost"
-          onClick={() => setPlayersPanelOpen((open) => !open)}
-        >
-          {playersPanelOpen ? "Скрыть" : "Показать"}
-        </button>
-      </div>
-      <div className={`players-grid ${playersPanelOpen ? "open" : "collapsed"}`}>
-        {players.map((p) => {
-          const name = playerDisplayName(p);
-          const balance = balances[p.id] ?? null;
-          const wins = winsByPlayerId.get(p.id) || 0;
-          const avatarUrl = p.user?.photo_url || p.user?.avatar || null;
-          const isSelected = selectedPlayerIdEffective === p.id;
-          const isHostTile = p.user?.id === room?.ownerId;
-          return (
-            <button
-              key={p.id}
-              type="button"
-              className={
-                "player-tile" +
-                (p.ready ? " ready" : "") +
-                (isSelected ? " selected" : "")
-              }
-              onClick={() => setSelectedPlayerId(p.id)}
-            >
-              <div className="player-thumb">
-                {avatarUrl ? <img src={avatarUrl} alt={name} /> : name.slice(0, 1)}
-              </div>
-              <div className="player-name">
-                {name}
-                {isHostTile && " ★"}
-              </div>
-              <div className="player-balance">
-                {balance != null ? `${moneyFormatter.format(balance)}$` : "—"}
-              </div>
-              {wins > 0 && <div className="player-pill">🏆 {wins}</div>}
-            </button>
-          );
-        })}
-      </div>
-    </section>
-  );
-
+        <div className={`players-rail ${playersPanelOpen ? "expanded" : ""}`}>
+          {players.map((p) => {
+            const name = playerDisplayName(p);
+            const balance = balances[p.id] ?? null;
+            const wins = winsByPlayerId.get(p.id) || 0;
+            const avatarUrl = p.user?.photo_url || p.user?.avatar || null;
+            const isSelected = selectedPlayerIdEffective === p.id;
+            const isHostTile = p.user?.id === room?.ownerId;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className={
+                  "player-chip" +
+                  (p.ready ? " ready" : "") +
+                  (isSelected ? " selected" : "") +
+                  (isHostTile ? " host" : "")
+                }
+                onClick={() => openBasketForPlayer(p.id)}
+              >
+                <div className="player-thumb">
+                  {avatarUrl ? <img src={avatarUrl} alt={name} /> : name.slice(0, 1)}
+                </div>
+                <div className="player-chip-body">
+                  <strong>{name}</strong>
+                  <span>{balance != null ? `${moneyFormatter.format(balance)}$` : "-"}</span>
+                </div>
+                {wins > 0 && <div className="player-pill">🏆 {wins}</div>}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    );
+  };
   const stackPanels = [
     showLobby ? renderLobbyCard() : null,
     showGame ? renderLotCard() : null,
     showResult ? renderResultsCard() : null,
-    !showLobby && !showResult ? renderBasketCard() : null,
     !showLobby ? renderHistoryCard() : null,
     !showLanding && error ? <div className="auction-error">{error}</div> : null,
   ].filter(Boolean);
@@ -1152,7 +1226,7 @@ export default function Auction({
               onClick={() => setPlayersPanelOpen((open) => !open)}
             >
               <strong>Игроки</strong>
-              <span>{playersPanelOpen ? "Скрыть" : "Показать"}</span>
+              <span>{playersPanelOpen ? "Свернуть" : "Показать"}</span>
             </button>
             <button
               type="button"
@@ -1160,12 +1234,12 @@ export default function Auction({
               onClick={primaryActionHandler}
               disabled={primaryActionDisabled}
             >
-              <strong>Действие</strong>
+              <strong>Торги</strong>
               <span>{primaryActionLabel}</span>
             </button>
             <button type="button" className="dock-btn" onClick={handleExit}>
               <strong>Выход</strong>
-              <span>Меню</span>
+              <span>В меню</span>
             </button>
           </nav>
         </>
@@ -1175,9 +1249,32 @@ export default function Auction({
           {toast.text}
         </div>
       )}
+      {renderBasketSheet()}
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
