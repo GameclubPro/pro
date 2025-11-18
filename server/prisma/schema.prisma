@@ -1,0 +1,185 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  // Для MySQL используется режим внешних ключей по умолчанию.
+  // При желании можно явно задать:
+  // relationMode = "foreignKeys"
+}
+
+enum Role {
+  DON
+  MAFIA
+  DOCTOR
+  SHERIFF
+  BODYGUARD
+  PROSTITUTE
+  JOURNALIST
+  SNIPER
+  CIVIL
+}
+
+enum Phase {
+  LOBBY
+  NIGHT
+  DAY
+  VOTE
+  ENDED
+}
+
+enum VoteType {
+  LYNCH
+  MAFIA
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  tgUserId  BigInt?  @unique
+  nativeId  String?  @unique @db.VarChar(191) // новый идентификатор для RN (deviceId/uid/OAuth sub)
+  firstName String?
+  username  String?  @db.VarChar(191)
+  photoUrl  String?  @db.Text
+  createdAt DateTime @default(now())
+
+  // Relations
+  Vote       Vote[]       @relation("VoterVotes")
+  RoomPlayer RoomPlayer[]
+  ownedRooms Room[]       @relation("OwnedRooms")
+
+  // Indexes
+  @@index([tgUserId])
+}
+
+model Room {
+  id         Int      @id @default(autoincrement())
+  code       String   @unique @db.VarChar(32)
+  status     Phase    @default(LOBBY)
+  ownerId    Int
+  dayNumber  Int      @default(0)
+  phaseEndsAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  owner   User   @relation("OwnedRooms", fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  players RoomPlayer[]
+  matches Match[]
+  votes   Vote[]
+
+  // Indexes
+  @@index([ownerId])
+  @@index([status])
+  @@index([status, phaseEndsAt])
+}
+
+model RoomPlayer {
+  id       Int      @id @default(autoincrement())
+  roomId   Int
+  userId   Int
+  role     Role?
+  alive    Boolean  @default(true)
+  ready    Boolean  @default(false)
+  joinedAt DateTime @default(now())
+
+  // Relations
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  actedNightActions    NightAction[] @relation("ActorNightAction")
+  targetedNightActions NightAction[] @relation("TargetNightAction")
+
+  receivedVotes Vote[] @relation("VoteTarget")
+
+  // Constraints & indexes
+  @@unique([roomId, userId]) // один и тот же пользователь не может повторно присоединиться в ту же комнату
+  @@index([roomId])
+  @@index([userId])
+  @@index([roomId, ready])
+  @@index([roomId, alive])
+  @@index([roomId, role, alive]) // полезно для выборок ролей среди живых
+}
+
+model Match {
+  id        Int       @id @default(autoincrement())
+  roomId    Int
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  winner    String?
+
+  // Relations
+  room         Room          @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  events       Event[]
+  nightActions NightAction[]
+
+  // Indexes
+  @@index([roomId])
+  @@index([startedAt])
+}
+
+model Event {
+  id        Int      @id @default(autoincrement())
+  matchId   Int
+  phase     Phase
+  payload   Json
+  createdAt DateTime @default(now())
+
+  // Relations
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  // Indexes
+  @@index([matchId])
+  @@index([matchId, phase])
+  @@index([createdAt])
+}
+
+model NightAction {
+  id             Int      @id @default(autoincrement())
+  matchId        Int
+  nightNumber    Int
+  actorPlayerId  Int
+  role           Role
+  targetPlayerId Int?
+  createdAt      DateTime @default(now())
+
+  // Relations
+  match  Match      @relation(fields: [matchId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  actor  RoomPlayer @relation("ActorNightAction", fields: [actorPlayerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  // Если цель (игрок) удалена (например, вышла/очищение комнаты) — оставляем запись, но обнуляем ссылку
+  target RoomPlayer? @relation("TargetNightAction", fields: [targetPlayerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  // Constraints & indexes
+  @@unique([matchId, nightNumber, actorPlayerId]) // один экшен на игрока за ночь в рамках матча
+  @@index([matchId, nightNumber])
+  @@index([actorPlayerId])
+  @@index([targetPlayerId])
+}
+
+model Vote {
+  id             Int      @id @default(autoincrement())
+  roomId         Int
+  voterId        Int
+  targetPlayerId Int?
+  type           VoteType @default(LYNCH)
+  dayNumber      Int      @default(0)
+  round          Int      @default(1)
+  createdAt      DateTime @default(now())
+
+  // Relations
+  room  Room @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  voter User @relation("VoterVotes", fields: [voterId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  // Если таргет исчез — сохраняем голос, обнуляем таргет
+  target RoomPlayer? @relation("VoteTarget", fields: [targetPlayerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  // Constraints & indexes
+  @@unique([roomId, voterId, type, dayNumber, round]) // один голос данного типа за раунд/день/комнату от одного игрока
+  @@index([roomId, type, dayNumber, round])
+  @@index([roomId, dayNumber, round])
+  @@index([voterId])
+  @@index([createdAt])
+}
