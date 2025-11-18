@@ -171,6 +171,22 @@ export default function Auction({
     () => (auctionState?.history || []).slice(-6).reverse(),
     [auctionState?.history]
   );
+
+  const readyCount = useMemo(() => {
+    if (!room) return 0;
+    return players.filter(
+      (p) => p.ready && p.user?.id !== room.ownerId
+    ).length;
+  }, [players, room]);
+
+  const nonHostPlayers = useMemo(() => {
+    if (!room) return Math.max(players.length - 1, 0);
+    return Math.max(players.length - 1, 0);
+  }, [players.length, room]);
+
+  const readyPercent = nonHostPlayers
+    ? Math.round((readyCount / Math.max(nonHostPlayers, 1)) * 100)
+    : 0;
   useEffect(() => {
     if (!currentSlot) {
       setMyBid("");
@@ -736,6 +752,7 @@ export default function Auction({
   );
 
   const renderLotCard = () => {
+    if (!showGame) return null;
     const icon = currentSlot?.type === "lootbox" ? "🎁" : "📦";
     return (
       <section className="panel lot-card">
@@ -769,73 +786,64 @@ export default function Auction({
                 </div>
               )}
             </div>
-            {showGame ? (
-              <>
-                <div className="bid-form">
-                  <input
-                    className="text-input"
-                    inputMode="numeric"
-                    placeholder="Ставка"
-                    value={myBid}
-                    onChange={(e) => setMyBid(e.target.value.replace(/[^\d]/g, ""))}
-                  />
-                  <div className="quick-bids">
-                    {BID_PRESETS.map((step) => (
-                      <button
-                        key={step}
-                        type="button"
-                        className="pill ghost"
-                        onClick={() => setBidRelative(step)}
-                        disabled={myBalance == null || myBalance <= 0}
-                      >
-                        +{moneyFormatter.format(step)}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      className="pill ghost"
-                      onClick={() => sendBid(myBalance || 0)}
-                      disabled={myBalance == null || myBalance <= 0}
-                    >
-                      All-in
-                    </button>
-                    <button type="button" className="pill ghost" onClick={sendPass}>
-                      Пас
-                    </button>
-                  </div>
+            <div className="bid-form">
+              <input
+                className="text-input"
+                inputMode="numeric"
+                placeholder="Ставка"
+                value={myBid}
+                onChange={(e) => setMyBid(e.target.value.replace(/[^\d]/g, ""))}
+              />
+              <div className="quick-bids">
+                {BID_PRESETS.map((step) => (
                   <button
+                    key={step}
                     type="button"
-                    className="accent-btn"
-                    onClick={() => sendBid()}
-                    disabled={busyBid || myBalance == null}
+                    className="pill ghost"
+                    onClick={() => setBidRelative(step)}
+                    disabled={myBalance == null || myBalance <= 0}
                   >
-                    {busyBid ? "Отправляем…" : "Сделать ставку"}
+                    +{moneyFormatter.format(step)}
                   </button>
-                </div>
-                <div className="muted tiny">
-                  Баланс: {myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "—"} · Ставка: {
-                    typeof myRoundBid === "number"
-                      ? `${moneyFormatter.format(myRoundBid)}$`
-                      : "—"
-                  }
-                </div>
-                {isOwner && (
-                  <div className="owner-row">
-                    <button
-                      type="button"
-                      className="pill ghost"
-                      onClick={auctionState?.paused ? resumeAuction : pauseAuction}
-                    >
-                      {auctionState?.paused ? "▶" : "⏸"}
-                    </button>
-                    <button type="button" className="pill ghost" onClick={forceNext}>
-                      ⏭
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <p className="muted">Хост может запустить аукцион, когда все готовы.</p>
+                ))}
+                <button
+                  type="button"
+                  className="pill ghost"
+                  onClick={() => sendBid(myBalance || 0)}
+                  disabled={myBalance == null || myBalance <= 0}
+                >
+                  All-in
+                </button>
+                <button type="button" className="pill ghost" onClick={sendPass}>
+                  Пас
+                </button>
+              </div>
+              <button
+                type="button"
+                className="accent-btn"
+                onClick={() => sendBid()}
+                disabled={busyBid || myBalance == null}
+              >
+                {busyBid ? "Отправляем…" : "Сделать ставку"}
+              </button>
+            </div>
+            <div className="muted tiny">
+              Баланс: {myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "—"} · Ставка:{" "}
+              {typeof myRoundBid === "number" ? `${moneyFormatter.format(myRoundBid)}$` : "—"}
+            </div>
+            {isOwner && (
+              <div className="owner-row">
+                <button
+                  type="button"
+                  className="pill ghost"
+                  onClick={auctionState?.paused ? resumeAuction : pauseAuction}
+                >
+                  {auctionState?.paused ? "▶" : "⏸"}
+                </button>
+                <button type="button" className="pill ghost" onClick={forceNext}>
+                  ⏭
+                </button>
+              </div>
             )}
           </>
         ) : (
@@ -847,81 +855,107 @@ export default function Auction({
   const renderLobbyCard = () => {
     if (!showLobby) return null;
     return (
-      <section className="panel compact">
-        <div className="panel-head">
-          <div>
-            <span className="label">Лобби</span>
-            <h3>Готовность</h3>
+      <section className="panel lobby-card">
+        <div className="lobby-status">
+          <div className="ready-meter">
+            <div className="ready-ring">
+              <svg viewBox="0 0 120 120">
+                <circle className="track" cx="60" cy="60" r="50" />
+                <circle
+                  className="progress"
+                  cx="60"
+                  cy="60"
+                  r="50"
+                  strokeDasharray={314}
+                  strokeDashoffset={314 - (314 * readyPercent) / 100}
+                />
+              </svg>
+              <div className="ready-value">
+                <strong>{readyCount}</strong>
+                <span>готовы</span>
+              </div>
+            </div>
+            <span className="muted small">
+              {nonHostPlayers > 0
+                ? `из ${nonHostPlayers}`
+                : `${players.length} игрок${players.length === 1 ? "" : "ов"}`}
+            </span>
+          </div>
+          <div className="lobby-actions">
+            {!isOwner ? (
+              <button
+                type="button"
+                className="accent-btn"
+                onClick={toggleReady}
+                disabled={!currentPlayer}
+              >
+                {currentPlayer?.ready ? "Я не готов" : "Я готов"}
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="accent-btn"
+                  onClick={handleStartAuction}
+                  disabled={!everyoneReadyExceptOwner}
+                >
+                  {everyoneReadyExceptOwner ? "Стартуем" : "Ждём игроков"}
+                </button>
+                <button
+                  type="button"
+                  className="pill ghost"
+                  onClick={() => setCfgOpen((v) => !v)}
+                >
+                  Настройки
+                </button>
+              </>
+            )}
           </div>
         </div>
-        {!isOwner ? (
-          <button
-            type="button"
-            className="accent-btn"
-            onClick={toggleReady}
-            disabled={!currentPlayer}
-          >
-            {currentPlayer?.ready ? "Я не готов" : "Я готов"}
-          </button>
-        ) : (
-          <>
-            <button
-              type="button"
-              className="accent-btn"
-              onClick={handleStartAuction}
-              disabled={!everyoneReadyExceptOwner}
-            >
-              {everyoneReadyExceptOwner ? "Запустить" : "Ждём игроков"}
+        {isOwner && cfgOpen && (
+          <div className="host-config">
+            <label className="field">
+              <span>Время, сек</span>
+              <input
+                className="text-input"
+                inputMode="numeric"
+                value={cfgRules.timePerSlotSec}
+                onChange={(e) =>
+                  setCfgRules((prev) => ({
+                    ...prev,
+                    timePerSlotSec: e.target.value.replace(/[^\d]/g, ""),
+                  }))
+                }
+              />
+            </label>
+            <label className="field">
+              <span>Слотов</span>
+              <input
+                className="text-input"
+                inputMode="numeric"
+                value={cfgRules.maxSlots}
+                onChange={(e) =>
+                  setCfgRules((prev) => ({
+                    ...prev,
+                    maxSlots: e.target.value.replace(/[^\d]/g, ""),
+                  }))
+                }
+              />
+            </label>
+            <label className="field">
+              <span>Слоты списком</span>
+              <textarea
+                className="text-input"
+                rows={3}
+                placeholder="Игрок | 90000 | lot"
+                value={cfgSlotsText}
+                onChange={(e) => setCfgSlotsText(e.target.value)}
+              />
+            </label>
+            <button type="button" className="accent-btn" onClick={configureAuction}>
+              Применить
             </button>
-            <button type="button" className="pill ghost" onClick={() => setCfgOpen((v) => !v)}>
-              Настройки
-            </button>
-            {cfgOpen && (
-              <div className="host-config">
-                <label className="field">
-                  <span>Время, сек</span>
-                  <input
-                    className="text-input"
-                    inputMode="numeric"
-                    value={cfgRules.timePerSlotSec}
-                    onChange={(e) =>
-                      setCfgRules((prev) => ({
-                        ...prev,
-                        timePerSlotSec: e.target.value.replace(/[^\d]/g, ""),
-                      }))
-                    }
-                  />
-                </label>
-                <label className="field">
-                  <span>Слотов</span>
-                  <input
-                    className="text-input"
-                    inputMode="numeric"
-                    value={cfgRules.maxSlots}
-                    onChange={(e) =>
-                      setCfgRules((prev) => ({
-                        ...prev,
-                        maxSlots: e.target.value.replace(/[^\d]/g, ""),
-                      }))
-                    }
-                  />
-                </label>
-                <label className="field">
-                  <span>Слоты списком</span>
-                  <textarea
-                    className="text-input"
-                    rows={3}
-                    placeholder="Игрок | 90000 | lot"
-                    value={cfgSlotsText}
-                    onChange={(e) => setCfgSlotsText(e.target.value)}
-                  />
-                </label>
-                <button type="button" className="accent-btn" onClick={configureAuction}>
-                  Применить
-                </button>
-              </div>
-            )}
-          </>
+          </div>
         )}
       </section>
     );
@@ -1088,6 +1122,15 @@ export default function Auction({
       </div>
     </section>
   );
+
+  const stackPanels = [
+    showLobby ? renderLobbyCard() : null,
+    showGame ? renderLotCard() : null,
+    showResult ? renderResultsCard() : null,
+    !showLobby && !showResult ? renderBasketCard() : null,
+    !showLobby ? renderHistoryCard() : null,
+    !showLanding && error ? <div className="auction-error">{error}</div> : null,
+  ].filter(Boolean);
   return (
     <div className="auction-app">
       <div className="ambient" aria-hidden="true" />
@@ -1098,23 +1141,18 @@ export default function Auction({
           {renderTopBar()}
           <div className="app-grid">
             <div className="stack">
-              {renderLotCard()}
-              {renderLobbyCard()}
-              {renderResultsCard()}
-              {renderBasketCard()}
-              {renderHistoryCard()}
-              {!showLanding && error && <div className="auction-error">{error}</div>}
+              {stackPanels}
             </div>
             {renderPlayersPanel()}
           </div>
-          <nav className="auction-dock" aria-label="Действия">
+          <nav className="auction-dock" aria-label="Actions">
             <button
               type="button"
               className="dock-btn"
               onClick={() => setPlayersPanelOpen((open) => !open)}
             >
-              👥
-              <span>{playersPanelOpen ? "Скрыть" : "Игроки"}</span>
+              <strong>Игроки</strong>
+              <span>{playersPanelOpen ? "Скрыть" : "Показать"}</span>
             </button>
             <button
               type="button"
@@ -1122,11 +1160,11 @@ export default function Auction({
               onClick={primaryActionHandler}
               disabled={primaryActionDisabled}
             >
-              ⚡️
+              <strong>Действие</strong>
               <span>{primaryActionLabel}</span>
             </button>
             <button type="button" className="dock-btn" onClick={handleExit}>
-              ↩️
+              <strong>Выход</strong>
               <span>Меню</span>
             </button>
           </nav>
@@ -1140,3 +1178,7 @@ export default function Auction({
     </div>
   );
 }
+
+
+
+

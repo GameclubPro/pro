@@ -176,6 +176,76 @@ textarea.text-input {
   padding: 18px;
 }
 
+.lobby-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lobby-status {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ready-meter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.ready-ring {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.ready-ring svg {
+  width: 120px;
+  height: 120px;
+  transform: rotate(-90deg);
+}
+
+.ready-ring circle {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.ready-ring .track {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+.ready-ring .progress {
+  stroke: var(--accent);
+  transition: stroke-dashoffset 0.3s ease;
+}
+
+.ready-value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.ready-value strong {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.lobby-actions {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .panel-head {
   display: flex;
   justify-content: space-between;
