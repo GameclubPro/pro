@@ -558,13 +558,6 @@ export default function Auction({
   }, [players, selectedPlayerId, selfInfo?.roomPlayerId]);
 
   useEffect(() => {
-    if (!room) return;
-    const preferExpanded =
-      typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches;
-    setPlayersPanelOpen(preferExpanded);
-  }, [room?.code]);
-
-  useEffect(() => {
     if (!sanitizedAutoCode || room || codeInput) return;
     setCodeInput(sanitizedAutoCode);
   }, [sanitizedAutoCode, room, codeInput]);
