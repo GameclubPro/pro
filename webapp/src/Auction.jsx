@@ -1,4 +1,5 @@
 ﻿// src/Auction.jsx
+import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import io from "socket.io-client";
 import "./Auction.css";
@@ -136,12 +137,14 @@ export default function Auction({
   const slotIndex =
     currentSlot && typeof currentSlot.index === "number" ? currentSlot.index + 1 : null;
   const slotMaxRaw =
+    auctionState?.maxSlots ??
     auctionState?.rules?.maxSlots ??
     auctionState?.totalSlots ??
     (Array.isArray(auctionState?.slots) ? auctionState.slots.length : null);
   const slotMax = slotMaxRaw != null && Number.isFinite(Number(slotMaxRaw))
     ? Number(slotMaxRaw)
     : null;
+  const initialBank = auctionState?.rules?.initialBalance || INITIAL_BANK;
 
   const showLanding = !room;
   const showLobby = phase === "lobby";
@@ -823,7 +826,7 @@ export default function Auction({
     setMyBid((prev) => {
       const numericPrev = Number(String(prev).replace(/\s/g, "")) || 0;
       const baseline = numericPrev > 0 ? numericPrev : baseBid > 0 ? baseBid : 0;
-      const max = myBalance ?? INITIAL_BANK;
+      const max = myBalance ?? initialBank;
       const next = delta === 0 ? baseline : baseline + delta;
       return String(clamp(next, 0, max));
     });
@@ -871,7 +874,8 @@ export default function Auction({
             not_participant: "Вы не участвуете",
             bad_amount: "Неверная сумма",
             not_enough_money: "Недостаточно денег",
-            paused: "Аукцион на паузе",
+                        paused: "Paused",
+            bid_below_base: "Bid must be >= base price",
           };
           pushError(map[resp?.error] || "Не удалось принять ставку");
         } else {
@@ -947,7 +951,12 @@ export default function Auction({
     : toggleReady;
   const renderLanding = () => (
     <div className="landing-screen">
-      <div className="landing-card">
+      <motion.div
+        className="landing-card"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+      >
         <span className="badge">AUCTION</span>
         <h1>Команды через ставки</h1>
         <p className="muted">Создай комнату и отправь код друзьям.</p>
@@ -984,7 +993,7 @@ export default function Auction({
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 
@@ -1020,6 +1029,13 @@ export default function Auction({
             </div>
             {auctionState?.paused && <span className="pill ghost">Пауза</span>}
           </div>
+        </div>
+        <div className="topbar-status">
+          <span className={`status-chip ${connecting ? "warn" : "ok"}`}>
+            <span className="dot" />
+            {connecting ? "Connecting…" : "Online"}
+          </span>
+          {auctionState?.paused && <span className="pill ghost tiny">Pause</span>}
         </div>
         <div className="topbar-balance">
           <span>баланс</span>
@@ -1188,7 +1204,9 @@ export default function Auction({
         )}
       </section>
     );
-  };  const renderLobbyCard = () => {
+  };
+
+  const renderLobbyCard = () => {
     if (!showLobby) return null;
     return (
       <section className="panel stage-card lobby-card">
@@ -1271,7 +1289,9 @@ export default function Auction({
         </div>
       </section>
     );
-  };  const renderResultsCard = () => {
+  };
+
+  const renderResultsCard = () => {
     if (!showResult) return null;
     return (
       <section className="panel">
@@ -1740,14 +1760,27 @@ export default function Auction({
     if (!toastStack.length) return null;
     return (
       <div className="toast-stack" role="status" aria-live="polite">
-        {toastStack.map((item) => (
-          <div key={item.id} className={`auction-toast ${item.type || "info"}`}>
-            <span>{item.text}</span>
-            <button type="button" onClick={() => dismissToast(item.id)} aria-label="Скрыть уведомление">
-              ✕
-            </button>
-          </div>
-        ))}
+        <AnimatePresence initial={false}>
+          {toastStack.map((item) => (
+            <motion.div
+              key={item.id}
+              className={`auction-toast ${item.type || "info"}`}
+              initial={{ opacity: 0, y: -12, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -12, scale: 0.96 }}
+              transition={{ duration: 0.18 }}
+            >
+              <span>{item.text}</span>
+              <button
+                type="button"
+                onClick={() => dismissToast(item.id)}
+                aria-label="Закрыть уведомление"
+              >
+                ×
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     );
   };
@@ -1855,3 +1888,15 @@ export default function Auction({
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+

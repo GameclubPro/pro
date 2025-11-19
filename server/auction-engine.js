@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { randomInt } = require('crypto');
 
@@ -186,6 +186,10 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       state.slotDeadlineAtMs = null;
       return;
     }
+    if (!state.activePlayerIds || state.activePlayerIds.length === 0) {
+      state.slotDeadlineAtMs = null;
+      return;
+    }
     const sec = Number(state.rules?.timePerSlotSec || 0);
     if (!Number.isFinite(sec) || sec <= 0) {
       state.slotDeadlineAtMs = null;
@@ -228,6 +232,14 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
 
   function ensureConsistentPhase(state) {
     if (state.phase !== 'in_progress') return;
+
+    if (!state.activePlayerIds.length) {
+      state.phase = 'finished';
+      state.winners = [];
+      state.slotDeadlineAtMs = null;
+      state.pauseLeftMs = null;
+      return;
+    }
 
     const noMoneyLeft =
       state.activePlayerIds.length > 0 &&
@@ -299,6 +311,8 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       paused: !!state.paused,
       rules: {
         timePerSlotSec: state.rules?.timePerSlotSec || DEFAULT_RULES.timePerSlotSec,
+        maxSlots: state.rules?.maxSlots || state.slots.length || DEFAULT_RULES.maxSlots,
+        initialBalance: state.rules?.initialBalance || DEFAULT_RULES.initialBalance,
       },
       players,
       balances: { ...state.balances },
@@ -323,6 +337,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         : state.slotDeadlineAtMs != null
           ? Math.max(0, state.slotDeadlineAtMs - Date.now())
           : null,
+      bidFeed: Array.isArray(state.bidFeed) ? state.bidFeed.slice(-8) : [],
     };
   }
 
@@ -431,6 +446,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     state.currentIndex += 1;
     state.currentBids = {};
     state.slotDeadlineAtMs = null;
+    state.bidFeed = [];
 
     const everyoneBroke = state.activePlayerIds.every(
       (pid) => (state.balances[pid] || 0) <= 0
@@ -512,6 +528,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         paused: false,
         pauseLeftMs: null,
         slotDeadlineAtMs: null,
+        bidFeed: [],
       };
 
       states.set(room.id, state);
@@ -569,8 +586,18 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         return { ok: false, error: 'not_enough_money' };
       }
 
+      const slot = state.slots[state.currentIndex];
+      if (slot && slot.basePrice > 0 && clean > 0 && clean < slot.basePrice) {
+        return { ok: false, error: 'bid_below_base' };
+      }
+
       // сохраняем ставку
       state.currentBids[pid] = clean;
+      if (!Array.isArray(state.bidFeed)) state.bidFeed = [];
+      state.bidFeed.push({ id: `${pid}-${Date.now()}`, playerId: pid, amount: clean });
+      if (state.bidFeed.length > 16) {
+        state.bidFeed = state.bidFeed.slice(-16);
+      }
 
       const publicState =
         resolveSlotIfReady(state, room) ||
@@ -628,6 +655,17 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     if (state.basketTotals) {
       delete state.basketTotals[pid];
     }
+    if (!state.activePlayerIds.length) {
+      state.phase = 'finished';
+      state.winners = [];
+      state.slotDeadlineAtMs = null;
+      clearTimer(roomId);
+    } else {
+      ensureConsistentPhase(state);
+      if (state.phase !== 'in_progress') {
+        clearTimer(roomId);
+      }
+    }
   }
 
   async function configure(code, userId, payload = {}) {
@@ -648,6 +686,10 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     if (r.maxSlots != null) {
       const v = Math.max(1, Math.min(60, Number(r.maxSlots) || 30));
       safeRules.maxSlots = v;
+    }
+    if (r.initialBalance != null) {
+      const v = Math.max(1_000, Math.min(10_000_000, Number(r.initialBalance) || DEFAULT_RULES.initialBalance));
+      safeRules.initialBalance = v;
     }
 
     const safeSlots = Array.isArray(payload.slots)
@@ -760,3 +802,6 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
 }
 
 module.exports = { createAuctionEngine };
+
+
+

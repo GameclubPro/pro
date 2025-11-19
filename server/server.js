@@ -1,4 +1,4 @@
-// Node.js 18+ — Express + Telegraf + Prisma (MySQL) + Socket.IO + Redis (optional)
+﻿// Node.js 18+ — Express + Telegraf + Prisma (MySQL) + Socket.IO + Redis (optional)
 // Публичные REST-роуты и имена socket-событий НЕ МЕНЯЛ — совместимость сохранена.
 
 'use strict';
@@ -1866,7 +1866,8 @@ io.on('connection', (socket) => {
           not_participant: 'Вы не участвуете в аукционе',
           bad_amount: 'Неверная сумма ставки',
           not_enough_money: 'Недостаточно денег',
-          paused: 'Аукцион на паузе',
+          
+          bid_below_base: '�?�?��? ������� ���',
         };
         const text = map[res.error] || 'Не удалось принять ставку';
         socket.emit('toast', { type: 'error', text });
@@ -2125,3 +2126,4 @@ process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 process.on('unhandledRejection', (r) => console.error('unhandledRejection:', r));
 process.on('uncaughtException', (e) => { console.error('uncaughtException:', e); process.exitCode = 1; });
+
