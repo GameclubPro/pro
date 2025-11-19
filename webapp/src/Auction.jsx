@@ -21,6 +21,14 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function getPointerY(event) {
+  if (!event) return 0;
+  if (typeof event.clientY === "number") return event.clientY;
+  if (event.touches?.length) return event.touches[0].clientY;
+  if (event.changedTouches?.length) return event.changedTouches[0].clientY;
+  return 0;
+}
+
 function parseCustomSlots(input) {
   return String(input || "")
     .split(/\r?\n/g)
@@ -65,22 +73,29 @@ export default function Auction({
   const [joining, setJoining] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [error, setError] = useState("");
-  const [toast, setToast] = useState(null);
+  const [toastStack, setToastStack] = useState([]);
+  const [criticalAlert, setCriticalAlert] = useState(null);
 
   const [busyBid, setBusyBid] = useState(false);
   const [myBid, setMyBid] = useState("");
 
   const [cfgOpen, setCfgOpen] = useState(false);
+  const [cfgStep, setCfgStep] = useState(0);
   const [cfgRules, setCfgRules] = useState({ timePerSlotSec: 9, maxSlots: 30 });
   const [cfgSlotsText, setCfgSlotsText] = useState("");
 
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
-  const [playersPanelOpen, setPlayersPanelOpen] = useState(false);
+  const [playersModalOpen, setPlayersModalOpen] = useState(false);
+  const [playersFilterReady, setPlayersFilterReady] = useState(false);
+  const [playersSort, setPlayersSort] = useState("default");
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [basketOpen, setBasketOpen] = useState(false);
+  const [sheetDrag, setSheetDrag] = useState(0);
 
   const deadlineAtRef = useRef(null);
   const [nowTick, setNowTick] = useState(0);
-  const lastToastRef = useRef(null);
+  const toastTimersRef = useRef(new Map());
+  const sheetDragStartRef = useRef(null);
   const progressSentRef = useRef(false);
   const lastSubscribedCodeRef = useRef(null);
   const lastSubscriptionSocketIdRef = useRef(null);
@@ -133,6 +148,9 @@ export default function Auction({
     (playerId) => {
       if (playerId == null) return;
       setSelectedPlayerId(playerId);
+      setPlayersModalOpen(false);
+      setSheetDrag(0);
+      sheetDragStartRef.current = null;
       setBasketOpen(true);
     },
     [setSelectedPlayerId]
@@ -140,7 +158,38 @@ export default function Auction({
 
   const closeBasket = useCallback(() => {
     setBasketOpen(false);
+    setSheetDrag(0);
+    sheetDragStartRef.current = null;
   }, []);
+
+  const closeConfigWizard = useCallback(() => {
+    setCfgOpen(false);
+    setCfgStep(0);
+  }, []);
+
+  const handleSheetDragStart = useCallback((event) => {
+    sheetDragStartRef.current = getPointerY(event);
+  }, []);
+
+  const handleSheetDragMove = useCallback(
+    (event) => {
+      if (sheetDragStartRef.current == null) return;
+      const delta = Math.max(0, getPointerY(event) - sheetDragStartRef.current);
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+      setSheetDrag(delta);
+    },
+    []
+  );
+
+  const handleSheetDragEnd = useCallback(() => {
+    if (sheetDrag > 90) {
+      closeBasket();
+    }
+    sheetDragStartRef.current = null;
+    setSheetDrag(0);
+  }, [closeBasket, sheetDrag]);
 
   const winsByPlayerId = useMemo(() => {
     const map = new Map();
@@ -181,10 +230,119 @@ export default function Auction({
         0
       : 0;
 
+  const dismissToast = useCallback((id) => {
+    if (!id) return;
+    setToastStack((prev) => prev.filter((toast) => toast.id !== id));
+    const timer = toastTimersRef.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      toastTimersRef.current.delete(id);
+    }
+  }, []);
+
+  const pushToast = useCallback(
+    (payload = {}) => {
+      if (!payload?.text) return null;
+      const id = payload.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const duration = payload.duration ?? 3200;
+      const entry = { ...payload, id };
+      setToastStack((prev) => [...prev.filter((toast) => toast.id !== id), entry].slice(-4));
+      if (duration > 0) {
+        const timer = setTimeout(() => dismissToast(id), duration);
+        toastTimersRef.current.set(id, timer);
+      }
+      return id;
+    },
+    [dismissToast]
+  );
+
+  const pushError = useCallback(
+    (message, options = {}) => {
+      setError(message || "");
+      if (!message) return;
+      pushToast({ type: "error", text: message, duration: options.duration ?? 3800 });
+      if (options.critical) {
+        setCriticalAlert({
+          id: Date.now(),
+          text: message,
+          actionLabel: options.actionLabel || "OK",
+          onAction: options.onAction || null,
+        });
+      }
+    },
+    [pushToast]
+  );
+
+  const clearError = useCallback(() => setError(""), []);
+  const closeCriticalAlert = useCallback(() => setCriticalAlert(null), []);
+
   const compactHistory = useMemo(
     () => (auctionState?.history || []).slice(-6).reverse(),
     [auctionState?.history]
   );
+  const fullHistory = useMemo(
+    () => (auctionState?.history || []).slice().reverse(),
+    [auctionState?.history]
+  );
+
+  const liveBidFeed = useMemo(() => {
+    const feed = Array.isArray(auctionState?.bidFeed) ? auctionState.bidFeed : [];
+    if (feed.length) {
+      return feed
+        .slice(-3)
+        .reverse()
+        .map((entry, index) => {
+          const playerId = entry.playerId ?? entry.id ?? index;
+          return {
+            id: entry.id || `${playerId}-${index}`,
+            playerId,
+            amount: Number(entry.amount) || 0,
+            label:
+              entry.label ||
+              playerNameById.get(playerId) ||
+              (playerId != null ? `Игрок ${playerId}` : "Ставка"),
+          };
+        });
+    }
+    const current = auctionState?.currentBids || {};
+    return Object.entries(current)
+      .map(([id, amount]) => ({
+        id,
+        playerId: Number(id),
+        amount: Number(amount) || 0,
+        label: playerNameById.get(Number(id)) || `Игрок ${id}`,
+      }))
+      .filter((entry) => entry.amount > 0)
+      .sort((a, b) => b.amount - a.amount)
+      .slice(0, 3);
+  }, [auctionState?.bidFeed, auctionState?.currentBids, playerNameById]);
+
+  const modalPlayers = useMemo(() => {
+    const base = players.slice();
+    const filtered = playersFilterReady ? base.filter((p) => p.ready) : base;
+    const next = filtered.slice();
+    next.sort((a, b) => {
+      if (playersSort === "balance") {
+        return (balances[b.id] ?? 0) - (balances[a.id] ?? 0);
+      }
+      if (playersSort === "wins") {
+        return (winsByPlayerId.get(b.id) || 0) - (winsByPlayerId.get(a.id) || 0);
+      }
+      const aId = typeof a.id === "number" ? a.id : Number(a.id) || 0;
+      const bId = typeof b.id === "number" ? b.id : Number(b.id) || 0;
+      return aId - bId;
+    });
+    return next;
+  }, [players, playersFilterReady, playersSort, balances, winsByPlayerId]);
+
+  const headerProgress = useMemo(() => {
+    if (showLobby) return readyPercent;
+    if (showGame) return progressPct ?? 0;
+    if (showResult) return 100;
+    return 0;
+  }, [showLobby, readyPercent, showGame, progressPct, showResult]);
+
+  const cfgPreviewSlots = useMemo(() => parseCustomSlots(cfgSlotsText), [cfgSlotsText]);
 
   const readyCount = useMemo(() => {
     if (!room) return 0;
@@ -288,23 +446,27 @@ export default function Auction({
 
     instance.on("connect_error", (err) => {
       setConnecting(false);
-      setError(`Не удалось подключиться: ${err.message}`);
+      pushError(`Не удалось подключиться: ${err.message}`, {
+        critical: true,
+        actionLabel: "Выйти",
+        onAction: handleExit,
+      });
     });
 
     instance.on("toast", (payload) => {
       if (!payload?.text) return;
-      lastToastRef.current = payload;
-      setToast(payload);
       if (payload.type === "error") {
-        setError(payload.text);
+        pushError(payload.text);
+        return;
       }
+      pushToast(payload);
     });
 
     instance.on("room:state", (payload) => {
       if (!payload) return;
       setRoom(payload.room || null);
       setPlayers(payload.players || []);
-      setError("");
+      clearError();
     });
 
     instance.on("private:self", (payload) => {
@@ -315,7 +477,7 @@ export default function Auction({
     instance.on("auction:state", (state) => {
       if (!state) return;
       setAuctionState(state);
-      setError("");
+      clearError();
     });
 
     return () => {
@@ -327,7 +489,7 @@ export default function Auction({
         instance.disconnect();
       } catch {}
     };
-  }, [apiBase, initData]);
+  }, [apiBase, initData, pushError, pushToast]);
 
   useEffect(() => {
     if (!socket) return;
@@ -349,16 +511,6 @@ export default function Auction({
   }, [socket, subscribeToRoom]);
 
   useEffect(() => {
-    if (!toast) return;
-    const timeout = setTimeout(() => {
-      if (lastToastRef.current === toast) {
-        setToast(null);
-      }
-    }, 2600);
-    return () => clearTimeout(timeout);
-  }, [toast]);
-
-  useEffect(() => {
     if (!setBackHandler) return;
     const handler = () => {
       handleExit();
@@ -374,6 +526,14 @@ export default function Auction({
     joinRoom(sanitizedAutoCode, { fromInvite: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, sanitizedAutoCode]);
+
+  useEffect(
+    () => () => {
+      toastTimersRef.current.forEach((timeout) => clearTimeout(timeout));
+      toastTimersRef.current.clear();
+    },
+    []
+  );
 
   useEffect(() => {
     if (phase !== "finished") {
@@ -439,13 +599,19 @@ export default function Auction({
       style.overflow = prev;
     };
   }, [basketOpen]);
+
+  useEffect(() => {
+    if (basketOpen) return;
+    setSheetDrag(0);
+    sheetDragStartRef.current = null;
+  }, [basketOpen]);
   async function createRoom() {
     if (!initData) {
-      setError("Нет initData от Telegram");
+      pushError("Нет initData от Telegram");
       return;
     }
     setCreating(true);
-    setError("");
+    clearError();
     try {
       const resp = await fetch(`${apiBase}/api/rooms`, {
         method: "POST",
@@ -458,7 +624,7 @@ export default function Auction({
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
         const code = data?.error || "failed";
-        setError(
+        pushError(
           code === "code_already_in_use" ? "Код комнаты уже занят" : "Не удалось создать комнату"
         );
         return;
@@ -470,7 +636,7 @@ export default function Auction({
         subscribeToRoom(data.room.code, { force: true });
       }
     } catch {
-      setError("Ошибка сети при создании комнаты");
+      pushError("Ошибка сети при создании комнаты");
     } finally {
       setCreating(false);
     }
@@ -478,16 +644,16 @@ export default function Auction({
 
   async function joinRoom(rawCode, options = {}) {
     if (!initData) {
-      setError("Нет initData от Telegram");
+      pushError("Нет initData от Telegram");
       return;
     }
     const code = normalizeCode(rawCode || codeInput);
     if (!code) {
-      setError("Введите код комнаты");
+      pushError("Введите код комнаты");
       return;
     }
     setJoining(true);
-    setError("");
+    clearError();
     try {
       const resp = await fetch(`${apiBase}/api/rooms/${code}/join`, {
         method: "POST",
@@ -505,7 +671,7 @@ export default function Auction({
           room_full: "Комната заполнена",
           game_in_progress: "Игра уже началась",
         };
-        setError(map[codeErr] || "Не удалось войти");
+        pushError(map[codeErr] || "Не удалось войти");
         return;
       }
       setRoom(data.room || null);
@@ -518,7 +684,7 @@ export default function Auction({
         } catch {}
       }
     } catch {
-      setError("Ошибка сети при входе в комнату");
+      pushError("Ошибка сети при входе в комнату");
     } finally {
       setJoining(false);
     }
@@ -533,7 +699,7 @@ export default function Auction({
       { code: room.code, ready: !ready },
       (resp) => {
         if (!resp || !resp.ok) {
-          setError("Не удалось изменить статус");
+          pushError("Не удалось изменить статус");
         }
       }
     );
@@ -553,7 +719,7 @@ export default function Auction({
             need_ready_players: "Ждём готовность игроков",
             already_started: "Игра уже идёт",
           };
-          setError(map[resp?.error] || "Не удалось запустить аукцион");
+          pushError(map[resp?.error] || "Не удалось запустить аукцион");
         }
       }
     );
@@ -574,12 +740,12 @@ export default function Auction({
       },
       (resp) => {
         if (!resp || !resp.ok) {
-          setError(resp?.errorText || "Не удалось применить настройки");
+          pushError(resp?.errorText || "Не удалось применить настройки");
         } else {
-          const payload = { type: "info", text: "Настройки обновлены" };
-          lastToastRef.current = payload;
-          setToast(payload);
-          setError("");
+          pushToast({ type: "info", text: "Настройки обновлены" });
+          clearError();
+          setCfgOpen(false);
+          setCfgStep(0);
         }
       }
     );
@@ -626,15 +792,15 @@ export default function Auction({
     const amount = raw === "" ? 0 : Number(raw);
 
     if (!Number.isFinite(amount) || amount < 0) {
-      setError("Введите корректную сумму");
+      pushError("Введите корректную сумму");
       return;
     }
     if (myBalance != null && amount > myBalance) {
-      setError("Ставка превышает ваш баланс");
+      pushError("Ставка превышает ваш баланс");
       return;
     }
     if (amount > 0 && baseBid > 0 && amount < baseBid) {
-      setError(`Минимальная ставка ${moneyFormatter.format(baseBid)}$`);
+      pushError(`Минимальная ставка ${moneyFormatter.format(baseBid)}$`);
       return;
     }
 
@@ -654,10 +820,10 @@ export default function Auction({
             not_enough_money: "Недостаточно денег",
             paused: "Аукцион на паузе",
           };
-          setError(map[resp?.error] || "Не удалось принять ставку");
+          pushError(map[resp?.error] || "Не удалось принять ставку");
         } else {
           setMyBid("");
-          setError("");
+          clearError();
         }
       }
     );
@@ -702,13 +868,9 @@ export default function Auction({
       if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(room.code);
       }
-      const payload = { type: "info", text: "Код скопирован" };
-      lastToastRef.current = payload;
-      setToast(payload);
+      pushToast({ type: "info", text: "Код скопирован" });
     } catch {
-      const payload = { type: "error", text: "Не удалось скопировать" };
-      lastToastRef.current = payload;
-      setToast(payload);
+      pushToast({ type: "error", text: "Не удалось скопировать" });
     }
   }
 
@@ -775,25 +937,75 @@ export default function Auction({
             </button>
           </div>
         </div>
-        {error && <div className="auction-error prominent">{error}</div>}
       </div>
     </div>
   );
 
   const renderTopBar = () => (
     <header className="auction-topbar">
-      <button type="button" className="icon-btn" onClick={handleExit}>
-        ←
-      </button>
-      <div className="topbar-center">
-        <span className="app-title">auction</span>
-        <button type="button" className="pill" onClick={copyRoomCode}>
-          {room?.code}
-        </button>
+      <div className="topbar-row">
+        <div className="topbar-left">
+          <div className="logo-chip">AU</div>
+          <div className="room-info">
+            <span className="app-title">auction</span>
+            <button type="button" className="pill room-code" onClick={copyRoomCode}>
+              {room?.code || "------"}
+            </button>
+          </div>
+        </div>
+        <div className="topbar-center">
+          <span className="phase-label">{PHASE_LABEL[phase]}</span>
+          {showLobby ? (
+            <span className="phase-subtitle">
+              {readyCount}/{Math.max(nonHostPlayers, 1) || 1} готовы
+            </span>
+          ) : (
+            slotMax && (
+              <span className="phase-subtitle">
+                Лот {slotIndex}/{slotMax}
+              </span>
+            )
+          )}
+          <div className="phase-meta">
+            <div className="phase-timer">
+              <strong>{secsLeft != null ? secsLeft : "--"}</strong>
+              <span>сек</span>
+            </div>
+            {auctionState?.paused && <span className="pill ghost">Пауза</span>}
+          </div>
+        </div>
+        <div className="topbar-balance">
+          <span>баланс</span>
+          <strong>{myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "-"}</strong>
+        </div>
+        <div className="topbar-actions">
+          <button
+            type="button"
+            className="icon-btn ghost"
+            onClick={() => {
+              setCfgStep(0);
+              setCfgOpen(true);
+            }}
+            disabled={!isOwner}
+            aria-label="Настройки комнаты"
+          >
+            ⚙
+          </button>
+          <button
+            type="button"
+            className="icon-btn ghost"
+            onClick={() => setPlayersModalOpen(true)}
+            aria-label="Чат и игроки"
+          >
+            💬
+          </button>
+          <button type="button" className="icon-btn" onClick={handleExit} aria-label="Назад">
+            ↩
+          </button>
+        </div>
       </div>
-      <div className="topbar-meta">
-        <span>{PHASE_LABEL[phase]}</span>
-        {myBalance != null && <strong>{moneyFormatter.format(myBalance)}$</strong>}
+      <div className="phase-progress" role="presentation" aria-hidden="true">
+        <div style={{ width: `${clamp(headerProgress, 0, 100)}%` }} />
       </div>
     </header>
   );
@@ -801,30 +1013,50 @@ export default function Auction({
   const renderLotCard = () => {
     if (!showGame) return null;
     const icon = currentSlot?.type === "lootbox" ? "🎁" : "📦";
+    const typeLabel = currentSlot?.type === "lootbox" ? "Кейс" : "Лот";
+    const growth = auctionState?.currentStep || auctionState?.growth || 0;
     return (
-      <section className="panel lot-card">
-        <div className="panel-head">
+      <section className="panel stage-card lot-card">
+        <header className="stage-head">
           <div>
-            <span className="label">Лот</span>
+            <span className="label">Активный этап</span>
             <h3>{currentSlot?.name || "Ждём слот"}</h3>
+            <span className="muted tiny">{typeLabel}</span>
           </div>
-          {auctionState?.paused && <span className="pill ghost">пауза</span>}
-        </div>
+          <div className="lot-pill">
+            <span>
+              #{slotIndex}
+              {slotMax ? ` / ${slotMax}` : ""}
+            </span>
+          </div>
+        </header>
         {currentSlot ? (
           <>
-            <div className="lot-focus">
-              <div className="lot-icon">{icon}</div>
+            <div className="lot-preview">
+              <div className={`lot-icon ${currentSlot.type || "lot"}`}>{icon}</div>
               <div className="lot-meta">
+                <span className="muted tiny">Базовая ставка</span>
                 <strong>{moneyFormatter.format(baseBid)}$</strong>
-                <span className="muted">
-                  {currentSlot.type === "lootbox" ? "Скрытый" : "Обычный"} · слот {(
-                    auctionState?.slotsPlayed ?? 0
-                  ) + 1}
-                  /{auctionState?.maxSlots}
-                </span>
+                {growth > 0 && (
+                  <span className="muted tiny">Шаг +{moneyFormatter.format(growth)}$</span>
+                )}
               </div>
             </div>
-            <div className="timer">
+            <div className="lot-pricing">
+              <div>
+                <span className="muted tiny">Моя ставка</span>
+                <strong className="balance-text">
+                  {myRoundBid != null ? `${moneyFormatter.format(myRoundBid)}$` : "—"}
+                </strong>
+              </div>
+              <div>
+                <span className="muted tiny">Баланс</span>
+                <strong className="balance-text">
+                  {myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "—"}
+                </strong>
+              </div>
+            </div>
+            <div className="timer timer-large">
               <div className="timer-value">{countdownStep != null ? countdownStep : "—"}</div>
               {secsLeft != null && <div className="muted small">{secsLeft} c</div>}
               {progressPct != null && (
@@ -833,15 +1065,18 @@ export default function Auction({
                 </div>
               )}
             </div>
+            {liveBidFeed.length > 0 && (
+              <div className="live-ticker" aria-live="polite">
+                {liveBidFeed.map((entry) => (
+                  <div key={entry.id} className="ticker-row">
+                    <span className="ticker-name">{entry.label}</span>
+                    <strong className="ticker-value">{moneyFormatter.format(entry.amount)}$</strong>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="bid-form">
-              <input
-                className="text-input"
-                inputMode="numeric"
-                placeholder="Ставка"
-                value={myBid}
-                onChange={(e) => setMyBid(e.target.value.replace(/[^\d]/g, ""))}
-              />
-              <div className="quick-bids">
+              <div className="quick-bids rail">
                 {BID_PRESETS.map((step) => (
                   <button
                     key={step}
@@ -865,44 +1100,69 @@ export default function Auction({
                   Пас
                 </button>
               </div>
-              <button
-                type="button"
-                className="accent-btn"
-                onClick={() => sendBid()}
-                disabled={busyBid || myBalance == null}
-              >
-                {busyBid ? "Отправляем…" : "Сделать ставку"}
-              </button>
-            </div>
-            <div className="muted tiny">
-              Баланс: {myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "—"} · Ставка:{" "}
-              {typeof myRoundBid === "number" ? `${moneyFormatter.format(myRoundBid)}$` : "—"}
+              <input
+                className="text-input"
+                inputMode="numeric"
+                placeholder="Ставка"
+                value={myBid}
+                onChange={(e) => setMyBid(e.target.value.replace(/[^\d]/g, ""))}
+              />
+              <div className="bid-actions">
+                <button type="button" className="ghost-btn" onClick={() => setBidRelative(0)}>
+                  Сбросить
+                </button>
+                <button
+                  type="button"
+                  className="accent-btn"
+                  onClick={() => sendBid()}
+                  disabled={busyBid || myBalance == null}
+                >
+                  {busyBid ? "Отправляем…" : "Сделать ставку"}
+                </button>
+              </div>
             </div>
             {isOwner && (
-              <div className="owner-row">
+              <div className="owner-row owner-inline">
                 <button
                   type="button"
                   className="pill ghost"
                   onClick={auctionState?.paused ? resumeAuction : pauseAuction}
                 >
-                  {auctionState?.paused ? "▶" : "⏸"}
+                  {auctionState?.paused ? "Продолжить" : "Пауза"}
                 </button>
                 <button type="button" className="pill ghost" onClick={forceNext}>
-                  ⏭
+                  Следующий
                 </button>
               </div>
             )}
           </>
         ) : (
-          <p className="muted">Комната готова к старту.</p>
+          <p className="muted">Настраиваем слот в комнате.</p>
         )}
       </section>
     );
-  };
-  const renderLobbyCard = () => {
+  };  const renderLobbyCard = () => {
     if (!showLobby) return null;
     return (
-      <section className="panel lobby-card">
+      <section className="panel stage-card lobby-card">
+        <header className="stage-head">
+          <div>
+            <span className="label">Комната</span>
+            <h3>{room?.name || room?.code || "Лобби"}</h3>
+          </div>
+          {isOwner && (
+            <button
+              type="button"
+              className="pill ghost"
+              onClick={() => {
+                setCfgStep(0);
+                setCfgOpen(true);
+              }}
+            >
+              Настройки
+            </button>
+          )}
+        </header>
         <div className="lobby-status">
           <div className="ready-meter">
             <div className="ready-ring">
@@ -950,65 +1210,21 @@ export default function Auction({
                 </button>
                 <button
                   type="button"
-                  className="pill ghost"
-                  onClick={() => setCfgOpen((v) => !v)}
+                  className="ghost-btn"
+                  onClick={() => {
+                    setCfgStep(0);
+                    setCfgOpen(true);
+                  }}
                 >
-                  Настройки
+                  Настроить
                 </button>
               </>
             )}
           </div>
         </div>
-        {isOwner && cfgOpen && (
-          <div className="host-config">
-            <label className="field">
-              <span>Время, сек</span>
-              <input
-                className="text-input"
-                inputMode="numeric"
-                value={cfgRules.timePerSlotSec}
-                onChange={(e) =>
-                  setCfgRules((prev) => ({
-                    ...prev,
-                    timePerSlotSec: e.target.value.replace(/[^\d]/g, ""),
-                  }))
-                }
-              />
-            </label>
-            <label className="field">
-              <span>Слотов</span>
-              <input
-                className="text-input"
-                inputMode="numeric"
-                value={cfgRules.maxSlots}
-                onChange={(e) =>
-                  setCfgRules((prev) => ({
-                    ...prev,
-                    maxSlots: e.target.value.replace(/[^\d]/g, ""),
-                  }))
-                }
-              />
-            </label>
-            <label className="field">
-              <span>Слоты списком</span>
-              <textarea
-                className="text-input"
-                rows={3}
-                placeholder="Игрок | 90000 | lot"
-                value={cfgSlotsText}
-                onChange={(e) => setCfgSlotsText(e.target.value)}
-              />
-            </label>
-            <button type="button" className="accent-btn" onClick={configureAuction}>
-              Применить
-            </button>
-          </div>
-        )}
       </section>
     );
-  };
-
-  const renderResultsCard = () => {
+  };  const renderResultsCard = () => {
     if (!showResult) return null;
     return (
       <section className="panel">
@@ -1058,43 +1274,69 @@ export default function Auction({
     if (!selectedPlayer || !basketOpen) return null;
     const avatarUrl = selectedPlayer.user?.photo_url || selectedPlayer.user?.avatar || null;
     const playerBalance = balances[selectedPlayer.id] ?? null;
-    const typeIcon = (slot) => (slot.type === "lootbox" ? "🎁" : "💎");
+    const playerBasket = selectedBasket;
+    const lootboxes = playerBasket.filter((item) => item.type === 'lootbox').length;
+    const latest = playerBasket[playerBasket.length - 1] || null;
+    const typeIcon = (slot) => (slot.type === "lootbox" ? "🎁" : "📦");
     return (
       <div className="basket-sheet" role="dialog" aria-modal="true">
         <button
           type="button"
-          className="basket-sheet__backdrop"
+          className="sheet-backdrop"
           aria-label="Закрыть корзину"
           onClick={closeBasket}
         />
-        <div className="basket-card">
+        <div
+          className="basket-card"
+          style={{ transform: `translateY(${sheetDrag}px)` }}
+          onPointerDown={handleSheetDragStart}
+          onPointerMove={handleSheetDragMove}
+          onPointerUp={handleSheetDragEnd}
+          onPointerCancel={handleSheetDragEnd}
+          onTouchStart={handleSheetDragStart}
+          onTouchMove={handleSheetDragMove}
+          onTouchEnd={handleSheetDragEnd}
+        >
+          <div className="sheet-handle" />
           <div className="basket-head">
-            <div className="basket-title">
+            <div>
               <span className="label">Корзина игрока</span>
               <h3>{playerDisplayName(selectedPlayer)}</h3>
             </div>
             <button type="button" className="icon-btn ghost" onClick={closeBasket} aria-label="Закрыть">
-              ×
+              ?
             </button>
           </div>
           <div className="basket-owner">
             <div className="basket-avatar">
-              {avatarUrl ? <img src={avatarUrl} alt={playerDisplayName(selectedPlayer)} /> : playerDisplayName(selectedPlayer).slice(0, 1)}
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={playerDisplayName(selectedPlayer)} />
+              ) : (
+                playerDisplayName(selectedPlayer).slice(0, 1)
+              )}
             </div>
             <div className="basket-meta">
               <span>Баланс</span>
-              <strong>{playerBalance != null ? `${moneyFormatter.format(playerBalance)}$` : "-"}</strong>
+              <strong>{playerBalance != null ? `${moneyFormatter.format(playerBalance)}$` : '-'}</strong>
             </div>
             <div className="basket-meta">
-              <span>Итого покупок</span>
+              <span>Потрачено</span>
               <strong>{moneyFormatter.format(selectedBasketTotal || 0)}$</strong>
             </div>
+            <div className="basket-meta">
+              <span>Последний лот</span>
+              <strong>{latest ? latest.name : '—'}</strong>
+            </div>
+            <div className="basket-meta">
+              <span>Кейсы</span>
+              <strong>{lootboxes}</strong>
+            </div>
           </div>
-          {selectedBasket.length === 0 ? (
-            <p className="muted center">Ещё нет выигранных лотов.</p>
+          {playerBasket.length === 0 ? (
+            <p className="muted center">Пока без трофеев.</p>
           ) : (
             <div className="basket-list">
-              {selectedBasket.map((item) => (
+              {playerBasket.map((item) => (
                 <div key={`${item.index}-${item.name}`} className="basket-row">
                   <div className="basket-row-main">
                     <span className="basket-icon">{typeIcon(item)}</span>
@@ -1114,83 +1356,40 @@ export default function Auction({
         </div>
       </div>
     );
-  };
-
-  const renderHistoryCard = () => {
+  };    const renderHistoryTimeline = () => {
     if (!compactHistory.length) return null;
     return (
-      <section className="panel compact">
+      <section className="panel timeline-card">
         <div className="panel-head">
           <div>
-            <span className="label">Последние</span>
-            <h3>Лоты</h3>
+            <span className="label">История</span>
+            <h3>Последние лоты</h3>
           </div>
-        </div>
-        <div className="history">
-          {compactHistory.map((slot) => {
-            const winner = slot.winnerPlayerId != null ? playerNameById.get(slot.winnerPlayerId) : null;
-            return (
-              <div key={slot.index} className="history-row">
-                <strong>
-                  #{slot.index + 1} · {slot.type === "lootbox" ? "🎁" : "📦"}
-                </strong>
-                <span>{slot.name}</span>
-                <span className="muted">
-                  {winner ? `${winner} · ${moneyFormatter.format(slot.winBid || 0)}$` : "пас"}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-    );
-  };
-
-  const renderPlayersPanel = () => {
-    if (!players.length) return null;
-    return (
-      <section className="panel players-panel">
-        <div className="panel-head players-panel-head">
-          <div>
-            <span className="label">Игроки</span>
-            <h3>{players.length}</h3>
-          </div>
-          <button
-            type="button"
-            className="pill ghost"
-            onClick={() => setPlayersPanelOpen((open) => !open)}
-          >
-            {playersPanelOpen ? "Свернуть" : "Показать всех"}
+          <button type="button" className="pill ghost" onClick={() => setHistoryModalOpen(true)}>
+            Подробнее
           </button>
         </div>
-        <div className={`players-rail ${playersPanelOpen ? "expanded" : ""}`}>
-          {players.map((p) => {
-            const name = playerDisplayName(p);
-            const balance = balances[p.id] ?? null;
-            const wins = winsByPlayerId.get(p.id) || 0;
-            const avatarUrl = p.user?.photo_url || p.user?.avatar || null;
-            const isSelected = selectedPlayerIdEffective === p.id;
-            const isHostTile = p.user?.id === room?.ownerId;
+        <div className="timeline">
+          {compactHistory.map((slot) => {
+            const winner =
+              slot.winnerPlayerId != null ? playerNameById.get(slot.winnerPlayerId) : null;
             return (
               <button
-                key={p.id}
+                key={slot.index}
                 type="button"
-                className={
-                  "player-chip" +
-                  (p.ready ? " ready" : "") +
-                  (isSelected ? " selected" : "") +
-                  (isHostTile ? " host" : "")
-                }
-                onClick={() => openBasketForPlayer(p.id)}
+                className="timeline-row"
+                onClick={() => setHistoryModalOpen(true)}
               >
-                <div className="player-thumb">
-                  {avatarUrl ? <img src={avatarUrl} alt={name} /> : name.slice(0, 1)}
+                <div className="timeline-dot" />
+                <div className="timeline-body">
+                  <strong>
+                    #{slot.index + 1} · {slot.type === "lootbox" ? "🎁" : "📦"}
+                  </strong>
+                  <span>{slot.name}</span>
+                  <span className="muted tiny">
+                    {winner ? `${winner} · ${moneyFormatter.format(slot.winBid || 0)}$` : "—"}
+                  </span>
                 </div>
-                <div className="player-chip-body">
-                  <strong>{name}</strong>
-                  <span>{balance != null ? `${moneyFormatter.format(balance)}$` : "-"}</span>
-                </div>
-                {wins > 0 && <div className="player-pill">🏆 {wins}</div>}
               </button>
             );
           })}
@@ -1198,13 +1397,389 @@ export default function Auction({
       </section>
     );
   };
-  const stackPanels = [
-    showLobby ? renderLobbyCard() : null,
-    showGame ? renderLotCard() : null,
-    showResult ? renderResultsCard() : null,
-    !showLobby ? renderHistoryCard() : null,
-    !showLanding && error ? <div className="auction-error">{error}</div> : null,
-  ].filter(Boolean);
+  const renderPlayersGridSection = () => {
+    if (!players.length) return null;
+    return (
+      <section className="panel players-grid-card">
+        <div className="panel-head players-grid-head">
+          <div>
+            <span className="label">Игроки</span>
+            <h3>{players.length}</h3>
+          </div>
+          <button
+            type="button"
+            className="icon-btn ghost"
+            aria-label="Показать всех игроков"
+            onClick={() => setPlayersModalOpen(true)}
+          >
+            🧲
+          </button>
+        </div>
+        <div className="players-grid">
+          {players.map((p) => {
+            const name = playerDisplayName(p);
+            const balance = balances[p.id] ?? null;
+            const wins = winsByPlayerId.get(p.id) || 0;
+            const avatarUrl = p.user?.photo_url || p.user?.avatar || null;
+            const isSelected = selectedPlayerIdEffective === p.id;
+            const isHostTile = p.user?.id === room?.ownerId;
+            const playerBasket = baskets[p.id] || baskets[String(p.id)] || [];
+            const cases = Array.isArray(playerBasket)
+              ? playerBasket.filter((item) => item.type === "lootbox").length
+              : 0;
+            const lastItem =
+              Array.isArray(playerBasket) && playerBasket.length
+                ? playerBasket[playerBasket.length - 1]
+                : null;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className={
+                  "player-card" +
+                  (p.ready ? " ready" : "") +
+                  (isSelected ? " selected" : "") +
+                  (isHostTile ? " host" : "")
+                }
+                onClick={() => openBasketForPlayer(p.id)}
+              >
+                <div className="player-card__avatar">
+                  {avatarUrl ? <img src={avatarUrl} alt={name} /> : name.slice(0, 1)}
+                </div>
+                <div className="player-card__body">
+                  <strong>{name}</strong>
+                  <span className="player-card__balance">
+                    {balance != null ? `${moneyFormatter.format(balance)}$` : "-"}
+                  </span>
+                  <div className="player-card__meta">
+                    <span>{lastItem ? lastItem.name : "Без побед"}</span>
+                    <span>{cases} кейс.</span>
+                  </div>
+                </div>
+                <div className="player-card__badges">
+                  {p.ready && <span className="player-badge">Готов</span>}
+                  {wins > 0 && <span className="player-badge ghost">+{wins}</span>}
+                  {isHostTile && <span className="player-badge ghost">Host</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+    );
+  };
+
+  const renderPlayersModal = () => {
+    if (!playersModalOpen) return null;
+    return (
+      <div className="sheet-overlay" role="dialog" aria-modal="true">
+        <button
+          type="button"
+          className="sheet-backdrop"
+          aria-label="Закрыть список игроков"
+          onClick={() => setPlayersModalOpen(false)}
+        />
+        <div className="players-modal">
+          <div className="sheet-handle" />
+          <header className="players-modal-head">
+            <strong>Игроки</strong>
+            <button type="button" className="icon-btn ghost" onClick={() => setPlayersModalOpen(false)}>
+              ✕
+            </button>
+          </header>
+          <div className="players-modal-filters">
+            <label className="toggle">
+              <input
+                type="checkbox"
+                checked={playersFilterReady}
+                onChange={(e) => setPlayersFilterReady(e.target.checked)}
+              />
+              <span>Только готовые</span>
+            </label>
+            <select value={playersSort} onChange={(e) => setPlayersSort(e.target.value)}>
+              <option value="default">По порядку</option>
+              <option value="balance">По балансу</option>
+              <option value="wins">По победам</option>
+            </select>
+          </div>
+          <div className="players-modal-list">
+            {modalPlayers.map((player) => {
+              const balance = balances[player.id] ?? null;
+              const wins = winsByPlayerId.get(player.id) || 0;
+              const avatarUrl = player.user?.photo_url || player.user?.avatar || null;
+              return (
+                <div key={player.id} className="players-modal-row">
+                  <div className="players-modal-main">
+                    <div className="player-card__avatar small">
+                      {avatarUrl ? <img src={avatarUrl} alt={playerDisplayName(player)} /> : playerDisplayName(player).slice(0, 1)}
+                    </div>
+                    <div>
+                      <strong>{playerDisplayName(player)}</strong>
+                      <span className="muted tiny">
+                        {balance != null ? `${moneyFormatter.format(balance)}$` : "-"} · победы {wins}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="players-modal-actions">
+                    <button
+                      type="button"
+                      className="pill ghost"
+                      onClick={() => openBasketForPlayer(player.id)}
+                    >
+                      Корзина
+                    </button>
+                    {player.id === myPlayerId && !isOwner && (
+                      <button type="button" className="pill ghost" onClick={toggleReady}>
+                        {player.ready ? "Не готов" : "Готов"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderHistoryModal = () => {
+    if (!historyModalOpen) return null;
+    return (
+      <div className="sheet-overlay" role="dialog" aria-modal="true">
+        <button
+          type="button"
+          className="sheet-backdrop"
+          aria-label="Закрыть историю"
+          onClick={() => setHistoryModalOpen(false)}
+        />
+        <div className="history-modal">
+          <div className="sheet-handle" />
+          <header className="players-modal-head">
+            <strong>История лотов</strong>
+            <button type="button" className="icon-btn ghost" onClick={() => setHistoryModalOpen(false)}>
+              ✕
+            </button>
+          </header>
+          <div className="history-modal-list">
+            {fullHistory.map((slot) => {
+              const winner =
+                slot.winnerPlayerId != null ? playerNameById.get(slot.winnerPlayerId) : null;
+              return (
+                <div key={`${slot.index}-${slot.name}`} className="history-modal-row">
+                  <div>
+                    <strong>
+                      #{slot.index + 1} · {slot.type === "lootbox" ? "🎁" : "📦"}
+                    </strong>
+                    <span>{slot.name}</span>
+                  </div>
+                  <div className="muted tiny">
+                    {winner ? `${winner} · ${moneyFormatter.format(slot.winBid || 0)}$` : "—"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderConfigWizard = () => {
+    if (!cfgOpen) return null;
+    const steps = ["rules", "slots"];
+    const safeStep = Math.min(cfgStep, steps.length - 1);
+    const current = steps[safeStep];
+    const progress = Math.round(((safeStep + 1) / steps.length) * 100);
+    return (
+      <div className="sheet-overlay" role="dialog" aria-modal="true">
+        <button
+          type="button"
+          className="sheet-backdrop"
+          aria-label="Закрыть настройки"
+          onClick={closeConfigWizard}
+        />
+        <div className="config-sheet">
+          <div className="sheet-handle" />
+          <header className="config-head">
+            <span>Настройки комнаты</span>
+            <div className="progress-track">
+              <div style={{ width: `${progress}%` }} />
+            </div>
+          </header>
+          {current === "rules" ? (
+            <div className="wizard-step">
+              <label className="field">
+                <span>Время на лот, сек</span>
+                <input
+                  className="text-input"
+                  inputMode="numeric"
+                  value={cfgRules.timePerSlotSec}
+                  onChange={(e) =>
+                    setCfgRules((prev) => ({
+                      ...prev,
+                      timePerSlotSec: e.target.value.replace(/[^\d]/g, ""),
+                    }))
+                  }
+                />
+              </label>
+              <label className="field">
+                <span>Максимум слотов</span>
+                <input
+                  className="text-input"
+                  inputMode="numeric"
+                  value={cfgRules.maxSlots}
+                  onChange={(e) =>
+                    setCfgRules((prev) => ({
+                      ...prev,
+                      maxSlots: e.target.value.replace(/[^\d]/g, ""),
+                    }))
+                  }
+                />
+              </label>
+            </div>
+          ) : (
+            <div className="wizard-step">
+              <label className="field">
+                <span>Слоты списком</span>
+                <textarea
+                  className="text-input"
+                  rows={4}
+                  placeholder="Лут | 90000 | lot"
+                  value={cfgSlotsText}
+                  onChange={(e) => setCfgSlotsText(e.target.value)}
+                />
+              </label>
+              <div className="wizard-preview">
+                {cfgPreviewSlots.length === 0 ? (
+                  <span className="muted tiny">Нет предпросмотра</span>
+                ) : (
+                  cfgPreviewSlots.slice(0, 5).map((slot, idx) => (
+                    <div key={`${slot.name}-${idx}`} className="wizard-preview-row">
+                      <span>{slot.name}</span>
+                      <span className="muted tiny">{slot.type === "lootbox" ? "Кейс" : "Лот"}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+          <footer className="wizard-footer">
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={() =>
+                safeStep === 0 ? closeConfigWizard() : setCfgStep((step) => Math.max(0, step - 1))
+              }
+            >
+              Назад
+            </button>
+            {safeStep < steps.length - 1 ? (
+              <button type="button" className="accent-btn" onClick={() => setCfgStep((step) => Math.min(steps.length - 1, step + 1))}>
+                Далее
+              </button>
+            ) : (
+              <button type="button" className="accent-btn" onClick={configureAuction}>
+                Применить
+              </button>
+            )}
+          </footer>
+        </div>
+      </div>
+    );
+  };
+
+  const renderToastStack = () => {
+    if (!toastStack.length) return null;
+    return (
+      <div className="toast-stack" role="status" aria-live="polite">
+        {toastStack.map((item) => (
+          <div key={item.id} className={`auction-toast ${item.type || "info"}`}>
+            <span>{item.text}</span>
+            <button type="button" onClick={() => dismissToast(item.id)} aria-label="Скрыть уведомление">
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderCriticalAlert = () => {
+    if (!criticalAlert) return null;
+    return (
+      <div className="critical-alert" role="alertdialog" aria-modal="true">
+        <div className="sheet-backdrop" onClick={closeCriticalAlert} />
+        <div className="critical-card">
+          <strong>Что-то пошло не так</strong>
+          <p>{criticalAlert.text}</p>
+          <button
+            type="button"
+            className="accent-btn"
+            onClick={() => {
+              criticalAlert.onAction?.();
+              closeCriticalAlert();
+            }}
+          >
+            {criticalAlert.actionLabel || "OK"}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderDock = () => {
+    if (showLanding) return null;
+    return (
+      <nav className="auction-dock" aria-label="Основные действия">
+        <button
+          type="button"
+          className="dock-icon"
+          aria-label="Игроки"
+          onClick={() => setPlayersModalOpen(true)}
+        >
+          👥
+        </button>
+        <button
+          type="button"
+          className="dock-cta"
+          onClick={primaryActionHandler}
+          disabled={primaryActionDisabled}
+        >
+          {primaryActionLabel}
+        </button>
+        <button
+          type="button"
+          className="dock-icon"
+          aria-label="История"
+          onClick={() => setHistoryModalOpen(true)}
+        >
+          🕘
+        </button>
+        <button type="button" className="dock-icon" aria-label="Выход" onClick={handleExit}>
+          ↩
+        </button>
+      </nav>
+    );
+  };
+
+  const renderOwnerFab = () => {
+    if (!isOwner || showLanding) return null;
+    const ownerLabel = showLobby ? "Старт" : showResult ? "Реванш" : "Следующий";
+    const ownerAction = showLobby || showResult ? handleStartAuction : forceNext;
+    return (
+      <button type="button" className="owner-fab" onClick={ownerAction}>
+        {ownerLabel}
+      </button>
+    );
+  };
+
+  const activeStageCard = showLobby
+    ? renderLobbyCard()
+    : showGame
+    ? renderLotCard()
+    : renderResultsCard();
+
   return (
     <div className="auction-app">
       <div className="ambient" aria-hidden="true" />
@@ -1213,69 +1788,23 @@ export default function Auction({
       ) : (
         <>
           {renderTopBar()}
-          <div className="app-grid">
-            <div className="stack">
-              {stackPanels}
+          <div className="stage-layout">
+            <div className="stage-primary">{activeStageCard}</div>
+            <div className="stage-rail">
+              {renderHistoryTimeline()}
+              {renderPlayersGridSection()}
             </div>
-            {renderPlayersPanel()}
           </div>
-          <nav className="auction-dock" aria-label="Actions">
-            <button
-              type="button"
-              className="dock-btn"
-              onClick={() => setPlayersPanelOpen((open) => !open)}
-            >
-              <strong>Игроки</strong>
-              <span>{playersPanelOpen ? "Свернуть" : "Показать"}</span>
-            </button>
-            <button
-              type="button"
-              className="dock-btn primary"
-              onClick={primaryActionHandler}
-              disabled={primaryActionDisabled}
-            >
-              <strong>Торги</strong>
-              <span>{primaryActionLabel}</span>
-            </button>
-            <button type="button" className="dock-btn" onClick={handleExit}>
-              <strong>Выход</strong>
-              <span>В меню</span>
-            </button>
-          </nav>
+          {renderDock()}
+          {renderOwnerFab()}
         </>
       )}
-      {toast && (
-        <div className={`auction-toast ${toast.type || "info"}`} role="status" aria-live="polite">
-          {toast.text}
-        </div>
-      )}
+      {renderToastStack()}
+      {renderCriticalAlert()}
       {renderBasketSheet()}
+      {renderPlayersModal()}
+      {renderHistoryModal()}
+      {renderConfigWizard()}
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
