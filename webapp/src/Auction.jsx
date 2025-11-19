@@ -237,6 +237,24 @@ export default function Auction({
     setSheetDrag(0);
   }, [closeBasket, sheetDrag]);
 
+  const safeHistory = useMemo(
+    () =>
+      ensureArray(auctionState?.history).filter(
+        (slot) => slot && typeof slot.index === "number"
+      ),
+    [auctionState?.history]
+  );
+
+  const compactHistory = useMemo(
+    () => safeHistory.slice(-6).reverse(),
+    [safeHistory]
+  );
+
+  const fullHistory = useMemo(
+    () => safeHistory.slice().reverse(),
+    [safeHistory]
+  );
+
   const winsByPlayerId = useMemo(() => {
     const map = new Map();
     fullHistory.forEach((slot) => {
@@ -327,23 +345,6 @@ export default function Auction({
 
   const clearError = useCallback(() => setError(""), []);
   const closeCriticalAlert = useCallback(() => setCriticalAlert(null), []);
-
-  const safeHistory = useMemo(
-    () =>
-      ensureArray(auctionState?.history).filter(
-        (slot) => slot && typeof slot.index === "number"
-      ),
-    [auctionState?.history]
-  );
-
-  const compactHistory = useMemo(
-    () => safeHistory.slice(-6).reverse(),
-    [safeHistory]
-  );
-  const fullHistory = useMemo(
-    () => safeHistory.slice().reverse(),
-    [safeHistory]
-  );
 
   const liveBidFeed = useMemo(() => {
     const feed = ensureArray(auctionState?.bidFeed).filter(
