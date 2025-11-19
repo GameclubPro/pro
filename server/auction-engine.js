@@ -107,8 +107,14 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     return { kind: 'empty', delta: 0 };
   }
 
+  function roomPlayersList(room) {
+    if (!room || !Array.isArray(room.players)) return [];
+    return room.players.filter((p) => p && p.id != null);
+  }
+
   function normalizeParticipants(state, room) {
-    const roomPlayerIds = new Set(room.players.map((p) => p.id));
+    const roomPlayers = roomPlayersList(room);
+    const roomPlayerIds = new Set(roomPlayers.map((p) => p.id));
 
     // ленивое создание структур корзин (на случай старого состояния)
     if (!state.baskets) state.baskets = {};
@@ -243,7 +249,8 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     normalizeParticipants(state, room);
     ensureConsistentPhase(state);
 
-    const players = room.players.map((p) => {
+    const roomPlayers = roomPlayersList(room);
+    const players = roomPlayers.map((p) => {
       const name =
         p.user?.firstName ||
         p.user?.username ||
@@ -447,7 +454,8 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         return { ok: false, error: 'forbidden_not_owner' };
       }
 
-      if (room.players.length < 2) {
+      const roomPlayers = roomPlayersList(room);
+      if (roomPlayers.length < 2) {
         return { ok: false, error: 'need_at_least_2_players' };
       }
 
@@ -457,7 +465,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       }
 
       // участники — все «готовые» + владелец
-      const participants = room.players.filter(
+      const participants = roomPlayers.filter(
         (p) => p.ready || p.userId === room.ownerId
       );
       if (participants.length < 2) {
@@ -542,7 +550,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         return { ok: false, error: 'paused' };
       }
 
-      const player = room.players.find((p) => p.userId === userId);
+      const player = roomPlayersList(room).find((p) => p.userId === userId);
       if (!player) return { ok: false, error: 'not_player' };
 
       const pid = player.id;

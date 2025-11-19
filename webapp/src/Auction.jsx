@@ -21,6 +21,20 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+const EMPTY_ARRAY = Object.freeze([]);
+const EMPTY_OBJECT = Object.freeze({});
+
+function ensureArray(value) {
+  return Array.isArray(value) ? value : EMPTY_ARRAY;
+}
+
+function ensurePlainObject(value) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return value;
+  }
+  return EMPTY_OBJECT;
+}
+
 function getPointerY(event) {
   if (!event) return 0;
   if (typeof event.clientY === "number") return event.clientY;
@@ -106,19 +120,27 @@ export default function Auction({
   const phase = auctionState?.phase || "lobby";
   const myPlayerId = selfInfo?.roomPlayerId ?? null;
 
-  const balances = auctionState?.balances || {};
+  const balances = useMemo(
+    () => ensurePlainObject(auctionState?.balances),
+    [auctionState?.balances]
+  );
   const myBalance = myPlayerId != null ? balances[myPlayerId] ?? null : null;
+
+  const currentBids = useMemo(
+    () => ensurePlainObject(auctionState?.currentBids),
+    [auctionState?.currentBids]
+  );
 
   const currentSlot = auctionState?.currentSlot || null;
   const baseBid = currentSlot?.basePrice || 0;
 
   const myRoundBid = useMemo(() => {
     if (myPlayerId == null) return null;
-    const value = auctionState?.currentBids?.[myPlayerId];
+    const value = currentBids[myPlayerId];
     return typeof value === "number" ? value : null;
-  }, [auctionState, myPlayerId]);
+  }, [currentBids, myPlayerId]);
 
-  const safePlayers = useMemo(() => players.filter(Boolean), [players]);
+  const safePlayers = useMemo(() => ensureArray(players).filter(Boolean), [players]);
 
   const currentPlayer = useMemo(
     () => safePlayers.find((p) => p.id === myPlayerId) || null,
@@ -137,14 +159,21 @@ export default function Auction({
       .every((p) => p.ready);
   }, [room, safePlayers]);
 
+  const statePlayers = useMemo(
+    () => ensureArray(auctionState?.players).filter((p) => p && p.id != null),
+    [auctionState?.players]
+  );
+
   const playerNameById = useMemo(() => {
     const map = new Map();
     safePlayers.forEach((p) => map.set(p.id, playerDisplayName(p)));
-    (auctionState?.players || []).forEach((p) => {
-      if (!map.has(p.id)) map.set(p.id, p.name);
+    statePlayers.forEach((p) => {
+      if (p && p.id != null && !map.has(p.id)) {
+        map.set(p.id, p.name || `Игрок ${p.id}`);
+      }
     });
     return map;
-  }, [safePlayers, auctionState]);
+  }, [safePlayers, statePlayers]);
 
   const openBasketForPlayer = useCallback(
     (playerId) => {
@@ -195,15 +224,21 @@ export default function Auction({
 
   const winsByPlayerId = useMemo(() => {
     const map = new Map();
-    (auctionState?.history || []).forEach((slot) => {
-      if (slot.winnerPlayerId == null) return;
+    fullHistory.forEach((slot) => {
+      if (!slot || slot.winnerPlayerId == null) return;
       map.set(slot.winnerPlayerId, (map.get(slot.winnerPlayerId) || 0) + 1);
     });
     return map;
-  }, [auctionState]);
+  }, [fullHistory]);
 
-  const baskets = auctionState?.baskets || {};
-  const basketTotals = auctionState?.basketTotals || {};
+  const baskets = useMemo(
+    () => ensurePlainObject(auctionState?.baskets),
+    [auctionState?.baskets]
+  );
+  const basketTotals = useMemo(
+    () => ensurePlainObject(auctionState?.basketTotals),
+    [auctionState?.basketTotals]
+  );
 
   const selectedPlayerIdEffective = useMemo(() => {
     if (selectedPlayerId != null) return selectedPlayerId;
@@ -278,17 +313,27 @@ export default function Auction({
   const clearError = useCallback(() => setError(""), []);
   const closeCriticalAlert = useCallback(() => setCriticalAlert(null), []);
 
-  const compactHistory = useMemo(
-    () => (auctionState?.history || []).slice(-6).reverse(),
-    [auctionState?.history]
-  );
-  const fullHistory = useMemo(
-    () => (auctionState?.history || []).slice().reverse(),
+  const safeHistory = useMemo(
+    () =>
+      ensureArray(auctionState?.history).filter(
+        (slot) => slot && typeof slot.index === "number"
+      ),
     [auctionState?.history]
   );
 
+  const compactHistory = useMemo(
+    () => safeHistory.slice(-6).reverse(),
+    [safeHistory]
+  );
+  const fullHistory = useMemo(
+    () => safeHistory.slice().reverse(),
+    [safeHistory]
+  );
+
   const liveBidFeed = useMemo(() => {
-    const feed = Array.isArray(auctionState?.bidFeed) ? auctionState.bidFeed : [];
+    const feed = ensureArray(auctionState?.bidFeed).filter(
+      (entry) => entry && (entry.playerId != null || entry.id != null)
+    );
     if (feed.length) {
       return feed
         .slice(-3)
@@ -306,8 +351,7 @@ export default function Auction({
           };
         });
     }
-    const current = auctionState?.currentBids || {};
-    return Object.entries(current)
+    return Object.entries(currentBids)
       .map(([id, amount]) => ({
         id,
         playerId: Number(id),
@@ -317,7 +361,7 @@ export default function Auction({
       .filter((entry) => entry.amount > 0)
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 3);
-  }, [auctionState?.bidFeed, auctionState?.currentBids, playerNameById]);
+  }, [auctionState?.bidFeed, currentBids, playerNameById]);
 
   const readyCount = useMemo(() => {
     if (!room) return 0;
