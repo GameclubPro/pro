@@ -133,6 +133,21 @@ export default function Auction({
 
   const currentSlot = auctionState?.currentSlot || null;
   const baseBid = currentSlot?.basePrice || 0;
+  const slotIndex =
+    currentSlot && typeof currentSlot.index === "number" ? currentSlot.index + 1 : null;
+  const slotMaxRaw =
+    auctionState?.rules?.maxSlots ??
+    auctionState?.totalSlots ??
+    (Array.isArray(auctionState?.slots) ? auctionState.slots.length : null);
+  const slotMax = slotMaxRaw != null && Number.isFinite(Number(slotMaxRaw))
+    ? Number(slotMaxRaw)
+    : null;
+
+  const showLanding = !room;
+  const showLobby = phase === "lobby";
+  const showGame = phase === "in_progress";
+  const showResult = phase === "finished";
+
 
   const myRoundBid = useMemo(() => {
     if (myPlayerId == null) return null;
@@ -395,13 +410,6 @@ export default function Auction({
     return next;
   }, [safePlayers, playersFilterReady, playersSort, balances, winsByPlayerId]);
 
-  const headerProgress = useMemo(() => {
-    if (showLobby) return readyPercent;
-    if (showGame) return progressPct ?? 0;
-    if (showResult) return 100;
-    return 0;
-  }, [showLobby, readyPercent, showGame, progressPct, showResult]);
-
   const cfgPreviewSlots = useMemo(() => parseCustomSlots(cfgSlotsText), [cfgSlotsText]);
   useEffect(() => {
     if (!currentSlot) {
@@ -453,6 +461,13 @@ export default function Auction({
     if (secsLeft >= 0) return 1;
     return null;
   }, [secsLeft, timePerSlot]);
+
+  const headerProgress = useMemo(() => {
+    if (showLobby) return readyPercent;
+    if (showGame) return progressPct ?? 0;
+    if (showResult) return 100;
+    return 0;
+  }, [showLobby, readyPercent, showGame, progressPct, showResult]);
 
   const subscribeToRoom = useCallback(
     (rawCode, options = {}) => {
@@ -910,12 +925,6 @@ export default function Auction({
       pushToast({ type: "error", text: "Не удалось скопировать" });
     }
   }
-
-  const showLanding = !room;
-  const showLobby = phase === "lobby";
-  const showGame = phase === "in_progress";
-  const showResult = phase === "finished";
-
   const primaryActionLabel = isOwner
     ? showLobby
       ? "Старт"
@@ -1341,7 +1350,7 @@ export default function Auction({
               <h3>{playerDisplayName(selectedPlayer)}</h3>
             </div>
             <button type="button" className="icon-btn ghost" onClick={closeBasket} aria-label="Закрыть">
-              ?
+              ✕
             </button>
           </div>
           <div className="basket-owner">
