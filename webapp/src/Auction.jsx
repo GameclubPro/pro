@@ -317,6 +317,22 @@ export default function Auction({
       .slice(0, 3);
   }, [auctionState?.bidFeed, auctionState?.currentBids, playerNameById]);
 
+  const readyCount = useMemo(() => {
+    if (!room) return 0;
+    return players.filter(
+      (p) => p.ready && p.user?.id !== room.ownerId
+    ).length;
+  }, [players, room]);
+
+  const nonHostPlayers = useMemo(() => {
+    if (!room) return Math.max(players.length - 1, 0);
+    return Math.max(players.length - 1, 0);
+  }, [players.length, room]);
+
+  const readyPercent = nonHostPlayers
+    ? Math.round((readyCount / Math.max(nonHostPlayers, 1)) * 100)
+    : 0;
+
   const modalPlayers = useMemo(() => {
     const base = players.slice();
     const filtered = playersFilterReady ? base.filter((p) => p.ready) : base;
@@ -343,22 +359,6 @@ export default function Auction({
   }, [showLobby, readyPercent, showGame, progressPct, showResult]);
 
   const cfgPreviewSlots = useMemo(() => parseCustomSlots(cfgSlotsText), [cfgSlotsText]);
-
-  const readyCount = useMemo(() => {
-    if (!room) return 0;
-    return players.filter(
-      (p) => p.ready && p.user?.id !== room.ownerId
-    ).length;
-  }, [players, room]);
-
-  const nonHostPlayers = useMemo(() => {
-    if (!room) return Math.max(players.length - 1, 0);
-    return Math.max(players.length - 1, 0);
-  }, [players.length, room]);
-
-  const readyPercent = nonHostPlayers
-    ? Math.round((readyCount / Math.max(nonHostPlayers, 1)) * 100)
-    : 0;
   useEffect(() => {
     if (!currentSlot) {
       setMyBid("");
