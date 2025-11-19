@@ -118,9 +118,11 @@ export default function Auction({
     return typeof value === "number" ? value : null;
   }, [auctionState, myPlayerId]);
 
+  const safePlayers = useMemo(() => players.filter(Boolean), [players]);
+
   const currentPlayer = useMemo(
-    () => players.find((p) => p.id === myPlayerId) || null,
-    [players, myPlayerId]
+    () => safePlayers.find((p) => p.id === myPlayerId) || null,
+    [safePlayers, myPlayerId]
   );
 
   const isOwner = useMemo(() => {
@@ -129,20 +131,20 @@ export default function Auction({
   }, [room, selfInfo]);
 
   const everyoneReadyExceptOwner = useMemo(() => {
-    if (!room || !players.length) return false;
-    return players
+    if (!room || !safePlayers.length) return false;
+    return safePlayers
       .filter((p) => p.user?.id !== room.ownerId)
       .every((p) => p.ready);
-  }, [room, players]);
+  }, [room, safePlayers]);
 
   const playerNameById = useMemo(() => {
     const map = new Map();
-    players.forEach((p) => map.set(p.id, playerDisplayName(p)));
+    safePlayers.forEach((p) => map.set(p.id, playerDisplayName(p)));
     (auctionState?.players || []).forEach((p) => {
       if (!map.has(p.id)) map.set(p.id, p.name);
     });
     return map;
-  }, [players, auctionState]);
+  }, [safePlayers, auctionState]);
 
   const openBasketForPlayer = useCallback(
     (playerId) => {
@@ -206,12 +208,12 @@ export default function Auction({
   const selectedPlayerIdEffective = useMemo(() => {
     if (selectedPlayerId != null) return selectedPlayerId;
     if (myPlayerId != null) return myPlayerId;
-    return players[0]?.id ?? null;
-  }, [selectedPlayerId, myPlayerId, players]);
+    return safePlayers[0]?.id ?? null;
+  }, [selectedPlayerId, myPlayerId, safePlayers]);
 
   const selectedPlayer = useMemo(
-    () => players.find((p) => p.id === selectedPlayerIdEffective) || null,
-    [players, selectedPlayerIdEffective]
+    () => safePlayers.find((p) => p.id === selectedPlayerIdEffective) || null,
+    [safePlayers, selectedPlayerIdEffective]
   );
 
   const selectedBasket = useMemo(() => {
@@ -319,22 +321,20 @@ export default function Auction({
 
   const readyCount = useMemo(() => {
     if (!room) return 0;
-    return players.filter(
-      (p) => p.ready && p.user?.id !== room.ownerId
-    ).length;
-  }, [players, room]);
+    return safePlayers.filter((p) => p.ready && p.user?.id !== room.ownerId).length;
+  }, [safePlayers, room]);
 
   const nonHostPlayers = useMemo(() => {
-    if (!room) return Math.max(players.length - 1, 0);
-    return Math.max(players.length - 1, 0);
-  }, [players.length, room]);
+    if (!room) return Math.max(safePlayers.length - 1, 0);
+    return Math.max(safePlayers.length - 1, 0);
+  }, [safePlayers.length, room]);
 
   const readyPercent = nonHostPlayers
     ? Math.round((readyCount / Math.max(nonHostPlayers, 1)) * 100)
     : 0;
 
   const modalPlayers = useMemo(() => {
-    const base = players.slice();
+    const base = safePlayers.slice();
     const filtered = playersFilterReady ? base.filter((p) => p.ready) : base;
     const next = filtered.slice();
     next.sort((a, b) => {
@@ -349,7 +349,7 @@ export default function Auction({
       return aId - bId;
     });
     return next;
-  }, [players, playersFilterReady, playersSort, balances, winsByPlayerId]);
+  }, [safePlayers, playersFilterReady, playersSort, balances, winsByPlayerId]);
 
   const headerProgress = useMemo(() => {
     if (showLobby) return readyPercent;
@@ -548,14 +548,14 @@ export default function Auction({
   }, [phase, onProgress]);
 
   useEffect(() => {
-    if (!players.length) {
+    if (!safePlayers.length) {
       setSelectedPlayerId(null);
       return;
     }
-    if (!players.some((p) => p.id === selectedPlayerId)) {
-      setSelectedPlayerId(selfInfo?.roomPlayerId ?? players[0].id);
+    if (!safePlayers.some((p) => p.id === selectedPlayerId)) {
+      setSelectedPlayerId(selfInfo?.roomPlayerId ?? safePlayers[0].id);
     }
-  }, [players, selectedPlayerId, selfInfo?.roomPlayerId]);
+  }, [safePlayers, selectedPlayerId, selfInfo?.roomPlayerId]);
 
   useEffect(() => {
     if (!sanitizedAutoCode || room || codeInput) return;
@@ -1178,7 +1178,7 @@ export default function Auction({
             <span className="muted small">
               {nonHostPlayers > 0
                 ? `из ${nonHostPlayers}`
-                : `${players.length} игрок${players.length === 1 ? "" : "ов"}`}
+                : `${safePlayers.length} игрок${safePlayers.length === 1 ? "" : "ов"}`}
             </span>
           </div>
           <div className="lobby-actions">
@@ -1228,7 +1228,7 @@ export default function Auction({
           </div>
         </div>
         <div className="results">
-          {players
+          {safePlayers
             .slice()
             .sort((a, b) => (balances[b.id] ?? 0) - (balances[a.id] ?? 0))
             .map((p) => {
@@ -1391,13 +1391,13 @@ export default function Auction({
     );
   };
   const renderPlayersGridSection = () => {
-    if (!players.length) return null;
+    if (!safePlayers.length) return null;
     return (
       <section className="panel players-grid-card">
         <div className="panel-head players-grid-head">
           <div>
             <span className="label">Игроки</span>
-            <h3>{players.length}</h3>
+            <h3>{safePlayers.length}</h3>
           </div>
           <button
             type="button"
@@ -1409,7 +1409,7 @@ export default function Auction({
           </button>
         </div>
         <div className="players-grid">
-          {players.map((p) => {
+          {safePlayers.map((p) => {
             const name = playerDisplayName(p);
             const balance = balances[p.id] ?? null;
             const wins = winsByPlayerId.get(p.id) || 0;
