@@ -1166,7 +1166,7 @@ export default function Auction({
           <div className="lobby-room">
             <div className="lobby-chip">LOBBY</div>
             <div className="lobby-name-row">
-              <h3>{room?.name || room?.code || "Комната"}</h3>
+              <h3>{room?.name || room?.code || "\u041a\u043e\u043c\u043d\u0430\u0442\u0430"}</h3>
               <button type="button" className="room-code-chip" onClick={copyRoomCode}>
                 {room?.code || "------"}
               </button>
@@ -1176,8 +1176,8 @@ export default function Auction({
             </p>
           </div>
           <div className="lobby-owner">
-            <span className="label">Ведущий</span>
-            <strong>{ownerPlayer ? playerDisplayName(ownerPlayer) : "—"}</strong>
+            <span className="label">\u0412\u0435\u0434\u0443\u0449\u0438\u0439</span>
+            <strong>{ownerPlayer ? playerDisplayName(ownerPlayer) : "\u2014"}</strong>
           </div>
         </div>
         <div className="lobby-body">
@@ -1196,20 +1196,20 @@ export default function Auction({
               </svg>
               <div className="ready-value">
                 <strong>{readyCount}</strong>
-                <span>готовы</span>
+                <span>\u0433\u043e\u0442\u043e\0432\044b</span>
               </div>
             </div>
             <div className="ready-copy">
-              <span className="muted small">готовность</span>
+              <span className="muted small">\u0433\u043e\0442\043e\0432\043d\043e\0441\0442\044c</span>
               <strong>{readyPercent}%</strong>
               <span className="muted tiny">
                 {readyCount}/{readyTarget} готовы
               </span>
-              <span className="muted tiny host-ready">Хост учтен</span>
+              <span className="muted tiny host-ready">\u0425\u043e\u0441\u0442 \u0443\u0447\u0442\u0435\u043d</span>
             </div>
           </div>
           <div className="lobby-cta">
-            <div className="cta-label">Подготовка</div>
+            <div className="cta-label">\u041f\u043e\u0434\u0433\u043e\0442\043e\0432\043a\u0430</div>
             {isOwner ? (
               <>
                 <button
@@ -1218,10 +1218,10 @@ export default function Auction({
                   onClick={handleStartAuction}
                   disabled={!canStart}
                 >
-                  {canStart ? "Запустить аукцион" : "Ждём готовность"}
+                  {canStart ? "\u0417\u0430\u043f\u0443\0441\u0442\u0438\u0442\u044c \u0430\u0443\u043a\u0446\u0438\u043e\u043d" : "\u0416\u0434\u0451\u043c \u0433\u043e\0442\u043e\0432\043d\043e\0441\0442\044c"}
                 </button>
                 <p className="muted tiny">
-                  Понадобится минимум двое и готовность команды.
+                  \u041f\u043e\u043d\u0430\u0434\u043e\0431\u0438\u0442\u0441\u044f \u043c\u0438\u043d\u0438\u043c\u0443\u043c \u0434\u0432\u043e\u0435 \u0438 \u0433\u043e\u0442\u043e\u0432\u043d\u043e\0441\0442\u044c \u043a\u043e\u043c\u0430\u043d\u0434\u044b.
                 </p>
               </>
             ) : (
@@ -1231,7 +1231,7 @@ export default function Auction({
                   className={`auction-btn outline xl ${myReady ? "ok" : ""}`}
                   onClick={toggleReady}
                 >
-                  {myReady ? "Я готов" : "Отметить готовность"}
+                  {myReady ? "\u042f \u0433\u043e\u0442\u043e\0432" : "\u041e\u0442\u043c\u0435\u0442\u0438\u0442\u044c \u0433\u043e\u0442\u043e\0432\u043d\u043e\0441\0442\u044c"}
                 </button>
                 <p className="muted tiny">
                   Ведущий запустит игру, когда все отметятся.
@@ -1240,14 +1240,24 @@ export default function Auction({
             )}
             <div className="lobby-inline-stats">
               <div>
-                <span className="label tiny">Банк</span>
+                <span className="label tiny">\u0411\u0430\u043d\u043a</span>
                 <strong>{moneyFormatter.format(initialBank)}$</strong>
               </div>
               {slotMax != null && (
                 <div>
-                  <span className="label tiny">Слоты</span>
+                  <span className="label tiny">\u0421\u043b\u043e\u0442\u044b</span>
                   <strong>{slotMax}</strong>
                 </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
               )}
             </div>
           </div>
