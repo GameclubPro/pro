@@ -930,25 +930,6 @@ export default function Auction({
       pushToast({ type: "error", text: "Не удалось скопировать" });
     }
   }
-  const primaryActionLabel = isOwner
-    ? showLobby
-      ? "Старт"
-      : showGame
-      ? "Далее"
-      : "Реванш"
-    : currentPlayer?.ready
-    ? "Не готов"
-    : "Я готов";
-
-  const primaryActionDisabled = isOwner
-    ? showLobby && !everyoneReadyExceptOwner
-    : !currentPlayer;
-
-  const primaryActionHandler = isOwner
-    ? showLobby || showResult
-      ? handleStartAuction
-      : forceNext
-    : toggleReady;
   const renderLanding = () => (
     <div className="landing-screen">
       <motion.div
@@ -1215,18 +1196,6 @@ export default function Auction({
             <span className="label">Комната</span>
             <h3>{room?.name || room?.code || "Лобби"}</h3>
           </div>
-          {isOwner && (
-            <button
-              type="button"
-              className="pill ghost"
-              onClick={() => {
-                setCfgStep(0);
-                setCfgOpen(true);
-              }}
-            >
-              Настройки
-            </button>
-          )}
         </header>
         <div className="lobby-status">
           <div className="ready-meter">
@@ -1253,39 +1222,11 @@ export default function Auction({
                 : `${safePlayers.length} игрок${safePlayers.length === 1 ? "" : "ов"}`}
             </span>
           </div>
-          <div className="lobby-actions">
-            {!isOwner ? (
-              <button
-                type="button"
-                className="accent-btn"
-                onClick={toggleReady}
-                disabled={!currentPlayer}
-              >
-                {currentPlayer?.ready ? "Я не готов" : "Я готов"}
-              </button>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className="accent-btn"
-                  onClick={handleStartAuction}
-                  disabled={!everyoneReadyExceptOwner}
-                >
-                  {everyoneReadyExceptOwner ? "Стартуем" : "Ждём игроков"}
-                </button>
-                <button
-                  type="button"
-                  className="ghost-btn"
-                  onClick={() => {
-                    setCfgStep(0);
-                    setCfgOpen(true);
-                  }}
-                >
-                  Настроить
-                </button>
-              </>
-            )}
-          </div>
+          <p className="muted small lobby-hint">
+            {!isOwner
+              ? "Нажми «Я готов» внизу, когда будешь готов к старту."
+              : "Как только все будут готовы, нажми «Старт» внизу экрана."}
+          </p>
         </div>
       </section>
     );
@@ -1808,76 +1749,6 @@ export default function Auction({
     );
   };
 
-  const renderDock = () => {
-    if (showLanding) return null;
-    const dockButtons = [];
-    if (isOwner) {
-      dockButtons.push(
-        <button
-          key="cfg"
-          type="button"
-          className="dock-icon"
-          aria-label="Настройки"
-          onClick={() => {
-            setCfgStep(0);
-            setCfgOpen(true);
-          }}
-        >
-          ⚙️
-        </button>
-      );
-    }
-
-    dockButtons.push(
-      <button
-        key="players"
-        type="button"
-        className="dock-icon"
-        aria-label="Игроки"
-        onClick={() => setPlayersModalOpen(true)}
-      >
-        👥
-      </button>,
-      <button
-        key="primary"
-        type="button"
-        className="dock-cta"
-        onClick={primaryActionHandler}
-        disabled={primaryActionDisabled}
-      >
-        {primaryActionLabel}
-      </button>,
-      <button
-        key="history"
-        type="button"
-        className="dock-icon"
-        aria-label="История"
-        onClick={() => setHistoryModalOpen(true)}
-      >
-        🕑
-      </button>,
-      <button key="exit" type="button" className="dock-icon" aria-label="Выход" onClick={handleExit}>
-        ↩
-      </button>
-    );
-    return (
-      <nav className="auction-dock" aria-label="???????? ????????">
-        {dockButtons}
-      </nav>
-    );
-  };
-
-  const renderOwnerFab = () => {
-    if (!isOwner || showLanding) return null;
-    const ownerLabel = showLobby ? "Старт" : showResult ? "Реванш" : "Следующий";
-    const ownerAction = showLobby || showResult ? handleStartAuction : forceNext;
-    return (
-      <button type="button" className="owner-fab" onClick={ownerAction}>
-        {ownerLabel}
-      </button>
-    );
-  };
-
   const activeStageCard = showLobby
     ? renderLobbyCard()
     : showGame
@@ -1885,8 +1756,7 @@ export default function Auction({
     : renderResultsCard();
 
   return (
-    <div className={`auction-app ${showLanding ? "landing" : "has-dock"}`}>
-      <div className="ambient" aria-hidden="true" />
+    <div className={`auction-app ${showLanding ? "landing" : ""}`}>
       {showLanding ? (
         renderLanding()
       ) : (
@@ -1899,8 +1769,6 @@ export default function Auction({
               {renderPlayersGridSection()}
             </div>
           </div>
-          {renderDock()}
-          {renderOwnerFab()}
         </>
       )}
       {renderToastStack()}
