@@ -1154,16 +1154,16 @@ const renderLobbyCard = () => {
           type="button"
           onClick={onSettingsClick}
           disabled={!isOwner}
-          title={isOwner ? "???????????? ?????????" : "?????? ??????????? ??????? ?????? ?????????"}
+          title={isOwner ? "Настройки комнаты" : "Только владелец может менять настройки"}
         >
-          ?
+          ⚙
         </button>
         <div className="lobby-room">
           <div className="lobby-name-row">
             <div>
-              <h3>{room?.name || room?.code || "??? ????????"}</h3>
+              <h3>{room?.name || room?.code || "Без названия"}</h3>
               <div className="lobby-meta">
-                {safePlayers.length} ??????? ? ?????? {readyCount}/{readyTarget} ? ???? {moneyFormatter.format(initialBank)}$
+                {safePlayers.length} игроков · готовы {readyCount}/{readyTarget} · банк {moneyFormatter.format(initialBank)}$
               </div>
             </div>
             <button type="button" className="room-code-chip" onClick={copyRoomCode}>
@@ -1171,7 +1171,7 @@ const renderLobbyCard = () => {
             </button>
           </div>
           <div className="lobby-owner">
-            <span className="label">????????</span>
+            <span className="label">Владелец</span>
             <strong>{ownerPlayer ? playerDisplayName(ownerPlayer) : "?"}</strong>
           </div>
         </div>
@@ -1182,24 +1182,24 @@ const renderLobbyCard = () => {
             onClick={isOwner ? handleStartAuction : toggleReady}
             disabled={isOwner ? !canStart : false}
           >
-            <span className="ico">?</span>
-            <span>{isOwner ? "?????" : myReady ? "?????" : "?? ?????"}</span>
+            <span className="ico">⏻</span>
+            <span>{isOwner ? "Старт" : myReady ? "Готов" : "Не готов"}</span>
           </button>
           <div className="ready-sub">
             {isOwner
               ? canStart
-                ? "????? ?????????"
-                : "???? ????????????? ?????????"
+                ? "Можно запускать"
+                : "Ждём готовность игроков"
               : myReady
-              ? "?? ??????????? ?????????"
-              : "???????, ????? ???? ???????"}
+              ? "Вы отмечены готовым"
+              : "Нажмите, чтобы быть готовым"}
           </div>
         </div>
       </header>
 
-      <div className="lobby-players-grid" aria-label="??????">
+      <div className="lobby-players-grid" aria-label="Игроки">
         {lobbyPlayers.map((p, idx) => {
-          const name = p ? playerDisplayName(p) : "?????";
+          const name = p ? playerDisplayName(p) : "Пусто";
           const avatar = p?.user?.photo_url || p?.user?.avatar || null;
           return (
             <div key={p?.id ?? `slot-${idx}`} className="lobby-player-card">
@@ -1587,17 +1587,17 @@ const renderConfigWizard = () => {
       <button
         type="button"
         className="sheet-backdrop"
-        aria-label="??????? ?????????"
+        aria-label="Закрыть настройки"
         onClick={closeConfigWizard}
       />
       <div className="config-sheet">
         <div className="sheet-handle" />
         <header className="config-head">
-          <span>????????? ???????</span>
+          <span>Настройки комнаты</span>
         </header>
         <div className="wizard-step">
           <label className="field">
-            <span>?????? ?? ??????</span>
+            <span>Бюджет на игрока</span>
             <input
               className="text-input"
               inputMode="numeric"
@@ -1609,10 +1609,10 @@ const renderConfigWizard = () => {
                 }))
               }
             />
-            <div className="field-hint">100 000 ? 5 000 000 $</div>
+            <div className="field-hint">100 000 – 5 000 000 $</div>
           </label>
           <label className="field">
-            <span>?????????? ?????</span>
+            <span>Количество лотов</span>
             <input
               className="text-input"
               inputMode="numeric"
@@ -1624,15 +1624,15 @@ const renderConfigWizard = () => {
                 }))
               }
             />
-            <div className="field-hint">10 ? 40</div>
+            <div className="field-hint">10 – 40</div>
           </label>
         </div>
         <footer className="wizard-footer">
           <button type="button" className="ghost-btn" onClick={closeConfigWizard}>
-            ??????
+            Отмена
           </button>
           <button type="button" className="accent-btn" onClick={configureAuction}>
-            ?????????
+            Сохранить
           </button>
         </footer>
       </div>
