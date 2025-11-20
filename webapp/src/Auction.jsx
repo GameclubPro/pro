@@ -1215,7 +1215,7 @@ const renderLobbyCard = () => {
     if (!showResult) return null;
     return (
       <section className="panel">
-        <div className="panel-head">
+        <div>
           <div>
             <span className="label">Финиш</span>
             <h3>Итоги</h3>
@@ -1347,7 +1347,7 @@ const renderLobbyCard = () => {
     if (!compactHistory.length) return null;
     return (
       <section className="panel timeline-card">
-        <div className="panel-head">
+        <div>
           <div>
             <span className="label">История</span>
             <h3>Последние лоты</h3>
@@ -1388,7 +1388,7 @@ const renderLobbyCard = () => {
     if (!safePlayers.length) return null;
     return (
       <section className="panel players-grid-card">
-        <div className="panel-head players-grid-head">
+        <div>
           <div>
             <span className="label">Игроки</span>
             <h3>{safePlayers.length}</h3>
@@ -1408,7 +1408,6 @@ const renderLobbyCard = () => {
             const balance = balances[p.id] ?? null;
             const wins = winsByPlayerId.get(p.id) || 0;
             const avatarUrl = p.user?.photo_url || p.user?.avatar || null;
-            const isSelected = selectedPlayerIdEffective === p.id;
             const isHostTile = p.user?.id === room?.ownerId;
             const playerBasket = baskets[p.id] || baskets[String(p.id)] || [];
             const cases = Array.isArray(playerBasket)
@@ -1422,12 +1421,7 @@ const renderLobbyCard = () => {
               <button
                 key={p.id}
                 type="button"
-                className={
-                  "player-card" +
-                  (p.ready ? " ready" : "") +
-                  (isSelected ? " selected" : "") +
-                  (isHostTile ? " host" : "")
-                }
+                className={p.ready ? "ready" : undefined}
                 onClick={() => openBasketForPlayer(p.id)}
               >
                 <div className="player-card__avatar">
@@ -1695,7 +1689,7 @@ const renderConfigWizard = () => {
     const readyTarget = Math.max(totalPlayers, 1);
 
     return (
-      <header className="auction-header">
+      <header>
         <div className="header-main">
           <button
             type="button"
