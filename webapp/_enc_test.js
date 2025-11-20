@@ -1,0 +1,1 @@
+const {TextDecoder, TextEncoder}=require('util');\nconst enc=new TextEncoder();\nconst dec=new TextDecoder('windows-1251');\nconst s='‏צרפנ‎ץר';\nconst bytes=enc.encode(s);\nconsole.log(bytes);\nconsole.log(dec.decode(bytes));\n

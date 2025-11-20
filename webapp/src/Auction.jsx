@@ -11,9 +11,9 @@ const CODE_ALPHABET_RE = /[^A-HJKMNPQRSTUVWXYZ23456789]/g;
 const BID_PRESETS = [1_000, 5_000, 10_000, 25_000, 50_000];
 
 const PHASE_LABEL = {
-  lobby: "юцшфрэшх",
-  in_progress: "шф╕Є Ёрєэф",
-  finished: "шЄюуш",
+  lobby: "Лобби",
+  in_progress: "Идут торги",
+  finished: "Финиш",
 };
 
 function normalizeCode(value = "") {
@@ -54,7 +54,7 @@ function parseCustomSlots(input) {
     .map((line) => {
       const [name, price, typeRaw] = line.split("|").map((part) => part.trim());
       const slot = {
-        name: name || "┴хч эрчтрэш ",
+        name: name || "Без названия",
         type: String(typeRaw || "lot").toLowerCase() === "lootbox" ? "lootbox" : "lot",
       };
       const base = Number(price);
@@ -66,8 +66,8 @@ function parseCustomSlots(input) {
 }
 
 function playerDisplayName(player) {
-  if (!player) return "╚уЁюъ";
-  return player.user?.first_name || player.user?.username || `╚уЁюъ ${player.id}`;
+  if (!player) return "Игрок";
+  return player.user?.first_name || player.user?.username || `Игрок ${player.id}`;
 }
 export default function Auction({
   apiBase,
@@ -205,7 +205,7 @@ export default function Auction({
     safePlayers.forEach((p) => map.set(p.id, playerDisplayName(p)));
     statePlayers.forEach((p) => {
       if (p && p.id != null && !map.has(p.id)) {
-        map.set(p.id, p.name || `╚уЁюъ ${p.id}`);
+        map.set(p.id, p.name || `Игрок ${p.id}`);
       }
     });
     return map;
@@ -383,7 +383,7 @@ export default function Auction({
             label:
               entry.label ||
               playerNameById.get(playerId) ||
-              (playerId != null ? `╚уЁюъ ${playerId}` : "╤Єртър"),
+              (playerId != null ? `Игрок ${playerId}` : "Ставка"),
           };
         });
     }
@@ -392,7 +392,7 @@ export default function Auction({
         id,
         playerId: Number(id),
         amount: Number(amount) || 0,
-        label: playerNameById.get(Number(id)) || `╚уЁюъ ${id}`,
+        label: playerNameById.get(Number(id)) || `Игрок ${id}`,
       }))
       .filter((entry) => entry.amount > 0)
       .sort((a, b) => b.amount - a.amount)
@@ -526,9 +526,9 @@ export default function Auction({
 
     instance.on("connect_error", (err) => {
       setConnecting(false);
-      pushError(`═х єфрыюё№ яюфъы■ўшЄ№ё : ${err.message}`, {
+      pushError(`Не удалось подключиться: ${err.message}`, {
         critical: true,
-        actionLabel: "┬√щЄш",
+        actionLabel: "Выйти",
         onAction: handleExit,
       });
     });
@@ -680,7 +680,7 @@ export default function Auction({
   }, [basketOpen]);
   async function createRoom() {
     if (!initData) {
-      pushError("═хЄ initData юЄ Telegram");
+      pushError("Нет initData из Telegram");
       return;
     }
     setCreating(true);
@@ -698,7 +698,9 @@ export default function Auction({
       if (!resp.ok) {
         const code = data?.error || "failed";
         pushError(
-          code === "code_already_in_use" ? "╩юф ъюьэрЄ√ єцх чрэ Є" : "═х єфрыюё№ ёючфрЄ№ ъюьэрЄє"
+          code === "code_already_in_use"
+            ? "Код комнаты уже используется"
+            : "Не удалось создать комнату"
         );
         return;
       }
@@ -709,7 +711,7 @@ export default function Auction({
         subscribeToRoom(data.room.code, { force: true });
       }
     } catch {
-      pushError("╬°шсър ёхЄш яЁш ёючфрэшш ъюьэрЄ√");
+      pushError("Не удалось создать комнату, попробуйте ещё раз");
     } finally {
       setCreating(false);
     }
@@ -717,12 +719,12 @@ export default function Auction({
 
   async function joinRoom(rawCode, options = {}) {
     if (!initData) {
-      pushError("═хЄ initData юЄ Telegram");
+      pushError("Нет initData из Telegram");
       return;
     }
     const code = normalizeCode(rawCode || codeInput);
     if (!code) {
-      pushError("┬тхфшЄх ъюф ъюьэрЄ√");
+      pushError("Введите код комнаты");
       return;
     }
     setJoining(true);
@@ -740,11 +742,11 @@ export default function Auction({
       if (!resp.ok) {
         const codeErr = data?.error || "failed";
         const map = {
-          room_not_found: "╩юьэрЄр эх эрщфхэр",
-          room_full: "╩юьэрЄр чряюыэхэр",
-          game_in_progress: "╚уЁр єцх эрўрырё№",
+          room_not_found: "Комната не найдена",
+          room_full: "Комната заполнена",
+          game_in_progress: "Игра уже идёт",
         };
-        pushError(map[codeErr] || "═х єфрыюё№ тющЄш");
+        pushError(map[codeErr] || "Не удалось войти");
         return;
       }
       setRoom(data.room || null);
@@ -757,7 +759,7 @@ export default function Auction({
         } catch {}
       }
     } catch {
-      pushError("╬°шсър ёхЄш яЁш тїюфх т ъюьэрЄє");
+      pushError("Не удалось войти в комнату");
     } finally {
       setJoining(false);
     }
@@ -772,7 +774,7 @@ export default function Auction({
       { code: room.code, ready: !ready },
       (resp) => {
         if (!resp || !resp.ok) {
-          pushError("═х єфрыюё№ шчьхэшЄ№ ёЄрЄєё");
+          pushError("Не удалось изменить статус");
         }
       }
     );
@@ -786,13 +788,13 @@ export default function Auction({
       (resp) => {
         if (!resp || !resp.ok) {
           const map = {
-            room_not_found: "╩юьэрЄр эх эрщфхэр",
-            forbidden_not_owner: "╥юы№ъю їюёЄ ьюцхЄ ёЄрЁЄютрЄ№",
-            need_at_least_2_players: "═єцэю ьшэшьєь фтр шуЁюър",
-            need_ready_players: "╞ф╕ь уюЄютэюёЄ№ шуЁюъют",
-            already_started: "╚уЁр єцх шф╕Є",
+            room_not_found: "Комната не найдена",
+            forbidden_not_owner: "Только владелец может начать",
+            need_at_least_2_players: "Нужно минимум 2 игрока",
+            need_ready_players: "Нужно, чтобы все были готовы",
+            already_started: "Аукцион уже идёт",
           };
-          pushError(map[resp?.error] || "═х єфрыюё№ чряєёЄшЄ№ рєъЎшюэ");
+          pushError(map[resp?.error] || "Не удалось запустить аукцион");
         }
       }
     );
@@ -894,8 +896,8 @@ export default function Auction({
             not_participant: "┬√ эх єўрёЄтєхЄх",
             bad_amount: "═хтхЁэр  ёєььр",
             not_enough_money: "═хфюёЄрЄюўэю фхэху",
-                        paused: "Paused",
-            bid_below_base: "Bid must be >= base price",
+                        paused: "Пауза",
+            bid_below_base: "Ставка ниже базовой",
           };
           pushError(map[resp?.error] || "═х єфрыюё№ яЁшэ Є№ ёЄртъє");
         } else {
@@ -983,13 +985,13 @@ export default function Auction({
           initialCode={sanitizedAutoCode}
           minCodeLength={4}
           maxCodeLength={6}
-          joinButtonLabel={joining ? "╧юфъы■ўрхь..." : "╧юфъы■ўшЄ№ё "}
-          joinBusyLabel="╧юфъы■ўрхь..."
-          createButtonLabel={creating ? "╤ючфр╕ь..." : "╤ючфрЄ№ ъюьэрЄє"}
-          createBusyLabel="╤ючфр╕ь..."
-          codePlaceholder="┬тхфшЄх ъюф"
+          joinButtonLabel={joining ? "Подключаем..." : "Присоединиться"}
+          joinBusyLabel="Подключаем..."
+          createButtonLabel={creating ? "Создаём..." : "Создать комнату"}
+          createBusyLabel="Создаём..."
+          codePlaceholder="Введите код"
           title="AUCTION"
-          tagline="╦юЄ√, ёЄртъш ш фЁєч№  т юфэющ ъюьэрЄх."
+          tagline="Аукцион, ставки и корзины в одном месте."
           error={error}
           onClearError={clearError}
         />
@@ -999,8 +1001,8 @@ export default function Auction({
 
   const renderLotCard = () => {
     if (!showGame) return null;
-    const icon = currentSlot?.type === "lootbox" ? "??" : "??";
-    const typeLabel = currentSlot?.type === "lootbox" ? "╩хщё" : "╦юЄ";
+    const icon = currentSlot?.type === "lootbox" ? "🎁" : "📦";
+    const typeLabel = currentSlot?.type === "lootbox" ? "Лутбокс" : "Лот";
     const growth = auctionState?.currentStep || auctionState?.growth || 0;
     return (
       <section className="panel stage-card lot-card">
@@ -1262,7 +1264,7 @@ const renderLobbyCard = () => {
     const playerBasket = selectedBasket;
     const lootboxes = playerBasket.filter((item) => item.type === 'lootbox').length;
     const latest = playerBasket[playerBasket.length - 1] || null;
-    const typeIcon = (slot) => (slot.type === "lootbox" ? "??" : "??");
+    const typeIcon = (slot) => (slot.type === "lootbox" ? "🎁" : "📦");
     return (
       <div className="basket-sheet" role="dialog" aria-modal="true">
         <button
@@ -1782,6 +1784,21 @@ const renderConfigWizard = () => {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
