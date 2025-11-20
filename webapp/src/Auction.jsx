@@ -1021,82 +1021,6 @@ export default function Auction({
     </div>
   );
 
-  const renderTopBar = () => (
-    <header className="auction-topbar">
-      <div className="topbar-row">
-        <div className="topbar-left">
-          <div className="logo-chip">AU</div>
-          <div className="room-info">
-            <span className="app-title">auction</span>
-            <button type="button" className="pill room-code" onClick={copyRoomCode}>
-              {room?.code || "------"}
-            </button>
-          </div>
-        </div>
-        <div className="topbar-center">
-          <span className="phase-label">{PHASE_LABEL[phase]}</span>
-          {showLobby ? (
-            <span className="phase-subtitle">
-              {readyCount}/{Math.max(nonHostPlayers, 1) || 1} готовы
-            </span>
-          ) : (
-            slotMax && (
-              <span className="phase-subtitle">
-                Лот {slotIndex}/{slotMax}
-              </span>
-            )
-          )}
-          <div className="phase-meta">
-            <div className="phase-timer">
-              <strong>{secsLeft != null ? secsLeft : "--"}</strong>
-              <span>сек</span>
-            </div>
-            {auctionState?.paused && <span className="pill ghost">Пауза</span>}
-          </div>
-        </div>
-        <div className="topbar-status">
-          <span className={`status-chip ${connecting ? "warn" : "ok"}`}>
-            <span className="dot" />
-            {connecting ? "Connecting…" : "Online"}
-          </span>
-          {auctionState?.paused && <span className="pill ghost tiny">Pause</span>}
-        </div>
-        <div className="topbar-balance">
-          <span>баланс</span>
-          <strong>{myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "-"}</strong>
-        </div>
-        <div className="topbar-actions">
-          <button
-            type="button"
-            className="icon-btn ghost"
-            onClick={() => {
-              setCfgStep(0);
-              setCfgOpen(true);
-            }}
-            disabled={!isOwner}
-            aria-label="Настройки комнаты"
-          >
-            ⚙
-          </button>
-          <button
-            type="button"
-            className="icon-btn ghost"
-            onClick={() => setPlayersModalOpen(true)}
-            aria-label="Чат и игроки"
-          >
-            💬
-          </button>
-          <button type="button" className="icon-btn" onClick={handleExit} aria-label="Назад">
-            ↩
-          </button>
-        </div>
-      </div>
-      <div className="phase-progress" role="presentation" aria-hidden="true">
-        <div style={{ width: `${clamp(headerProgress, 0, 100)}%` }} />
-      </div>
-    </header>
-  );
-
   const renderLotCard = () => {
     if (!showGame) return null;
     const icon = currentSlot?.type === "lootbox" ? "🎁" : "📦";
@@ -1864,7 +1788,6 @@ export default function Auction({
         renderLanding()
       ) : (
         <>
-          {renderTopBar()}
           <div className="stage-layout">
             <div className="stage-primary">{activeStageCard}</div>
             <div className="stage-rail">
