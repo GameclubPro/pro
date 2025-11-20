@@ -1136,8 +1136,6 @@ const renderLobbyCard = () => {
   const readyTarget = Math.max(totalPlayers, 1);
   const myReady = !!currentPlayer?.ready;
   const canStart = readyCount >= readyTarget && safePlayers.length >= 2;
-  const lobbyPlayers = safePlayers.slice(0, 4);
-  while (lobbyPlayers.length < 4) lobbyPlayers.push(null);
 
   const onSettingsClick = () => {
     if (!isOwner) return;
@@ -1145,74 +1143,72 @@ const renderLobbyCard = () => {
   };
 
   return (
-    <div className="lobby-card">
-      <header className="lobby-head">
-        <div className="lobby-chip">LOBBY</div>
-        <button
-          className="lobby-settings icon-btn"
-          type="button"
-          onClick={onSettingsClick}
-          disabled={!isOwner}
-          title={isOwner ? "Настройки комнаты" : "Только владелец может менять настройки"}
-        >
-          ⚙
-        </button>
-        <div className="lobby-room">
-          <div className="lobby-name-row">
-            <div>
-              <h3>{room?.name || room?.code || "Без названия"}</h3>
-              <div className="lobby-meta">
-                {safePlayers.length} игроков · готовы {readyCount}/{readyTarget} · банк {moneyFormatter.format(initialBank)}$
-              </div>
-            </div>
-            <button type="button" className="room-code-chip" onClick={copyRoomCode}>
-              {room?.code || "------"}
-            </button>
-          </div>
-          <div className="lobby-owner">
-            <span className="label">Владелец</span>
-            <strong>{ownerPlayer ? playerDisplayName(ownerPlayer) : "?"}</strong>
+    <section className="lobby-new">
+      <div className="lobby-bar">
+        <div className="lobby-code-block">
+          <span className="label">Код комнаты</span>
+          <div className="lobby-code-row">
+            <span className="lobby-code">{room?.code || "------"}</span>
+            <button type="button" className="icon-btn" onClick={copyRoomCode} aria-label="Скопировать код">⧉</button>
+            <button type="button" className="icon-btn" onClick={shareRoomCode} aria-label="Поделиться кодом">↗</button>
           </div>
         </div>
-        <div className="ready-card">
+        {isOwner && (
           <button
+            className="icon-btn"
             type="button"
-            className={`ready-btn ${isOwner ? "primary" : myReady ? "ok" : "ghost"}`}
-            onClick={isOwner ? handleStartAuction : toggleReady}
-            disabled={isOwner ? !canStart : false}
+            onClick={onSettingsClick}
+            aria-label="Настройки комнаты"
           >
-            <span className="ico">⏻</span>
-            <span>{isOwner ? "Старт" : myReady ? "Готов" : "Не готов"}</span>
+            ⚙
           </button>
-          <div className="ready-sub">
-            {isOwner
-              ? canStart
-                ? "Можно запускать"
-                : "Ждём готовность игроков"
-              : myReady
-              ? "Вы отмечены готовым"
-              : "Нажмите, чтобы быть готовым"}
-          </div>
-        </div>
-      </header>
+        )}
+      </div>
 
-      <div className="lobby-players-grid" aria-label="Игроки">
-        {lobbyPlayers.map((p, idx) => {
-          const name = p ? playerDisplayName(p) : "Пусто";
-          const avatar = p?.user?.photo_url || p?.user?.avatar || null;
+      <div className="lobby-meta-row">
+        <span className="lobby-pill">{safePlayers.length} игроков</span>
+        <span className="lobby-pill ready">{readyCount}/{readyTarget} готовы</span>
+        <span className="lobby-pill">Банк {moneyFormatter.format(initialBank)}$</span>
+        {slotMax != null && <span className="lobby-pill">Лотов {slotMax}</span>}
+      </div>
+
+      <div className="lobby-cta-row">
+        <div className="lobby-owner-tag">Владелец: {ownerPlayer ? playerDisplayName(ownerPlayer) : "—"}</div>
+        <button
+          type="button"
+          className={`cta-main ${!isOwner && myReady ? "ok" : ""}`}
+          onClick={isOwner ? handleStartAuction : toggleReady}
+          disabled={isOwner && !canStart}
+        >
+          {isOwner ? (canStart ? "Старт" : "Ждём готовность") : myReady ? "Готов" : "Я готов"}
+        </button>
+      </div>
+
+      <div className="lobby-list" aria-label="Игроки">
+        {safePlayers.map((p) => {
+          const name = playerDisplayName(p);
+          const avatar = p.user?.photo_url || p.user?.avatar || null;
+          const isHost = p.user?.id === room?.ownerId;
           return (
-            <div key={p?.id ?? `slot-${idx}`} className="lobby-player-card">
-              <div className="lobby-player-avatar">
+            <div key={p.id} className="lobby-player-line">
+              <div className="lobby-player-ava">
                 {avatar ? <img src={avatar} alt={name} /> : name.slice(0, 1)}
               </div>
-              <div className="lobby-player-name">{name}</div>
+              <div className="lobby-player-body">
+                <div className="lobby-player-name">{name}</div>
+                <div className="lobby-player-meta">
+                  {isHost && <span className="badge-owner">хост</span>}
+                  {p.ready && <span className="badge-ready">готов</span>}
+                </div>
+              </div>
             </div>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 };
+;
 
 ;
   const renderResultsCard = () => {
