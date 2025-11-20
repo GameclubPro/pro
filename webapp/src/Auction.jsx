@@ -819,9 +819,9 @@ export default function Auction({
       },
       (resp) => {
         if (!resp || !resp.ok) {
-          pushError(resp?.errorText || "═х єфрыюё№ яЁшьхэшЄ№ эрёЄЁющъш");
+          pushError(resp?.errorText || "Не удалось применить настройки");
         } else {
-          pushToast({ type: "info", text: "═рёЄЁющъш юсэютыхэ√" });
+          pushToast({ type: "info", text: "Настройки обновлены" });
           clearError();
           setCfgOpen(false);
         }
@@ -870,15 +870,15 @@ export default function Auction({
     const amount = raw === "" ? 0 : Number(raw);
 
     if (!Number.isFinite(amount) || amount < 0) {
-      pushError("┬тхфшЄх ъюЁЁхъЄэє■ ёєььє");
+      pushError("Введите корректную сумму");
       return;
     }
     if (myBalance != null && amount > myBalance) {
-      pushError("╤Єртър яЁхт√°рхЄ тр° срырэё");
+      pushError("Ставка превышает ваш баланс");
       return;
     }
     if (amount > 0 && baseBid > 0 && amount < baseBid) {
-      pushError(`╠шэшьры№эр  ёЄртър ${moneyFormatter.format(baseBid)}$`);
+      pushError(`Минимальная ставка ${moneyFormatter.format(baseBid)}$`);
       return;
     }
 
@@ -890,16 +890,16 @@ export default function Auction({
         setBusyBid(false);
         if (!resp || !resp.ok) {
           const map = {
-            room_not_found: "╩юьэрЄр эх эрщфхэр",
-            not_running: "└єъЎшюэ х∙╕ эх чряє∙хэ",
-            not_player: "┬√ эх т ъюьэрЄх",
-            not_participant: "┬√ эх єўрёЄтєхЄх",
-            bad_amount: "═хтхЁэр  ёєььр",
-            not_enough_money: "═хфюёЄрЄюўэю фхэху",
-                        paused: "Пауза",
+            room_not_found: "Комната не найдена",
+            not_running: "Аукцион ещё не запущен",
+            not_player: "Вы не в комнате",
+            not_participant: "Вы не участвуете",
+            bad_amount: "Неверная сумма",
+            not_enough_money: "Недостаточно денег",
+            paused: "Пауза",
             bid_below_base: "Ставка ниже базовой",
           };
-          pushError(map[resp?.error] || "═х єфрыюё№ яЁшэ Є№ ёЄртъє");
+          pushError(map[resp?.error] || "Не удалось принять ставку");
         } else {
           setMyBid("");
           clearError();
@@ -947,9 +947,9 @@ export default function Auction({
       if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(room.code);
       }
-      pushToast({ type: "info", text: "╩юф ёъюяшЁютрэ" });
+      pushToast({ type: "info", text: "Код скопирован" });
     } catch {
-      pushToast({ type: "error", text: "═х єфрыюё№ ёъюяшЁютрЄ№" });
+      pushToast({ type: "error", text: "Не удалось скопировать" });
     }
   }
   
@@ -1008,8 +1008,8 @@ export default function Auction({
       <section className="panel stage-card lot-card">
         <header className="stage-head">
           <div>
-            <span className="label">└ъЄштэ√щ ¤Єря</span>
-            <h3>{currentSlot?.name || "╞ф╕ь ёыюЄ"}</h3>
+            <span className="label">Активный этап</span>
+            <h3>{currentSlot?.name || "Ждём слот"}</h3>
             <span className="muted tiny">{typeLabel}</span>
           </div>
           <div className="lot-pill">
@@ -1024,29 +1024,29 @@ export default function Auction({
             <div className="lot-preview">
               <div className={`lot-icon ${currentSlot.type || "lot"}`}>{icon}</div>
               <div className="lot-meta">
-                <span className="muted tiny">┴рчютр  ёЄртър</span>
+                <span className="muted tiny">Базовая ставка</span>
                 <strong>{moneyFormatter.format(baseBid)}$</strong>
                 {growth > 0 && (
-                  <span className="muted tiny">╪ру +{moneyFormatter.format(growth)}$</span>
+                  <span className="muted tiny">Шаг +{moneyFormatter.format(growth)}$</span>
                 )}
               </div>
             </div>
             <div className="lot-pricing">
               <div>
-                <span className="muted tiny">╠ю  ёЄртър</span>
+                <span className="muted tiny">Моя ставка</span>
                 <strong className="balance-text">
-                  {myRoundBid != null ? `${moneyFormatter.format(myRoundBid)}$` : "Ч"}
+                  {myRoundBid != null ? `${moneyFormatter.format(myRoundBid)}$` : "—"}
                 </strong>
               </div>
               <div>
-                <span className="muted tiny">┴рырэё</span>
+                <span className="muted tiny">Баланс</span>
                 <strong className="balance-text">
-                  {myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "Ч"}
+                  {myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "—"}
                 </strong>
               </div>
             </div>
             <div className="timer timer-large">
-              <div className="timer-value">{countdownStep != null ? countdownStep : "Ч"}</div>
+              <div className="timer-value">{countdownStep != null ? countdownStep : "—"}</div>
               {secsLeft != null && <div className="muted small">{secsLeft} c</div>}
               {progressPct != null && (
                 <div className="timer-bar">
@@ -1086,19 +1086,19 @@ export default function Auction({
                   All-in
                 </button>
                 <button type="button" className="pill ghost" onClick={sendPass}>
-                  ╧рё
+                  Пас
                 </button>
               </div>
               <input
                 className="text-input"
                 inputMode="numeric"
-                placeholder="╤Єртър"
+                placeholder="Ставка"
                 value={myBid}
                 onChange={(e) => setMyBid(e.target.value.replace(/[^\d]/g, ""))}
               />
               <div className="bid-actions">
                 <button type="button" className="ghost-btn" onClick={() => setBidRelative(0)}>
-                  ╤сЁюёшЄ№
+                  Сбросить
                 </button>
                 <button
                   type="button"
@@ -1106,7 +1106,7 @@ export default function Auction({
                   onClick={() => sendBid()}
                   disabled={busyBid || myBalance == null}
                 >
-                  {busyBid ? "╬ЄяЁрты хьЕ" : "╤фхырЄ№ ёЄртъє"}
+                  {busyBid ? "Отправляем…" : "Сделать ставку"}
                 </button>
               </div>
             </div>
@@ -1117,16 +1117,16 @@ export default function Auction({
                   className="pill ghost"
                   onClick={auctionState?.paused ? resumeAuction : pauseAuction}
                 >
-                  {auctionState?.paused ? "╧ЁюфюыцшЄ№" : "╧рєчр"}
+                  {auctionState?.paused ? "Продолжить" : "Пауза"}
                 </button>
                 <button type="button" className="pill ghost" onClick={forceNext}>
-                  ╤ыхфє■∙шщ
+                  Следующий
                 </button>
               </div>
             )}
           </>
         ) : (
-          <p className="muted">═рёЄЁрштрхь ёыюЄ т ъюьэрЄх.</p>
+          <p className="muted">Настраиваем слот в комнате.</p>
         )}
       </section>
     );
@@ -1148,11 +1148,11 @@ const renderLobbyCard = () => {
     <section className="lobby-new">
       <div className="lobby-bar">
         <div className="lobby-code-block">
-          <span className="label">╩юф ъюьэрЄ√</span>
+          <span className="label">Код комнаты</span>
           <div className="lobby-code-row">
             <span className="lobby-code">{room?.code || "------"}</span>
-            <button type="button" className="icon-btn" onClick={copyRoomCode} aria-label="╤ъюяшЁютрЄ№ ъюф">?</button>
-            <button type="button" className="icon-btn" onClick={shareRoomCode} aria-label="╧юфхышЄ№ё  ъюфюь">?</button>
+            <button type="button" className="icon-btn" onClick={copyRoomCode} aria-label="Скопировать код">?</button>
+            <button type="button" className="icon-btn" onClick={shareRoomCode} aria-label="Поделиться кодом">?</button>
           </div>
         </div>
         {isOwner && (
@@ -1160,7 +1160,7 @@ const renderLobbyCard = () => {
             className="icon-btn"
             type="button"
             onClick={onSettingsClick}
-            aria-label="═рёЄЁющъш ъюьэрЄ√"
+            aria-label="Настройки комнаты"
           >
             ?
           </button>
@@ -1168,25 +1168,25 @@ const renderLobbyCard = () => {
       </div>
 
       <div className="lobby-meta-row">
-        <span className="lobby-pill">{safePlayers.length} шуЁюъют</span>
-        <span className="lobby-pill ready">{readyCount}/{readyTarget} уюЄют√</span>
-        <span className="lobby-pill">┴рэъ {moneyFormatter.format(initialBank)}$</span>
-        {slotMax != null && <span className="lobby-pill">╦юЄют {slotMax}</span>}
+        <span className="lobby-pill">{safePlayers.length} игроков</span>
+        <span className="lobby-pill ready">{readyCount}/{readyTarget} готовы</span>
+        <span className="lobby-pill">Банк {moneyFormatter.format(initialBank)}$</span>
+        {slotMax != null && <span className="lobby-pill">Лотов {slotMax}</span>}
       </div>
 
       <div className="lobby-cta-row">
-        <div className="lobby-owner-tag">┬ырфхыхЎ: {ownerPlayer ? playerDisplayName(ownerPlayer) : "Ч"}</div>
+        <div className="lobby-owner-tag">Владелец: {ownerPlayer ? playerDisplayName(ownerPlayer) : "—"}</div>
         <button
           type="button"
           className={`cta-main ${!isOwner && myReady ? "ok" : ""}`}
           onClick={isOwner ? handleStartAuction : toggleReady}
           disabled={isOwner && !canStart}
         >
-          {isOwner ? (canStart ? "╤ЄрЁЄ" : "╞ф╕ь уюЄютэюёЄ№") : myReady ? "├юЄют" : "▀ уюЄют"}
+          {isOwner ? (canStart ? "Старт" : "Ждём готовность") : myReady ? "Готов" : "Я готов"}
         </button>
       </div>
 
-      <div className="lobby-list" aria-label="╚уЁюъш">
+      <div className="lobby-list" aria-label="Игроки">
         {safePlayers.map((p) => {
           const name = playerDisplayName(p);
           const avatar = p.user?.photo_url || p.user?.avatar || null;
@@ -1198,7 +1198,7 @@ const renderLobbyCard = () => {
               <div className="lobby-player-body">
                 <div className="lobby-player-name">{name}</div>
                 <div className="lobby-player-meta">
-                  {p.ready && <span className="badge-ready">уюЄют</span>}
+                  {p.ready && <span className="badge-ready">готов</span>}
                 </div>
               </div>
             </div>
@@ -1208,17 +1208,15 @@ const renderLobbyCard = () => {
     </section>
   );
 };
-;
 
-;
   const renderResultsCard = () => {
     if (!showResult) return null;
     return (
       <section className="panel">
         <div>
           <div>
-            <span className="label">╘шэш°</span>
-            <h3>╚Єюуш</h3>
+            <span className="label">Финиш</span>
+            <h3>Итоги</h3>
           </div>
         </div>
         <div className="results">
@@ -1246,11 +1244,11 @@ const renderLobbyCard = () => {
         <div className="owner-row">
           {isOwner && (
             <button type="button" className="accent-btn" onClick={handleStartAuction}>
-              ┼∙╕ Ёрєэф
+              Ещё раунд
             </button>
           )}
           <button type="button" className="ghost-btn" onClick={handleExit}>
-            ╠хэ■
+            Меню
           </button>
         </div>
       </section>
@@ -1270,7 +1268,7 @@ const renderLobbyCard = () => {
         <button
           type="button"
           className="sheet-backdrop"
-          aria-label="╟ръЁ√Є№ ъюЁчшэє"
+          aria-label="Закрыть корзину"
           onClick={closeBasket}
         />
         <div
@@ -1287,10 +1285,10 @@ const renderLobbyCard = () => {
           <div className="sheet-handle" />
           <div className="basket-head">
             <div>
-              <span className="label">╩юЁчшэр шуЁюър</span>
+              <span className="label">Корзина игрока</span>
               <h3>{playerDisplayName(selectedPlayer)}</h3>
             </div>
-            <button type="button" className="icon-btn ghost" onClick={closeBasket} aria-label="╟ръЁ√Є№">
+            <button type="button" className="icon-btn ghost" onClick={closeBasket} aria-label="Закрыть">
               ?
             </button>
           </div>
@@ -1303,24 +1301,24 @@ const renderLobbyCard = () => {
               )}
             </div>
             <div className="basket-meta">
-              <span>┴рырэё</span>
+              <span>Баланс</span>
               <strong>{playerBalance != null ? `${moneyFormatter.format(playerBalance)}$` : '-'}</strong>
             </div>
             <div className="basket-meta">
-              <span>╧юЄЁрўхэю</span>
+              <span>Потрачено</span>
               <strong>{moneyFormatter.format(selectedBasketTotal || 0)}$</strong>
             </div>
             <div className="basket-meta">
-              <span>╧юёыхфэшщ ыюЄ</span>
-              <strong>{latest ? latest.name : 'Ч'}</strong>
+              <span>Последний лот</span>
+              <strong>{latest ? latest.name : '—'}</strong>
             </div>
             <div className="basket-meta">
-              <span>╩хщё√</span>
+              <span>Кейсы</span>
               <strong>{lootboxes}</strong>
             </div>
           </div>
           {playerBasket.length === 0 ? (
-            <p className="muted center">╧юър схч ЄЁюЇххт.</p>
+            <p className="muted center">Пока без трофеев.</p>
           ) : (
             <div className="basket-list">
               {playerBasket.map((item) => (
@@ -1343,17 +1341,19 @@ const renderLobbyCard = () => {
         </div>
       </div>
     );
-  };    const renderHistoryTimeline = () => {
+  };
+
+  const renderHistoryTimeline = () => {
     if (!compactHistory.length) return null;
     return (
       <section className="panel timeline-card">
         <div>
           <div>
-            <span className="label">╚ёЄюЁш </span>
-            <h3>╧юёыхфэшх ыюЄ√</h3>
+            <span className="label">История</span>
+            <h3>Последние лоты</h3>
           </div>
           <button type="button" className="pill ghost" onClick={() => setHistoryModalOpen(true)}>
-            ╧юфЁюсэхх
+            Подробнее
           </button>
         </div>
         <div className="timeline">
@@ -1370,11 +1370,11 @@ const renderLobbyCard = () => {
                 <div className="timeline-dot" />
                 <div className="timeline-body">
                   <strong>
-                    #{slot.index + 1} ╖ {slot.type === "lootbox" ? "??" : "??"}
+                    #{slot.index + 1} · {slot.type === "lootbox" ? "🎁" : "📦"}
                   </strong>
                   <span>{slot.name}</span>
                   <span className="muted tiny">
-                    {winner ? `${winner} ╖ ${moneyFormatter.format(slot.winBid || 0)}$` : "Ч"}
+                    {winner ? `${winner} · ${moneyFormatter.format(slot.winBid || 0)}$` : "—"}
                   </span>
                 </div>
               </button>
@@ -1391,16 +1391,16 @@ const renderLobbyCard = () => {
       <section className="panel players-grid-card">
         <div>
           <div>
-            <span className="label">╚уЁюъш</span>
+            <span className="label">Игроки</span>
             <h3>{safePlayers.length}</h3>
           </div>
           <button
             type="button"
             className="icon-btn ghost"
-            aria-label="╧юърчрЄ№ тёхї шуЁюъют"
+            aria-label="Показать всех игроков"
             onClick={() => setPlayersModalOpen(true)}
           >
-            ??
+            👥
           </button>
         </div>
         <div className="players-grid">
@@ -1433,12 +1433,12 @@ const renderLobbyCard = () => {
                     {balance != null ? `${moneyFormatter.format(balance)}$` : "-"}
                   </span>
                   <div className="player-tile__meta">
-                    <span>{lastItem ? lastItem.name : "┴хч яюсхф"}</span>
-                    <span>{cases} ъхщё.</span>
+                    <span>{lastItem ? lastItem.name : "Без побед"}</span>
+                    <span>{cases} кейсов</span>
                   </div>
                 </div>
                 <div className="player-tile__badges">
-                  {p.ready && <span className="player-badge">├юЄют</span>}
+                  {p.ready && <span className="player-badge">Готов</span>}
                   {wins > 0 && <span className="player-badge ghost">+{wins}</span>}
                 </div>
               </button>
@@ -1456,13 +1456,13 @@ const renderLobbyCard = () => {
         <button
           type="button"
           className="sheet-backdrop"
-          aria-label="╟ръЁ√Є№ ёяшёюъ шуЁюъют"
+          aria-label="Закрыть список игроков"
           onClick={() => setPlayersModalOpen(false)}
         />
         <div className="players-modal">
           <div className="sheet-handle" />
           <header className="players-modal-head">
-            <strong>╚уЁюъш</strong>
+            <strong>Игроки</strong>
             <button type="button" className="icon-btn ghost" onClick={() => setPlayersModalOpen(false)}>
               ?
             </button>
@@ -1474,12 +1474,12 @@ const renderLobbyCard = () => {
                 checked={playersFilterReady}
                 onChange={(e) => setPlayersFilterReady(e.target.checked)}
               />
-              <span>╥юы№ъю уюЄют√х</span>
+              <span>Только готовые</span>
             </label>
             <select value={playersSort} onChange={(e) => setPlayersSort(e.target.value)}>
-              <option value="default">╧ю яюЁ фъє</option>
-              <option value="balance">╧ю срырэёє</option>
-              <option value="wins">╧ю яюсхфрь</option>
+              <option value="default">По порядку</option>
+              <option value="balance">По балансу</option>
+              <option value="wins">По победам</option>
             </select>
           </div>
           <div className="players-modal-list">
@@ -1493,24 +1493,24 @@ const renderLobbyCard = () => {
                     <div className="player-tile__avatar small">
                       {avatarUrl ? <img src={avatarUrl} alt={playerDisplayName(player)} /> : playerDisplayName(player).slice(0, 1)}
                     </div>
-                    <div>
-                      <strong>{playerDisplayName(player)}</strong>
-                      <span className="muted tiny">
-                        {balance != null ? `${moneyFormatter.format(balance)}$` : "-"} ╖ яюсхф√ {wins}
-                      </span>
-                    </div>
+                  <div>
+                    <strong>{playerDisplayName(player)}</strong>
+                    <span className="muted tiny">
+                      {balance != null ? `${moneyFormatter.format(balance)}$` : "-"} · побед: {wins}
+                    </span>
                   </div>
+                </div>
                   <div className="players-modal-actions">
                     <button
                       type="button"
                       className="pill ghost"
                       onClick={() => openBasketForPlayer(player.id)}
                     >
-                      ╩юЁчшэр
+                      Корзина
                     </button>
                     {player.id === myPlayerId && !isOwner && (
                       <button type="button" className="pill ghost" onClick={toggleReady}>
-                        {player.ready ? "═х уюЄют" : "├юЄют"}
+                        {player.ready ? "Не готов" : "Готов"}
                       </button>
                     )}
                   </div>
@@ -1530,13 +1530,13 @@ const renderLobbyCard = () => {
         <button
           type="button"
           className="sheet-backdrop"
-          aria-label="╟ръЁ√Є№ шёЄюЁш■"
+          aria-label="Закрыть историю"
           onClick={() => setHistoryModalOpen(false)}
         />
         <div className="history-modal">
           <div className="sheet-handle" />
           <header className="players-modal-head">
-            <strong>╚ёЄюЁш  ыюЄют</strong>
+            <strong>История лотов</strong>
             <button type="button" className="icon-btn ghost" onClick={() => setHistoryModalOpen(false)}>
               ?
             </button>
@@ -1549,12 +1549,12 @@ const renderLobbyCard = () => {
                 <div key={`${slot.index}-${slot.name}`} className="history-modal-row">
                   <div>
                     <strong>
-                      #{slot.index + 1} ╖ {slot.type === "lootbox" ? "??" : "??"}
+                      #{slot.index + 1} · {slot.type === "lootbox" ? "🎁" : "📦"}
                     </strong>
                     <span>{slot.name}</span>
                   </div>
                   <div className="muted tiny">
-                    {winner ? `${winner} ╖ ${moneyFormatter.format(slot.winBid || 0)}$` : "Ч"}
+                    {winner ? `${winner} · ${moneyFormatter.format(slot.winBid || 0)}$` : "—"}
                   </div>
                 </div>
               );
@@ -1565,8 +1565,7 @@ const renderLobbyCard = () => {
     );
   };
 
-  
-const renderConfigWizard = () => {
+  const renderConfigWizard = () => {
   if (!cfgOpen) return null;
   const budget = cfgRules.initialBalance ?? initialBank;
   const lotsCount = cfgRules.maxSlots ?? 20;
@@ -1575,17 +1574,17 @@ const renderConfigWizard = () => {
       <button
         type="button"
         className="sheet-backdrop"
-        aria-label="╟ръЁ√Є№ эрёЄЁющъш"
+        aria-label="Закрыть настройки"
         onClick={closeConfigWizard}
       />
       <div className="config-sheet">
         <div className="sheet-handle" />
         <header className="config-head">
-          <span>═рёЄЁющъш ъюьэрЄ√</span>
+          <span>Настройки комнаты</span>
         </header>
         <div className="wizard-step">
           <label className="field">
-            <span>┴■фцхЄ эр шуЁюър</span>
+            <span>Бюджет на игрока</span>
             <input
               className="text-input"
               inputMode="numeric"
@@ -1593,42 +1592,40 @@ const renderConfigWizard = () => {
               onChange={(e) =>
                 setCfgRules((prev) => ({
                   ...prev,
-                  initialBalance: e.target.value.replace(/[^\d]/g, ""),
-                }))
-              }
-            />
-            <div className="field-hint">100 000 Ц 5 000 000 $</div>
-          </label>
-          <label className="field">
-            <span>╩юышўхёЄтю ыюЄют</span>
-            <input
-              className="text-input"
+              initialBalance: e.target.value.replace(/[^\d]/g, ""),
+            }))
+          }
+        />
+        <div className="field-hint">100 000 – 5 000 000 $</div>
+      </label>
+      <label className="field">
+        <span>Количество лотов</span>
+        <input
+          className="text-input"
               inputMode="numeric"
               value={lotsCount}
               onChange={(e) =>
                 setCfgRules((prev) => ({
                   ...prev,
                   maxSlots: e.target.value.replace(/[^\d]/g, ""),
-                }))
-              }
-            />
-            <div className="field-hint">10 Ц 40</div>
-          </label>
+            }))
+          }
+        />
+        <div className="field-hint">10 – 40</div>
+      </label>
         </div>
         <footer className="wizard-footer">
           <button type="button" className="ghost-btn" onClick={closeConfigWizard}>
-            ╬Єьхэр
+            Отмена
           </button>
           <button type="button" className="accent-btn" onClick={configureAuction}>
-            ╤юїЁрэшЄ№
+            Сохранить
           </button>
         </footer>
       </div>
     </div>
   );
 };
-
-;
 
   const renderToastStack = () => {
     if (!toastStack.length) return null;
@@ -1648,7 +1645,7 @@ const renderConfigWizard = () => {
               <button
                 type="button"
                 onClick={() => dismissToast(item.id)}
-                aria-label="╟ръЁ√Є№ єтхфюьыхэшх"
+                aria-label="Закрыть уведомление"
               >
                 ?
               </button>
@@ -1665,7 +1662,7 @@ const renderConfigWizard = () => {
       <div className="critical-alert" role="alertdialog" aria-modal="true">
         <div className="sheet-backdrop" onClick={closeCriticalAlert} />
         <div className="critical-card">
-          <strong>╫Єю-Єю яю°ыю эх Єръ</strong>
+          <strong>Что-то пошло не так</strong>
           <p>{criticalAlert.text}</p>
           <button
             type="button"
@@ -1684,7 +1681,7 @@ const renderConfigWizard = () => {
 
   const renderHeader = () => {
     if (showLanding || showLobby) return null;
-    const phaseLabel = PHASE_LABEL[phase] || "└єъЎшюэ";
+    const phaseLabel = PHASE_LABEL[phase] || "Аукцион";
     const readyTarget = Math.max(totalPlayers, 1);
 
     return (
@@ -1693,7 +1690,7 @@ const renderConfigWizard = () => {
           <button
             type="button"
             className="icon-btn ghost"
-            aria-label="┬√щЄш т ьхэ■"
+            aria-label="Выйти в меню"
             onClick={handleExit}
           >
             &lt;
@@ -1701,13 +1698,13 @@ const renderConfigWizard = () => {
           <div className="header-titles">
             <span className="phase-chip">{phaseLabel}</span>
             <div className="header-title-row">
-              <h2>{room?.name || "╩юьэрЄр рєъЎшюэр"}</h2>
+              <h2>{room?.name || "Комната аукциона"}</h2>
               <button type="button" className="room-code-chip" onClick={copyRoomCode}>
                 {room?.code || "------"}
               </button>
             </div>
             <p className="header-subline">
-              {safePlayers.length} шуЁюъют ╖ уюЄютэюёЄ№ {readyCount}/{readyTarget} ╖ срэъ {" "}
+              {safePlayers.length} игроков · готовность {readyCount}/{readyTarget} · банк{" "}
               {moneyFormatter.format(initialBank)}$
             </p>
           </div>
@@ -1716,7 +1713,7 @@ const renderConfigWizard = () => {
           <button
             type="button"
             className="icon-btn ghost"
-            aria-label="╧юфхышЄ№ё  ъюьэрЄющ"
+            aria-label="Поделиться комнатой"
             onClick={shareRoomCode}
           >
             ?
@@ -1724,25 +1721,25 @@ const renderConfigWizard = () => {
         </div>
         <div className="header-metrics">
           <div className="stat-card">
-            <span className="label">├юЄютэюёЄ№</span>
+            <span className="label">Готовность</span>
             <strong>{readyPercent}%</strong>
-            <p className="muted tiny">{readyCount} шч {readyTarget}</p>
+            <p className="muted tiny">{readyCount} из {readyTarget}</p>
           </div>
           <div className="stat-card">
-            <span className="label">╨рєэф</span>
+            <span className="label">Раунд</span>
             <strong>
               {slotIndex != null && slotMax
                 ? `${slotIndex}/${slotMax}`
                 : slotIndex != null
                 ? `#${slotIndex}`
-                : "Ч"}
+                : "—"}
             </strong>
-            <p className="muted tiny">{currentSlot?.name || "╞ф╕ь ёЄрЁЄ"}</p>
+            <p className="muted tiny">{currentSlot?.name || "Ждём старт"}</p>
           </div>
           <div className="stat-card">
-            <span className="label">┬Ёхь </span>
+            <span className="label">Время</span>
             <strong>{secsLeft != null ? `${secsLeft}s` : "?"}</strong>
-            <p className="muted tiny">{progressPct != null ? `${progressPct}% Ўшъыр` : "╬цшфрэшх"}</p>
+            <p className="muted tiny">{progressPct != null ? `${progressPct}% цикла` : "Ожидание"}</p>
           </div>
         </div>
       </header>
@@ -1784,34 +1781,4 @@ const renderConfigWizard = () => {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
