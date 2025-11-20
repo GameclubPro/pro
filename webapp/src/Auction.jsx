@@ -941,21 +941,21 @@ export default function Auction({
   
   async function shareRoomCode() {
     if (!room?.code) return;
-    const base = typeof window !== 'undefined' ? window.location?.origin || '' : '';
-    const shareUrl = base ? `${base.replace(/\/+$/, '')}/?join=${encodeURIComponent(room.code)}` : '';
+    const base = typeof window !== "undefined" ? window.location?.origin || "" : "";
+    const shareUrl = base ? `${base.replace(/\/+$/, "")}/?join=${encodeURIComponent(room.code)}` : "";
     try {
-      if (typeof navigator !== 'undefined' && navigator.share) {
-        await navigator.share({ text: `??? ???????: ${room.code}`, url: shareUrl || undefined });
-      } else if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ text: `Room code: ${room.code}`, url: shareUrl || undefined });
+      } else if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(shareUrl || room.code);
       }
-      pushToast({ type: 'info', text: '?????? ???????????' });
+      pushToast({ type: "info", text: "Share link copied" });
     } catch {
-      pushToast({ type: 'error', text: '?? ??????? ??????????' });
+      pushToast({ type: "error", text: "Share failed" });
     }
   }
 
-const renderLanding = () => (
+  const renderLanding = () => (
     <div className="landing-screen">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -985,7 +985,7 @@ const renderLanding = () => (
     </div>
   );
 
-const renderLotCard = () => {
+  const renderLotCard = () => {
     if (!showGame) return null;
     const icon = currentSlot?.type === "lootbox" ? "🎁" : "📦";
     const typeLabel = currentSlot?.type === "lootbox" ? "Кейс" : "Лот";
@@ -1753,7 +1753,20 @@ const renderLotCard = () => {
       ) : (
         <>
           <div className="stage-layout">
-            <div className="stage-primary">{activeStageCard}</div>
+            <div className="stage-primary">
+              {showLobby && (
+                <RoomHUD
+                  code={room?.code}
+                  isOwner={isOwner}
+                  phase="LOBBY"
+                  phaseLabel={PHASE_LABEL[phase]}
+                  onCopy={copyRoomCode}
+                  onShare={shareRoomCode}
+                  onLeave={handleExit}
+                />
+              )}
+              {activeStageCard}
+            </div>
             <div className="stage-rail">
               {renderHistoryTimeline()}
               {renderPlayersGridSection()}

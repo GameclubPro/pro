@@ -478,6 +478,11 @@ textarea.text-input:focus {
   max-width: 880px;
   margin-inline: auto;
 }
+.stage-primary > .mf-hud{
+  width: 100%;
+  max-width: 880px;
+  margin-inline: auto;
+}
 
 .stage-primary > .panel,
 .stage-primary > .stage-card {
