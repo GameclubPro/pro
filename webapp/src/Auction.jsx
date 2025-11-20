@@ -389,16 +389,16 @@ export default function Auction({
 
   const readyCount = useMemo(() => {
     if (!room) return 0;
-    return safePlayers.filter((p) => p.ready && p.user?.id !== room.ownerId).length;
+    return safePlayers.filter((p) => {
+      const isOwnerPlayer = room.ownerId != null && p.user?.id === room.ownerId;
+      return isOwnerPlayer || p.ready;
+    }).length;
   }, [safePlayers, room]);
 
-  const nonHostPlayers = useMemo(() => {
-    if (!room) return Math.max(safePlayers.length - 1, 0);
-    return Math.max(safePlayers.length - 1, 0);
-  }, [safePlayers.length, room]);
+  const totalPlayers = safePlayers.length || 0;
 
-  const readyPercent = nonHostPlayers
-    ? Math.round((readyCount / Math.max(nonHostPlayers, 1)) * 100)
+  const readyPercent = totalPlayers
+    ? Math.round((readyCount / Math.max(totalPlayers, 1)) * 100)
     : 0;
 
   const modalPlayers = useMemo(() => {
@@ -1156,14 +1156,14 @@ export default function Auction({
 
     const renderLobbyCard = () => {
     if (!showLobby) return null;
-    const readyTarget = Math.max(nonHostPlayers, 1) || 1;
+    const readyTarget = Math.max(totalPlayers, 1);
     const myReady = !!currentPlayer?.ready;
     const canStart = readyCount >= readyTarget && safePlayers.length >= 2;
 
     return (
-      <section className="panel stage-card lobby-card">
-        <header className="lobby-head">
-          <div className="lobby-title">
+      <div className="lobby-card">
+        <div className="lobby-row">
+          <div className="lobby-room">
             <div className="lobby-chip">LOBBY</div>
             <div className="lobby-name-row">
               <h3>{room?.name || room?.code || "Комната"}</h3>
@@ -1179,7 +1179,7 @@ export default function Auction({
             <span className="label">Ведущий</span>
             <strong>{ownerPlayer ? playerDisplayName(ownerPlayer) : "—"}</strong>
           </div>
-        </header>
+        </div>
         <div className="lobby-body">
           <div className="ready-meter glass">
             <div className="ready-ring">
@@ -1205,6 +1205,7 @@ export default function Auction({
               <span className="muted tiny">
                 {readyCount}/{readyTarget} готовы
               </span>
+              <span className="muted tiny host-ready">Хост учтен</span>
             </div>
           </div>
           <div className="lobby-cta">
@@ -1251,7 +1252,7 @@ export default function Auction({
             </div>
           </div>
         </div>
-      </section>
+      </div>
     );
   };
 

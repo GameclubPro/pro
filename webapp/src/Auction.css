@@ -480,6 +480,11 @@ textarea.text-input:focus {
   max-width: 880px;
   margin-inline: auto;
 }
+.stage-primary > .lobby-card{
+  width: 100%;
+  max-width: 880px;
+  margin-inline: auto;
+}
 
 .panel {
   background: var(--surface);
@@ -540,23 +545,24 @@ textarea.text-input:focus {
   mix-blend-mode: screen;
 }
 
-.lobby-head{
+.lobby-row{
   display:flex;
-  align-items:flex-start;
+  align-items:center;
   justify-content:space-between;
   gap:12px;
   flex-wrap:wrap;
   padding: 12px 14px;
   border-radius: 16px;
   border:1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
-  background: linear-gradient(180deg, rgba(24,26,30,.4), rgba(16,18,24,.32));
+  background: linear-gradient(180deg, rgba(24,26,30,.42), rgba(14,16,22,.34));
   box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 10px 28px rgba(0,0,0,.32);
   backdrop-filter: blur(6px) saturate(120%);
 }
-.lobby-title{
+.lobby-room{
   display:flex;
   flex-direction:column;
   gap:8px;
+  min-width:0;
 }
 .lobby-chip{
   display:inline-flex;
@@ -589,6 +595,7 @@ textarea.text-input:focus {
   font-size:12px;
   color: var(--text);
   cursor: pointer;
+  white-space: nowrap;
 }
 .room-code-chip:active{ transform: translateY(1px); }
 
@@ -604,7 +611,7 @@ textarea.text-input:focus {
 
 .lobby-body{
   display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 14px;
   align-items:stretch;
   padding: 4px 2px 2px;
@@ -634,8 +641,8 @@ textarea.text-input:focus {
 
 .ready-ring {
   position: relative;
-  width: 116px;
-  height: 116px;
+  width: 112px;
+  height: 112px;
   flex-shrink: 0;
 }
 
@@ -659,17 +666,29 @@ textarea.text-input:focus {
   inset: 0;
   display: grid;
   place-items: center;
+  padding: 8px;
+  text-align: center;
+}
+.ready-value strong{
+  font-size: 24px;
+  line-height: 1.1;
+  letter-spacing:.04em;
+}
+.ready-value span{
   font-size: 12px;
-  letter-spacing: 0.12em;
+  letter-spacing:.12em;
   text-transform: uppercase;
+  color: var(--muted);
 }
 
 .ready-copy{
   display:flex;
   flex-direction:column;
   gap:6px;
+  min-width: 0;
 }
 .ready-copy strong{ font-size: 22px; letter-spacing:.06em; }
+.ready-copy .host-ready{ color: color-mix(in srgb, var(--accent-2) 70%, #fff 30%); }
 
 .lobby-cta{
   display:flex;
