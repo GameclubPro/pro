@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import io from "socket.io-client";
 import RoomMenu from "./shared/RoomMenu.jsx";
-import { HUD as RoomHUD } from "./shared/RoomHud.jsx";
 import "./Mafia/mafia.css";
 import "./Auction.css";
 
@@ -1694,6 +1693,73 @@ const renderConfigWizard = () => {
     );
   };
 
+  const renderHeader = () => {
+    if (showLanding) return null;
+    const phaseLabel = PHASE_LABEL[phase] || "Аукцион";
+    const readyTarget = Math.max(totalPlayers, 1);
+
+    return (
+      <header className="auction-header">
+        <div className="header-main">
+          <button
+            type="button"
+            className="icon-btn ghost"
+            aria-label="Выйти в меню"
+            onClick={handleExit}
+          >
+            ←
+          </button>
+          <div className="header-titles">
+            <span className="phase-chip">{phaseLabel}</span>
+            <div className="header-title-row">
+              <h2>{room?.name || "Комната аукциона"}</h2>
+              <button type="button" className="room-code-chip" onClick={copyRoomCode}>
+                {room?.code || "------"}
+              </button>
+            </div>
+            <p className="header-subline">
+              {safePlayers.length} игроков · готовность {readyCount}/{readyTarget} · банк {" "}
+              {moneyFormatter.format(initialBank)}$
+            </p>
+          </div>
+        </div>
+        <div className="header-actions">
+          <button
+            type="button"
+            className="icon-btn ghost"
+            aria-label="Поделиться комнатой"
+            onClick={shareRoomCode}
+          >
+            ↗
+          </button>
+        </div>
+        <div className="header-metrics">
+          <div className="stat-card">
+            <span className="label">Готовность</span>
+            <strong>{readyPercent}%</strong>
+            <p className="muted tiny">{readyCount} из {readyTarget}</p>
+          </div>
+          <div className="stat-card">
+            <span className="label">Раунд</span>
+            <strong>
+              {slotIndex != null && slotMax
+                ? `${slotIndex}/${slotMax}`
+                : slotIndex != null
+                ? `#${slotIndex}`
+                : "—"}
+            </strong>
+            <p className="muted tiny">{currentSlot?.name || "Ждём старт"}</p>
+          </div>
+          <div className="stat-card">
+            <span className="label">Время</span>
+            <strong>{secsLeft != null ? `${secsLeft}s` : "∞"}</strong>
+            <p className="muted tiny">{progressPct != null ? `${progressPct}% цикла` : "Ожидание"}</p>
+          </div>
+        </div>
+      </header>
+    );
+  };
+
   const activeStageCard = showLobby
     ? renderLobbyCard()
     : showGame
@@ -1710,24 +1776,12 @@ const renderConfigWizard = () => {
         renderLanding()
       ) : (
         <>
-          <div className="stage-layout">
-            <div className="stage-primary">
-              {showLobby && (
-                <RoomHUD
-                  code={room?.code}
-                  isOwner={isOwner}
-                  phase="LOBBY"
-                  phaseLabel={PHASE_LABEL[phase]}
-                  onCopy={copyRoomCode}
-                  onShare={shareRoomCode}
-                  onLeave={handleExit}
-                />
-              )}
-              {activeStageCard}
-            </div>
-            <div className="stage-rail">
-              {renderHistoryTimeline()}
+          {renderHeader()}
+          <div className="mobile-stack">
+            {activeStageCard}
+            <div className="secondary-stack">
               {renderPlayersGridSection()}
+              {renderHistoryTimeline()}
             </div>
           </div>
         </>

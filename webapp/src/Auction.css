@@ -82,6 +82,87 @@ input, textarea {
   gap: 12px;
 }
 
+.auction-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.header-main {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.header-titles h2 {
+  margin: 2px 0;
+  font-size: 22px;
+}
+
+.header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.header-subline {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.phase-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border);
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.header-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.stat-card {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.stat-card strong {
+  font-size: 18px;
+}
+
+.mobile-stack,
+.secondary-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .auction-app.landing {
   padding-bottom: calc(var(--safe-bottom) + 42px);
 }
@@ -461,19 +542,7 @@ textarea.text-input:focus {
   .auction-join-inline{ grid-template-columns: 1fr; }
   .auction-bento{ grid-template-columns: 1fr; }
 }
-.stage-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.stage-primary,
-.stage-rail {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.stage-primary > .lobby-card{
+.lobby-card{
   position: relative;
   display:flex;
   flex-direction:column;
@@ -1360,8 +1429,8 @@ textarea.text-input:focus {
 }
 
 @media (min-width: 720px) {
-  .stage-layout {
-    gap: 18px;
+  .mobile-stack {
+    gap: 16px;
   }
 
   .landing-card {
@@ -1382,9 +1451,8 @@ textarea.text-input:focus {
     padding-inline: clamp(32px, 9vw, 120px);
   }
 
-  .stage-layout {
-    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.85fr);
-    align-items: start;
+  .mobile-stack {
+    gap: 18px;
   }
 
   .players-grid-card .players-grid {
