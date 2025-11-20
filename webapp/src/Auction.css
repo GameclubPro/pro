@@ -1297,6 +1297,14 @@ textarea.text-input:focus {
   box-shadow: var(--shadow);
 }
 
+/* Hide legacy lobby elements per host request */
+.auction-app.phase-lobby .auction-header,
+.auction-app.phase-lobby .panel-head,
+.auction-app.phase-lobby .players-grid-head,
+.auction-app.phase-lobby .player-card.selected.host {
+  display: none !important;
+}
+
 @media (hover: hover) {
   button:hover:not(:disabled) {
     transform: translateY(-1px);
