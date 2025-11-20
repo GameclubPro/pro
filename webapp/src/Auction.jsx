@@ -1154,7 +1154,7 @@ export default function Auction({
     );
   };
 
-    const renderLobbyCard = () => {
+  const renderLobbyCard = () => {
     if (!showLobby) return null;
     const readyTarget = Math.max(totalPlayers, 1);
     const myReady = !!currentPlayer?.ready;
@@ -1166,18 +1166,18 @@ export default function Auction({
           <div className="lobby-room">
             <div className="lobby-chip">LOBBY</div>
             <div className="lobby-name-row">
-              <h3>{room?.name || room?.code || "\u041a\u043e\u043c\u043d\u0430\u0442\u0430"}</h3>
+              <h3>{room?.name || room?.code || "???????"}</h3>
               <button type="button" className="room-code-chip" onClick={copyRoomCode}>
                 {room?.code || "------"}
               </button>
             </div>
             <p className="muted tiny">
-              {safePlayers.length} игроков · {readyCount}/{readyTarget} готовы
+              {safePlayers.length} ??????? ? {readyCount}/{readyTarget} ??????
             </p>
           </div>
           <div className="lobby-owner">
-            <span className="label">\u0412\u0435\u0434\u0443\u0449\u0438\u0439</span>
-            <strong>{ownerPlayer ? playerDisplayName(ownerPlayer) : "\u2014"}</strong>
+            <span className="label">???????</span>
+            <strong>{ownerPlayer ? playerDisplayName(ownerPlayer) : "?"}</strong>
           </div>
         </div>
         <div className="lobby-body">
@@ -1196,20 +1196,20 @@ export default function Auction({
               </svg>
               <div className="ready-value">
                 <strong>{readyCount}</strong>
-                <span>\u0433\u043e\u0442\u043e\0432\044b</span>
+                <span>??????</span>
               </div>
             </div>
             <div className="ready-copy">
-              <span className="muted small">\u0433\u043e\0442\043e\0432\043d\043e\0441\0442\044c</span>
+              <span className="muted small">??????????</span>
               <strong>{readyPercent}%</strong>
               <span className="muted tiny">
-                {readyCount}/{readyTarget} готовы
+                {readyCount}/{readyTarget} ??????
               </span>
-              <span className="muted tiny host-ready">\u0425\u043e\u0441\u0442 \u0443\u0447\u0442\u0435\u043d</span>
+              <span className="muted tiny host-ready">???? ?????</span>
             </div>
           </div>
           <div className="lobby-cta">
-            <div className="cta-label">\u041f\u043e\u0434\u0433\u043e\0442\043e\0432\043a\u0430</div>
+            <div className="cta-label">??????????</div>
             {isOwner ? (
               <>
                 <button
@@ -1218,10 +1218,10 @@ export default function Auction({
                   onClick={handleStartAuction}
                   disabled={!canStart}
                 >
-                  {canStart ? "\u0417\u0430\u043f\u0443\0441\u0442\u0438\u0442\u044c \u0430\u0443\u043a\u0446\u0438\u043e\u043d" : "\u0416\u0434\u0451\u043c \u0433\u043e\0442\u043e\0432\043d\043e\0441\0442\044c"}
+                  {canStart ? "????????? ???????" : "???? ??????????"}
                 </button>
                 <p className="muted tiny">
-                  \u041f\u043e\u043d\u0430\u0434\u043e\0431\u0438\u0442\u0441\u044f \u043c\u0438\u043d\u0438\u043c\u0443\u043c \u0434\u0432\u043e\u0435 \u0438 \u0433\u043e\u0442\u043e\u0432\u043d\u043e\0441\0442\u044c \u043a\u043e\u043c\u0430\u043d\u0434\u044b.
+                  ??????????? ??????? ???? ? ?????????? ???????.
                 </p>
               </>
             ) : (
@@ -1231,21 +1231,21 @@ export default function Auction({
                   className={`auction-btn outline xl ${myReady ? "ok" : ""}`}
                   onClick={toggleReady}
                 >
-                  {myReady ? "\u042f \u0433\u043e\u0442\u043e\0432" : "\u041e\u0442\u043c\u0435\u0442\u0438\u0442\u044c \u0433\u043e\u0442\u043e\0432\u043d\u043e\0441\0442\u044c"}
+                  {myReady ? "? ?????" : "???????? ??????????"}
                 </button>
                 <p className="muted tiny">
-                  Ведущий запустит игру, когда все отметятся.
+                  ??????? ???????? ????, ????? ??? ?????????.
                 </p>
               </>
             )}
             <div className="lobby-inline-stats">
               <div>
-                <span className="label tiny">\u0411\u0430\u043d\u043a</span>
+                <span className="label tiny">????</span>
                 <strong>{moneyFormatter.format(initialBank)}$</strong>
               </div>
               {slotMax != null && (
                 <div>
-                  <span className="label tiny">\u0421\u043b\u043e\u0442\u044b</span>
+                  <span className="label tiny">?????</span>
                   <strong>{slotMax}</strong>
                 </div>
               )}
@@ -1253,19 +1253,8 @@ export default function Auction({
           </div>
         </div>
       </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
     );
   };
-
   const renderResultsCard = () => {
     if (!showResult) return null;
     return (
@@ -1817,6 +1806,7 @@ export default function Auction({
     </div>
   );
 }
+
 
 
 
