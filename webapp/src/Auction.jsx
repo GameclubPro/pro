@@ -1693,7 +1693,7 @@ const renderConfigWizard = () => {
             aria-label="Выйти в меню"
             onClick={handleExit}
           >
-            <
+            &lt;
           </button>
           <div className="header-titles">
             <span className="phase-chip">{phaseLabel}</span>
