@@ -2,6 +2,9 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import io from "socket.io-client";
+import RoomMenu from "./shared/RoomMenu.jsx";
+import { HUD as RoomHUD } from "./shared/RoomHud.jsx";
+import "./Mafia/mafia.css";
 import "./Auction.css";
 
 const INITIAL_BANK = 1_000_000;
@@ -935,93 +938,54 @@ export default function Auction({
       pushToast({ type: "error", text: "Не удалось скопировать" });
     }
   }
-  const renderLanding = () => (
+  
+  async function shareRoomCode() {
+    if (!room?.code) return;
+    const base = typeof window !== 'undefined' ? window.location?.origin || '' : '';
+    const shareUrl = base ? `${base.replace(/\/+$/, '')}/?join=${encodeURIComponent(room.code)}` : '';
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({ text: `??? ???????: ${room.code}`, url: shareUrl || undefined });
+      } else if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl || room.code);
+      }
+      pushToast({ type: 'info', text: '?????? ???????????' });
+    } catch {
+      pushToast({ type: 'error', text: '?? ??????? ??????????' });
+    }
+  }
+
+const renderLanding = () => (
     <div className="landing-screen">
-      <motion.section
-        className="landing-card auction-menu"
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
       >
-        <header className="auction-hero">
-          <div className="auction-logo">AUCTION</div>
-          <p className="auction-tagline">Торг, лут и готовность в одном окне.</p>
-          <div className="auction-hero-meta">
-            <span className="auction-chip ghost">lobby</span>
-            <span className="auction-chip">loot & bids</span>
-          </div>
-        </header>
-
-        <div className="auction-actions">
-          <div className="auction-join-inline">
-            <label htmlFor="auction-join-code" className="sr-only">
-              Код комнаты
-            </label>
-            <input
-              id="auction-join-code"
-              className="auction-input big"
-              maxLength={6}
-              placeholder="Введите код"
-              value={codeInput}
-              onChange={(e) => setCodeInput(normalizeCode(e.target.value))}
-              inputMode="latin"
-              autoCapitalize="characters"
-              autoCorrect="off"
-            />
-            <button
-              type="button"
-              className="auction-btn primary big"
-              onClick={() => joinRoom(codeInput)}
-              disabled={joining}
-            >
-              {joining ? "Входим..." : "Подключиться"}
-            </button>
-          </div>
-          {error && (
-            <div className="auction-hint danger" role="alert">
-              {error}
-            </div>
-          )}
-          <button
-            type="button"
-            className="auction-btn primary xl auction-create-cta"
-            onClick={createRoom}
-            disabled={creating}
-          >
-            {creating ? "Создаем..." : "Создать комнату"}
-          </button>
-        </div>
-
-        <div className="auction-bento">
-          <article className="auction-card">
-            <div className="ico" aria-hidden="true">
-              🛰️
-            </div>
-            <div className="title">Лобби</div>
-            <p className="text">Готовность и код как в мафии, но без картинок.</p>
-          </article>
-          <article className="auction-card">
-            <div className="ico" aria-hidden="true">
-              💰
-            </div>
-            <div className="title">Торги</div>
-            <p className="text">Ставки и лидеры видны прямо из нового окна.</p>
-          </article>
-          <article className="auction-card">
-            <div className="ico" aria-hidden="true">
-              🎁
-            </div>
-            <div className="title">Лут</div>
-            <p className="text">
-              Следите за слотом и лутбоксами, не уходя из лобби.
-            </p>
-          </article>
-        </div>
-      </motion.section>
+        <RoomMenu
+          busy={creating || joining}
+          onCreate={createRoom}
+          onJoin={(code) => joinRoom(code)}
+          code={codeInput || undefined}
+          onCodeChange={(val) => setCodeInput(normalizeCode(val))}
+          initialCode={sanitizedAutoCode}
+          minCodeLength={4}
+          maxCodeLength={6}
+          joinButtonLabel={joining ? "Connecting..." : "Join room"}
+          joinBusyLabel="Connecting..."
+          createButtonLabel={creating ? "Creating..." : "Create room"}
+          createBusyLabel="Creating..."
+          codePlaceholder="Enter code"
+          title="AUCTION"
+          tagline="Loot, bids and friends in one lobby."
+          error={error}
+          onClearError={clearError}
+        />
+      </motion.div>
     </div>
   );
 
-  const renderLotCard = () => {
+const renderLotCard = () => {
     if (!showGame) return null;
     const icon = currentSlot?.type === "lootbox" ? "🎁" : "📦";
     const typeLabel = currentSlot?.type === "lootbox" ? "Кейс" : "Лот";
