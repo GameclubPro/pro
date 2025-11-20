@@ -98,8 +98,11 @@ export default function Auction({
   const [myBid, setMyBid] = useState("");
 
   const [cfgOpen, setCfgOpen] = useState(false);
-  const [cfgStep, setCfgStep] = useState(0);
-  const [cfgRules, setCfgRules] = useState({ timePerSlotSec: 9, maxSlots: 30 });
+  const [cfgRules, setCfgRules] = useState({
+    timePerSlotSec: 9,
+    maxSlots: 30,
+    initialBalance: INITIAL_BANK,
+  });
   const [cfgSlotsText, setCfgSlotsText] = useState("");
 
   const [selectedPlayerId, setSelectedPlayerId] = useState(null);
@@ -148,6 +151,14 @@ export default function Auction({
     ? Number(slotMaxRaw)
     : null;
   const initialBank = auctionState?.rules?.initialBalance || INITIAL_BANK;
+  useEffect(() => {
+    setCfgRules((prev) => ({
+      ...prev,
+      timePerSlotSec: auctionState?.rules?.timePerSlotSec ?? prev.timePerSlotSec ?? 9,
+      maxSlots: auctionState?.rules?.maxSlots ?? prev.maxSlots ?? 30,
+      initialBalance: auctionState?.rules?.initialBalance ?? prev.initialBalance ?? INITIAL_BANK,
+    }));
+  }, [auctionState?.rules?.timePerSlotSec, auctionState?.rules?.maxSlots, auctionState?.rules?.initialBalance]);
 
   const showLanding = !room;
   const showLobby = phase === "lobby";
@@ -221,7 +232,6 @@ export default function Auction({
 
   const closeConfigWizard = useCallback(() => {
     setCfgOpen(false);
-    setCfgStep(0);
   }, []);
 
   const handleSheetDragStart = useCallback((event) => {
@@ -792,13 +802,17 @@ export default function Auction({
   function configureAuction() {
     if (!socket || !room || !isOwner) return;
     const slots = parseCustomSlots(cfgSlotsText);
+    const initialBalance = clamp(Number(cfgRules.initialBalance) || INITIAL_BANK, 100_000, 5_000_000);
+    const maxSlots = clamp(Number(cfgRules.maxSlots) || 30, 10, 40);
+    const timePerSlotSec = clamp(Number(cfgRules.timePerSlotSec) || 25, 5, 120);
     socket.emit(
       "auction:configure",
       {
         code: room.code,
         rules: {
-          timePerSlotSec: clamp(Number(cfgRules.timePerSlotSec) || 25, 5, 120),
-          maxSlots: clamp(Number(cfgRules.maxSlots) || 30, 1, 60),
+          timePerSlotSec,
+          maxSlots,
+          initialBalance,
         },
         slots,
       },
@@ -809,7 +823,6 @@ export default function Auction({
           pushToast({ type: "info", text: "Настройки обновлены" });
           clearError();
           setCfgOpen(false);
-          setCfgStep(0);
         }
       }
     );
@@ -971,13 +984,13 @@ export default function Auction({
           initialCode={sanitizedAutoCode}
           minCodeLength={4}
           maxCodeLength={6}
-          joinButtonLabel={joining ? "Connecting..." : "Join room"}
-          joinBusyLabel="Connecting..."
-          createButtonLabel={creating ? "Creating..." : "Create room"}
-          createBusyLabel="Creating..."
-          codePlaceholder="Enter code"
+          joinButtonLabel={joining ? "Подключаем..." : "Подключиться"}
+          joinBusyLabel="Подключаем..."
+          createButtonLabel={creating ? "Создаём..." : "Создать комнату"}
+          createBusyLabel="Создаём..."
+          codePlaceholder="Введите код"
           title="AUCTION"
-          tagline="Loot, bids and friends in one lobby."
+          tagline="Лоты, ставки и друзья в одной комнате."
           error={error}
           onClearError={clearError}
         />
@@ -1118,107 +1131,91 @@ export default function Auction({
     );
   };
 
-  const renderLobbyCard = () => {
-    if (!showLobby) return null;
-    const readyTarget = Math.max(totalPlayers, 1);
-    const myReady = !!currentPlayer?.ready;
-    const canStart = readyCount >= readyTarget && safePlayers.length >= 2;
+  
+const renderLobbyCard = () => {
+  if (!showLobby) return null;
+  const readyTarget = Math.max(totalPlayers, 1);
+  const myReady = !!currentPlayer?.ready;
+  const canStart = readyCount >= readyTarget && safePlayers.length >= 2;
+  const lobbyPlayers = safePlayers.slice(0, 4);
+  while (lobbyPlayers.length < 4) lobbyPlayers.push(null);
 
-    return (
-      <div className="lobby-card">
-        <div className="lobby-row">
-          <div className="lobby-room">
-            <div className="lobby-chip">LOBBY</div>
-            <div className="lobby-name-row">
-              <h3>{room?.name || room?.code || "Без названия"}</h3>
-              <button type="button" className="room-code-chip" onClick={copyRoomCode}>
-                {room?.code || "------"}
-              </button>
+  const onSettingsClick = () => {
+    if (!isOwner) return;
+    setCfgOpen(true);
+  };
+
+  return (
+    <div className="lobby-card">
+      <header className="lobby-head">
+        <div className="lobby-chip">LOBBY</div>
+        <button
+          className="lobby-settings icon-btn"
+          type="button"
+          onClick={onSettingsClick}
+          disabled={!isOwner}
+          title={isOwner ? "???????????? ?????????" : "?????? ??????????? ??????? ?????? ?????????"}
+        >
+          ?
+        </button>
+        <div className="lobby-room">
+          <div className="lobby-name-row">
+            <div>
+              <h3>{room?.name || room?.code || "??? ????????"}</h3>
+              <div className="lobby-meta">
+                {safePlayers.length} ??????? ? ?????? {readyCount}/{readyTarget} ? ???? {moneyFormatter.format(initialBank)}$
+              </div>
             </div>
-            <p className="muted tiny">
-              {safePlayers.length} игроков · готовы {readyCount}/{readyTarget}
-            </p>
+            <button type="button" className="room-code-chip" onClick={copyRoomCode}>
+              {room?.code || "------"}
+            </button>
           </div>
           <div className="lobby-owner">
-            <span className="label">Владелец</span>
+            <span className="label">????????</span>
             <strong>{ownerPlayer ? playerDisplayName(ownerPlayer) : "?"}</strong>
           </div>
         </div>
-        <div className="lobby-body">
-          <div className="ready-meter glass">
-            <div className="ready-ring">
-              <svg viewBox="0 0 120 120">
-                <circle className="track" cx="60" cy="60" r="50" />
-                <circle
-                  className="progress"
-                  cx="60"
-                  cy="60"
-                  r="50"
-                  strokeDasharray={314}
-                  strokeDashoffset={314 - (314 * readyPercent) / 100}
-                />
-              </svg>
-              <div className="ready-value">
-                <strong>{readyCount}</strong>
-                <span>готовы</span>
-              </div>
-            </div>
-            <div className="ready-copy">
-              <span className="muted small">Готовность</span>
-              <strong>{readyPercent}%</strong>
-              <span className="muted tiny">
-                {readyCount}/{readyTarget} готовы
-              </span>
-              <span className="muted tiny host-ready">Хост готов</span>
-            </div>
-          </div>
-          <div className="lobby-cta">
-            <div className="cta-label">Действия</div>
-            {isOwner ? (
-              <>
-                <button
-                  type="button"
-                  className="auction-btn primary xl"
-                  onClick={handleStartAuction}
-                  disabled={!canStart}
-                >
-                  {canStart ? "Запустить аукцион" : "Ждём готовность"}
-                </button>
-                <p className="muted tiny">
-                  Запускайте только когда все отметились готовыми.
-                </p>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className={`auction-btn outline xl ${myReady ? "ok" : ""}`}
-                  onClick={toggleReady}
-                >
-                  {myReady ? "Я готов" : "Отметить готовность"}
-                </button>
-                <p className="muted tiny">
-                  Нажмите готов, чтобы хост смог начать.
-                </p>
-              </>
-            )}
-            <div className="lobby-inline-stats">
-              <div>
-                <span className="label tiny">Банк</span>
-                <strong>{moneyFormatter.format(initialBank)}$</strong>
-              </div>
-              {slotMax != null && (
-                <div>
-                  <span className="label tiny">Слотов</span>
-                  <strong>{slotMax}</strong>
-                </div>
-              )}
-            </div>
+        <div className="ready-card">
+          <button
+            type="button"
+            className={`ready-btn ${isOwner ? "primary" : myReady ? "ok" : "ghost"}`}
+            onClick={isOwner ? handleStartAuction : toggleReady}
+            disabled={isOwner ? !canStart : false}
+          >
+            <span className="ico">?</span>
+            <span>{isOwner ? "?????" : myReady ? "?????" : "?? ?????"}</span>
+          </button>
+          <div className="ready-sub">
+            {isOwner
+              ? canStart
+                ? "????? ?????????"
+                : "???? ????????????? ?????????"
+              : myReady
+              ? "?? ??????????? ?????????"
+              : "???????, ????? ???? ???????"}
           </div>
         </div>
+      </header>
+
+      <div className="lobby-players-grid" aria-label="??????">
+        {lobbyPlayers.map((p, idx) => {
+          const name = p ? playerDisplayName(p) : "?????";
+          const avatar = p?.user?.photo_url || p?.user?.avatar || null;
+          return (
+            <div key={p?.id ?? `slot-${idx}`} className="lobby-player-card">
+              <div className="lobby-player-avatar">
+                {avatar ? <img src={avatar} alt={name} /> : name.slice(0, 1)}
+              </div>
+              <div className="lobby-player-name">{name}</div>
+            </div>
+          );
+        })}
       </div>
-    );
-  };
+    </div>
+  );
+};
+
+;
   const renderResultsCard = () => {
     if (!showResult) return null;
     return (
@@ -1580,109 +1577,70 @@ export default function Auction({
     );
   };
 
-  const renderConfigWizard = () => {
-    if (!cfgOpen) return null;
-    const steps = ["rules", "slots"];
-    const safeStep = Math.min(cfgStep, steps.length - 1);
-    const current = steps[safeStep];
-    const progress = Math.round(((safeStep + 1) / steps.length) * 100);
-    return (
-      <div className="sheet-overlay" role="dialog" aria-modal="true">
-        <button
-          type="button"
-          className="sheet-backdrop"
-          aria-label="Закрыть настройки"
-          onClick={closeConfigWizard}
-        />
-        <div className="config-sheet">
-          <div className="sheet-handle" />
-          <header className="config-head">
-            <span>Настройки комнаты</span>
-            <div className="progress-track">
-              <div style={{ width: `${progress}%` }} />
-            </div>
-          </header>
-          {current === "rules" ? (
-            <div className="wizard-step">
-              <label className="field">
-                <span>Время на лот, сек</span>
-                <input
-                  className="text-input"
-                  inputMode="numeric"
-                  value={cfgRules.timePerSlotSec}
-                  onChange={(e) =>
-                    setCfgRules((prev) => ({
-                      ...prev,
-                      timePerSlotSec: e.target.value.replace(/[^\d]/g, ""),
-                    }))
-                  }
-                />
-              </label>
-              <label className="field">
-                <span>Максимум слотов</span>
-                <input
-                  className="text-input"
-                  inputMode="numeric"
-                  value={cfgRules.maxSlots}
-                  onChange={(e) =>
-                    setCfgRules((prev) => ({
-                      ...prev,
-                      maxSlots: e.target.value.replace(/[^\d]/g, ""),
-                    }))
-                  }
-                />
-              </label>
-            </div>
-          ) : (
-            <div className="wizard-step">
-              <label className="field">
-                <span>Слоты списком</span>
-                <textarea
-                  className="text-input"
-                  rows={4}
-                  placeholder="Лут | 90000 | lot"
-                  value={cfgSlotsText}
-                  onChange={(e) => setCfgSlotsText(e.target.value)}
-                />
-              </label>
-              <div className="wizard-preview">
-                {cfgPreviewSlots.length === 0 ? (
-                  <span className="muted tiny">Нет предпросмотра</span>
-                ) : (
-                  cfgPreviewSlots.slice(0, 5).map((slot, idx) => (
-                    <div key={`${slot.name}-${idx}`} className="wizard-preview-row">
-                      <span>{slot.name}</span>
-                      <span className="muted tiny">{slot.type === "lootbox" ? "Кейс" : "Лот"}</span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-          <footer className="wizard-footer">
-            <button
-              type="button"
-              className="ghost-btn"
-              onClick={() =>
-                safeStep === 0 ? closeConfigWizard() : setCfgStep((step) => Math.max(0, step - 1))
+  
+const renderConfigWizard = () => {
+  if (!cfgOpen) return null;
+  const budget = cfgRules.initialBalance ?? initialBank;
+  const lotsCount = cfgRules.maxSlots ?? 20;
+  return (
+    <div className="sheet-overlay" role="dialog" aria-modal="true">
+      <button
+        type="button"
+        className="sheet-backdrop"
+        aria-label="??????? ?????????"
+        onClick={closeConfigWizard}
+      />
+      <div className="config-sheet">
+        <div className="sheet-handle" />
+        <header className="config-head">
+          <span>????????? ???????</span>
+        </header>
+        <div className="wizard-step">
+          <label className="field">
+            <span>?????? ?? ??????</span>
+            <input
+              className="text-input"
+              inputMode="numeric"
+              value={budget}
+              onChange={(e) =>
+                setCfgRules((prev) => ({
+                  ...prev,
+                  initialBalance: e.target.value.replace(/[^\d]/g, ""),
+                }))
               }
-            >
-              Назад
-            </button>
-            {safeStep < steps.length - 1 ? (
-              <button type="button" className="accent-btn" onClick={() => setCfgStep((step) => Math.min(steps.length - 1, step + 1))}>
-                Далее
-              </button>
-            ) : (
-              <button type="button" className="accent-btn" onClick={configureAuction}>
-                Применить
-              </button>
-            )}
-          </footer>
+            />
+            <div className="field-hint">100 000 ? 5 000 000 $</div>
+          </label>
+          <label className="field">
+            <span>?????????? ?????</span>
+            <input
+              className="text-input"
+              inputMode="numeric"
+              value={lotsCount}
+              onChange={(e) =>
+                setCfgRules((prev) => ({
+                  ...prev,
+                  maxSlots: e.target.value.replace(/[^\d]/g, ""),
+                }))
+              }
+            />
+            <div className="field-hint">10 ? 40</div>
+          </label>
         </div>
+        <footer className="wizard-footer">
+          <button type="button" className="ghost-btn" onClick={closeConfigWizard}>
+            ??????
+          </button>
+          <button type="button" className="accent-btn" onClick={configureAuction}>
+            ?????????
+          </button>
+        </footer>
       </div>
-    );
-  };
+    </div>
+  );
+};
+
+;
 
   const renderToastStack = () => {
     if (!toastStack.length) return null;
