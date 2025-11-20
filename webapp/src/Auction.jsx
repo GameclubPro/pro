@@ -1810,35 +1810,59 @@ export default function Auction({
 
   const renderDock = () => {
     if (showLanding) return null;
+    const dockButtons = [];
+    if (isOwner) {
+      dockButtons.push(
+        <button
+          key="cfg"
+          type="button"
+          className="dock-icon"
+          aria-label="Настройки"
+          onClick={() => {
+            setCfgStep(0);
+            setCfgOpen(true);
+          }}
+        >
+          ⚙️
+        </button>
+      );
+    }
+
+    dockButtons.push(
+      <button
+        key="players"
+        type="button"
+        className="dock-icon"
+        aria-label="Игроки"
+        onClick={() => setPlayersModalOpen(true)}
+      >
+        👥
+      </button>,
+      <button
+        key="primary"
+        type="button"
+        className="dock-cta"
+        onClick={primaryActionHandler}
+        disabled={primaryActionDisabled}
+      >
+        {primaryActionLabel}
+      </button>,
+      <button
+        key="history"
+        type="button"
+        className="dock-icon"
+        aria-label="История"
+        onClick={() => setHistoryModalOpen(true)}
+      >
+        🕑
+      </button>,
+      <button key="exit" type="button" className="dock-icon" aria-label="Выход" onClick={handleExit}>
+        ↩
+      </button>
+    );
     return (
-      <nav className="auction-dock" aria-label="Основные действия">
-        <button
-          type="button"
-          className="dock-icon"
-          aria-label="Игроки"
-          onClick={() => setPlayersModalOpen(true)}
-        >
-          👥
-        </button>
-        <button
-          type="button"
-          className="dock-cta"
-          onClick={primaryActionHandler}
-          disabled={primaryActionDisabled}
-        >
-          {primaryActionLabel}
-        </button>
-        <button
-          type="button"
-          className="dock-icon"
-          aria-label="История"
-          onClick={() => setHistoryModalOpen(true)}
-        >
-          🕘
-        </button>
-        <button type="button" className="dock-icon" aria-label="Выход" onClick={handleExit}>
-          ↩
-        </button>
+      <nav className="auction-dock" aria-label="???????? ????????">
+        {dockButtons}
       </nav>
     );
   };
@@ -1861,7 +1885,7 @@ export default function Auction({
     : renderResultsCard();
 
   return (
-    <div className="auction-app">
+    <div className={`auction-app ${showLanding ? "landing" : "has-dock"}`}>
       <div className="ambient" aria-hidden="true" />
       {showLanding ? (
         renderLanding()

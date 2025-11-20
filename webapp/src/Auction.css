@@ -66,11 +66,19 @@ input, textarea {
   position: relative;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: calc(var(--safe-top) + 12px) clamp(14px, 5vw, 28px) calc(var(--safe-bottom) + 140px);
+  padding: calc(var(--safe-top) + 12px) clamp(14px, 5vw, 28px) calc(var(--safe-bottom) + 36px);
   background:
     radial-gradient(circle at 16% -8%, rgba(86, 176, 255, 0.22), transparent 48%),
     radial-gradient(circle at 80% 0%, rgba(110, 242, 203, 0.22), transparent 52%),
     linear-gradient(145deg, #050910 0%, #060c17 48%, #071026 100%);
+}
+
+.auction-app.has-dock {
+  padding-bottom: calc(var(--safe-bottom) + 140px);
+}
+
+.auction-app.landing {
+  padding-bottom: calc(var(--safe-bottom) + 36px);
 }
 
 .ambient {
@@ -435,6 +443,55 @@ textarea.text-input {
   justify-self: end;
 }
 
+@media (max-width: 540px) {
+  .auction-topbar {
+    padding: 12px;
+  }
+
+  .topbar-row {
+    grid-template-areas:
+      "brand actions"
+      "phase phase"
+      "status balance";
+    grid-template-columns: 1fr auto;
+  }
+
+  .app-title,
+  .room-code {
+    letter-spacing: 0.12em;
+  }
+
+  .phase-label {
+    letter-spacing: 0.08em;
+  }
+
+  .topbar-center {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .phase-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .topbar-status {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .topbar-balance {
+    justify-self: start;
+    text-align: left;
+    padding: 8px 10px;
+    min-width: auto;
+  }
+
+  .topbar-actions {
+    display: none;
+  }
+}
+
 .phase-progress {
   width: 100%;
   height: 6px;
@@ -489,6 +546,16 @@ textarea.text-input {
 .stage-head h3,
 .panel-head h3 {
   font-size: 20px;
+}
+
+@media (max-width: 719px) {
+  .stage-layout {
+    gap: 12px;
+  }
+
+  .stage-rail {
+    display: none;
+  }
 }
 
 .lobby-card .lobby-status {
@@ -663,6 +730,10 @@ textarea.text-input {
   gap: 8px;
   overflow-x: auto;
   padding-bottom: 4px;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 12px;
+  mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
 }
 
 .quick-bids.rail::-webkit-scrollbar {
@@ -672,6 +743,11 @@ textarea.text-input {
 .quick-bids.rail::-webkit-scrollbar-thumb {
   background: var(--surface);
   border-radius: 999px;
+}
+
+.quick-bids.rail > * {
+  min-width: 78px;
+  scroll-snap-align: start;
 }
 
 .bid-actions {
@@ -728,10 +804,16 @@ textarea.text-input {
   gap: 10px;
   overflow-x: auto;
   padding-bottom: 6px;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 12px;
 }
 
 .players-grid-card .players-grid::-webkit-scrollbar {
   height: 6px;
+}
+
+.players-grid-card .players-grid > * {
+  scroll-snap-align: start;
 }
 
 .players-grid-head {
@@ -877,6 +959,7 @@ textarea.text-input {
   align-items: flex-end;
   justify-content: center;
   padding: clamp(10px, 4vw, 28px);
+  padding-bottom: calc(var(--safe-bottom) + clamp(10px, 4vw, 28px));
 }
 
 .sheet-backdrop {
@@ -894,6 +977,7 @@ textarea.text-input {
   align-items: flex-end;
   justify-content: center;
   padding: clamp(10px, 4vw, 28px);
+  padding-bottom: calc(var(--safe-bottom) + clamp(10px, 4vw, 28px));
 }
 
 .sheet-handle {
@@ -911,15 +995,16 @@ textarea.text-input {
   position: relative;
   z-index: 1;
   width: min(560px, 100%);
-  max-height: min(88vh, 680px);
+  max-height: min(88vh, calc(100vh - var(--safe-top) - 12px), 680px);
   background: var(--surface-strong);
   border: 1px solid var(--border);
   border-radius: 26px 26px 0 0;
-  padding: 18px 18px 24px;
+  padding: 18px 18px calc(24px + var(--safe-bottom));
   box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .basket-head,
@@ -1114,7 +1199,9 @@ textarea.text-input {
   box-shadow: 0 26px 60px rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(18px);
   display: grid;
-  grid-template-columns: repeat(4, minmax(44px, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(44px, 1fr);
+  grid-template-columns: none;
   gap: 10px;
   z-index: 20;
 }
@@ -1236,11 +1323,21 @@ textarea.text-input {
     grid-auto-columns: unset;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     overflow: visible;
+    scroll-snap-type: none;
+    scroll-padding-inline: 0;
   }
 
   .quick-bids.rail {
     grid-auto-flow: row;
     grid-template-columns: repeat(auto-fit, minmax(86px, 1fr));
     overflow: visible;
+    scroll-snap-type: none;
+    scroll-padding-inline: 0;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+
+  .quick-bids.rail > * {
+    min-width: auto;
   }
 }
