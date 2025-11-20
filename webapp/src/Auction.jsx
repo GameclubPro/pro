@@ -1166,17 +1166,17 @@ export default function Auction({
           <div className="lobby-room">
             <div className="lobby-chip">LOBBY</div>
             <div className="lobby-name-row">
-              <h3>{room?.name || room?.code || "???????"}</h3>
+              <h3>{room?.name || room?.code || "Без названия"}</h3>
               <button type="button" className="room-code-chip" onClick={copyRoomCode}>
                 {room?.code || "------"}
               </button>
             </div>
             <p className="muted tiny">
-              {safePlayers.length} ??????? ? {readyCount}/{readyTarget} ??????
+              {safePlayers.length} игроков · готовы {readyCount}/{readyTarget}
             </p>
           </div>
           <div className="lobby-owner">
-            <span className="label">???????</span>
+            <span className="label">Владелец</span>
             <strong>{ownerPlayer ? playerDisplayName(ownerPlayer) : "?"}</strong>
           </div>
         </div>
@@ -1196,20 +1196,20 @@ export default function Auction({
               </svg>
               <div className="ready-value">
                 <strong>{readyCount}</strong>
-                <span>??????</span>
+                <span>готовы</span>
               </div>
             </div>
             <div className="ready-copy">
-              <span className="muted small">??????????</span>
+              <span className="muted small">Готовность</span>
               <strong>{readyPercent}%</strong>
               <span className="muted tiny">
-                {readyCount}/{readyTarget} ??????
+                {readyCount}/{readyTarget} готовы
               </span>
-              <span className="muted tiny host-ready">???? ?????</span>
+              <span className="muted tiny host-ready">Хост готов</span>
             </div>
           </div>
           <div className="lobby-cta">
-            <div className="cta-label">??????????</div>
+            <div className="cta-label">Действия</div>
             {isOwner ? (
               <>
                 <button
@@ -1218,10 +1218,10 @@ export default function Auction({
                   onClick={handleStartAuction}
                   disabled={!canStart}
                 >
-                  {canStart ? "????????? ???????" : "???? ??????????"}
+                  {canStart ? "Запустить аукцион" : "Ждём готовность"}
                 </button>
                 <p className="muted tiny">
-                  ??????????? ??????? ???? ? ?????????? ???????.
+                  Запускайте только когда все отметились готовыми.
                 </p>
               </>
             ) : (
@@ -1231,21 +1231,21 @@ export default function Auction({
                   className={`auction-btn outline xl ${myReady ? "ok" : ""}`}
                   onClick={toggleReady}
                 >
-                  {myReady ? "? ?????" : "???????? ??????????"}
+                  {myReady ? "Я готов" : "Отметить готовность"}
                 </button>
                 <p className="muted tiny">
-                  ??????? ???????? ????, ????? ??? ?????????.
+                  Нажмите готов, чтобы хост смог начать.
                 </p>
               </>
             )}
             <div className="lobby-inline-stats">
               <div>
-                <span className="label tiny">????</span>
+                <span className="label tiny">Банк</span>
                 <strong>{moneyFormatter.format(initialBank)}$</strong>
               </div>
               {slotMax != null && (
                 <div>
-                  <span className="label tiny">?????</span>
+                  <span className="label tiny">Слотов</span>
                   <strong>{slotMax}</strong>
                 </div>
               )}
