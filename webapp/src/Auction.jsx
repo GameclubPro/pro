@@ -999,7 +999,7 @@ export default function Auction({
 
   const renderLotCard = () => {
     if (!showGame) return null;
-    const icon = currentSlot?.type === "lootbox" ? "🎁" : "📦";
+    const icon = currentSlot?.type === "lootbox" ? "??" : "??";
     const typeLabel = currentSlot?.type === "lootbox" ? "Кейс" : "Лот";
     const growth = auctionState?.currentStep || auctionState?.growth || 0;
     return (
@@ -1149,8 +1149,8 @@ const renderLobbyCard = () => {
           <span className="label">Код комнаты</span>
           <div className="lobby-code-row">
             <span className="lobby-code">{room?.code || "------"}</span>
-            <button type="button" className="icon-btn" onClick={copyRoomCode} aria-label="Скопировать код">⧉</button>
-            <button type="button" className="icon-btn" onClick={shareRoomCode} aria-label="Поделиться кодом">↗</button>
+            <button type="button" className="icon-btn" onClick={copyRoomCode} aria-label="Скопировать код">?</button>
+            <button type="button" className="icon-btn" onClick={shareRoomCode} aria-label="Поделиться кодом">?</button>
           </div>
         </div>
         {isOwner && (
@@ -1160,7 +1160,7 @@ const renderLobbyCard = () => {
             onClick={onSettingsClick}
             aria-label="Настройки комнаты"
           >
-            ⚙
+            ?
           </button>
         )}
       </div>
@@ -1188,7 +1188,6 @@ const renderLobbyCard = () => {
         {safePlayers.map((p) => {
           const name = playerDisplayName(p);
           const avatar = p.user?.photo_url || p.user?.avatar || null;
-          const isHost = p.user?.id === room?.ownerId;
           return (
             <div key={p.id} className="lobby-player-line">
               <div className="lobby-player-ava">
@@ -1197,7 +1196,6 @@ const renderLobbyCard = () => {
               <div className="lobby-player-body">
                 <div className="lobby-player-name">{name}</div>
                 <div className="lobby-player-meta">
-                  {isHost && <span className="badge-owner">хост</span>}
                   {p.ready && <span className="badge-ready">готов</span>}
                 </div>
               </div>
@@ -1264,7 +1262,7 @@ const renderLobbyCard = () => {
     const playerBasket = selectedBasket;
     const lootboxes = playerBasket.filter((item) => item.type === 'lootbox').length;
     const latest = playerBasket[playerBasket.length - 1] || null;
-    const typeIcon = (slot) => (slot.type === "lootbox" ? "🎁" : "📦");
+    const typeIcon = (slot) => (slot.type === "lootbox" ? "??" : "??");
     return (
       <div className="basket-sheet" role="dialog" aria-modal="true">
         <button
@@ -1291,7 +1289,7 @@ const renderLobbyCard = () => {
               <h3>{playerDisplayName(selectedPlayer)}</h3>
             </div>
             <button type="button" className="icon-btn ghost" onClick={closeBasket} aria-label="Закрыть">
-              ✕
+              ?
             </button>
           </div>
           <div className="basket-owner">
@@ -1370,7 +1368,7 @@ const renderLobbyCard = () => {
                 <div className="timeline-dot" />
                 <div className="timeline-body">
                   <strong>
-                    #{slot.index + 1} · {slot.type === "lootbox" ? "🎁" : "📦"}
+                    #{slot.index + 1} · {slot.type === "lootbox" ? "??" : "??"}
                   </strong>
                   <span>{slot.name}</span>
                   <span className="muted tiny">
@@ -1399,7 +1397,7 @@ const renderLobbyCard = () => {
             aria-label="Показать всех игроков"
             onClick={() => setPlayersModalOpen(true)}
           >
-            🧲
+            ??
           </button>
         </div>
         <div className="players-grid">
@@ -1408,7 +1406,6 @@ const renderLobbyCard = () => {
             const balance = balances[p.id] ?? null;
             const wins = winsByPlayerId.get(p.id) || 0;
             const avatarUrl = p.user?.photo_url || p.user?.avatar || null;
-            const isHostTile = p.user?.id === room?.ownerId;
             const playerBasket = baskets[p.id] || baskets[String(p.id)] || [];
             const cases = Array.isArray(playerBasket)
               ? playerBasket.filter((item) => item.type === "lootbox").length
@@ -1424,23 +1421,22 @@ const renderLobbyCard = () => {
                 className={p.ready ? "ready" : undefined}
                 onClick={() => openBasketForPlayer(p.id)}
               >
-                <div className="player-card__avatar">
+                <div className="player-tile__avatar">
                   {avatarUrl ? <img src={avatarUrl} alt={name} /> : name.slice(0, 1)}
                 </div>
-                <div className="player-card__body">
+                <div className="player-tile__body">
                   <strong>{name}</strong>
-                  <span className="player-card__balance">
+                  <span className="player-tile__balance">
                     {balance != null ? `${moneyFormatter.format(balance)}$` : "-"}
                   </span>
-                  <div className="player-card__meta">
+                  <div className="player-tile__meta">
                     <span>{lastItem ? lastItem.name : "Без побед"}</span>
                     <span>{cases} кейс.</span>
                   </div>
                 </div>
-                <div className="player-card__badges">
+                <div className="player-tile__badges">
                   {p.ready && <span className="player-badge">Готов</span>}
                   {wins > 0 && <span className="player-badge ghost">+{wins}</span>}
-                  {isHostTile && <span className="player-badge ghost">Host</span>}
                 </div>
               </button>
             );
@@ -1465,7 +1461,7 @@ const renderLobbyCard = () => {
           <header className="players-modal-head">
             <strong>Игроки</strong>
             <button type="button" className="icon-btn ghost" onClick={() => setPlayersModalOpen(false)}>
-              ✕
+              ?
             </button>
           </header>
           <div className="players-modal-filters">
@@ -1491,7 +1487,7 @@ const renderLobbyCard = () => {
               return (
                 <div key={player.id} className="players-modal-row">
                   <div className="players-modal-main">
-                    <div className="player-card__avatar small">
+                    <div className="player-tile__avatar small">
                       {avatarUrl ? <img src={avatarUrl} alt={playerDisplayName(player)} /> : playerDisplayName(player).slice(0, 1)}
                     </div>
                     <div>
@@ -1539,7 +1535,7 @@ const renderLobbyCard = () => {
           <header className="players-modal-head">
             <strong>История лотов</strong>
             <button type="button" className="icon-btn ghost" onClick={() => setHistoryModalOpen(false)}>
-              ✕
+              ?
             </button>
           </header>
           <div className="history-modal-list">
@@ -1550,7 +1546,7 @@ const renderLobbyCard = () => {
                 <div key={`${slot.index}-${slot.name}`} className="history-modal-row">
                   <div>
                     <strong>
-                      #{slot.index + 1} · {slot.type === "lootbox" ? "🎁" : "📦"}
+                      #{slot.index + 1} · {slot.type === "lootbox" ? "??" : "??"}
                     </strong>
                     <span>{slot.name}</span>
                   </div>
@@ -1651,7 +1647,7 @@ const renderConfigWizard = () => {
                 onClick={() => dismissToast(item.id)}
                 aria-label="Закрыть уведомление"
               >
-                ×
+                ?
               </button>
             </motion.div>
           ))}
@@ -1697,7 +1693,7 @@ const renderConfigWizard = () => {
             aria-label="Выйти в меню"
             onClick={handleExit}
           >
-            ←
+            <
           </button>
           <div className="header-titles">
             <span className="phase-chip">{phaseLabel}</span>
@@ -1720,7 +1716,7 @@ const renderConfigWizard = () => {
             aria-label="Поделиться комнатой"
             onClick={shareRoomCode}
           >
-            ↗
+            ?
           </button>
         </div>
         <div className="header-metrics">
@@ -1742,7 +1738,7 @@ const renderConfigWizard = () => {
           </div>
           <div className="stat-card">
             <span className="label">Время</span>
-            <strong>{secsLeft != null ? `${secsLeft}s` : "∞"}</strong>
+            <strong>{secsLeft != null ? `${secsLeft}s` : "?"}</strong>
             <p className="muted tiny">{progressPct != null ? `${progressPct}% цикла` : "Ожидание"}</p>
           </div>
         </div>
@@ -1785,6 +1781,7 @@ const renderConfigWizard = () => {
     </div>
   );
 }
+
 
 
 
