@@ -165,6 +165,11 @@ export default function Auction({
     [safePlayers, myPlayerId]
   );
 
+  const ownerPlayer = useMemo(
+    () => safePlayers.find((p) => p.user?.id === room?.ownerId) || null,
+    [room?.ownerId, safePlayers]
+  );
+
   const isOwner = useMemo(() => {
     if (!room || !selfInfo) return false;
     return room.ownerId === selfInfo.userId;
@@ -932,49 +937,87 @@ export default function Auction({
   }
   const renderLanding = () => (
     <div className="landing-screen">
-      <motion.div
-        className="landing-card"
+      <motion.section
+        className="landing-card auction-menu"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
       >
-        <span className="badge">AUCTION</span>
-        <h1>Команды через ставки</h1>
-        <p className="muted">Создай комнату и отправь код друзьям.</p>
-        <div className="landing-actions">
-          <button
-            type="button"
-            className="accent-btn"
-            onClick={createRoom}
-            disabled={creating}
-          >
-            {creating ? "Создаём…" : "Создать комнату"}
-          </button>
-          <div className="join-inline">
+        <header className="auction-hero">
+          <div className="auction-logo">AUCTION</div>
+          <p className="auction-tagline">Торг, лут и готовность в одном окне.</p>
+          <div className="auction-hero-meta">
+            <span className="auction-chip ghost">lobby</span>
+            <span className="auction-chip">loot & bids</span>
+          </div>
+        </header>
+
+        <div className="auction-actions">
+          <div className="auction-join-inline">
             <label htmlFor="auction-join-code" className="sr-only">
               Код комнаты
             </label>
             <input
               id="auction-join-code"
-              className="text-input"
+              className="auction-input big"
               maxLength={6}
-              placeholder="Ввести код"
+              placeholder="Введите код"
               value={codeInput}
               onChange={(e) => setCodeInput(normalizeCode(e.target.value))}
               inputMode="latin"
               autoCapitalize="characters"
+              autoCorrect="off"
             />
             <button
               type="button"
-              className="ghost-btn"
+              className="auction-btn primary big"
               onClick={() => joinRoom(codeInput)}
               disabled={joining}
             >
-              {joining ? "Подключаем…" : "Подключиться"}
+              {joining ? "Входим..." : "Подключиться"}
             </button>
           </div>
+          {error && (
+            <div className="auction-hint danger" role="alert">
+              {error}
+            </div>
+          )}
+          <button
+            type="button"
+            className="auction-btn primary xl auction-create-cta"
+            onClick={createRoom}
+            disabled={creating}
+          >
+            {creating ? "Создаем..." : "Создать комнату"}
+          </button>
         </div>
-      </motion.div>
+
+        <div className="auction-bento">
+          <article className="auction-card">
+            <div className="ico" aria-hidden="true">
+              🛰️
+            </div>
+            <div className="title">Лобби</div>
+            <p className="text">Готовность и код как в мафии, но без картинок.</p>
+          </article>
+          <article className="auction-card">
+            <div className="ico" aria-hidden="true">
+              💰
+            </div>
+            <div className="title">Торги</div>
+            <p className="text">Ставки и лидеры видны прямо из нового окна.</p>
+          </article>
+          <article className="auction-card">
+            <div className="ico" aria-hidden="true">
+              🎁
+            </div>
+            <div className="title">Лут</div>
+            <p className="text">
+              Следите за слотом и лутбоксами, не уходя из лобби.
+            </p>
+          </article>
+        </div>
+      </motion.section>
     </div>
   );
 
@@ -1187,18 +1230,34 @@ export default function Auction({
     );
   };
 
-  const renderLobbyCard = () => {
+    const renderLobbyCard = () => {
     if (!showLobby) return null;
+    const readyTarget = Math.max(nonHostPlayers, 1) || 1;
+    const myReady = !!currentPlayer?.ready;
+    const canStart = readyCount >= readyTarget && safePlayers.length >= 2;
+
     return (
       <section className="panel stage-card lobby-card">
-        <header className="stage-head">
-          <div>
-            <span className="label">Комната</span>
-            <h3>{room?.name || room?.code || "Лобби"}</h3>
+        <header className="lobby-head">
+          <div className="lobby-title">
+            <div className="lobby-chip">LOBBY</div>
+            <div className="lobby-name-row">
+              <h3>{room?.name || room?.code || "Комната"}</h3>
+              <button type="button" className="room-code-chip" onClick={copyRoomCode}>
+                {room?.code || "------"}
+              </button>
+            </div>
+            <p className="muted tiny">
+              {safePlayers.length} игроков · {readyCount}/{readyTarget} готовы
+            </p>
+          </div>
+          <div className="lobby-owner">
+            <span className="label">Ведущий</span>
+            <strong>{ownerPlayer ? playerDisplayName(ownerPlayer) : "—"}</strong>
           </div>
         </header>
-        <div className="lobby-status">
-          <div className="ready-meter">
+        <div className="lobby-body">
+          <div className="ready-meter glass">
             <div className="ready-ring">
               <svg viewBox="0 0 120 120">
                 <circle className="track" cx="60" cy="60" r="50" />
@@ -1216,17 +1275,57 @@ export default function Auction({
                 <span>готовы</span>
               </div>
             </div>
-            <span className="muted small">
-              {nonHostPlayers > 0
-                ? `из ${nonHostPlayers}`
-                : `${safePlayers.length} игрок${safePlayers.length === 1 ? "" : "ов"}`}
-            </span>
+            <div className="ready-copy">
+              <span className="muted small">готовность</span>
+              <strong>{readyPercent}%</strong>
+              <span className="muted tiny">
+                {readyCount}/{readyTarget} готовы
+              </span>
+            </div>
           </div>
-          <p className="muted small lobby-hint">
-            {!isOwner
-              ? "Нажми «Я готов» внизу, когда будешь готов к старту."
-              : "Как только все будут готовы, нажми «Старт» внизу экрана."}
-          </p>
+          <div className="lobby-cta">
+            <div className="cta-label">Подготовка</div>
+            {isOwner ? (
+              <>
+                <button
+                  type="button"
+                  className="auction-btn primary xl"
+                  onClick={handleStartAuction}
+                  disabled={!canStart}
+                >
+                  {canStart ? "Запустить аукцион" : "Ждём готовность"}
+                </button>
+                <p className="muted tiny">
+                  Понадобится минимум двое и готовность команды.
+                </p>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={`auction-btn outline xl ${myReady ? "ok" : ""}`}
+                  onClick={toggleReady}
+                >
+                  {myReady ? "Я готов" : "Отметить готовность"}
+                </button>
+                <p className="muted tiny">
+                  Ведущий запустит игру, когда все отметятся.
+                </p>
+              </>
+            )}
+            <div className="lobby-inline-stats">
+              <div>
+                <span className="label tiny">Банк</span>
+                <strong>{moneyFormatter.format(initialBank)}$</strong>
+              </div>
+              {slotMax != null && (
+                <div>
+                  <span className="label tiny">Слоты</span>
+                  <strong>{slotMax}</strong>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </section>
     );
@@ -1755,8 +1854,12 @@ export default function Auction({
     ? renderLotCard()
     : renderResultsCard();
 
+  const appClassName = ["auction-app", showLanding ? "landing" : "", showLobby ? "phase-lobby" : ""]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <div className={`auction-app ${showLanding ? "landing" : ""}`}>
+    <div className={appClassName}>
       {showLanding ? (
         renderLanding()
       ) : (

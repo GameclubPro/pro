@@ -67,20 +67,30 @@ input, textarea {
 }
 
 .auction-app {
-  max-width: 480px;
+  max-width: 1040px;
   margin: 0 auto;
   position: relative;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: calc(var(--safe-top) + 12px) 12px calc(var(--safe-bottom) + 12px);
-  background-color: var(--bg);
+  padding: calc(var(--safe-top) + 16px) clamp(12px, 3vw, 24px) calc(var(--safe-bottom) + 16px);
+  background:
+    radial-gradient(140% 180% at 0% 0%, color-mix(in srgb, var(--accent-2) 16%, transparent) 0, transparent 60%),
+    radial-gradient(160% 220% at 100% 0%, color-mix(in srgb, var(--accent) 12%, transparent) 0, transparent 60%),
+    linear-gradient(180deg, #05070f 0%, #050813 100%);
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
 .auction-app.landing {
-  padding-bottom: calc(var(--safe-bottom) + 36px);
+  padding-bottom: calc(var(--safe-bottom) + 42px);
+}
+
+.auction-app.phase-lobby {
+  background:
+    radial-gradient(160% 200% at 12% -6%, color-mix(in srgb, var(--accent-2) 18%, transparent) 0, transparent 58%),
+    radial-gradient(180% 220% at 90% -10%, color-mix(in srgb, var(--accent) 18%, transparent) 0, transparent 60%),
+    linear-gradient(180deg, #060914 0%, #05070f 100%);
 }
 
 .ambient {
@@ -252,47 +262,204 @@ textarea.text-input:focus {
   z-index: 1;
   display: flex;
   justify-content: center;
-  padding-top: 12px;
+  padding: clamp(10px, 3vh, 24px) 0;
 }
 
 .landing-card {
-  width: min(480px, 100%);
-  border-radius: var(--radius-lg);
-  padding: 26px;
+  width: min(960px, 100%);
+  border-radius: 22px;
+  padding: clamp(22px, 6vw, 32px);
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
-  border: 1px solid var(--border);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255,255,255,.04) inset;
   display: flex;
   flex-direction: column;
   gap: 16px;
+  backdrop-filter: blur(10px) saturate(120%);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
 }
 
-.landing-card h1 {
-  font-size: clamp(24px, 5vw, 30px);
+.auction-menu::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background: radial-gradient(120% 200% at var(--mx, 60%) 10%, color-mix(in srgb, var(--accent-2) 20%, transparent) 0, transparent 60%);
+  mix-blend-mode: screen;
+  opacity:.5;
 }
 
-.landing-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.auction-hero{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
 }
 
-.join-inline {
-  display: grid;
-  gap: 10px;
+.auction-logo{
+  font-size: clamp(36px, 9vw, 64px);
+  letter-spacing:.14em;
+  font-weight:1000;
+  text-transform: uppercase;
+  background: linear-gradient(180deg,#fff 0%, #d9e3f0 88%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  text-shadow: 0 0 10px rgba(0,0,0,.4), 0 4px 0 rgba(0,0,0,.32);
+}
+
+.auction-tagline{
+  margin: 6px 0 0;
+  max-width: 52ch;
+  color: color-mix(in srgb, var(--muted) 70%, #fff 30%);
+  text-shadow: 0 1px 0 rgba(0,0,0,.35);
+}
+
+.auction-hero-meta{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.auction-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px;
+  border-radius: 999px;
+  border:1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+  background: rgba(255,255,255,.06);
+  font-size:12px;
+  letter-spacing:.12em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.auction-chip.ghost{
+  border-color: color-mix(in srgb, var(--accent-2) 32%, var(--border));
+  background: rgba(255,255,255,.04);
+  color: color-mix(in srgb, var(--text) 80%, #fff 20%);
+}
+
+.auction-actions{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.auction-join-inline{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap:10px;
+  background: linear-gradient(180deg, rgba(20,22,26,.92), rgba(12,14,20,.90));
+  border:1px solid color-mix(in srgb, var(--accent) 22%, #3a404c 78%);
+  border-radius: 16px;
   padding: 10px;
-  border-radius: 18px;
-  border: 1px solid var(--border);
-  background: var(--surface-muted);
+  box-shadow: var(--shadow);
 }
 
-@media (min-width: 640px) {
-  .join-inline {
-    grid-template-columns: 1fr auto;
-    align-items: center;
-  }
+.auction-input.big{
+  min-height: 50px;
+  font-size: 16px;
+  border-radius: 14px;
+  border:1px solid var(--border-strong);
+  background:#0d101a;
+  color: var(--text);
+  padding: 12px 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+.auction-input.big:focus{
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  box-shadow: 0 0 0 8px rgba(246,196,82,0.12);
 }
 
+.auction-hint{
+  font-size: 13px;
+  color: var(--muted);
+  padding: 0 2px;
+}
+.auction-hint.danger{ color: var(--danger); }
+
+.auction-btn{
+  width:100%;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  border-radius: 14px;
+  border:1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+  color: var(--text);
+  padding: 12px 14px;
+  letter-spacing:.06em;
+  text-transform: uppercase;
+  font-weight: 800;
+  cursor:pointer;
+  box-shadow: 0 12px 30px rgba(0,0,0,.32);
+}
+.auction-btn.primary{
+  background:
+    linear-gradient(180deg,#2d3641 0%, #1b2129 100%) padding-box,
+    linear-gradient(120deg,#6b7784,#a3b1be) border-box;
+  border:1px solid transparent;
+  color:#eaf0f6;
+  text-shadow: 0 1px 0 rgba(0,0,0,.55);
+}
+.auction-btn.outline{
+  border-color: color-mix(in srgb, var(--accent-2) 40%, var(--border));
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+}
+.auction-btn.xl{
+  padding: 16px 18px;
+  border-radius: 16px;
+  font-size: 17px;
+}
+.auction-btn.big{
+  min-height: 50px;
+  font-size: 15px;
+}
+.auction-btn.ok{
+  border-color: color-mix(in srgb, var(--accent-3) 60%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-3) 30%, transparent) inset;
+}
+
+.auction-create-cta{
+  position: sticky;
+  bottom: calc(8px + var(--safe-bottom));
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.06) inset,
+    0 12px 32px rgba(0,0,0,.38);
+}
+
+.auction-bento{
+  display:grid;
+  gap:10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.auction-card{
+  display:grid;
+  grid-template-columns: auto 1fr;
+  column-gap:10px;
+  row-gap:4px;
+  align-items:start;
+  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow: 0 6px 22px rgba(0,0,0,.28) inset;
+}
+.auction-card .ico{ font-size: 20px; filter: drop-shadow(0 2px 6px rgba(0,0,0,.35)); }
+.auction-card .title{ font-weight:900; letter-spacing:.02em; }
+.auction-card .text{ color:#d8dbe2; margin:0; grid-column: 1 / -1; }
+
+@media (max-width: 720px){
+  .auction-join-inline{ grid-template-columns: 1fr; }
+  .auction-bento{ grid-template-columns: 1fr; }
+}
 .auction-topbar {
   position: sticky;
   top: calc(var(--safe-top) + 8px);
@@ -551,22 +718,115 @@ textarea.text-input:focus {
   }
 }
 
-.lobby-card .lobby-status {
-  display: grid;
-  gap: 14px;
+.lobby-card{
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(160% 220% at -10% -10%, color-mix(in srgb, var(--accent-2) 12%, transparent), transparent 60%),
+    radial-gradient(180% 240% at 120% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%),
+    linear-gradient(180deg, #0b101c 0%, #090d16 100%);
+  border:1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+  box-shadow: var(--shadow), 0 0 0 1px rgba(255,255,255,.04) inset;
+  backdrop-filter: blur(10px) saturate(120%);
+}
+.lobby-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background: radial-gradient(120% 180% at var(--mx, 70%) 10%, color-mix(in srgb, var(--accent-2) 22%, transparent), transparent 58%);
+  opacity:.32;
+  mix-blend-mode: screen;
 }
 
-.ready-meter {
-  display: grid;
-  grid-template-columns: auto auto;
-  align-items: center;
-  gap: 12px;
+.lobby-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.lobby-title{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.lobby-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 12px;
+  border-radius:999px;
+  border:1px solid color-mix(in srgb, var(--accent-2) 30%, var(--border));
+  background: rgba(255,255,255,.04);
+  font-size:11px;
+  letter-spacing:.14em;
+  text-transform: uppercase;
+}
+.lobby-name-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.room-code-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border:1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  background: rgba(255,255,255,.06);
+  letter-spacing:.12em;
+  text-transform: uppercase;
+  font-size:12px;
+  color: var(--text);
+  cursor: pointer;
+}
+.room-code-chip:active{ transform: translateY(1px); }
+
+.lobby-owner{
+  min-width: 160px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border:1px solid var(--border);
+  background: rgba(255,255,255,.05);
+  text-align: right;
+}
+
+.lobby-body{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  align-items:stretch;
+}
+
+.ready-meter{
+  display:flex;
+  align-items:center;
+  gap: 14px;
+  padding: 12px;
+  border-radius: 16px;
+  border:1px solid color-mix(in srgb, var(--accent-2) 26%, var(--border));
+  background: linear-gradient(180deg, rgba(20,22,26,.92), rgba(12,14,20,.90));
+  box-shadow: 0 12px 30px rgba(0,0,0,.32);
+  position: relative;
+  overflow: hidden;
+}
+.ready-meter::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background: linear-gradient(120deg, rgba(255,255,255,.05), transparent);
+  mix-blend-mode: screen;
 }
 
 .ready-ring {
   position: relative;
   width: 116px;
   height: 116px;
+  flex-shrink: 0;
 }
 
 .ready-ring circle {
@@ -594,10 +854,38 @@ textarea.text-input:focus {
   text-transform: uppercase;
 }
 
-.lobby-actions {
-  display: grid;
-  gap: 10px;
+.ready-copy{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
 }
+.ready-copy strong{ font-size: 22px; letter-spacing:.06em; }
+
+.lobby-cta{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border:1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  box-shadow: 0 12px 32px rgba(0,0,0,.36);
+}
+
+.cta-label{
+  font-size: 12px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.lobby-inline-stats{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap:10px;
+  margin-top: 2px;
+}
+.lobby-inline-stats strong{ font-size: 16px; }
 
 .lot-card .lot-preview {
   display: grid;
@@ -1323,9 +1611,8 @@ textarea.text-input:focus {
     grid-template-columns: 1fr 1.2fr auto;
   }
 
-  .lobby-card .lobby-status {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: center;
+  .lobby-body{
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   }
 
   .players-grid-card .players-grid {
