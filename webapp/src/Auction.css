@@ -656,12 +656,12 @@ textarea.text-input:focus {
   gap:12px;
   padding: 14px;
   border-radius: 18px;
-  border:1px solid color-mix(in srgb, var(--border) 80%, rgba(255,255,255,.14));
+  border:1px solid color-mix(in srgb, var(--border) 70%, rgba(255,255,255,.12));
   background:
-    linear-gradient(180deg, rgba(12,16,28,.9), rgba(8,10,16,.9)),
-    radial-gradient(220% 180% at 0% 0%, rgba(106,184,255,.06), transparent 52%);
+    linear-gradient(180deg, rgba(10,14,24,.92), rgba(6,8,14,.9)),
+    radial-gradient(200% 160% at 0% 0%, rgba(106,184,255,.05), transparent 50%);
   box-shadow:
-    0 14px 36px rgba(0,0,0,.32),
+    0 12px 30px rgba(0,0,0,.28),
     0 1px 0 rgba(255,255,255,.04) inset;
   backdrop-filter: blur(10px) saturate(130%);
 }
@@ -685,7 +685,7 @@ textarea.text-input:focus {
   padding: 9px 12px;
   border-radius: 12px;
   border:1px dashed color-mix(in srgb, var(--accent-2) 32%, var(--border));
-  background: rgba(255,255,255,.05);
+  background: rgba(255,255,255,.04);
   letter-spacing:.10em;
   font-weight:800;
   color: var(--text);
@@ -700,7 +700,7 @@ textarea.text-input:focus {
 .lobby-code-text{ font-variant-numeric: tabular-nums; text-transform: uppercase; }
 .lobby-code.copied{
   border-color: color-mix(in srgb, var(--accent-3) 52%, var(--border));
-  background: linear-gradient(120deg, rgba(11,209,157,.14), rgba(255,255,255,.04));
+  background: linear-gradient(120deg, rgba(11,209,157,.12), rgba(255,255,255,.03));
   box-shadow: 0 0 0 4px rgba(11,209,157,.1);
 }
 .code-check{
@@ -721,7 +721,7 @@ textarea.text-input:focus {
 .lobby-grid{
   display:grid;
   grid-template-columns: 1fr;
-  gap:14px;
+  gap:12px;
   align-items:start;
 }
 .lobby-col{
@@ -754,10 +754,11 @@ textarea.text-input:focus {
   border-radius: 14px;
   border:1px solid color-mix(in srgb, var(--border) 70%, rgba(255,255,255,.12));
   background:
-    linear-gradient(140deg, rgba(255,255,255,.03), rgba(255,255,255,.01)),
-    rgba(12,14,22,.78);
-  box-shadow: 0 10px 18px rgba(0,0,0,.22);
+    linear-gradient(145deg, rgba(255,255,255,.03), rgba(255,255,255,.015)),
+    rgba(12,14,22,.82);
+  box-shadow: 0 8px 16px rgba(0,0,0,.2);
   transition: transform .16s ease, box-shadow .16s ease, border-color .2s ease;
+  min-height: 66px;
 }
 .metric-ico{
   width: 32px;
@@ -814,6 +815,9 @@ textarea.text-input:focus {
   background: rgba(255,255,255,.08);
   overflow:hidden;
 }
+.ready-progress + .progress-hint{
+  margin-top: 2px;
+}
 .ready-fill{
   position: absolute;
   inset: 0;
@@ -840,7 +844,7 @@ textarea.text-input:focus {
   padding: 10px 12px;
   border-radius: 14px;
   border:1px dashed color-mix(in srgb, var(--accent-2) 36%, var(--border));
-  background: rgba(255,255,255,.04);
+  background: rgba(255,255,255,.03);
   color: var(--text);
   flex: 1 1 220px;
 }
@@ -863,8 +867,8 @@ textarea.text-input:focus {
   letter-spacing:.04em;
   text-transform: uppercase;
   color: #0c1018;
-  background: linear-gradient(135deg, var(--accent), var(--accent-3));
-  box-shadow: 0 12px 28px rgba(246,196,82,.32);
+  background: linear-gradient(135deg, #f7c763, #10cfa3);
+  box-shadow: 0 10px 24px rgba(15,207,163,.24);
   transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
 }
 .cta-main.ok{
@@ -887,7 +891,7 @@ textarea.text-input:focus {
   border:1px solid var(--border);
   border-radius: 14px;
   background: rgba(255,255,255,.02);
-  box-shadow: none;
+  box-shadow: 0 8px 18px rgba(0,0,0,.14);
   padding: 12px;
   display:grid;
   gap:12px;
@@ -924,7 +928,7 @@ textarea.text-input:focus {
   pointer-events:none;
 }
 .lobby-player-ava{
-  width:40px; height:40px;
+  width:38px; height:38px;
   border-radius: 12px;
   overflow:hidden;
   background: rgba(255,255,255,.06);
