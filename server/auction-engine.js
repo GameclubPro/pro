@@ -754,9 +754,16 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
 
       state.paused = false;
       if (state.pauseLeftMs != null) {
-        state.slotDeadlineAtMs = Date.now() + Math.max(1000, state.pauseLeftMs);
+        const left = Math.max(1000, state.pauseLeftMs);
+        state.slotDeadlineAtMs = Date.now() + left;
+        clearTimer(state.roomId);
+        const handle = setTimeout(() => {
+          finalizeByTimer(state.roomId).catch(() => {});
+        }, left + 25);
+        timers.set(state.roomId, handle);
+      } else {
+        scheduleTimer(state);
       }
-      scheduleTimer(state);
 
       const pub = buildPublicState(state, room);
       if (onState) onState(pub);
@@ -802,6 +809,4 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
 }
 
 module.exports = { createAuctionEngine };
-
-
 
