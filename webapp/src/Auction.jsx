@@ -1426,7 +1426,7 @@ const renderLobbyCard = () => {
         )}
       </div>
 
-      <div className="lobby-list" aria-label="��ப�"><div className="lobby-list" aria-label="Игроки">
+      <div className="lobby-list" aria-label="Игроки">
         {safePlayers.map((p) => {
           const name = playerDisplayName(p);
           const avatar = p.user?.photo_url || p.user?.avatar || null;
@@ -1784,7 +1784,9 @@ const renderLobbyCard = () => {
         </div>
       </div>
     );
-  };  const renderHistoryModal = () => {
+  };
+
+  const renderHistoryModal = () => {
     if (!historyModalOpen) return null;
     return (
       <div className="sheet-overlay" role="dialog" aria-modal="true">
@@ -2042,6 +2044,13 @@ const renderLobbyCard = () => {
     </div>
   );
 }
+
+
+
+
+
+
+
 
 
 
