@@ -1368,86 +1368,146 @@ export default function Auction({
       </section>
     );
   };
-const renderLobbyCard = () => {
-  if (!showLobby) return null;
-  const readyTarget = Math.max(totalPlayers, 1);
-  const myReady = !!currentPlayer?.ready;
-  const canStart = readyCount >= readyTarget && safePlayers.length >= 2;
 
-  const onSettingsClick = () => {
-    if (!isOwner) return;
-    setCfgOpen(true);
-  };
+  const renderLobbyCard = () => {
+    if (!showLobby) return null;
+    const readyTarget = Math.max(totalPlayers, 1);
+    const myReady = !!currentPlayer?.ready;
+    const canStart = readyCount >= readyTarget && safePlayers.length >= 2;
 
-  return (
-    <section className="lobby-new">
-      <div className="lobby-bar">
-        <div className="lobby-code-block">
-          <span className="label">Код комнаты</span>
-          <div className="lobby-code-row">
-            <span className="lobby-code">{room?.code || "------"}</span>
-            <button type="button" className="icon-btn" onClick={copyRoomCode} aria-label="Скопировать код">?</button>
-            <button type="button" className="icon-btn" onClick={shareRoomCode} aria-label="Поделиться кодом">?</button>
-          </div>
-        </div>
-        {isOwner && (
-          <button
-            className="icon-btn"
-            type="button"
-            onClick={onSettingsClick}
-            aria-label="Настройки комнаты"
-          >
-            ?
-          </button>
-        )}
-      </div>
+    const onSettingsClick = () => {
+      if (!isOwner) return;
+      setCfgOpen(true);
+    };
 
-      <div className="lobby-meta-row">
-        <span className="lobby-pill">{safePlayers.length} игроков</span>
-        <span className="lobby-pill ready">{readyCount}/{readyTarget} готовы</span>
-        <span className="lobby-pill">Банк {moneyFormatter.format(initialBank)}$</span>
-        {slotMax != null && <span className="lobby-pill">Лотов {slotMax}</span>}
-      </div>
-
-      <div className="lobby-cta-row">
-        <div className="lobby-owner-tag">��������: {ownerPlayer ? playerDisplayName(ownerPlayer) : "-"}</div>
-        <button
-          type="button"
-          className={`cta-main ${!isOwner && myReady ? "ok" : ""}`}
-          onClick={isOwner ? handleStartAuction : toggleReady}
-          disabled={isOwner && !canStart}
-        >
-          {isOwner ? (canStart ? "����" : "��� ��⮢�����") : myReady ? "��⮢" : "� ��⮢"}
-        </button>
-        {isOwner && (
-          <button type="button" className="pill ghost" onClick={nudgeUnready}>
-            ������ ��⮢�
-          </button>
-        )}
-      </div>
-
-      <div className="lobby-list" aria-label="Игроки">
-        {safePlayers.map((p) => {
-          const name = playerDisplayName(p);
-          const avatar = p.user?.photo_url || p.user?.avatar || null;
-          return (
-            <div key={p.id} className="lobby-player-line">
-              <div className="lobby-player-ava">
-                {avatar ? <img src={avatar} alt={name} /> : name.slice(0, 1)}
-              </div>
-              <div className="lobby-player-body">
-                <div className="lobby-player-name">{name}</div>
-                <div className="lobby-player-meta">
-                  {p.ready && <span className="badge-ready">готов</span>}
-                </div>
+    return (
+      <section className="lobby-new">
+        <div className="lobby-bar">
+          <div className="lobby-code-block">
+            <span className="label">Код комнаты</span>
+            <div className="lobby-code-row">
+              <span className="lobby-code">{room?.code || "------"}</span>
+              <div className="lobby-actions">
+                <button type="button" className="icon-btn" onClick={copyRoomCode} aria-label="Скопировать код">
+                  📋
+                </button>
+                <button type="button" className="icon-btn" onClick={shareRoomCode} aria-label="Поделиться кодом">
+                  📤
+                </button>
               </div>
             </div>
-          );
-        })}
-      </div>
-    </section>
-  );
-};
+          </div>
+          {isOwner && (
+            <button
+              className="icon-btn"
+              type="button"
+              onClick={onSettingsClick}
+              aria-label="Настройки комнаты"
+            >
+              ⚙️
+            </button>
+          )}
+        </div>
+
+        <div className="lobby-grid">
+          <div className="lobby-col">
+            <div className="lobby-meta-row">
+              <div className="lobby-metric">
+                <span className="metric-ico">👥</span>
+                <div>
+                  <div className="metric-label">В лобби</div>
+                  <strong>{safePlayers.length}</strong>
+                </div>
+              </div>
+              <div className="lobby-metric">
+                <span className="metric-ico">✅</span>
+                <div>
+                  <div className="metric-label">Готовность</div>
+                  <strong>{readyCount}/{readyTarget}</strong>
+                </div>
+              </div>
+              <div className="lobby-metric">
+                <span className="metric-ico">💰</span>
+                <div>
+                  <div className="metric-label">Банк</div>
+                  <strong>{moneyFormatter.format(initialBank)}$</strong>
+                </div>
+              </div>
+              {slotMax != null && (
+                <div className="lobby-metric">
+                  <span className="metric-ico">🎯</span>
+                  <div>
+                    <div className="metric-label">Лотов</div>
+                    <strong>{slotMax}</strong>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="lobby-cta-row">
+              <div className="lobby-owner-tag">
+                <span className="owner-ico">👑</span>
+                <div>
+                  <div className="metric-label">Хост комнаты</div>
+                  <strong>{ownerPlayer ? playerDisplayName(ownerPlayer) : "—"}</strong>
+                </div>
+              </div>
+              <button
+                type="button"
+                className={`cta-main ${!isOwner && myReady ? "ok" : ""}`}
+                onClick={isOwner ? handleStartAuction : toggleReady}
+                disabled={isOwner && !canStart}
+              >
+                {isOwner
+                  ? canStart
+                    ? "🚀 Стартовать торги"
+                    : "⏳ Ждём готовых"
+                  : myReady
+                    ? "✅ Готов"
+                    : "🟢 Я готов"}
+              </button>
+              {isOwner && (
+                <button type="button" className="pill ghost" onClick={nudgeUnready}>
+                  🔔 Напомнить остальным
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="lobby-col">
+            <div className="lobby-list-card">
+              <div className="lobby-list-head">
+                <div>
+                  <span className="label">Игроки</span>
+                  <h4>Состав лобби</h4>
+                </div>
+                <p className="muted tiny">Присоединились по порядку прихода</p>
+              </div>
+              <div className="lobby-list" aria-label="Игроки">
+                {safePlayers.map((p) => {
+                  const name = playerDisplayName(p);
+                  const avatar = p.user?.photo_url || p.user?.avatar || null;
+                  return (
+                    <div key={p.id} className="lobby-player-line">
+                      <div className="lobby-player-ava">
+                        {avatar ? <img src={avatar} alt={name} /> : name.slice(0, 1)}
+                      </div>
+                      <div className="lobby-player-body">
+                        <div className="lobby-player-name">{name}</div>
+                        <div className="lobby-player-meta">
+                          {p.ready && <span className="badge-ready">готов</span>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  };
 
   const renderResultsCard = () => {
     if (!showResult) return null;
