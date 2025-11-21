@@ -6,6 +6,7 @@ import RoomMenu from "./shared/RoomMenu.jsx";
 import "./Mafia/mafia.css";
 import "./Auction.css";
 
+// NOTE: Мобильный веб-интерфейс: весь UI заточен под смартфоны (портретные узкие экраны).
 const INITIAL_BANK = 1_000_000;
 const CODE_ALPHABET_RE = /[^A-HJKMNPQRSTUVWXYZ23456789]/g;
 const BID_PRESETS = [1_000, 5_000, 10_000, 25_000, 50_000];
