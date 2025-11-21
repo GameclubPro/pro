@@ -788,6 +788,11 @@ textarea.text-input:focus {
   gap:10px;
   align-items:start;
 }
+.cta-actions{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap:8px;
+}
 .lobby-status{
   border:1px solid color-mix(in srgb, var(--accent-2) 32%, var(--border));
   border-radius: 14px;

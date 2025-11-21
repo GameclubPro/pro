@@ -1490,36 +1490,38 @@ export default function Auction({
                   </div>
                   <div className="progress-hint">{readyPct}%</div>
                 </div>
-              <div className="lobby-owner-tag">
-                <span className="owner-ico">👑</span>
-                <div>
-                  <div className="metric-label">Хост комнаты</div>
-                  <strong>{ownerPlayer ? playerDisplayName(ownerPlayer) : "—"}</strong>
+                <div className="lobby-owner-tag">
+                  <span className="owner-ico">👑</span>
+                  <div>
+                    <div className="metric-label">Хост комнаты</div>
+                    <strong>{ownerPlayer ? playerDisplayName(ownerPlayer) : "—"}</strong>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className={`cta-main ${!isOwner && myReady ? "ok" : ""}`}
+                  onClick={isOwner ? handleStartAuction : toggleReady}
+                  disabled={isOwner && !canStart}
+                >
+                  {isOwner
+                    ? canStart
+                      ? "🚀 Стартовать торги"
+                      : "⏳ Ждём готовых"
+                    : myReady
+                      ? "✅ Готов"
+                      : "🟢 Я готов"}
+                </button>
+                <div className="cta-actions">
+                  <button type="button" className="pill ghost slim" onClick={scrollToPlayers}>
+                    👥 Показать игроков
+                  </button>
+                  {isOwner && (
+                    <button type="button" className="pill ghost slim" onClick={nudgeUnready}>
+                      🔔 Напомнить остальным
+                    </button>
+                  )}
                 </div>
               </div>
-              <button
-                type="button"
-                className={`cta-main ${!isOwner && myReady ? "ok" : ""}`}
-                onClick={isOwner ? handleStartAuction : toggleReady}
-                disabled={isOwner && !canStart}
-              >
-                {isOwner
-                  ? canStart
-                    ? "🚀 Стартовать торги"
-                    : "⏳ Ждём готовых"
-                  : myReady
-                    ? "✅ Готов"
-                    : "🟢 Я готов"}
-              </button>
-              <button type="button" className="pill ghost slim" onClick={scrollToPlayers}>
-                👥 Показать игроков
-              </button>
-              {isOwner && (
-                <button type="button" className="pill ghost" onClick={nudgeUnready}>
-                  🔔 Напомнить остальным
-                </button>
-              )}
-            </div>
           </div>
 
           <div className="lobby-col">
