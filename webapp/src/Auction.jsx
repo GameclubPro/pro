@@ -1,5 +1,5 @@
 // src/Auction.jsx
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import io from "socket.io-client";
 import RoomMenu from "./shared/RoomMenu.jsx";
