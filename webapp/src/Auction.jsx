@@ -1033,7 +1033,7 @@ export default function Auction({
       return;
     }
     if (amount > 0 && baseBid > 0 && amount < baseBid) {
-      pushError(`Минимальная ставка ${moneyFormatter.format(baseBid)}$`);
+      pushError(`Минимальная стаВка ${moneyFormatter.format(baseBid)}$`);
       return;
     }
 
