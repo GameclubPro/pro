@@ -987,6 +987,30 @@ textarea.text-input:focus {
   .lobby-cta-row{ align-items:stretch; }
   .lobby-owner-tag{ flex:1 1 100%; }
 }
+
+@media (max-width: 400px){
+  .auction-app{
+    padding: calc(var(--safe-top) + 10px) clamp(10px, 6vw, 14px) calc(var(--safe-bottom) + 10px);
+  }
+  .lobby-new{ padding: 12px; gap:10px; border-radius: 16px; }
+  .lobby-code{ padding: 8px 10px; letter-spacing: .08em; font-size: 13px; }
+  .lobby-actions{ width:100%; justify-content:flex-start; }
+  .lobby-metric{ padding: 8px; gap:8px; }
+  .metric-ico{ width: 28px; height: 28px; font-size: 15px; }
+  .status-text{ font-size: 13px; }
+  .ready-progress{ height: 5px; }
+  .ready-thumb{ width: 12px; height: 12px; top: -5px; }
+  .cta-main{ font-size: 13px; padding: 11px 12px; }
+  .pill{ font-size: 11px; padding: 8px 12px; }
+  .lobby-player-line{ padding: 8px; gap:8px; }
+  .lobby-player-ava{ width:36px; height:36px; }
+}
+
+@media (min-width: 401px) and (max-width: 720px){
+  .lobby-meta-row{ grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  .lobby-code-row{ gap:6px; }
+  .cta-main{ padding: 12px 14px; }
+}
 @media (min-width: 760px){
   .auction-app{ max-width: 680px; }
   .lobby-new{ gap:16px; }
