@@ -80,6 +80,7 @@ export default function Auction({
   onInviteConsumed,
 }) {
   const [socket, setSocket] = useState(null);
+  const [connecting, setConnecting] = useState(false);
 
   const [room, setRoom] = useState(null);
   const [players, setPlayers] = useState([]);
