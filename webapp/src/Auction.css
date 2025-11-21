@@ -775,6 +775,77 @@ textarea.text-input:focus {
   gap: 12px;
 }
 
+.lot-teaser-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.teaser-card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  display: grid;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.teaser-card.now {
+  border-color: color-mix(in srgb, var(--accent-2) 30%, var(--border));
+}
+
+.teaser-card.next {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+
+.teaser-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.teaser-name {
+  font-weight: 800;
+}
+
+.teaser-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.teaser-ico {
+  position: absolute;
+  right: 10px;
+  bottom: 6px;
+  font-size: 22px;
+  opacity: 0.4;
+}
+
+.recap-bar {
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.recap-meta {
+  display: grid;
+  gap: 4px;
+  justify-items: flex-end;
+  text-align: right;
+  font-size: 13px;
+}
+
 .lot-pricing > div {
   padding: 12px;
   border-radius: 14px;
@@ -892,6 +963,27 @@ textarea.text-input:focus {
   gap: 10px;
 }
 
+.bid-tweaks {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 10px;
+  align-items: end;
+}
+
+.custom-step input.text-input {
+  padding: 10px 12px;
+}
+
+.bid-helpers {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pill.tight {
+  padding: 6px 12px;
+}
+
 .owner-row {
   display: flex;
   gap: 10px;
@@ -952,6 +1044,29 @@ textarea.text-input:focus {
 
 .players-grid-card .players-grid > * {
   scroll-snap-align: start;
+}
+
+.players-grid-card .players-grid > button.player-tile {
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "avatar body badges";
+  gap: 10px;
+  color: inherit;
+}
+
+.player-tile.leader {
+  border-color: color-mix(in srgb, var(--accent-2) 40%, var(--border));
+  box-shadow: 0 10px 28px rgba(106, 184, 255, 0.22);
+}
+
+.player-tile.low {
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
 }
 
 .player-tile__avatar {
@@ -1124,6 +1239,17 @@ textarea.text-input:focus {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  margin-bottom: 10px;
+}
+
+.players-modal-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-muted);
   margin-bottom: 10px;
 }
 
@@ -1468,6 +1594,10 @@ textarea.text-input:focus {
   .lobby-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .bid-tweaks {
+    grid-template-columns: 1fr;
   }
 
   .timeline-row {
