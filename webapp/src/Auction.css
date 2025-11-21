@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap");
+
 :root {
   --bg: #050814;
   --bg-soft: #070b16;
@@ -42,10 +44,11 @@
 }
 
 body {
-  font-family: "Sora", "Manrope", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "Space Grotesk", "Manrope", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   margin: 0;
   background-color: var(--bg);
   color: var(--text);
+  letter-spacing: -0.01em;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -67,30 +70,34 @@ input, textarea {
 }
 
 .auction-app {
+  width: 100%;
   max-width: 1040px;
   margin: 0 auto;
   position: relative;
   min-height: 100vh;
   min-height: 100dvh;
+  isolation: isolate;
+  overflow: hidden;
   padding: calc(var(--safe-top) + 16px) clamp(12px, 3vw, 24px) calc(var(--safe-bottom) + 16px);
   background:
     radial-gradient(140% 180% at 0% 0%, color-mix(in srgb, var(--accent-2) 16%, transparent) 0, transparent 60%),
-    radial-gradient(160% 220% at 100% 0%, color-mix(in srgb, var(--accent) 12%, transparent) 0, transparent 60%),
-    linear-gradient(180deg, #05070f 0%, #050813 100%);
+    radial-gradient(160% 280% at 120% -40%, color-mix(in srgb, var(--accent) 20%, transparent) 0, transparent 68%),
+    linear-gradient(160deg, #05070f 0%, #050813 45%, #05070f 100%);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .header-main {
   display: flex;
   gap: 12px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .header-titles h2 {
   margin: 2px 0;
-  font-size: 22px;
+  font-size: clamp(20px, 4.6vw, 26px);
 }
 
 .header-title-row {
@@ -104,6 +111,98 @@ input, textarea {
   margin: 2px 0 0;
   color: var(--muted);
   font-size: 13px;
+}
+
+.auction-header {
+  backdrop-filter: var(--glass);
+  background:
+    radial-gradient(120% 180% at 18% 0%, rgba(106, 184, 255, 0.16), transparent 60%),
+    radial-gradient(120% 200% at 100% -20%, rgba(246, 196, 82, 0.12), transparent 58%),
+    rgba(12, 16, 28, 0.92);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 12px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+}
+
+.room-code-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px dashed color-mix(in srgb, var(--accent-2) 40%, var(--border));
+  background: rgba(255, 255, 255, 0.05);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: transform 0.15s ease, border-color 0.2s ease;
+}
+
+.room-code-chip:active {
+  transform: translateY(1px);
+}
+
+.auction-app .panel {
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  box-shadow: var(--shadow);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.auction-app .panel > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stage-primary > * {
+  width: 100%;
+}
+
+.stage-card {
+  background:
+    radial-gradient(140% 160% at 18% 0%, rgba(106, 184, 255, 0.14), transparent 60%),
+    radial-gradient(140% 210% at 100% -16%, rgba(11, 209, 157, 0.1), transparent 70%),
+    rgba(10, 12, 18, 0.94);
+  border: 1px solid var(--border-strong);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.stage-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 75% 10%, rgba(246, 196, 82, 0.14), transparent 55%);
+  opacity: 0.65;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.stage-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.stage-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .phase-chip {
@@ -129,6 +228,14 @@ input, textarea {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 10px;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+}
+
+.auction-header .header-metrics {
+  grid-column: 1 / -1;
 }
 
 .stat-card {
@@ -149,11 +256,12 @@ input, textarea {
 .secondary-stack {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
-.stage-primary > .lobby-new{
+.stage-primary > .lobby-new,
+.stage-primary > .panel{
   width: 100%;
-  max-width: 720px;
+  max-width: 820px;
   margin: 0 auto;
 }
 
@@ -1305,6 +1413,78 @@ textarea.text-input:focus {
   display: none !important;
 }
 
+@media (max-width: 640px) {
+  .auction-app {
+    padding: calc(var(--safe-top) + 12px) clamp(10px, 4vw, 16px) calc(var(--safe-bottom) + 14px);
+    gap: 14px;
+  }
+
+  .auction-header {
+    grid-template-columns: 1fr;
+    padding: 10px 12px;
+  }
+
+  .header-main {
+    align-items: flex-start;
+  }
+
+  .header-actions {
+    justify-content: flex-start;
+  }
+
+  .header-metrics {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+
+  .auction-app .panel {
+    padding: 12px;
+  }
+
+  .lot-preview {
+    grid-template-columns: 1fr;
+  }
+
+  .lot-icon {
+    width: 72px;
+    height: 72px;
+    margin-inline: auto;
+  }
+
+  .lot-pricing {
+    grid-template-columns: 1fr;
+  }
+
+  .bid-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .lobby-bar,
+  .lobby-meta-row,
+  .lobby-cta-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .lobby-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .timeline-row {
+    align-items: flex-start;
+  }
+
+  .players-grid-card .players-grid {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    overflow: visible;
+    scroll-snap-type: none;
+    scroll-padding-inline: 0;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+}
+
 @media (hover: hover) {
   button:hover:not(:disabled) {
     transform: translateY(-1px);
@@ -1326,6 +1506,14 @@ textarea.text-input:focus {
 
   .players-grid-card .players-grid {
     grid-auto-columns: minmax(220px, 42%);
+  }
+}
+
+@media (min-width: 900px) {
+  .mobile-stack {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    align-items: start;
   }
 }
 

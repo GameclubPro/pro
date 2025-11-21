@@ -1685,7 +1685,7 @@ const renderLobbyCard = () => {
     const readyTarget = Math.max(totalPlayers, 1);
 
     return (
-      <header>
+      <header className="auction-header panel">
         <div className="header-main">
           <button
             type="button"
@@ -1764,7 +1764,7 @@ const renderLobbyCard = () => {
         <>
           {renderHeader()}
           <div className="mobile-stack">
-            {activeStageCard}
+            <div className="stage-primary">{activeStageCard}</div>
             <div className="secondary-stack">
               {renderPlayersGridSection()}
               {renderHistoryTimeline()}
