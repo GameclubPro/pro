@@ -112,6 +112,7 @@ export default function Auction({
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [basketOpen, setBasketOpen] = useState(false);
   const [copiedFlash, setCopiedFlash] = useState(false);
+  const [codeExpanded, setCodeExpanded] = useState(false);
   const [sheetDrag, setSheetDrag] = useState(0);
   const [customBidStep, setCustomBidStep] = useState(2_000);
   const [liveBidFeed, setLiveBidFeed] = useState([]);
@@ -1389,10 +1390,21 @@ export default function Auction({
     const canStart = readyCount >= readyTarget && safePlayers.length >= 2;
     const readyRatio = readyTarget ? Math.min(1, readyCount / readyTarget) : 0;
     const readyPct = Math.round(readyRatio * 100);
+    const readyMissing = Math.max(readyTarget - readyCount, 0);
+    const lobbyPlayers = safePlayers
+      .slice()
+      .sort((a, b) => Number(b.ready) - Number(a.ready));
+    const primaryCtaLabel = isOwner
+      ? canStart
+        ? "🚀 Стартовать торги"
+        : "⏳ Ждём готовых"
+      : myReady
+        ? "✅ Готов"
+        : "🟢 Я готов";
     const statusText = isOwner
       ? canStart
         ? "Все готовы, можно стартовать"
-        : `Ждём ещё ${Math.max(readyTarget - readyCount, 0)}`
+        : `Ждём ещё ${readyMissing}`
       : myReady
         ? "Ожидаем остальных"
         : "Нажмите, чтобы отметить готовность";
@@ -1407,6 +1419,8 @@ export default function Auction({
       el?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
 
+    const toggleCodeExpanded = () => setCodeExpanded((prev) => !prev);
+
     return (
       <section className="lobby-new">
         <div className="lobby-bar">
@@ -1416,9 +1430,11 @@ export default function Auction({
             </button>
             <span className="mobile-pill">Mobile</span>
           </div>
-          <div className="lobby-code-block">
-            <span className="label">Код комнаты</span>
+          <div className={`lobby-code-block ${codeExpanded ? "is-open" : "is-collapsed"}`}>
             <div className="lobby-code-row">
+              <button type="button" className="pill ghost slim code-toggle" onClick={toggleCodeExpanded}>
+                {codeExpanded ? "Скрыть код" : "Код комнаты"}
+              </button>
               <span className={`lobby-code ${copiedFlash ? "copied" : ""}`}>
                 <span className="lobby-code-text">{room?.code || "------"}</span>
                 <span className="code-check" aria-hidden="true">{copiedFlash ? "✓" : ""}</span>
@@ -1446,7 +1462,7 @@ export default function Auction({
         </div>
 
         <div className="lobby-grid">
-          <div className="lobby-col">
+          <div className="lobby-col lobby-col-meta">
               <div className="lobby-meta-row">
               <div className="lobby-metric">
                 <span className="metric-ico" aria-hidden="true">👥</span>
@@ -1503,13 +1519,7 @@ export default function Auction({
                   onClick={isOwner ? handleStartAuction : toggleReady}
                   disabled={isOwner && !canStart}
                 >
-                  {isOwner
-                    ? canStart
-                      ? "🚀 Стартовать торги"
-                      : "⏳ Ждём готовых"
-                    : myReady
-                      ? "✅ Готов"
-                      : "🟢 Я готов"}
+                  {primaryCtaLabel}
                 </button>
                 <div className="cta-actions">
                   <button type="button" className="pill ghost slim" onClick={scrollToPlayers}>
@@ -1524,17 +1534,21 @@ export default function Auction({
               </div>
           </div>
 
-          <div className="lobby-col">
+          <div className="lobby-col lobby-col-list">
               <div className="lobby-list-card">
                 <div className="lobby-list-head">
                   <div>
                     <span className="label">Игроки</span>
                     <h4>Состав лобби</h4>
+                    <p className="muted tiny">
+                      Готовность {readyCount}/{readyTarget}
+                      {readyMissing > 0 ? ` · ждём ${readyMissing}` : ""}
+                    </p>
                   </div>
                   <p className="muted tiny">Присоединились по порядку прихода</p>
                 </div>
                 <div className="lobby-list" aria-label="Игроки" id="lobby-players">
-                  {safePlayers.map((p) => {
+                  {lobbyPlayers.map((p) => {
                     const name = playerDisplayName(p);
                     const avatar = p.user?.photo_url || p.user?.avatar || null;
                     const isHost = ownerPlayer?.id === p.id;
@@ -1559,6 +1573,22 @@ export default function Auction({
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="lobby-sticky-cta">
+          <div className="sticky-cta-meta">
+            <span className="tiny-label">Готовность</span>
+            <strong>{readyCount}/{readyTarget}</strong>
+            <span className="muted tiny">В лобби {safePlayers.length}</span>
+          </div>
+          <button
+            type="button"
+            className={`cta-main ${!isOwner && myReady ? "ok" : ""}`}
+            onClick={isOwner ? handleStartAuction : toggleReady}
+            disabled={isOwner && !canStart}
+          >
+            {primaryCtaLabel}
+          </button>
         </div>
       </section>
     );
