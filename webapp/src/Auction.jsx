@@ -920,10 +920,10 @@ export default function Auction({
         <button
           type="button"
           className="icon-btn icon-btn--ghost"
-          aria-label="Выйти"
-          onClick={handleExit}
+          aria-label="Поделиться"
+          onClick={shareRoomCode}
         >
-          ←
+          📨
         </button>
         <div className="app-header__center">
           <div className="app-header__eyebrow">
@@ -954,11 +954,11 @@ export default function Auction({
         </div>
         <button
           type="button"
-          className="icon-btn icon-btn--ghost"
-          aria-label="Поделиться"
-          onClick={shareRoomCode}
+          className="icon-btn icon-btn--ghost app-header__close"
+          aria-label="Выйти"
+          onClick={handleExit}
         >
-          📤
+          ×
         </button>
       </header>
     );
@@ -1135,7 +1135,7 @@ export default function Auction({
 
         <div className="bottom-bar bottom-bar--lobby">
           <div className="bottom-bar__meta">
-            <strong className="bottom-bar__value">
+            <strong>
               {readyCount}/{readyTarget}
             </strong>
           </div>
