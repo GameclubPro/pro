@@ -977,6 +977,28 @@ export default function Auction({
       ? "Я не готов"
       : "Я готов";
 
+    const primaryClassName = [
+      "btn",
+      "btn--compact",
+      "bottom-bar__primary",
+      isOwner ? "btn--power" : myReady ? "btn--ready" : "btn--not-ready",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const primaryIcon = isOwner ? (
+      <span className="btn__icon btn__icon--power" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M10 2v6m3.95-4.95a7 7 0 1 1-7.9 0"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
+      </span>
+    ) : null;
+
     const primaryAction = () => {
       if (isOwner) {
         if (!canStart) return;
@@ -1134,10 +1156,11 @@ export default function Auction({
         <div className="bottom-bar bottom-bar--lobby">
           <button
             type="button"
-            className="btn btn--primary btn--compact bottom-bar__primary"
+            className={primaryClassName}
             onClick={primaryAction}
             disabled={isOwner && !canStart}
           >
+            {primaryIcon}
             {primaryLabel}
           </button>
         </div>
