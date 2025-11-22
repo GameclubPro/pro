@@ -74,6 +74,7 @@ export default function Auction({
   onInviteConsumed,
 }) {
   const [socket, setSocket] = useState(null);
+  const socketRef = useRef(null);
   const [connecting, setConnecting] = useState(false);
 
   const [room, setRoom] = useState(null);
@@ -282,10 +283,11 @@ export default function Auction({
 
   const subscribeToRoom = useCallback(
     (rawCode, options = {}) => {
+      const sock = socketRef.current;
       const code = normalizeCode(rawCode);
-      if (!code || !socket) return;
+      if (!code || !sock) return;
       const force = options.force ?? false;
-      const socketId = socket.id ?? null;
+      const socketId = sock.id ?? null;
       const alreadySame =
         lastSubscribedCodeRef.current === code &&
         lastSubscriptionSocketIdRef.current === socketId &&
@@ -294,13 +296,13 @@ export default function Auction({
       if (!force && alreadySame) return;
 
       lastSubscribedCodeRef.current = code;
-      socket.emit("room:subscribe", { code, game: AUCTION_GAME });
-      socket.emit("auction:sync", { code, game: AUCTION_GAME });
+      sock.emit("room:subscribe", { code, game: AUCTION_GAME });
+      sock.emit("auction:sync", { code, game: AUCTION_GAME });
       if (socketId) {
         lastSubscriptionSocketIdRef.current = socketId;
       }
     },
-    [socket]
+    []
   );
 
   // ---------- EXIT / BACK ----------
@@ -380,6 +382,7 @@ export default function Auction({
       auth: { initData: initData || "" },
     });
 
+    socketRef.current = instance;
     setSocket(instance);
     setConnecting(true);
 
@@ -434,6 +437,7 @@ export default function Auction({
     });
 
     return () => {
+      socketRef.current = null;
       try {
         instance.off("toast");
         instance.off("room:state");
@@ -447,7 +451,7 @@ export default function Auction({
         // ignore
       }
     };
-  }, [apiBase, initData, subscribeToRoom, pushError, pushToast, clearError]);
+  }, [apiBase, initData, pushError, pushToast, clearError]);
 
   // Подписка по коду комнаты
   useEffect(() => {
