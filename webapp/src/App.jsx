@@ -9,7 +9,7 @@ import TruthOrDare from "./TruthOrDare"; // Правда/Действие
 import Compatibility from "./compatibility"; // «Совместимость»
 import Choice from "./choice"; // «Выбор»
 import SketchBattle from "./SketchBattle"; // «Скетч-баттл»
-import Auction from "./Auction"; // 💰 «Аукцион»
+import Auction from "./Auction.tsx"; // 💰 «Аукцион»
 
 /**
  * Play Team — Telegram WebApp
