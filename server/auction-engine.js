@@ -1,6 +1,7 @@
 ﻿'use strict';
 
 const { randomInt } = require('crypto');
+const { RoomGame } = require('@prisma/client');
 
 /**
  * createAuctionEngine
@@ -57,8 +58,8 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
 
   async function getRoomWithPlayers(code) {
     if (!code) return null;
-    return prisma.room.findUnique({
-      where: { code },
+    return prisma.room.findFirst({
+      where: { code, game: RoomGame.AUCTION },
       include: {
         players: {
           include: { user: true },
@@ -214,7 +215,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
             players: { include: { user: true }, orderBy: { joinedAt: 'asc' } },
           },
         });
-        if (!room) return;
+        if (!room || room.game !== RoomGame.AUCTION) return;
         // финалим слот на основании имеющихся ставок (кто не поставил — считается пас)
         const publicState = resolveSlotNow(state, room);
         if (state.phase === 'in_progress') {

@@ -259,7 +259,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
     }
 
     return {
-      room: { code: room.code, status: room.status, ownerId: room.ownerId, dayNumber: room.dayNumber, phaseEndsAt: room.phaseEndsAt },
+      room: { code: room.code, status: room.status, ownerId: room.ownerId, dayNumber: room.dayNumber, phaseEndsAt: room.phaseEndsAt, game: room.game },
       players,
       timer: timerPayload,
       etag,

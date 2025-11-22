@@ -29,6 +29,22 @@ if (typeof window !== "undefined") {
   window.__BOT_USERNAME__ = BOT_USERNAME;
 }
 const STARTAPP_PAYLOAD = "home";
+const GAME_MAFIA = "mafia";
+const GAME_AUCTION = "auction";
+const normalizeGameName = (raw) => {
+  const v = String(raw || "").trim().toLowerCase();
+  if (v === GAME_AUCTION) return GAME_AUCTION;
+  if (v === GAME_MAFIA) return GAME_MAFIA;
+  return null;
+};
+const parseStartPayload = (raw = "") => {
+  const value = String(raw || "").trim();
+  const auctionMatch = value.match(/^auction-([A-Za-z0-9_-]{4,})$/i);
+  if (auctionMatch) return { code: auctionMatch[1].toUpperCase(), game: GAME_AUCTION };
+  const joinMatch = value.match(/^join-([A-Za-z0-9_-]{4,})$/i);
+  if (joinMatch) return { code: joinMatch[1].toUpperCase(), game: GAME_MAFIA };
+  return { code: null, game: null };
+};
 
 /* ==== Helpers для одноразового инвайта ==== */
 const INVITE_STORAGE_KEY = `pt_consumed_invites_v1_${BOT_USERNAME}`; // чтобы не конфликтовало между ботами
@@ -48,9 +64,11 @@ function stripInviteFromUrl() {
   try {
     const u = new URL(location.href);
     u.searchParams.delete("join");
+    u.searchParams.delete("game");
     u.searchParams.delete("tgWebAppStartParam");
     const hash = new URLSearchParams(u.hash.replace(/^#/, ""));
     hash.delete("join");
+    hash.delete("game");
     hash.delete("tgWebAppStartParam");
     u.hash = hash.toString() ? `#${hash.toString()}` : "";
     history.replaceState(null, "", u.toString());
@@ -100,6 +118,7 @@ export default function App() {
 
   // --- Инвайт-код: реактивное состояние, обновляется из всех источников ---
   const [inviteCode, setInviteCode] = useState(null);
+  const [inviteGame, setInviteGame] = useState(null); // 'mafia' | 'auction' | null
 
   // Одноразовый инвайт: локальная карта "поглощённых"
   const consumedInvitesRef = useRef({});
@@ -107,6 +126,18 @@ export default function App() {
     consumedInvitesRef.current = readConsumedInvites();
   }, []);
   const isInviteConsumed = useCallback((code) => !!(code && consumedInvitesRef.current?.[code]), []);
+  const applyInvite = useCallback(
+    (code, game = null) => {
+      const normalizedCode = (code || "").toUpperCase();
+      if (!normalizedCode) return;
+      if (isInviteConsumed(normalizedCode)) return;
+      const normalizedGame = normalizeGameName(game);
+      if (normalizedCode === inviteCode && normalizedGame === inviteGame) return;
+      setInviteCode(normalizedCode);
+      setInviteGame(normalizedGame);
+    },
+    [inviteCode, inviteGame, isInviteConsumed]
+  );
   const consumeInvite = useCallback((code) => {
     if (!code) return;
     const map = { ...(consumedInvitesRef.current || {}), [code]: Date.now() };
@@ -115,6 +146,7 @@ export default function App() {
     // Важно: сразу чистим URL, чтобы рефреш/повторное открытие не тащило обратно.
     stripInviteFromUrl();
     setInviteCode(null);
+    setInviteGame(null);
   }, []);
 
   // Если есть WebApp API, tgWebAppData в URL или tgWebAppStartParam — считаем, что это запуск из Telegram
@@ -245,36 +277,35 @@ export default function App() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const q = new URLSearchParams(location.search).get("join");
+    const gq = new URLSearchParams(location.search).get("game");
     const h = new URLSearchParams(location.hash.slice(1)).get("join");
+    const gh = new URLSearchParams(location.hash.slice(1)).get("game");
     const next = (q || h || "").trim();
     const up = (next || "").toUpperCase();
-    if (up && !isInviteConsumed(up) && up !== inviteCode) setInviteCode(up);
+    if (up) applyInvite(up, gq || gh || null);
   }, []); // один раз при монтировании
 
   /* ---------- Источники инвайт-кода: tgWebAppStartParam из URL (при ?startapp=...) ---------- */
   useEffect(() => {
     if (!startParamFromUrl) return;
-    const m = String(startParamFromUrl).match(/^join-([A-Za-z0-9_-]{4,})$/i);
-    const code = m ? m[1].toUpperCase() : null;
-    if (code && !isInviteConsumed(code) && code !== inviteCode) setInviteCode(code);
-  }, [startParamFromUrl, inviteCode]);
+    const { code, game } = parseStartPayload(startParamFromUrl);
+    if (code) applyInvite(code, game);
+  }, [startParamFromUrl, applyInvite]);
 
   /* ---------- Источники инвайт-кода: start_param из initDataUnsafe (может появиться позже) ---------- */
   useEffect(() => {
     const sp = tg?.initDataUnsafe?.start_param || "";
-    const m = sp.match(/^join-([A-Za-z0-9_-]{4,})$/i);
-    const code = m ? m[1].toUpperCase() : null;
-    if (code && !isInviteConsumed(code) && code !== inviteCode) setInviteCode(code);
-  }, [tg?.initDataUnsafe?.start_param, inviteCode]);
+    const { code, game } = parseStartPayload(sp);
+    if (code) applyInvite(code, game);
+  }, [tg?.initDataUnsafe?.start_param, applyInvite]);
 
   /* ---------- Источники инвайт-кода: разбор строки resolvedInitData ---------- */
   useEffect(() => {
     if (!resolvedInitData) return;
     const sp = new URLSearchParams(resolvedInitData).get("start_param") || "";
-    const m = sp.match(/^join-([A-Za-z0-9_-]{4,})$/i);
-    const code = m ? m[1].toUpperCase() : null;
-    if (code && !isInviteConsumed(code) && code !== inviteCode) setInviteCode(code);
-  }, [resolvedInitData, inviteCode]);
+    const { code, game } = parseStartPayload(sp);
+    if (code) applyInvite(code, game);
+  }, [resolvedInitData, applyInvite]);
 
   // ---- Делегирование BackButton + управление системными жестами TG ----
   const backHandlerRef = useRef(null);            // сюда игры кладут свой обработчик
@@ -345,6 +376,8 @@ export default function App() {
 
   // initData, который будем пробрасывать в игры/сокеты по необходимости
   const effectiveInitData = resolvedInitData || tg?.initData || initFromUrl || "";
+  const mafiaAutoJoin = inviteGame === GAME_AUCTION ? null : inviteCode;
+  const auctionAutoJoin = inviteGame === GAME_AUCTION ? inviteCode : null;
 
   /* ---------- ФОЛБЭК: если уже добавили в комнату через /start, а WebApp открыт без ?join/ start_param ---------- */
   useEffect(() => {
@@ -372,23 +405,28 @@ export default function App() {
         if (!resp.ok) return;
         const data = await resp.json();
         const code = (data?.code || "").toString().trim().toUpperCase();
-        if (!aborted && code && !inviteCode && !isInviteConsumed(code)) setInviteCode(code);
+        const game = normalizeGameName(data?.game);
+        if (!aborted && code) {
+          applyInvite(code, game);
+        }
       } catch {
         /* silent */
       }
     })();
     return () => { aborted = true; };
-  }, [isProbablyTelegram, inviteCode, route.kind, effectiveInitData, isInviteConsumed]);
+  }, [isProbablyTelegram, inviteCode, route.kind, effectiveInitData, applyInvite]);
 
   // ---- Автопереход в «Мафию», если найден инвайт-код ----
   useEffect(() => {
-    if (inviteCode) setRoute({ kind: "game", name: "mafia" });
-  }, [inviteCode]);
+    if (inviteCode) setRoute({ kind: "game", name: inviteGame || "mafia" });
+  }, [inviteCode, inviteGame]);
 
   // ---- Guard: если открыто НЕ в Telegram (и нет tgWebAppData/tgWebAppStartParam), показываем кнопку "Открыть в Telegram"
   if (typeof window !== "undefined" && !isProbablyTelegram) {
     // в guard-е (когда не Telegram): сохраняем инвайт-код в startapp
-    const startPayload = inviteCode ? `join-${inviteCode}` : STARTAPP_PAYLOAD;
+    const startPayload = inviteCode
+      ? `${inviteGame === GAME_AUCTION ? "auction" : "join"}-${inviteCode}`
+      : STARTAPP_PAYLOAD;
     const deepLink = `https://t.me/${BOT_USERNAME}?startapp=${encodeURIComponent(startPayload)}`;
     return (
       <div className="app" data-scheme={scheme} style={cssVars}>
@@ -445,7 +483,7 @@ export default function App() {
               goBack={closeGame}
               onProgress={bumpProgress}
               setBackHandler={setBackHandler}  // <-- делегируем управление BackButton в игру
-              autoJoinCode={inviteCode}        // <-- прокидываем код инвайта
+              autoJoinCode={mafiaAutoJoin}     // <-- прокидываем код инвайта
               onInviteConsumed={consumeInvite} // <-- одноразовый инвайт: после входа пометить и очистить URL
             />
           )}
@@ -456,7 +494,7 @@ export default function App() {
               goBack={closeGame}
               onProgress={bumpProgress}
               setBackHandler={setBackHandler}
-              autoJoinCode={inviteCode}
+              autoJoinCode={auctionAutoJoin}
               onInviteConsumed={consumeInvite}
             />
           )}

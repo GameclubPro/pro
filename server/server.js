@@ -15,7 +15,7 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const { Server: SocketIOServer } = require('socket.io');
 const { Telegraf } = require('telegraf');
-const { PrismaClient, Phase, Role, VoteType } = require('@prisma/client');
+const { PrismaClient, Phase, Role, VoteType, RoomGame } = require('@prisma/client');
 const { verifyInitData, parseUser, parseInitData } = require('./verifyInitData');
 const { Readable } = require('stream');
 const { randomInt, randomUUID } = require('crypto');
@@ -85,6 +85,19 @@ const VOTE_SEC  = Math.max(20, parseInt(MAFIA_VOTE_SEC, 10) || 60);
 const ALLOW_HTTP = CORS_ALLOW_HTTP === '1';
 const USE_REDIS = !!REDIS_URL;
 const INITDATA_MAX_AGE = Math.max(60, parseInt(INITDATA_MAX_AGE_SEC, 10) || 900);
+const DEFAULT_GAME = RoomGame.MAFIA;
+
+function normalizeGame(raw, fallback = DEFAULT_GAME) {
+  const v = String(raw || '').trim().toUpperCase();
+  if (v === 'AUCTION') return RoomGame.AUCTION;
+  if (v === 'MAFIA') return RoomGame.MAFIA;
+  return fallback;
+}
+function gameFromReq(req, fallback = null) {
+  const raw = req?.query?.game ?? req?.body?.game;
+  if (raw == null || raw === '') return fallback;
+  return normalizeGame(raw, fallback || DEFAULT_GAME);
+}
 
 // JSON BigInt safe
 const jsonSafe = (x) =>
@@ -635,9 +648,10 @@ async function upsertTgUser(tgUser) {
   });
   return user;
 }
-async function readRoomWithPlayersByCode(code) {
-  return prisma.room.findUnique({
-    where: { code },
+async function readRoomWithPlayersByCode(code, { game } = {}) {
+  const where = { code, ...(game ? { game } : {}) };
+  return prisma.room.findFirst({
+    where,
     include: {
       players: { include: { user: true }, orderBy: { joinedAt: 'asc' } },
       matches: { orderBy: { id: 'desc' }, take: 1 },
@@ -862,6 +876,7 @@ app.get('/api/self/active-room', async (req, res) => {
     const auth = await authEither(req, { allowStale: true });
     if (!auth.ok) return res.status(auth.http || 401).json({ error: auth.error });
 
+    const requestedGame = gameFromReq(req, null);
     const me = await prisma.user.findUnique({
       where: { id: auth.user.id },
       select: { id: true },
@@ -869,12 +884,15 @@ app.get('/api/self/active-room', async (req, res) => {
     if (!me) return res.json({ code: null });
 
     const room = await prisma.room.findFirst({
-      where: { players: { some: { userId: me.id } } },
+      where: {
+        players: { some: { userId: me.id } },
+        ...(requestedGame ? { game: requestedGame } : {}),
+      },
       orderBy: { updatedAt: 'desc' },
-      select: { code: true, status: true },
+      select: { code: true, status: true, game: true },
     });
 
-    return res.json(room ? { code: room.code, status: room.status } : { code: null });
+    return res.json(room ? { code: room.code, status: room.status, game: room.game } : { code: null });
   } catch (e) {
     console.error('GET /api/self/active-room', e);
     return res.status(500).json({ error: 'failed' });
@@ -941,6 +959,42 @@ const auction = createAuctionEngine({
   },
 });
 
+
+function auctionRoomPayload(room, players) {
+  if (!room || room.game !== RoomGame.AUCTION) return null;
+  const readySet = mafia.getReadySet(room.id);
+  return {
+    room: jsonSafe({
+      id: room.id,
+      code: room.code,
+      status: room.status,
+      ownerId: room.ownerId,
+      dayNumber: room.dayNumber,
+      phaseEndsAt: room.phaseEndsAt,
+      game: room.game,
+    }),
+    players: jsonSafe(mafia.toPublicPlayers(players || room.players || [], { readySet })),
+  };
+}
+
+function emitAuctionRoomState(room, players) {
+  try {
+    const payload = auctionRoomPayload(room, players);
+    if (!payload) return;
+    io.to(`room:${room.code}`).emit('room:state', payload);
+  } catch (e) {
+    console.warn('emitAuctionRoomState failed:', e?.message || e);
+  }
+}
+
+async function emitAuctionRoomStateByCode(code) {
+  try {
+    const room = await readRoomWithPlayersByCode(code, { game: RoomGame.AUCTION });
+    if (room) emitAuctionRoomState(room, room.players);
+  } catch (e) {
+    console.warn('emitAuctionRoomStateByCode failed:', e?.message || e);
+  }
+}
 /* ============================ Room REST (после инициализации движка) ============================ */
 // create
 app.post('/api/rooms', createLimiter, async (req, res) => {
@@ -949,11 +1003,12 @@ app.post('/api/rooms', createLimiter, async (req, res) => {
     if (!auth.ok) return res.status(auth.http || 401).json({ error: auth.error });
     const owner = auth.user;
 
+    const game = gameFromReq(req, DEFAULT_GAME);
     let code = sanitizeProvidedCode(req.body?.code);
     const tryCreate = async (codeForTry) =>
       prisma.$transaction(async (tx) => {
         const room = await tx.room.create({
-          data: { code: codeForTry, ownerId: owner.id, status: Phase.LOBBY, dayNumber: 0, phaseEndsAt: null },
+          data: { code: codeForTry, ownerId: owner.id, status: Phase.LOBBY, dayNumber: 0, phaseEndsAt: null, game },
         });
         const ownerPlayer = await tx.roomPlayer.create({ data: { roomId: room.id, userId: owner.id, alive: true } });
         return { room, ownerPlayerId: ownerPlayer.id };
@@ -980,10 +1035,12 @@ app.post('/api/rooms', createLimiter, async (req, res) => {
       if (!created) return res.status(500).json({ error: 'code_generation_failed' });
     }
 
-    const full = await readRoomWithPlayersByCode(code);
+    const full = await readRoomWithPlayersByCode(code, { game });
 
     // Владелец «готов» в движке
-    try { await mafia.setReady(full.id, created.ownerPlayerId, true); } catch {}
+    if (game === RoomGame.MAFIA) {
+      try { await mafia.setReady(full.id, created.ownerPlayerId, true); } catch {}
+    }
 
     const readySet = mafia.getReadySet(full.id);
     const payload = {
@@ -994,6 +1051,7 @@ app.post('/api/rooms', createLimiter, async (req, res) => {
         ownerId: full.ownerId,
         dayNumber: full.dayNumber,
         phaseEndsAt: full.phaseEndsAt,
+        game: full.game,
       }),
       // owner попадёт в readySet
       players: jsonSafe(mafia.toPublicPlayers(full.players, { readySet })),
@@ -1016,7 +1074,8 @@ app.get('/api/rooms/:code', async (req, res) => {
     let viewerIsOwner = false;
     let isMember = false;
 
-    const room = await readRoomWithPlayersByCode(code);
+    const expectedGame = gameFromReq(req, DEFAULT_GAME);
+    const room = await readRoomWithPlayersByCode(code, { game: expectedGame || undefined });
     if (!room) return res.status(404).json({ error: 'room_not_found' });
 
     if (auth.ok) {
@@ -1040,6 +1099,7 @@ app.get('/api/rooms/:code', async (req, res) => {
         ownerId: room.ownerId,
         dayNumber: room.dayNumber,
         phaseEndsAt: room.phaseEndsAt,
+        game: room.game,
       }),
       players: playersPublic,
       playersCount: room.players.length,
@@ -1058,12 +1118,15 @@ app.get('/api/rooms/:code/events', async (req, res) => {
     if (!auth.ok) return res.status(auth.http || 401).json({ error: auth.error });
 
     const { code } = req.params;
+    const expectedGame = gameFromReq(req, DEFAULT_GAME);
     const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '25'), 10) || 25));
     const room = await prisma.room.findUnique({
       where: { code },
       include: { matches: { orderBy: { id: 'desc' }, take: 1 } },
     });
-    if (!room || !room.matches.length) return res.json({ items: [] });
+    if (!room) return res.status(404).json({ error: 'room_not_found' });
+    if (expectedGame && room.game !== expectedGame) return res.status(404).json({ error: 'room_not_found' });
+    if (!room.matches.length) return res.json({ items: [] });
 
     const me = await prisma.roomPlayer.findFirst({
       where: { matchId: room.matches[0].id, roomId: room.id, userId: auth.user.id },
@@ -1093,6 +1156,7 @@ app.post('/api/rooms/:code/join', joinLimiter, async (req, res) => {
     const auth = await authEither(req);
     if (!auth.ok) return res.status(auth.http || 401).json({ error: auth.error });
     const user = auth.user;
+    const expectedGame = gameFromReq(req, DEFAULT_GAME);
 
     const result = await prisma.$transaction(async (tx) => {
       const room = await tx.room.findUnique({
@@ -1100,6 +1164,7 @@ app.post('/api/rooms/:code/join', joinLimiter, async (req, res) => {
         include: { players: { include: { user: true }, orderBy: { joinedAt: 'asc' } } },
       });
       if (!room) return { error: 'room_not_found' };
+      if (expectedGame && room.game !== expectedGame) return { error: 'wrong_game' };
       if (room.players.length >= MAX_PLAYERS) return { error: 'room_full' };
 
       const already = await tx.roomPlayer.findFirst({ where: { roomId: room.id, userId: user.id } });
@@ -1130,18 +1195,22 @@ app.post('/api/rooms/:code/join', joinLimiter, async (req, res) => {
       const viewerIsOwner = full.ownerId === user.id;
 
       return {
-        room: { id: full.id, code: full.code, status: full.status, ownerId: full.ownerId, dayNumber: full.dayNumber, phaseEndsAt: full.phaseEndsAt },
+        room: { id: full.id, code: full.code, status: full.status, ownerId: full.ownerId, dayNumber: full.dayNumber, phaseEndsAt: full.phaseEndsAt, game: full.game },
         players: full.players,
         viewerIsOwner,
       };
     });
 
     if (result?.error) {
-      const status = result.error === 'room_not_found' ? 404 : 409;
+      const status = (result.error === 'room_not_found' || result.error === 'wrong_game') ? 404 : 409;
       return res.status(status).json({ error: result.error });
     }
 
-    mafia.emitRoomStateDebounced(result.room.code);
+    if (result.room.game === RoomGame.AUCTION) {
+      emitAuctionRoomState(result.room, result.players);
+    } else {
+      mafia.emitRoomStateDebounced(result.room.code);
+    }
     const readySet = mafia.getReadySet(result.room.id);
     res.json({
       room: jsonSafe(result.room),
@@ -1163,6 +1232,7 @@ app.post('/api/rooms/:code/leave', async (req, res) => {
     if (!auth.ok) return res.status(auth.http || 401).json({ error: auth.error });
 
     const { code } = req.params;
+    const game = normalizeGame(req.body?.game ?? req.query?.game, DEFAULT_GAME);
 
     const result = await prisma.$transaction(async (tx) => {
       const room = await tx.room.findUnique({
@@ -1170,6 +1240,7 @@ app.post('/api/rooms/:code/leave', async (req, res) => {
         include: { players: { include: { user: true }, orderBy: { joinedAt: 'asc' } }, matches: { take: 1, orderBy: { id: 'desc' } } },
       });
       if (!room) return { ok: false, error: 'room_not_found' };
+      if (room.game !== game) return { ok: false, error: 'room_wrong_game' };
 
       const me = room.players.find((p) => p.userId === auth.user.id);
       if (!me) return { ok: true, deletedRoom: false, leftPlayerId: null, newOwnerPlayerId: null };
@@ -1180,7 +1251,9 @@ app.post('/api/rooms/:code/leave', async (req, res) => {
 
       const restCount = await tx.roomPlayer.count({ where: { roomId: room.id } });
       if (restCount === 0) {
-        mafia.cancelTimer(room.id);
+        if (room.game === RoomGame.MAFIA) {
+          mafia.cancelTimer(room.id);
+        }
         await tx.room.delete({ where: { id: room.id } });
         return { ok: true, deletedRoom: true, leftPlayerId, newOwnerPlayerId: null };
       }
@@ -1201,60 +1274,66 @@ app.post('/api/rooms/:code/leave', async (req, res) => {
 
     if (!result.ok) return res.status(404).json({ error: result.error || 'failed' });
 
-    // Доп.синхронизация состава и маф-команд после REST leave
+    // пост-обработка после REST leave
     try {
-      const roomRow = await prisma.room.findUnique({ where: { code }, select: { id: true } });
+      const roomRow = await prisma.room.findUnique({ where: { code }, select: { id: true, game: true } });
       if (roomRow?.id) {
-        await mafia.rebuildMafiaRoom(roomRow.id);
-        try { await mafia.clearReadyForPlayer(roomRow.id, result.leftPlayerId || undefined); } catch {}
-        if (result.newOwnerPlayerId) {
-          try { await mafia.setReady(roomRow.id, result.newOwnerPlayerId, true); } catch {}
+        if (roomRow.game === RoomGame.MAFIA) {
+          await mafia.rebuildMafiaRoom(roomRow.id);
+          try { await mafia.clearReadyForPlayer(roomRow.id, result.leftPlayerId || undefined); } catch {}
+          if (result.newOwnerPlayerId) {
+            try { await mafia.setReady(roomRow.id, result.newOwnerPlayerId, true); } catch {}
+          }
+          await mafia.emitMafiaTargets(roomRow.id);
+          await mafia.emitMafiaTeam(roomRow.id);
         }
-        await mafia.emitMafiaTargets(roomRow.id);
-        await mafia.emitMafiaTeam(roomRow.id);
 
-        // 🔥 PATCH: обновляем аукцион
-        try {
-          if (result.deletedRoom) {
-            // Комнату удалили — выбрасываем её из аукционного движка
-            auction.clearRoomStateById(roomRow.id);
-          } else if (result.leftPlayerId) {
-            // Игрок вышел — убираем его из участников аукциона
-            auction.removePlayerFromAuction(roomRow.id, result.leftPlayerId);
-          }
+        if (roomRow.game === RoomGame.AUCTION) {
+          try {
+            if (result.deletedRoom) {
+              auction.clearRoomStateById(roomRow.id);
+            } else if (result.leftPlayerId) {
+              auction.removePlayerFromAuction(roomRow.id, result.leftPlayerId);
+            }
 
-          // Отправим свежее состояние аукциона в комнату
-          const st = await auction.getState(code);
-          if (st) {
-            io.to(`room:${code}`).emit('auction:state', st);
+            const st = await auction.getState(code);
+            if (st) {
+              io.to(`room:${code}`).emit('auction:state', st);
+            }
+          } catch (e) {
+            console.warn('auction update after REST leave failed:', e?.message || e);
           }
-        } catch (e) {
-          console.warn('auction update after REST leave failed:', e?.message || e);
         }
       }
     } catch (e) { console.warn('post-leave rebuild failed:', e?.message || e); }
 
-    mafia.emitRoomStateDebounced(code);
+    if (game === RoomGame.AUCTION) {
+      if (!result.deletedRoom) {
+        await emitAuctionRoomStateByCode(code);
+      }
+    } else {
+      mafia.emitRoomStateDebounced(code);
+    }
     res.json({ ok: result.ok, deletedRoom: result.deletedRoom });
   } catch (e) {
     console.error('POST /api/rooms/:code/leave', e);
     res.status(500).json({ error: 'failed' });
   }
 });
-
 // to-lobby (reset)
 app.post('/api/rooms/:code/to-lobby', async (req, res) => {
   try {
     const auth = await authEither(req);
     if (!auth.ok) return res.status(auth.http || 401).json({ ok: false, error: auth.error });
 
-    const { code } = req.params;
+  const { code } = req.params;
 
-    const room = await prisma.room.findUnique({
-      where: { code },
-      include: { players: true, matches: { orderBy: { id: 'desc' }, take: 1 } }
-    });
-    if (!room) return res.status(404).json({ ok: false, error: 'room_not_found' });
+  const room = await prisma.room.findUnique({
+    where: { code },
+    include: { players: true, matches: { orderBy: { id: 'desc' }, take: 1 } }
+  });
+  if (!room) return res.status(404).json({ ok: false, error: 'room_not_found' });
+  if (room.game !== RoomGame.MAFIA) return res.status(400).json({ ok: false, error: 'wrong_game' });
 
     // ✅ Любой игрок может вернуть комнату в лобби, если матч завершён
     if (room.status !== Phase.ENDED && room.ownerId !== auth.user.id) {
@@ -1364,34 +1443,47 @@ app.post('/api/mafia/:code/start', async (req, res) => {
 /* ============================ READY REST ============================ */
 app.post('/api/rooms/:code/ready', async (req, res) => {
   try {
-    // Разрешаем устаревший initData для этой операции (JWT всё равно приоритетнее)
+    // ����蠥� ���ॢ訩 initData ��� �⮩ ����樨 (JWT ��� ࠢ�� �ਮ��⭥�)
     const auth = await authEither(req, { allowStale: true });
     if (!auth.ok) return res.status(auth.http || 401).json({ ok: false, error: auth.error });
     const { code } = req.params;
     const { ready } = req.body || {};
 
-    const room = await readRoomWithPlayersByCode(code);
-    if (!room || room.status !== Phase.LOBBY) return res.status(400).json({ ok: false, error: 'not_in_lobby' });
+    const expectedGame = gameFromReq(req, DEFAULT_GAME);
+    const room = await readRoomWithPlayersByCode(code, { game: expectedGame || undefined });
+    if (!room) return res.status(404).json({ ok: false, error: 'room_not_found' });
+    if (expectedGame && room.game !== expectedGame) return res.status(404).json({ ok: false, error: 'wrong_game' });
+    if (room.status !== Phase.LOBBY) return res.status(400).json({ ok: false, error: 'not_in_lobby' });
     const me = await prisma.roomPlayer.findFirst({ where: { roomId: room.id, userId: auth.user.id } });
     if (!me) return res.status(403).json({ ok: false, error: 'forbidden_not_member' });
 
     if (room.ownerId === auth.user.id) {
-      // владелец не переключает «готов»
-      mafia.emitRoomStateDebounced(code);
+      // �������� �� ��४��砥� <��⮢>
+      if (room.game === RoomGame.AUCTION) {
+        emitAuctionRoomState(room, room.players);
+      } else {
+        mafia.emitRoomStateDebounced(code);
+      }
       return res.json({ ok: true, ready: false });
     }
 
-    // ✅ синхронизируем и БД, и in-memory кэш
+    // ? ᨭ�஭����㥬 � ��, � in-memory ���
     await prisma.roomPlayer.update({ where: { id: me.id }, data: { ready: !!ready } });
     await mafia.setReady(room.id, me.id, !!ready);
-    mafia.emitRoomStateDebounced(code);
+    if (room.game === RoomGame.AUCTION) {
+      const players = (room.players || []).map((p) =>
+        p.id === me.id ? { ...p, ready: !!ready } : p
+      );
+      emitAuctionRoomState(room, players);
+    } else {
+      mafia.emitRoomStateDebounced(code);
+    }
     return res.json({ ok: true, ready: !!ready });
   } catch (e) {
     console.error('POST /api/rooms/:code/ready', e);
     return res.status(500).json({ ok: false, error: 'failed' });
   }
 });
-
 /* ============================ Socket.IO Auth ============================ */
 io.use(async (socket, next) => {
   try {
@@ -1437,71 +1529,91 @@ io.on('connection', (socket) => {
 
   // ⚠️ Больше НЕ выполняем авто-чистку комнат/игроков на коннекте — по требованиям продукта.
 
-  socket.on('room:subscribe', async ({ code }) => {
+  socket.on('room:subscribe', async ({ code, game }) => {
     try {
-      if (!code) return socket.emit('toast', { type: 'error', text: 'Код комнаты пуст' });
+      if (!code) return socket.emit('toast', { type: 'error', text: '��� ������� ����' });
 
-      const room = await readRoomWithPlayersByCode(code);
-      if (!room) return socket.emit('toast', { type: 'error', text: 'Комната не найдена' });
+      const expectedGame = game ? normalizeGame(game, null) : DEFAULT_GAME;
+      const room = await readRoomWithPlayersByCode(code, { game: expectedGame || undefined });
+      if (!room) return socket.emit('toast', { type: 'error', text: '������ �� �������' });
+      if (expectedGame && room.game !== expectedGame) return socket.emit('toast', { type: 'error', text: '������ ��㣮�� ०���' });
 
       const me = await prisma.roomPlayer.findFirst({ where: { roomId: room.id, userId: user.id } });
-      if (!me) return socket.emit('toast', { type: 'error', text: 'Сначала вступите в комнату' });
+      if (!me) return socket.emit('toast', { type: 'error', text: '���砫� ���㯨� � �������' });
 
       socket.join(`room:${code}`);
       socket.join(`player:${me.id}`);
       userRooms.add(`room:${code}`);
       socket.data.playerIds.add(me.id);
 
-      if (mafia.MAFIA_ROLES.has(me.role)) {
+      if (room.game === RoomGame.MAFIA && mafia.MAFIA_ROLES.has(me.role)) {
         socket.join(`maf:${room.id}`);
       }
 
-      // ВАЖНЫЙ ПОРЯДОК: СНАЧАЛА приватные данные игрока, затем публичное состояние комнаты.
+      // ������ �������: ������� �ਢ��� ����� ��ப�, ��⥬ �㡫�筮� ���ﭨ� �������.
       try {
         socket.emit('private:self', await mafia.privateSelfState(me.id));
       } catch (e) {
         console.warn('private:self emit on subscribe failed:', e?.message || e);
       }
-      try {
-        await mafia.emitRoomStateNow(code);
-      } catch {}
 
-      const rt = mafiaTimerFor(room.id);
-      if (rt?.endsAt) {
-        socket.emit('timer:update', {
-          phase: rt.phase || room.status,
-          endsAt: rt.endsAt,
-          serverTime: Date.now(),
-          dayNumber: room.dayNumber,
-          round: rt.round || 1
+      if (room.game === RoomGame.MAFIA) {
+        try {
+          await mafia.emitRoomStateNow(code);
+        } catch {}
+
+        const rt = mafiaTimerFor(room.id);
+        if (rt?.endsAt) {
+          socket.emit('timer:update', {
+            phase: rt.phase || room.status,
+            endsAt: rt.endsAt,
+            serverTime: Date.now(),
+            dayNumber: room.dayNumber,
+            round: rt.round || 1
+          });
+        }
+
+        await mafia.emitMafiaTargets(room.id);
+        await mafia.emitMafiaTeam(room.id);
+      } else if (room.game === RoomGame.AUCTION) {
+        const readySet = mafia.getReadySet(room.id);
+        socket.emit('room:state', {
+          room: jsonSafe({
+            id: room.id,
+            code: room.code,
+            status: room.status,
+            ownerId: room.ownerId,
+            dayNumber: room.dayNumber,
+            phaseEndsAt: room.phaseEndsAt,
+            game: room.game,
+          }),
+          players: jsonSafe(mafia.toPublicPlayers(room.players, { readySet })),
+          viewerIsOwner: room.ownerId === user.id,
         });
-      }
-
-      await mafia.emitMafiaTargets(room.id);
-      await mafia.emitMafiaTeam(room.id);
-
-      // Если в этой комнате уже идёт аукцион — отправляем его состояние
-      try {
-        const st = await auction.getState(code);
-        if (st) socket.emit('auction:state', st);
-      } catch (e) {
-        console.warn('auction:state on subscribe failed:', e?.message || e);
+        try {
+          const st = await auction.getState(code);
+          if (st) socket.emit('auction:state', st);
+        } catch (e) {
+          console.warn('auction:state on subscribe failed:', e?.message || e);
+        }
       }
     } catch (e) {
       console.error('room:subscribe error', e);
-      socket.emit('toast', { type: 'error', text: 'Не удалось подписаться на комнату' });
+      socket.emit('toast', { type: 'error', text: '�� 㤠���� ���������� �� �������' });
     }
   });
-
   // === NEW: Обратносуместимое резюмирование с ETag/дельтой событий ===
-  socket.on('room:resume', async ({ code, etag, lastEventId }, cb) => {
+  socket.on('room:resume', async ({ code, etag, lastEventId, game }, cb) => {
     try {
       if (!code) return ackErr(cb, 'room_not_found');
-      const room = await readRoomWithPlayersByCode(code);
+      const expectedGame = game ? normalizeGame(game, null) : DEFAULT_GAME;
+      const room = await readRoomWithPlayersByCode(code, { game: expectedGame || undefined });
       if (!room) return ackErr(cb, 'room_not_found');
+      if (expectedGame && room.game !== expectedGame) return ackErr(cb, 'wrong_game');
 
       const me = await prisma.roomPlayer.findFirst({ where: { roomId: room.id, userId: user.id } });
       if (!me) return ackErr(cb, 'forbidden_not_member');
+      if (room.game !== RoomGame.MAFIA) return ackErr(cb, 'wrong_game');
 
       const state = await mafia.publicRoomState(code);
 
@@ -1524,24 +1636,26 @@ io.on('connection', (socket) => {
       // Иначе — полноценный ресинк (приватное состояние, паблик, таймеры и маф-сигналы)
       try { socket.join(`player:${me.id}`); } catch {}
       try { socket.join(`room:${code}`); } catch {}
-      if (mafia.MAFIA_ROLES.has(me.role)) {
+      if (room.game === RoomGame.MAFIA && mafia.MAFIA_ROLES.has(me.role)) {
         try { socket.join(`maf:${room.id}`); } catch {}
       }
 
       try { socket.emit('private:self', await mafia.privateSelfState(me.id)); } catch {}
       try { await mafia.emitRoomStateNow(code); } catch {}
-      const rt = mafiaTimerFor(room.id);
-      if (rt?.endsAt) {
-        socket.emit('timer:update', {
-          phase: rt.phase || room.status,
-          endsAt: rt.endsAt,
-          serverTime: Date.now(),
-          dayNumber: room.dayNumber,
-          round: rt.round || 1
-        });
+      if (room.game === RoomGame.MAFIA) {
+        const rt = mafiaTimerFor(room.id);
+        if (rt?.endsAt) {
+          socket.emit('timer:update', {
+            phase: rt.phase || room.status,
+            endsAt: rt.endsAt,
+            serverTime: Date.now(),
+            dayNumber: room.dayNumber,
+            round: rt.round || 1
+          });
+        }
+        await mafia.emitMafiaTargets(room.id);
+        await mafia.emitMafiaTeam(room.id);
       }
-      await mafia.emitMafiaTargets(room.id);
-      await mafia.emitMafiaTeam(room.id);
 
       let delta = [];
       if (room.matches?.[0] && Number.isFinite(Number(lastEventId))) {
@@ -1562,8 +1676,9 @@ io.on('connection', (socket) => {
   socket.on('game:start', async ({ code }, cb) => {
     try {
       if (!code) return;
-      const room = await readRoomWithPlayersByCode(code);
+      const room = await readRoomWithPlayersByCode(code, { game: RoomGame.MAFIA });
       if (!room) { socket.emit('toast', { type: 'error', text: 'Комната не найдена' }); return ackErr(cb, 'room_not_found'); }
+      if (room.game !== RoomGame.MAFIA) { socket.emit('toast', { type: 'error', text: 'Другой режим комнаты' }); return ackErr(cb, 'wrong_game'); }
       if (room.ownerId !== user.id) { socket.emit('toast', { type: 'error', text: 'Только владелец может начать игру' }); return ackErr(cb, 'forbidden_not_owner'); }
       if (room.status !== Phase.LOBBY) { socket.emit('toast', { type: 'error', text: 'Игра уже начата' }); return ackErr(cb, 'already_started'); }
       if (room.players.length < 4) { socket.emit('toast', { type: 'error', text: 'Минимум 4 игрока' }); return ackErr(cb, 'need_at_least_4_players'); }
@@ -1588,8 +1703,9 @@ io.on('connection', (socket) => {
   // ====== NIGHT ACTION (ACK) ======
   socket.on('night:act', async ({ code, targetPlayerId, opId }, cb) => {
     try {
-      const room = await readRoomWithPlayersByCode(code);
-      if (!room || room.status !== Phase.NIGHT) return ackErr(cb, 'Сейчас не ночь');
+      const room = await readRoomWithPlayersByCode(code, { game: RoomGame.MAFIA });
+      if (!room || room.game !== RoomGame.MAFIA) return ackErr(cb, 'wrong_game');
+      if (room.status !== Phase.NIGHT) return ackErr(cb, 'Сейчас не ночь');
 
       const alivePlayers = room.players.filter(p => p.alive);
       const me = alivePlayers.find(p => p.userId === user.id);
@@ -1664,8 +1780,9 @@ io.on('connection', (socket) => {
   // ====== VOTE CAST (ACK) ======
   socket.on('vote:cast', async ({ code, targetPlayerId, opId }, cb) => {
     try {
-      const room = await readRoomWithPlayersByCode(code);
-      if (!room || room.status !== Phase.VOTE) return ackErr(cb, 'Сейчас не голосование');
+      const room = await readRoomWithPlayersByCode(code, { game: RoomGame.MAFIA });
+      if (!room || room.game !== RoomGame.MAFIA) return ackErr(cb, 'wrong_game');
+      if (room.status !== Phase.VOTE) return ackErr(cb, 'Сейчас не голосование');
 
       const alivePlayers = room.players.filter(p => p.alive);
       const me = alivePlayers.find(p => p.userId === user.id);
@@ -1720,37 +1837,52 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ====== READY (ACK) ======
-  socket.on('ready:set', async ({ code, ready }, cb) => {
+    // ====== READY (ACK) ======
+  socket.on('ready:set', async ({ code, ready, game }, cb) => {
     try {
       if (!code) return ackErr(cb, 'room_not_found');
-      const room = await readRoomWithPlayersByCode(code);
-      if (!room || room.status !== Phase.LOBBY) return ackErr(cb, 'not_in_lobby');
+      const expectedGame = game ? normalizeGame(game, null) : DEFAULT_GAME;
+      const room = await readRoomWithPlayersByCode(code, { game: expectedGame || undefined });
+      if (!room) return ackErr(cb, 'room_not_found');
+      if (expectedGame && room.game !== expectedGame) return ackErr(cb, 'wrong_game');
+      if (room.status !== Phase.LOBBY) return ackErr(cb, 'not_in_lobby');
 
       const me = await prisma.roomPlayer.findFirst({ where: { roomId: room.id, userId: user.id } });
       if (!me) return ackErr(cb, 'forbidden_not_member');
       if (room.ownerId === user.id) {
-        // Владелец не отмечает "Готов"
-        mafia.emitRoomStateDebounced(code);
+        // �������� �� �⬥砥� "��⮢"
+        if (room.game === RoomGame.AUCTION) {
+          emitAuctionRoomState(room, room.players);
+        } else {
+          mafia.emitRoomStateDebounced(code);
+        }
         return ackOk(cb, { ready: false });
       }
-      // ✅ синхронизация с БД + кэш
+      // ? ᨭ�஭����� � �� + ���
       await prisma.roomPlayer.update({ where: { id: me.id }, data: { ready: !!ready } });
       await mafia.setReady(room.id, me.id, !!ready);
-      mafia.emitRoomStateDebounced(code);
+      if (room.game === RoomGame.AUCTION) {
+        const players = (room.players || []).map((p) =>
+          p.id === me.id ? { ...p, ready: !!ready } : p
+        );
+        emitAuctionRoomState(room, players);
+      } else {
+        mafia.emitRoomStateDebounced(code);
+      }
       return ackOk(cb, { ready: !!ready });
     } catch (e) {
       console.error('ready:set error', e);
       return ackErr(cb, 'failed');
     }
   });
-
-  // ====== ROOM LEAVE (ACK) ======
-  socket.on('room:leave', async ({ code }, cb) => {
+// ====== ROOM LEAVE (ACK) ======
+  socket.on('room:leave', async ({ code, game }, cb) => {
     try {
       if (!code) return ackErr(cb, 'room_not_found');
-      const room = await readRoomWithPlayersByCode(code);
+      const expectedGame = game ? normalizeGame(game, null) : null;
+      const room = await readRoomWithPlayersByCode(code, { game: expectedGame || undefined });
       if (!room) return ackErr(cb, 'room_not_found');
+      if (expectedGame && room.game !== expectedGame) return ackErr(cb, 'wrong_game');
 
       let newOwnerPlayerId = null;
       let leftPlayerId = null;
@@ -1767,7 +1899,7 @@ io.on('connection', (socket) => {
 
           const restCount = await tx.roomPlayer.count({ where: { roomId: room.id } });
           if (restCount === 0) {
-            mafia.cancelTimer(room.id);
+            if (room.game === RoomGame.MAFIA) mafia.cancelTimer(room.id);
             await tx.room.delete({ where: { id: room.id } });
             deletedRoom = true;
             return;
@@ -1796,29 +1928,37 @@ io.on('connection', (socket) => {
       try { socket.leave(`maf:${room.id}`); } catch {}
 
       // 🔥 PATCH: обновляем аукцион после выхода игрока по сокету
-      try {
-        if (deletedRoom) {
-          auction.clearRoomStateById(room.id);
-        } else if (leftPlayerId != null) {
-          auction.removePlayerFromAuction(room.id, leftPlayerId);
-          const st = await auction.getState(code);
-          if (st) {
-            io.to(`room:${code}`).emit('auction:state', st);
+      if (room.game === RoomGame.AUCTION) {
+        try {
+          if (deletedRoom) {
+            auction.clearRoomStateById(room.id);
+          } else if (leftPlayerId != null) {
+            auction.removePlayerFromAuction(room.id, leftPlayerId);
+            const st = await auction.getState(code);
+            if (st) {
+              io.to(`room:${code}`).emit('auction:state', st);
+            }
           }
+        } catch (e) {
+          console.warn('auction update on room:leave failed:', e?.message || e);
         }
-      } catch (e) {
-        console.warn('auction update on room:leave failed:', e?.message || e);
       }
 
       ackOk(cb);
 
-      mafia.emitRoomStateDebounced(code);
-      await mafia.rebuildMafiaRoom(room.id);
-      if (newOwnerPlayerId) {
-        try { await mafia.setReady(room.id, newOwnerPlayerId, true); } catch {}
+      if (room.game === RoomGame.AUCTION) {
+        if (!deletedRoom) {
+          await emitAuctionRoomStateByCode(code);
+        }
+      } else {
+        mafia.emitRoomStateDebounced(code);
+        await mafia.rebuildMafiaRoom(room.id);
+        if (newOwnerPlayerId) {
+          try { await mafia.setReady(room.id, newOwnerPlayerId, true); } catch {}
+        }
+        await mafia.emitMafiaTargets(room.id);
+        await mafia.emitMafiaTeam(room.id);
       }
-      await mafia.emitMafiaTargets(room.id);
-      await mafia.emitMafiaTeam(room.id);
     } catch (e) {
       console.error('room:leave error', e);
       return ackErr(cb, 'failed');

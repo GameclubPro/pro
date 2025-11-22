@@ -6,6 +6,7 @@ import "./Auction.css";
 const INITIAL_BANK = 1_000_000;
 const CODE_ALPHABET_RE = /[^A-HJKMNPQRSTUVWXYZ23456789]/g;
 const BID_PRESETS = [1_000, 5_000, 10_000, 25_000, 50_000];
+const AUCTION_GAME = "AUCTION";
 
 const PHASE_LABEL = {
   lobby: "Лобби",
@@ -59,6 +60,7 @@ export default function Auction({
   const [room, setRoom] = useState(null);
   const [players, setPlayers] = useState([]);
   const [selfInfo, setSelfInfo] = useState(null);
+  const [viewerIsOwner, setViewerIsOwner] = useState(false);
   const [auctionState, setAuctionState] = useState(null);
 
   const [creating, setCreating] = useState(false);
@@ -147,9 +149,10 @@ export default function Auction({
   );
 
   const isOwner = useMemo(() => {
+    if (viewerIsOwner) return true;
     if (!room || !selfInfo) return false;
     return room.ownerId === selfInfo.userId;
-  }, [room, selfInfo]);
+  }, [viewerIsOwner, room, selfInfo]);
 
   const totalPlayers = safePlayers.length || 0;
 
@@ -272,8 +275,8 @@ export default function Auction({
       if (!force && alreadySame) return;
 
       lastSubscribedCodeRef.current = code;
-      socket.emit("room:subscribe", { code });
-      socket.emit("auction:sync", { code });
+      socket.emit("room:subscribe", { code, game: AUCTION_GAME });
+      socket.emit("auction:sync", { code, game: AUCTION_GAME });
       if (socketId) {
         lastSubscriptionSocketIdRef.current = socketId;
       }
@@ -293,14 +296,14 @@ export default function Auction({
           "Content-Type": "application/json",
           "X-Telegram-Init-Data": initData || "",
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ game: AUCTION_GAME }),
       }).catch(() => {});
     } catch {
       // ignore
     }
 
     try {
-      socket?.emit("room:leave", { code });
+      socket?.emit("room:leave", { code, game: AUCTION_GAME });
     } catch {
       // ignore
     }
@@ -308,6 +311,7 @@ export default function Auction({
     setRoom(null);
     setPlayers([]);
     setSelfInfo(null);
+    setViewerIsOwner(false);
     setAuctionState(null);
     lastSubscribedCodeRef.current = null;
     lastSubscriptionSocketIdRef.current = null;
@@ -393,6 +397,9 @@ export default function Auction({
       if (!payload) return;
       setRoom(payload.room || null);
       setPlayers(payload.players || []);
+      if (typeof payload.viewerIsOwner === "boolean") {
+        setViewerIsOwner(payload.viewerIsOwner);
+      }
       clearError();
     });
 
@@ -495,7 +502,7 @@ export default function Auction({
           "Content-Type": "application/json",
           "X-Telegram-Init-Data": initData,
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ game: AUCTION_GAME }),
       });
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
@@ -509,6 +516,7 @@ export default function Auction({
       }
       setRoom(data.room || null);
       setPlayers(data.players || []);
+      setViewerIsOwner(true);
       if (data.room?.code) {
         setCodeInput(data.room.code);
         subscribeToRoom(data.room.code, { force: true });
@@ -541,7 +549,7 @@ export default function Auction({
             "Content-Type": "application/json",
             "X-Telegram-Init-Data": initData,
           },
-          body: JSON.stringify({}),
+          body: JSON.stringify({ game: AUCTION_GAME }),
         }
       );
       const data = await resp.json().catch(() => ({}));
@@ -551,12 +559,14 @@ export default function Auction({
           room_not_found: "Комната не найдена",
           room_full: "Комната заполнена",
           game_in_progress: "Игра уже идёт",
+          wrong_game: "Эта ссылка для другой игры",
         };
         pushError(map[codeErr] || "Не удалось войти");
         return;
       }
       setRoom(data.room || null);
       setPlayers(data.players || []);
+      setViewerIsOwner(!!data.viewerIsOwner);
       setCodeInput(code);
       subscribeToRoom(code, { force: true });
 
@@ -580,7 +590,7 @@ export default function Auction({
     const ready = !!currentPlayer?.ready;
     socket.emit(
       "ready:set",
-      { code: room.code, ready: !ready },
+      { code: room.code, ready: !ready, game: AUCTION_GAME },
       (resp) => {
         if (!resp || !resp.ok) {
           pushError("Не удалось изменить статус");
@@ -593,15 +603,16 @@ export default function Auction({
     if (!socket || !room || !isOwner) return;
     socket.emit(
       "auction:start",
-      { code: room.code },
+      { code: room.code, game: AUCTION_GAME },
       (resp) => {
         if (!resp || !resp.ok) {
           const map = {
             room_not_found: "Комната не найдена",
-            forbidden_not_owner: "Только владелец может начать",
+            forbidden_not_owner: "Только владелец может начать игру",
             need_at_least_2_players: "Нужно минимум 2 игрока",
-            need_ready_players: "Нужно, чтобы все были готовы",
-            already_started: "Аукцион уже идёт",
+            need_ready_players: "Нужно, чтобы все отметились «готов»",
+            already_started: "Аукцион уже запущен",
+            wrong_game: "Это комната другого режима",
           };
           pushError(
             map[resp?.error] || "Не удалось запустить аукцион"
@@ -613,17 +624,29 @@ export default function Auction({
 
   const pauseAuction = useCallback(() => {
     if (!socket || !room || !isOwner) return;
-    socket.emit("auction:pause", { code: room.code }, () => {});
+    socket.emit(
+      "auction:pause",
+      { code: room.code, game: AUCTION_GAME },
+      () => {}
+    );
   }, [socket, room, isOwner]);
 
   const resumeAuction = useCallback(() => {
     if (!socket || !room || !isOwner) return;
-    socket.emit("auction:resume", { code: room.code }, () => {});
+    socket.emit(
+      "auction:resume",
+      { code: room.code, game: AUCTION_GAME },
+      () => {}
+    );
   }, [socket, room, isOwner]);
 
   const forceNext = useCallback(() => {
     if (!socket || !room || !isOwner) return;
-    socket.emit("auction:next", { code: room.code }, () => {});
+    socket.emit(
+      "auction:next",
+      { code: room.code, game: AUCTION_GAME },
+      () => {}
+    );
   }, [socket, room, isOwner]);
 
   function setBidRelative(delta = 0) {
@@ -678,7 +701,7 @@ export default function Auction({
     setBusyBid(true);
     socket.emit(
       "auction:bid",
-      { code: room.code, amount },
+      { code: room.code, amount, game: AUCTION_GAME },
       (resp) => {
         setBusyBid(false);
         if (!resp || !resp.ok) {
@@ -691,6 +714,7 @@ export default function Auction({
             not_enough_money: "Недостаточно денег",
             paused: "Пауза",
             bid_below_base: "Ставка ниже базовой",
+            wrong_game: "Это комната другого режима",
           };
           pushError(
             map[resp?.error] || "Не удалось принять ставку"
@@ -728,7 +752,7 @@ export default function Auction({
     const shareUrl = base
       ? `${base.replace(/\/+$/, "")}/?join=${encodeURIComponent(
           room.code
-        )}`
+        )}&game=auction`
       : "";
 
     try {
@@ -882,9 +906,7 @@ export default function Auction({
       readyCount >= readyTarget && totalPlayers >= 2;
 
     const primaryLabel = isOwner
-      ? canStart
-        ? "Запустить аукцион"
-        : "Ждём игроков"
+      ? "Начать игру"
       : myReady
       ? "Я не готов"
       : "Я готов";
