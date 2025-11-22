@@ -997,7 +997,37 @@ export default function Auction({
           />
         </svg>
       </span>
-    ) : null;
+    ) : myReady ? (
+      <span className="btn__icon btn__icon--ready" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M5 10.5l3 3 7-8"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+    ) : (
+      <span className="btn__icon btn__icon--not-ready" aria-hidden="true">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M10 4v6m0 4.5h.01"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+          <circle
+            cx="10"
+            cy="10"
+            r="8"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
+        </svg>
+      </span>
+    );
 
     const primaryAction = () => {
       if (isOwner) {
