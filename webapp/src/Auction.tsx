@@ -14,6 +14,12 @@ const PHASE_LABEL: Record<string, string> = {
   finished: "Итоги",
 };
 
+const PHASE_EMOJI: Record<string, string> = {
+  lobby: "👥",
+  in_progress: "⚔️",
+  finished: "🏁",
+};
+
 function normalizeCode(value = "") {
   return value.toUpperCase().replace(CODE_ALPHABET_RE, "").slice(0, 6);
 }
@@ -323,26 +329,29 @@ export default function Auction({
 
   // ---------- SOCKET SUBSCRIBE ----------
 
-  const subscribeToRoom = useCallback((rawCode: string, options: { force?: boolean } = {}) => {
-    const sock = socketRef.current;
-    const code = normalizeCode(rawCode);
-    if (!code || !sock) return;
-    const force = options.force ?? false;
-    const socketId = sock.id ?? null;
-    const alreadySame =
-      lastSubscribedCodeRef.current === code &&
-      lastSubscriptionSocketIdRef.current === socketId &&
-      socketId != null;
+  const subscribeToRoom = useCallback(
+    (rawCode: string, options: { force?: boolean } = {}) => {
+      const sock = socketRef.current;
+      const code = normalizeCode(rawCode);
+      if (!code || !sock) return;
+      const force = options.force ?? false;
+      const socketId = sock.id ?? null;
+      const alreadySame =
+        lastSubscribedCodeRef.current === code &&
+        lastSubscriptionSocketIdRef.current === socketId &&
+        socketId != null;
 
-    if (!force && alreadySame) return;
+      if (!force && alreadySame) return;
 
-    lastSubscribedCodeRef.current = code;
-    sock.emit("room:subscribe", { code, game: AUCTION_GAME });
-    sock.emit("auction:sync", { code, game: AUCTION_GAME });
-    if (socketId) {
-      lastSubscriptionSocketIdRef.current = socketId;
-    }
-  }, []);
+      lastSubscribedCodeRef.current = code;
+      sock.emit("room:subscribe", { code, game: AUCTION_GAME });
+      sock.emit("auction:sync", { code, game: AUCTION_GAME });
+      if (socketId) {
+        lastSubscriptionSocketIdRef.current = socketId;
+      }
+    },
+    []
+  );
 
   // ---------- EXIT / BACK ----------
 
@@ -674,17 +683,29 @@ export default function Auction({
 
   const pauseAuction = useCallback(() => {
     if (!socket || !room || !isOwner) return;
-    socket.emit("auction:pause", { code: room.code, game: AUCTION_GAME }, () => {});
+    socket.emit(
+      "auction:pause",
+      { code: room.code, game: AUCTION_GAME },
+      () => {}
+    );
   }, [socket, room, isOwner]);
 
   const resumeAuction = useCallback(() => {
     if (!socket || !room || !isOwner) return;
-    socket.emit("auction:resume", { code: room.code, game: AUCTION_GAME }, () => {});
+    socket.emit(
+      "auction:resume",
+      { code: room.code, game: AUCTION_GAME },
+      () => {}
+    );
   }, [socket, room, isOwner]);
 
   const forceNext = useCallback(() => {
     if (!socket || !room || !isOwner) return;
-    socket.emit("auction:next", { code: room.code, game: AUCTION_GAME }, () => {});
+    socket.emit(
+      "auction:next",
+      { code: room.code, game: AUCTION_GAME },
+      () => {}
+    );
   }, [socket, room, isOwner]);
 
   function setBidRelative(delta = 0) {
@@ -812,14 +833,17 @@ export default function Auction({
     <div className="screen screen--landing">
       <motion.div
         className="landing-card"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25 }}
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.35 }}
       >
         <div className="landing-card__head">
-          <div className="landing-logo">AUCTION</div>
+          <div className="landing-logo">
+            <span className="landing-logo__primary">NEON</span>
+            <span className="landing-logo__secondary">AUCTION</span>
+          </div>
           <p className="landing-tagline">
-            Простой аукцион для вашей компании прямо в Telegram.
+            Молниеносные торги для вашей команды прямо в Telegram.
           </p>
           <div className="landing-chips">
             <span className="pill pill--soft">
@@ -827,6 +851,10 @@ export default function Auction({
             </span>
             <span className="pill pill--soft">
               <span>⚡</span> быстрые раунды
+            </span>
+            <span className="pill pill--soft">
+              <span>💰</span> стартовый банк{" "}
+              {moneyFormatter.format(initialBank)}$
             </span>
           </div>
         </div>
@@ -879,6 +907,7 @@ export default function Auction({
     if (phase === "in_progress") return null; // скрываем header во время игры
 
     const phaseLabel = PHASE_LABEL[phase] || "Аукцион";
+    const phaseEmoji = PHASE_EMOJI[phase] || "🎮";
     const playersOnline = safePlayers.length || 0;
     const playersLabel =
       playersOnline === 1
@@ -899,7 +928,12 @@ export default function Auction({
         </button>
         <div className="app-header__center">
           <div className="app-header__eyebrow">
-            <span className="chip chip--phase">{phaseLabel}</span>
+            <span className="chip chip--phase">
+              <span className="chip__icon" aria-hidden="true">
+                {phaseEmoji}
+              </span>
+              {phaseLabel}
+            </span>
             <span className="app-header__meta">
               <span className="app-header__pulse" aria-hidden="true" />
               {playersOnline} {playersLabel}
@@ -1268,7 +1302,7 @@ export default function Auction({
               onClick={() => setBidRelative(myBalance || 0)}
               disabled={myBalance == null || myBalance <= 0}
             >
-              All-in
+              All‑in
             </button>
             <button
               type="button"
@@ -1337,10 +1371,7 @@ export default function Auction({
 
     const sorted = safePlayers
       .slice()
-      .sort(
-        (a, b) =>
-          (netWorths[b.id] ?? 0) - (netWorths[a.id] ?? 0)
-      );
+      .sort((a, b) => (netWorths[b.id] ?? 0) - (netWorths[a.id] ?? 0));
 
     return (
       <div className="screen-body results-layout">
@@ -1458,6 +1489,7 @@ export default function Auction({
   const appClassName = [
     "auction-app",
     showLanding ? "auction-app--landing" : "",
+    `auction-app--phase-${phase}`,
   ]
     .filter(Boolean)
     .join(" ");
