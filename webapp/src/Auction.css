@@ -117,65 +117,158 @@ textarea {
 /* HEADER */
 
 .app-header {
+  position: relative;
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
-  padding: 10px 10px;
+  padding: 12px 12px;
   border-radius: var(--radius-lg);
   background:
     radial-gradient(
       120% 180% at 15% 0%,
-      rgba(106, 184, 255, 0.16),
-      transparent 60%
+      rgba(106, 184, 255, 0.2),
+      transparent 52%
     ),
     radial-gradient(
       120% 200% at 100% -20%,
-      rgba(246, 196, 82, 0.14),
+      rgba(246, 196, 82, 0.16),
       transparent 55%
     ),
-    rgba(10, 13, 26, 0.96);
-  border: 1px solid var(--border);
+    linear-gradient(
+      150deg,
+      rgba(12, 16, 32, 0.95) 0%,
+      rgba(8, 11, 24, 0.9) 60%,
+      rgba(10, 13, 26, 0.9) 100%
+    );
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   box-shadow: var(--shadow);
+  overflow: hidden;
+  isolation: isolate;
+  backdrop-filter: blur(18px);
+}
+
+.app-header::after {
+  content: "";
+  position: absolute;
+  inset: -30% 10% 40% -30%;
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    rgba(11, 209, 157, 0.15),
+    transparent 55%
+  );
+  filter: blur(24px);
+  opacity: 0.9;
+  pointer-events: none;
 }
 
 .app-header__center {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
   min-width: 0;
+  z-index: 1;
 }
 
-.app-header__title-row {
+.app-header__eyebrow {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
 }
 
+.app-header__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.app-header__pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-2), var(--accent-3));
+  box-shadow: 0 0 0 0 rgba(11, 209, 157, 0.36);
+  animation: header-pulse 2s ease-in-out infinite;
+}
+
+@keyframes header-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(11, 209, 157, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(11, 209, 157, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(11, 209, 157, 0);
+  }
+}
+
 .app-header__room {
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.app-header__code-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .app-header__code {
   align-self: flex-start;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px dashed
-    color-mix(in srgb, var(--accent-2) 40%, var(--border));
-  background: rgba(255, 255, 255, 0.04);
-  letter-spacing: 0.12em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent-2) 45%, var(--border));
+  background: linear-gradient(
+    120deg,
+    rgba(106, 184, 255, 0.18),
+    rgba(246, 196, 82, 0.18)
+  );
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text);
   cursor: pointer;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
+.app-header__code-label {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.app-header__code-value {
+  font-size: 14px;
+  letter-spacing: 0.2em;
+}
+
+.app-header__hint {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  opacity: 0.9;
+}
 /* GENERIC ELEMENTS */
 
 .label {
@@ -276,6 +369,21 @@ textarea {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+.icon-btn--ghost {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.02)
+  );
+  border-color: color-mix(in srgb, var(--border) 60%, transparent);
+  transition: transform 0.16s ease, background 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.icon-btn--ghost:active {
+  transform: translateY(1px) scale(0.98);
 }
 
 .btn {
@@ -705,15 +813,10 @@ textarea {
   gap: 2px;
 }
 
-.bottom-bar__label {
-  font-size: 11px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
 .bottom-bar__value {
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
 /* GAME */

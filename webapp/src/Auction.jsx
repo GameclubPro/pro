@@ -906,37 +906,55 @@ export default function Auction({
   const renderHeader = () => {
     if (!room) return null;
     const phaseLabel = PHASE_LABEL[phase] || "Аукцион";
+    const roomTitle = (room.name || "").trim() || "Аукцион";
+    const playersOnline = safePlayers.length || 0;
+    const playersLabel =
+      playersOnline === 1
+        ? "игрок"
+        : playersOnline >= 5 || playersOnline === 0
+        ? "игроков"
+        : "игрока";
 
     return (
       <header className="app-header">
         <button
           type="button"
-          className="icon-btn"
+          className="icon-btn icon-btn--ghost"
           aria-label="Выйти"
           onClick={handleExit}
         >
           ←
         </button>
         <div className="app-header__center">
-          <div className="app-header__title-row">
-            <span className="chip chip--phase">
-              {phaseLabel}
-            </span>
-            <span className="app-header__room">
-              {room.name || "Комната аукциона"}
+          <div className="app-header__eyebrow">
+            <span className="chip chip--phase">{phaseLabel}</span>
+            <span className="app-header__meta">
+              <span className="app-header__pulse" aria-hidden="true" />
+              {playersOnline} {playersLabel}
             </span>
           </div>
-          <button
-            type="button"
-            className="app-header__code"
-            onClick={copyRoomCode}
-          >
-            {room.code || "------"}
-          </button>
+          <h1 className="app-header__room" title={roomTitle}>
+            {roomTitle}
+          </h1>
+          <div className="app-header__code-row">
+            <button
+              type="button"
+              className="app-header__code"
+              onClick={copyRoomCode}
+            >
+              <span className="app-header__code-label">Код</span>
+              <span className="app-header__code-value">
+                {room.code || "------"}
+              </span>
+            </button>
+            <span className="app-header__hint">
+              нажми, чтобы скопировать
+            </span>
+          </div>
         </div>
         <button
           type="button"
-          className="icon-btn"
+          className="icon-btn icon-btn--ghost"
           aria-label="Поделиться"
           onClick={shareRoomCode}
         >
@@ -1117,9 +1135,6 @@ export default function Auction({
 
         <div className="bottom-bar bottom-bar--lobby">
           <div className="bottom-bar__meta">
-            <span className="bottom-bar__label">
-              Готовы к старту
-            </span>
             <strong className="bottom-bar__value">
               {readyCount}/{readyTarget}
             </strong>
