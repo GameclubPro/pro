@@ -50,7 +50,7 @@ const {
   REDIS_URL = '',
   REDIS_PREFIX = 'mafia',
 
-  INITDATA_MAX_AGE_SEC = '900',
+  INITDATA_MAX_AGE_SEC = '86400',
   // Грейс для авто-кика по разрыву сокета — 5 минут по умолчанию
   AUTO_LEAVE_GRACE_MS  = '300000',
   // NEW: порог авто-удаления комнат, если нет ни одного активного сокета (минуты)
@@ -84,7 +84,7 @@ const DAY_SEC   = Math.max(20, parseInt(MAFIA_DAY_SEC, 10) || 60);
 const VOTE_SEC  = Math.max(20, parseInt(MAFIA_VOTE_SEC, 10) || 60);
 const ALLOW_HTTP = CORS_ALLOW_HTTP === '1';
 const USE_REDIS = !!REDIS_URL;
-const INITDATA_MAX_AGE = Math.max(60, parseInt(INITDATA_MAX_AGE_SEC, 10) || 900);
+const INITDATA_MAX_AGE = Math.max(60, parseInt(INITDATA_MAX_AGE_SEC, 10) || 86400);
 const DEFAULT_GAME = RoomGame.MAFIA;
 
 function normalizeGame(raw, fallback = DEFAULT_GAME) {

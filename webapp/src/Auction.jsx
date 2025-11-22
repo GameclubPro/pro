@@ -36,6 +36,25 @@ function ensurePlainObject(value) {
   return EMPTY_OBJECT;
 }
 
+const SERVER_ERROR_MESSAGES = {
+  initData_required: "Открой игру из Telegram — нет initData.",
+  bad_signature: "Подпись Telegram не сошлась. Запусти игру заново из бота.",
+  stale_init_data: "Сессия Telegram устарела. Открой игру заново из Telegram.",
+  code_already_in_use: "Код комнаты уже используется",
+  room_not_found: "Комната не найдена",
+  room_full: "Комната заполнена",
+  game_in_progress: "Игра уже идёт",
+  wrong_game: "Эта ссылка для другой игры",
+};
+function mapServerError(code, status, fallback) {
+  if (status === 429) return "Слишком много попыток. Попробуйте чуть позже.";
+  if (status === 401 && (!code || code === "failed")) {
+    return SERVER_ERROR_MESSAGES.stale_init_data;
+  }
+  if (!code) return fallback;
+  return SERVER_ERROR_MESSAGES[code] || fallback;
+}
+
 function playerDisplayName(player) {
   if (!player) return "Игрок";
   return (
@@ -506,12 +525,8 @@ export default function Auction({
       });
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
-        const code = data?.error || "failed";
-        pushError(
-          code === "code_already_in_use"
-            ? "Код комнаты уже используется"
-            : "Не удалось создать комнату"
-        );
+        const code = data?.error || data?.message || "failed";
+        pushError(mapServerError(code, resp.status, "Не удалось создать комнату"));
         return;
       }
       setRoom(data.room || null);
@@ -554,14 +569,8 @@ export default function Auction({
       );
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
-        const codeErr = data?.error || "failed";
-        const map = {
-          room_not_found: "Комната не найдена",
-          room_full: "Комната заполнена",
-          game_in_progress: "Игра уже идёт",
-          wrong_game: "Эта ссылка для другой игры",
-        };
-        pushError(map[codeErr] || "Не удалось войти");
+        const codeErr = data?.error || data?.message || "failed";
+        pushError(mapServerError(codeErr, resp.status, "Не удалось войти в комнату"));
         return;
       }
       setRoom(data.room || null);
