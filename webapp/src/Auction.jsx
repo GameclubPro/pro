@@ -113,6 +113,10 @@ export default function Auction({
     () => ensurePlainObject(auctionState?.balances),
     [auctionState?.balances]
   );
+  const basketTotals = useMemo(
+    () => ensurePlainObject(auctionState?.basketTotals),
+    [auctionState?.basketTotals]
+  );
   const myBalance =
     myPlayerId != null ? balances[myPlayerId] ?? null : null;
 
@@ -157,6 +161,38 @@ export default function Auction({
     () => ensureArray(players).filter(Boolean),
     [players]
   );
+
+  const netWorths = useMemo(() => {
+    const fromState = ensurePlainObject(auctionState?.netWorths);
+    const ids = new Set([
+      ...safePlayers.map((p) => p.id).filter((id) => id != null),
+      ...Object.keys(balances).map((k) => Number(k)),
+      ...Object.keys(basketTotals).map((k) => Number(k)),
+    ]);
+    const map = {};
+    ids.forEach((pid) => {
+      if (!Number.isFinite(pid)) return;
+      const from = fromState[pid];
+      const worth =
+        typeof from === "number"
+          ? from
+          : (balances[pid] || 0) + (basketTotals[pid] || 0);
+      map[pid] = worth;
+    });
+    return map;
+  }, [auctionState?.netWorths, safePlayers, balances, basketTotals]);
+
+  const myBasketTotal =
+    myPlayerId != null ? basketTotals[myPlayerId] ?? 0 : null;
+
+  const myNetWorth = useMemo(() => {
+    if (myPlayerId == null) return null;
+    const from = netWorths[myPlayerId];
+    if (typeof from === "number") return from;
+    const balance = myBalance ?? 0;
+    const basket = basketTotals[myPlayerId] ?? 0;
+    return balance + basket;
+  }, [myBalance, myPlayerId, netWorths, basketTotals]);
 
   const currentPlayer = useMemo(
     () => safePlayers.find((p) => p.id === myPlayerId) || null,
@@ -206,11 +242,11 @@ export default function Auction({
   );
 
   const totalBank = useMemo(() => {
-    return Object.values(balances).reduce(
+    return Object.values(netWorths).reduce(
       (sum, value) => sum + (Number(value) || 0),
       0
     );
-  }, [balances]);
+  }, [netWorths]);
 
   const secsLeft = useMemo(() => {
     if (!deadlineAtRef.current) return null;
@@ -1188,6 +1224,20 @@ export default function Auction({
                   : "—"}
               </span>
             </div>
+            <div className="lot-balance-card">
+              <span className="lot-balance-card__label">
+                Состояние (баланс + покупки)
+              </span>
+              <span className="lot-balance-card__value">
+                {myNetWorth != null
+                  ? `${moneyFormatter.format(myNetWorth)}$`
+                  : "—"}
+              </span>
+              <span className="muted">
+                Баланс {moneyFormatter.format(myBalance ?? 0)}$ · Покупки{" "}
+                {moneyFormatter.format(myBasketTotal ?? 0)}$
+              </span>
+            </div>
           </div>
 
           <div className="timer">
@@ -1365,8 +1415,8 @@ export default function Auction({
       .slice()
       .sort(
         (a, b) =>
-          (balances[b.id] ?? 0) -
-          (balances[a.id] ?? 0)
+          (netWorths[b.id] ?? 0) -
+          (netWorths[a.id] ?? 0)
       );
 
     return (
@@ -1385,6 +1435,9 @@ export default function Auction({
               const avatar =
                 p.user?.photo_url || p.user?.avatar || null;
               const balance = balances[p.id] ?? 0;
+              const basketValue = basketTotals[p.id] ?? 0;
+              const netWorth =
+                netWorths[p.id] ?? balance + basketValue;
               const isWinner = winners.includes(p.id);
               return (
                 <div
@@ -1409,10 +1462,12 @@ export default function Auction({
                         {name}
                       </span>
                       <span className="result-row__money">
-                        {moneyFormatter.format(
-                          balance
-                        )}
+                        {moneyFormatter.format(netWorth)}
                         $
+                      </span>
+                      <span className="result-row__meta muted">
+                        Баланс {moneyFormatter.format(balance)}$ · Покупки{" "}
+                        {moneyFormatter.format(basketValue)}$
                       </span>
                     </div>
                   </div>

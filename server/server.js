@@ -2006,8 +2006,8 @@ io.on('connection', (socket) => {
           not_participant: 'Вы не участвуете в аукционе',
           bad_amount: 'Неверная сумма ставки',
           not_enough_money: 'Недостаточно денег',
-          
-          bid_below_base: '�?�?��? ������� ���',
+          paused: 'Аукцион на паузе',
+          bid_below_base: 'Ставка ниже базовой',
         };
         const text = map[res.error] || 'Не удалось принять ставку';
         socket.emit('toast', { type: 'error', text });

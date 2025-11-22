@@ -160,17 +160,27 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     }
   }
 
+  function playerNetWorth(state, playerId) {
+    const balance = Number(state.balances?.[playerId] || 0);
+    const basket = Number(state.basketTotals?.[playerId] || 0);
+    return balance + basket;
+  }
+
   function computeWinners(state) {
     if (!state.activePlayerIds.length) return [];
-    const balancesList = state.activePlayerIds.map(
-      (pid) => state.balances[pid] || 0
-    );
-    const maxBalance = balancesList.length
-      ? Math.max(...balancesList)
-      : 0;
-    return state.activePlayerIds.filter(
-      (pid) => (state.balances[pid] || 0) === maxBalance
-    );
+    let maxWorth = -Infinity;
+    const winners = [];
+    for (const pid of state.activePlayerIds) {
+      const worth = playerNetWorth(state, pid);
+      if (worth > maxWorth) {
+        maxWorth = worth;
+        winners.length = 0;
+        winners.push(pid);
+      } else if (worth === maxWorth) {
+        winners.push(pid);
+      }
+    }
+    return winners;
   }
 
   function clearTimer(roomId) {
@@ -263,6 +273,16 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     ensureConsistentPhase(state);
 
     const roomPlayers = roomPlayersList(room);
+    const netWorths = {};
+    for (const pid of new Set([
+      ...roomPlayers.map((p) => p.id),
+      ...Object.keys(state.balances || {}).map((k) => Number(k)),
+      ...Object.keys(state.basketTotals || {}).map((k) => Number(k)),
+    ])) {
+      if (!Number.isFinite(pid)) continue;
+      netWorths[pid] = playerNetWorth(state, pid);
+    }
+
     const players = roomPlayers.map((p) => {
       const name =
         p.user?.firstName ||
@@ -274,6 +294,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         name,
         active: state.activePlayerIds.includes(p.id),
         balance: state.balances[p.id] ?? null,
+        netWorth: netWorths[p.id] ?? null,
       };
     });
 
@@ -320,6 +341,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       currentBids: { ...state.currentBids },
       baskets,
       basketTotals: { ...(state.basketTotals || {}) },
+      netWorths,
       slotsPlayed: state.slotsPlayed,
       maxSlots: state.slots.length,
       currentSlotIndex: currentSlot ? currentSlot.index : null,

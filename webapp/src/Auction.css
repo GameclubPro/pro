@@ -966,7 +966,12 @@ textarea {
 }
 
 .result-row__money {
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.result-row__meta {
+  font-size: 12px;
   color: var(--muted);
 }
 
