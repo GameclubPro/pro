@@ -1,8 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
 
 :root {
-  --bg: #050814;
-  --bg-soft: #070b16;
+  --bg: #020617;
+  --bg-soft: #020617;
   --surface: #0c1020;
   --surface-strong: #101629;
   --surface-muted: rgba(255, 255, 255, 0.03);
@@ -50,7 +50,8 @@ body {
 }
 
 body {
-  font-family: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: "Space Grotesk", system-ui, -apple-system, "Segoe UI",
+    sans-serif;
   background: var(--bg);
   color: var(--text);
   -webkit-font-smoothing: antialiased;
@@ -85,21 +86,27 @@ textarea {
   margin: 0 auto;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: calc(var(--safe-top) + 10px) 12px calc(var(--safe-bottom) + 10px);
+  padding: calc(var(--safe-top) + 10px) 12px
+    calc(var(--safe-bottom) + 10px);
   display: flex;
   flex-direction: column;
   background:
     radial-gradient(
-      140% 160% at 0% 0%,
-      rgba(106, 184, 255, 0.24),
+      160% 160% at -10% -20%,
+      rgba(96, 165, 250, 0.35),
       transparent 60%
     ),
     radial-gradient(
-      160% 240% at 110% -40%,
-      rgba(246, 196, 82, 0.28),
+      160% 220% at 120% -40%,
+      rgba(45, 212, 191, 0.32),
+      transparent 65%
+    ),
+    radial-gradient(
+      120% 220% at 50% 120%,
+      rgba(250, 204, 21, 0.16),
       transparent 70%
     ),
-    linear-gradient(165deg, #05070f 0%, #050814 45%, #05060f 100%);
+    linear-gradient(160deg, #020617 0%, #020617 40%, #020617 100%);
   overflow: hidden;
   isolation: isolate;
   color: var(--text);
@@ -177,7 +184,7 @@ textarea {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
   z-index: 1;
 }
@@ -193,7 +200,7 @@ textarea {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
+  padding: 5px 9px;
   border-radius: 999px;
   border: 1px solid var(--border-soft);
   background: rgba(255, 255, 255, 0.04);
@@ -222,45 +229,11 @@ textarea {
   }
 }
 
-.app-header__progress {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.app-header__progress-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.app-header__progress-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--muted);
-}
-
-.app-header__progress-value {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.app-header__subtitle {
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 .app-header__code-row {
   display: flex;
   align-items: center;
+  gap: 8px;
   flex-wrap: wrap;
-  gap: 6px;
 }
 
 .app-header__code {
@@ -346,26 +319,32 @@ textarea {
 .chip--host {
   position: absolute;
   top: -6px;
-  right: -6px;
-  padding: 4px 7px;
+  right: -4px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
   border-radius: 999px;
-  border: none;
+  border-color: rgba(246, 196, 82, 0.9);
   background: radial-gradient(
     circle at 30% 0%,
     #ffffff 0%,
-    #f6c452 45%,
-    #b9781b 100%
+    #f6c452 35%,
+    #f59e0b 70%,
+    #92400e 100%
   );
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.6);
-  font-size: 14px;
-  line-height: 1;
-  text-transform: none;
-  letter-spacing: 0;
-  color: #1a1200;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  box-shadow: 0 8px 18px rgba(246, 196, 82, 0.55);
+  pointer-events: none;
 }
 
 .chip--winner {
-  border-color: color-mix(in srgb, var(--accent-3) 60%, var(--border));
+  border-color: color-mix(
+    in srgb,
+    var(--accent-3) 60%,
+    var(--border)
+  );
   color: #0bd19d;
 }
 
@@ -413,9 +392,7 @@ textarea {
     rgba(255, 255, 255, 0.02)
   );
   border-color: color-mix(in srgb, var(--border) 60%, transparent);
-  transition:
-    transform 0.16s ease,
-    background 0.16s ease,
+  transition: transform 0.16s ease, background 0.16s ease,
     border-color 0.16s ease;
 }
 
@@ -445,7 +422,11 @@ textarea {
 
 .btn--primary {
   width: 100%;
-  background: linear-gradient(135deg, var(--accent), var(--accent-3));
+  background: linear-gradient(
+    135deg,
+    var(--accent),
+    var(--accent-3)
+  );
   color: #ffffff;
   box-shadow: 0 14px 32px rgba(246, 196, 82, 0.3);
 }
@@ -479,7 +460,11 @@ textarea {
 }
 
 .text-input:focus {
-  border-color: color-mix(in srgb, var(--accent) 80%, var(--border));
+  border-color: color-mix(
+    in srgb,
+    var(--accent) 80%,
+    var(--border)
+  );
   box-shadow: 0 0 0 6px rgba(246, 196, 82, 0.16);
 }
 
@@ -538,29 +523,40 @@ textarea {
 }
 
 .landing-card {
+  position: relative;
   width: 100%;
   border-radius: 24px;
   padding: 20px 18px 16px;
   background:
     radial-gradient(
-      130% 200% at 0% 0%,
-      rgba(106, 184, 255, 0.24),
+      140% 220% at -10% -20%,
+      rgba(96, 165, 250, 0.45),
       transparent 60%
     ),
     radial-gradient(
-      160% 240% at 120% -40%,
-      rgba(246, 196, 82, 0.28),
+      140% 260% at 120% -40%,
+      rgba(45, 212, 191, 0.4),
       transparent 65%
     ),
-    rgba(5, 7, 16, 0.96);
-  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
-  box-shadow: var(--shadow);
+    rgba(6, 9, 20, 0.96);
+  border: 1px solid color-mix(in srgb, var(--accent-2) 35%, var(--border));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
   display: flex;
   flex-direction: column;
   gap: 14px;
   overflow: hidden;
   isolation: isolate;
-  backdrop-filter: blur(24px);
+  backdrop-filter: blur(26px);
+}
+
+.landing-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  mix-blend-mode: screen;
+  pointer-events: none;
 }
 
 .landing-card__head {
@@ -574,7 +570,11 @@ textarea {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-weight: 900;
-  background: linear-gradient(180deg, #ffffff 0%, #dbe6ff 80%);
+  background: linear-gradient(
+    180deg,
+    #ffffff 0%,
+    #dbe6ff 80%
+  );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -583,7 +583,11 @@ textarea {
 
 .landing-tagline {
   font-size: 13px;
-  color: color-mix(in srgb, var(--muted) 80%, #ffffff 20%);
+  color: color-mix(
+    in srgb,
+    var(--muted) 80%,
+    #ffffff 20%
+  );
 }
 
 .landing-chips {
@@ -632,56 +636,87 @@ textarea {
   padding-bottom: 12px;
 }
 
-.lobby-header {
+.lobby-header-main {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.lobby-header__top {
+.lobby-header-main__row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
+  margin-top: 2px;
 }
 
-.lobby-header__count {
-  font-size: 13px;
-  color: var(--muted);
+.lobby-header-main__players {
+  font-size: 15px;
+  font-weight: 600;
 }
 
-.lobby-header__progress {
+.lobby-header-main__code {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.04);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.lobby-header-progress {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.lobby-header__progress-row {
+.lobby-header-progress__top {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  gap: 8px;
 }
 
-.lobby-header__progress-label {
+.lobby-header-progress__label {
   font-size: 11px;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
 
-.lobby-header__progress-value {
-  font-size: 13px;
+.lobby-header-progress__value {
+  font-size: 11px;
   font-weight: 600;
 }
 
-.lobby-settings-btn {
-  flex-shrink: 0;
+.progress {
+  position: relative;
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.progress--inline {
+  height: 4px;
+}
+
+.progress__fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    var(--accent-3),
+    var(--accent-2)
+  );
+  box-shadow: 0 0 14px rgba(11, 209, 157, 0.28);
 }
 
 .lobby-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-top: 8px;
 }
@@ -706,27 +741,6 @@ textarea {
 .lobby-stat__value {
   font-size: 14px;
   font-weight: 700;
-}
-
-.progress {
-  position: relative;
-  width: 100%;
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  overflow: hidden;
-}
-
-.progress--header,
-.progress--inline {
-  height: 4px;
-}
-
-.progress__fill {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, var(--accent-3), var(--accent-2));
-  box-shadow: 0 0 14px rgba(11, 209, 157, 0.28);
 }
 
 .lobby-hint {
@@ -764,7 +778,11 @@ textarea {
 }
 
 .lobby-player--ready {
-  border-color: color-mix(in srgb, var(--accent-3) 45%, var(--border));
+  border-color: color-mix(
+    in srgb,
+    var(--accent-3) 45%,
+    var(--border)
+  );
   background: linear-gradient(
     135deg,
     rgba(11, 209, 157, 0.18),
@@ -773,7 +791,11 @@ textarea {
 }
 
 .lobby-player--host {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-color: color-mix(
+    in srgb,
+    var(--accent) 45%,
+    var(--border)
+  );
 }
 
 .lobby-player__avatar {
@@ -831,6 +853,12 @@ textarea {
   box-shadow: 0 0 12px rgba(11, 209, 157, 0.52);
 }
 
+.lobby-settings {
+  flex-shrink: 0;
+}
+
+/* BOTTOM BAR */
+
 .bottom-bar {
   margin-top: 4px;
   padding: 8px 9px;
@@ -838,9 +866,11 @@ textarea {
   border: 1px solid var(--border);
   background: rgba(10, 13, 26, 0.96);
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 8px;
+}
+
+.bottom-bar__primary {
+  max-width: 260px;
 }
 
 /* GAME */
@@ -1054,7 +1084,11 @@ textarea {
 }
 
 .result-row--winner {
-  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  border-color: color-mix(
+    in srgb,
+    var(--accent) 50%,
+    var(--border)
+  );
   box-shadow: 0 8px 20px rgba(246, 196, 82, 0.3);
 }
 
@@ -1156,11 +1190,8 @@ textarea {
 /* INTERACTION */
 
 button {
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    background 0.15s ease,
-    border-color 0.15s ease,
+  transition: transform 0.15s ease, box-shadow 0.15s ease,
+    background 0.15s ease, border-color 0.15s ease,
     opacity 0.15s ease;
 }
 

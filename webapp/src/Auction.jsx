@@ -8,7 +8,7 @@ const CODE_ALPHABET_RE = /[^A-HJKMNPQRSTUVWXYZ23456789]/g;
 const BID_PRESETS = [1_000, 5_000, 10_000, 25_000, 50_000];
 const AUCTION_GAME = "AUCTION";
 
-const PHASE_LABEL = {
+const PHASE_LABEL: Record<string, string> = {
   lobby: "Лобби",
   in_progress: "Торги",
   finished: "Итоги",
@@ -18,25 +18,25 @@ function normalizeCode(value = "") {
   return value.toUpperCase().replace(CODE_ALPHABET_RE, "").slice(0, 6);
 }
 
-function clamp(value, min, max) {
+function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-const EMPTY_ARRAY = Object.freeze([]);
-const EMPTY_OBJECT = Object.freeze({});
+const EMPTY_ARRAY: any[] = Object.freeze([]);
+const EMPTY_OBJECT: Record<string, unknown> = Object.freeze({});
 
-function ensureArray(value) {
-  return Array.isArray(value) ? value : EMPTY_ARRAY;
+function ensureArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : EMPTY_ARRAY;
 }
 
-function ensurePlainObject(value) {
+function ensurePlainObject<T extends object>(value: unknown): T {
   if (value && typeof value === "object" && !Array.isArray(value)) {
-    return value;
+    return value as T;
   }
-  return EMPTY_OBJECT;
+  return EMPTY_OBJECT as T;
 }
 
-const SERVER_ERROR_MESSAGES = {
+const SERVER_ERROR_MESSAGES: Record<string, string> = {
   initData_required: "Открой игру из Telegram — нет initData.",
   bad_signature: "Подпись Telegram не сошлась. Запусти игру заново из бота.",
   stale_init_data: "Сессия Telegram устарела. Открой игру заново из Telegram.",
@@ -46,7 +46,8 @@ const SERVER_ERROR_MESSAGES = {
   game_in_progress: "Игра уже идёт",
   wrong_game: "Эта ссылка для другой игры",
 };
-function mapServerError(code, status, fallback) {
+
+function mapServerError(code: string | undefined, status: number, fallback: string) {
   if (status === 429) return "Слишком много попыток. Попробуйте чуть позже.";
   if (status === 401 && (!code || code === "failed")) {
     return SERVER_ERROR_MESSAGES.stale_init_data;
@@ -55,7 +56,7 @@ function mapServerError(code, status, fallback) {
   return SERVER_ERROR_MESSAGES[code] || fallback;
 }
 
-function playerDisplayName(player) {
+function playerDisplayName(player: any) {
   if (!player) return "Игрок";
   return (
     player.user?.first_name ||
@@ -72,31 +73,41 @@ export default function Auction({
   setBackHandler,
   autoJoinCode,
   onInviteConsumed,
+}: {
+  apiBase: string;
+  initData?: string;
+  goBack?: () => void;
+  onProgress?: () => void;
+  setBackHandler?: (fn: (() => void) | null) => void;
+  autoJoinCode?: string;
+  onInviteConsumed?: (code: string) => void;
 }) {
-  const [socket, setSocket] = useState(null);
-  const socketRef = useRef(null);
+  const [socket, setSocket] = useState<any>(null);
+  const socketRef = useRef<any>(null);
   const [connecting, setConnecting] = useState(false);
 
-  const [room, setRoom] = useState(null);
-  const [players, setPlayers] = useState([]);
-  const [selfInfo, setSelfInfo] = useState(null);
+  const [room, setRoom] = useState<any>(null);
+  const [players, setPlayers] = useState<any[]>([]);
+  const [selfInfo, setSelfInfo] = useState<any>(null);
   const [viewerIsOwner, setViewerIsOwner] = useState(false);
-  const [auctionState, setAuctionState] = useState(null);
+  const [auctionState, setAuctionState] = useState<any>(null);
 
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
   const [codeInput, setCodeInput] = useState("");
   const [error, setError] = useState("");
-  const [toastStack, setToastStack] = useState([]);
+  const [toastStack, setToastStack] = useState<
+    { id: string; text: string; type?: "error" | "info"; duration?: number }[]
+  >([]);
 
   const [busyBid, setBusyBid] = useState(false);
   const [myBid, setMyBid] = useState("");
 
-  const deadlineAtRef = useRef(null);
+  const deadlineAtRef = useRef<number | null>(null);
   const [nowTick, setNowTick] = useState(0);
-  const toastTimersRef = useRef(new Map());
-  const lastSubscribedCodeRef = useRef(null);
-  const lastSubscriptionSocketIdRef = useRef(null);
+  const toastTimersRef = useRef<Map<string, any>>(new Map());
+  const lastSubscribedCodeRef = useRef<string | null>(null);
+  const lastSubscriptionSocketIdRef = useRef<string | null>(null);
   const progressSentRef = useRef(false);
   const lastBidAtRef = useRef(0);
 
@@ -106,21 +117,22 @@ export default function Auction({
     [autoJoinCode]
   );
 
-  const phase = auctionState?.phase || "lobby";
+  const phase: "lobby" | "in_progress" | "finished" | string =
+    auctionState?.phase || "lobby";
   const myPlayerId = selfInfo?.roomPlayerId ?? null;
 
   const balances = useMemo(
-    () => ensurePlainObject(auctionState?.balances),
+    () => ensurePlainObject<Record<number, number>>(auctionState?.balances),
     [auctionState?.balances]
   );
   const basketTotals = useMemo(
-    () => ensurePlainObject(auctionState?.basketTotals),
+    () => ensurePlainObject<Record<number, number>>(auctionState?.basketTotals),
     [auctionState?.basketTotals]
   );
   const myBalance = myPlayerId != null ? balances[myPlayerId] ?? null : null;
 
   const currentBids = useMemo(
-    () => ensurePlainObject(auctionState?.currentBids),
+    () => ensurePlainObject<Record<number, number>>(auctionState?.currentBids),
     [auctionState?.currentBids]
   );
   const myRoundBid = useMemo(() => {
@@ -154,18 +166,20 @@ export default function Auction({
   const initialBank = auctionState?.rules?.initialBalance || INITIAL_BANK;
 
   const safePlayers = useMemo(
-    () => ensureArray(players).filter(Boolean),
+    () => ensureArray<any>(players).filter(Boolean),
     [players]
   );
 
   const netWorths = useMemo(() => {
-    const fromState = ensurePlainObject(auctionState?.netWorths);
-    const ids = new Set([
+    const fromState = ensurePlainObject<Record<number, number>>(
+      auctionState?.netWorths
+    );
+    const ids = new Set<number>([
       ...safePlayers.map((p) => p.id).filter((id) => id != null),
       ...Object.keys(balances).map((k) => Number(k)),
       ...Object.keys(basketTotals).map((k) => Number(k)),
     ]);
-    const map = {};
+    const map: Record<number, number> = {};
     ids.forEach((pid) => {
       if (!Number.isFinite(pid)) return;
       const from = fromState[pid];
@@ -178,7 +192,8 @@ export default function Auction({
     return map;
   }, [auctionState?.netWorths, safePlayers, balances, basketTotals]);
 
-  const myBasketTotal = myPlayerId != null ? basketTotals[myPlayerId] ?? 0 : null;
+  const myBasketTotal =
+    myPlayerId != null ? basketTotals[myPlayerId] ?? 0 : null;
 
   const myNetWorth = useMemo(() => {
     if (myPlayerId == null) return null;
@@ -221,7 +236,7 @@ export default function Auction({
 
   const safeHistory = useMemo(
     () =>
-      ensureArray(auctionState?.history).filter(
+      ensureArray<any>(auctionState?.history).filter(
         (slot) => slot && typeof slot.index === "number"
       ),
     [auctionState?.history]
@@ -232,7 +247,7 @@ export default function Auction({
   );
 
   const winners = useMemo(
-    () => ensureArray(auctionState?.winners),
+    () => ensureArray<number>(auctionState?.winners),
     [auctionState?.winners]
   );
 
@@ -262,9 +277,9 @@ export default function Auction({
   const showGame = !showLanding && phase === "in_progress";
   const showResults = !showLanding && phase === "finished";
 
-  // ---------- TOASTS ----------
+  // ---------- TOАSTS ----------
 
-  const dismissToast = useCallback((id) => {
+  const dismissToast = useCallback((id: string) => {
     if (!id) return;
     setToastStack((prev) => prev.filter((t) => t.id !== id));
     const timer = toastTimersRef.current.get(id);
@@ -275,7 +290,7 @@ export default function Auction({
   }, []);
 
   const pushToast = useCallback(
-    (payload = {}) => {
+    (payload: { id?: string; text: string; type?: "error" | "info"; duration?: number }) => {
       if (!payload.text) return null;
       const id =
         payload.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -296,7 +311,7 @@ export default function Auction({
   );
 
   const pushError = useCallback(
-    (message) => {
+    (message?: string) => {
       const text = message || "Что-то пошло не так";
       setError(text);
       pushToast({ type: "error", text, duration: 3600 });
@@ -308,7 +323,7 @@ export default function Auction({
 
   // ---------- SOCKET SUBSCRIBE ----------
 
-  const subscribeToRoom = useCallback((rawCode, options = {}) => {
+  const subscribeToRoom = useCallback((rawCode: string, options: { force?: boolean } = {}) => {
     const sock = socketRef.current;
     const code = normalizeCode(rawCode);
     if (!code || !sock) return;
@@ -423,12 +438,14 @@ export default function Auction({
       lastSubscriptionSocketIdRef.current = null;
     });
 
-    instance.on("connect_error", (err) => {
+    instance.on("connect_error", (err: any) => {
       setConnecting(false);
-      pushError(`Не удалось подключиться: ${err?.message || "ошибка соединения"}`);
+      pushError(
+        `Не удалось подключиться: ${err?.message || "ошибка соединения"}`
+      );
     });
 
-    instance.on("toast", (payload) => {
+    instance.on("toast", (payload: any) => {
       if (!payload?.text) return;
       if (payload.type === "error") {
         pushError(payload.text);
@@ -437,7 +454,7 @@ export default function Auction({
       pushToast(payload);
     });
 
-    instance.on("room:state", (payload) => {
+    instance.on("room:state", (payload: any) => {
       if (!payload) return;
       setRoom(payload.room || null);
       setPlayers(payload.players || []);
@@ -447,12 +464,12 @@ export default function Auction({
       clearError();
     });
 
-    instance.on("private:self", (payload) => {
+    instance.on("private:self", (payload: any) => {
       if (!payload) return;
       setSelfInfo(payload);
     });
 
-    instance.on("auction:state", (state) => {
+    instance.on("auction:state", (state: any) => {
       if (!state) return;
       setAuctionState(state);
       clearError();
@@ -549,16 +566,18 @@ export default function Auction({
       });
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
-        const code = data?.error || data?.message || "failed";
-        pushError(mapServerError(code, resp.status, "Не удалось создать комнату"));
+        const code = (data as any)?.error || (data as any)?.message || "failed";
+        pushError(
+          mapServerError(code, resp.status, "Не удалось создать комнату")
+        );
         return;
       }
-      setRoom(data.room || null);
-      setPlayers(data.players || []);
+      setRoom((data as any).room || null);
+      setPlayers((data as any).players || []);
       setViewerIsOwner(true);
-      if (data.room?.code) {
-        setCodeInput(data.room.code);
-        subscribeToRoom(data.room.code, { force: true });
+      if ((data as any).room?.code) {
+        setCodeInput((data as any).room.code);
+        subscribeToRoom((data as any).room.code, { force: true });
       }
     } catch {
       pushError("Не удалось создать комнату, попробуйте ещё раз");
@@ -567,7 +586,7 @@ export default function Auction({
     }
   }
 
-  async function joinRoom(rawCode, options = {}) {
+  async function joinRoom(rawCode?: string, options: { fromInvite?: boolean } = {}) {
     if (!initData) {
       pushError("Нет initData из Telegram");
       return;
@@ -590,13 +609,16 @@ export default function Auction({
       });
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
-        const codeErr = data?.error || data?.message || "failed";
-        pushError(mapServerError(codeErr, resp.status, "Не удалось войти в комнату"));
+        const codeErr =
+          (data as any)?.error || (data as any)?.message || "failed";
+        pushError(
+          mapServerError(codeErr, resp.status, "Не удалось войти в комнату")
+        );
         return;
       }
-      setRoom(data.room || null);
-      setPlayers(data.players || []);
-      setViewerIsOwner(!!data.viewerIsOwner);
+      setRoom((data as any).room || null);
+      setPlayers((data as any).players || []);
+      setViewerIsOwner(!!(data as any).viewerIsOwner);
       setCodeInput(code);
       subscribeToRoom(code, { force: true });
 
@@ -621,7 +643,7 @@ export default function Auction({
     socket.emit(
       "ready:set",
       { code: room.code, ready: !ready, game: AUCTION_GAME },
-      (resp) => {
+      (resp: any) => {
         if (!resp || !resp.ok) {
           pushError("Не удалось изменить статус");
         }
@@ -634,9 +656,9 @@ export default function Auction({
     socket.emit(
       "auction:start",
       { code: room.code, game: AUCTION_GAME },
-      (resp) => {
+      (resp: any) => {
         if (!resp || !resp.ok) {
-          const map = {
+          const map: Record<string, string> = {
             room_not_found: "Комната не найдена",
             forbidden_not_owner: "Только владелец может начать игру",
             need_at_least_2_players: "Нужно минимум 2 игрока",
@@ -681,7 +703,7 @@ export default function Auction({
     sendBid(0);
   }
 
-  function sendBid(forcedAmount) {
+  function sendBid(forcedAmount?: number | null) {
     if (!socket || !room || !selfInfo) return;
     if (!auctionState || auctionState.phase !== "in_progress") return;
 
@@ -715,10 +737,10 @@ export default function Auction({
     socket.emit(
       "auction:bid",
       { code: room.code, amount, game: AUCTION_GAME },
-      (resp) => {
+      (resp: any) => {
         setBusyBid(false);
         if (!resp || !resp.ok) {
-          const map = {
+          const map: Record<string, string> = {
             room_not_found: "Комната не найдена",
             not_running: "Аукцион ещё не запущен",
             not_player: "Вы не в комнате",
@@ -740,7 +762,10 @@ export default function Auction({
   async function copyRoomCode() {
     if (!room?.code) return;
     try {
-      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.clipboard?.writeText
+      ) {
         await navigator.clipboard.writeText(room.code);
         pushToast({ type: "info", text: "Код скопирован" });
       } else {
@@ -754,7 +779,9 @@ export default function Auction({
   async function shareRoomCode() {
     if (!room?.code) return;
     const base =
-      typeof window !== "undefined" ? window.location?.origin || "" : "";
+      typeof window !== "undefined"
+        ? window.location?.origin || ""
+        : "";
     const shareUrl = base
       ? `${base.replace(/\/+$/, "")}/?join=${encodeURIComponent(
           room.code
@@ -849,8 +876,9 @@ export default function Auction({
 
   const renderHeader = () => {
     if (!room) return null;
+    if (phase === "in_progress") return null; // скрываем header во время игры
+
     const phaseLabel = PHASE_LABEL[phase] || "Аукцион";
-    const roomTitle = (room.name || "").trim() || "Аукцион";
     const playersOnline = safePlayers.length || 0;
     const playersLabel =
       playersOnline === 1
@@ -858,8 +886,6 @@ export default function Auction({
         : playersOnline >= 5 || playersOnline === 0
         ? "игроков"
         : "игрока";
-    const readyTarget = Math.max(totalPlayers || 1, 1);
-    const showLobbyProgress = phase === "lobby";
 
     return (
       <header className="app-header">
@@ -879,30 +905,6 @@ export default function Auction({
               {playersOnline} {playersLabel}
             </span>
           </div>
-
-          {showLobbyProgress ? (
-            <div className="app-header__progress">
-              <div className="app-header__progress-top">
-                <span className="app-header__progress-label">Готовность</span>
-                <span className="app-header__progress-value">
-                  {readyCount}/{readyTarget}
-                </span>
-              </div>
-              <div className="progress progress--header">
-                <div
-                  className="progress__fill"
-                  style={{
-                    width: `${Math.max(6, readyPercent)}%`,
-                  }}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="app-header__subtitle" title={roomTitle}>
-              {roomTitle}
-            </div>
-          )}
-
           <div className="app-header__code-row">
             <button
               type="button"
@@ -950,28 +952,30 @@ export default function Auction({
       }
     };
 
-    const sortedPlayers = safePlayers
-      .slice()
-      .sort((a, b) => Number(b.ready) - Number(a.ready));
+    // порядок игроков больше не зависит от ready — они не прыгают
+    const sortedPlayers = safePlayers.slice();
 
     return (
       <div className="screen-body lobby-layout">
         <section className="card card--lobby-top">
           <div className="card-row">
-            <div className="lobby-header">
-              <div className="lobby-header__top">
-                <span className="label">Комната</span>
-                <span className="lobby-header__count">
+            <div className="lobby-header-main">
+              <span className="label">Комната</span>
+              <div className="lobby-header-main__row">
+                <span className="lobby-header-main__players">
                   {totalPlayers} игрок
                   {totalPlayers === 1 ? "" : "ов"}
                 </span>
+                <span className="lobby-header-main__code">
+                  #{room?.code || "------"}
+                </span>
               </div>
-              <div className="lobby-header__progress">
-                <div className="lobby-header__progress-row">
-                  <span className="lobby-header__progress-label">
+              <div className="lobby-header-progress">
+                <div className="lobby-header-progress__top">
+                  <span className="lobby-header-progress__label">
                     Готовность
                   </span>
-                  <span className="lobby-header__progress-value">
+                  <span className="lobby-header-progress__value">
                     {readyCount}/{readyTarget}
                   </span>
                 </div>
@@ -988,8 +992,14 @@ export default function Auction({
             {isOwner && (
               <button
                 type="button"
-                className="icon-btn icon-btn--ghost lobby-settings-btn"
+                className="icon-btn icon-btn--ghost lobby-settings"
                 aria-label="Настройки комнаты"
+                onClick={() =>
+                  pushToast({
+                    type: "info",
+                    text: "Настройки скоро будут 😉",
+                  })
+                }
               >
                 ⚙️
               </button>
@@ -1008,10 +1018,6 @@ export default function Auction({
               <span className="lobby-stat__value">
                 {slotMax != null ? slotMax : "—"}
               </span>
-            </div>
-            <div className="lobby-stat">
-              <span className="lobby-stat__label">Игроков</span>
-              <span className="lobby-stat__value">{totalPlayers}</span>
             </div>
           </div>
 
@@ -1055,7 +1061,11 @@ export default function Auction({
                     .join(" ")}
                 >
                   <div className="lobby-player__avatar">
-                    {avatar ? <img src={avatar} alt={name} /> : name.slice(0, 1)}
+                    {avatar ? (
+                      <img src={avatar} alt={name} />
+                    ) : (
+                      name.slice(0, 1)
+                    )}
                   </div>
                   <div className="lobby-player__body">
                     <div className="lobby-player__name">{name}</div>
@@ -1066,14 +1076,16 @@ export default function Auction({
                   <div className="lobby-player__status">
                     <span
                       className={
-                        p.ready ? "status-dot status-dot--ok" : "status-dot"
+                        p.ready
+                          ? "status-dot status-dot--ok"
+                          : "status-dot"
                       }
                     />
                   </div>
                   {isHost && (
                     <span
                       className="chip chip--host"
-                      aria-label="Хост комнаты"
+                      aria-label="Хост"
                       title="Хост комнаты"
                     >
                       👑
@@ -1088,7 +1100,7 @@ export default function Auction({
         <div className="bottom-bar bottom-bar--lobby">
           <button
             type="button"
-            className="btn btn--primary btn--compact"
+            className="btn btn--primary btn--compact bottom-bar__primary"
             onClick={primaryAction}
             disabled={isOwner && !canStart}
           >
@@ -1232,7 +1244,9 @@ export default function Auction({
             <span className="label">Ставка</span>
             <span className="muted">
               Баланс:{" "}
-              {myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "—"}
+              {myBalance != null
+                ? `${moneyFormatter.format(myBalance)}$`
+                : "—"}
             </span>
           </div>
 
@@ -1323,7 +1337,10 @@ export default function Auction({
 
     const sorted = safePlayers
       .slice()
-      .sort((a, b) => (netWorths[b.id] ?? 0) - (netWorths[a.id] ?? 0));
+      .sort(
+        (a, b) =>
+          (netWorths[b.id] ?? 0) - (netWorths[a.id] ?? 0)
+      );
 
     return (
       <div className="screen-body results-layout">
@@ -1411,7 +1428,10 @@ export default function Auction({
           {toastStack.map((item) => (
             <motion.div
               key={item.id}
-              className={["toast", item.type === "error" ? "toast--error" : ""]
+              className={[
+                "toast",
+                item.type === "error" ? "toast--error" : "",
+              ]
                 .filter(Boolean)
                 .join(" ")}
               initial={{ opacity: 0, y: -8, scale: 0.96 }}
