@@ -117,8 +117,7 @@ export default function Auction({
     () => ensurePlainObject(auctionState?.basketTotals),
     [auctionState?.basketTotals]
   );
-  const myBalance =
-    myPlayerId != null ? balances[myPlayerId] ?? null : null;
+  const myBalance = myPlayerId != null ? balances[myPlayerId] ?? null : null;
 
   const currentBids = useMemo(
     () => ensurePlainObject(auctionState?.currentBids),
@@ -142,9 +141,7 @@ export default function Auction({
       auctionState?.maxSlots ??
       auctionState?.rules?.maxSlots ??
       auctionState?.totalSlots ??
-      (Array.isArray(auctionState?.slots)
-        ? auctionState.slots.length
-        : null);
+      (Array.isArray(auctionState?.slots) ? auctionState.slots.length : null);
     const num = Number(raw);
     return Number.isFinite(num) ? num : null;
   }, [
@@ -154,8 +151,7 @@ export default function Auction({
     auctionState?.slots,
   ]);
 
-  const initialBank =
-    auctionState?.rules?.initialBalance || INITIAL_BANK;
+  const initialBank = auctionState?.rules?.initialBalance || INITIAL_BANK;
 
   const safePlayers = useMemo(
     () => ensureArray(players).filter(Boolean),
@@ -182,8 +178,7 @@ export default function Auction({
     return map;
   }, [auctionState?.netWorths, safePlayers, balances, basketTotals]);
 
-  const myBasketTotal =
-    myPlayerId != null ? basketTotals[myPlayerId] ?? 0 : null;
+  const myBasketTotal = myPlayerId != null ? basketTotals[myPlayerId] ?? 0 : null;
 
   const myNetWorth = useMemo(() => {
     if (myPlayerId == null) return null;
@@ -250,14 +245,11 @@ export default function Auction({
 
   const secsLeft = useMemo(() => {
     if (!deadlineAtRef.current) return null;
-    const diff = Math.ceil(
-      (deadlineAtRef.current - Date.now()) / 1000
-    );
+    const diff = Math.ceil((deadlineAtRef.current - Date.now()) / 1000);
     return Math.max(0, diff);
   }, [nowTick]);
 
-  const timePerSlot =
-    auctionState?.rules?.timePerSlotSec || 0;
+  const timePerSlot = auctionState?.rules?.timePerSlotSec || 0;
 
   const progressPct = useMemo(() => {
     if (secsLeft == null || !timePerSlot) return null;
@@ -286,8 +278,7 @@ export default function Auction({
     (payload = {}) => {
       if (!payload.text) return null;
       const id =
-        payload.id ||
-        `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        payload.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const duration = payload.duration ?? 2800;
       const entry = { ...payload, id };
 
@@ -317,29 +308,26 @@ export default function Auction({
 
   // ---------- SOCKET SUBSCRIBE ----------
 
-  const subscribeToRoom = useCallback(
-    (rawCode, options = {}) => {
-      const sock = socketRef.current;
-      const code = normalizeCode(rawCode);
-      if (!code || !sock) return;
-      const force = options.force ?? false;
-      const socketId = sock.id ?? null;
-      const alreadySame =
-        lastSubscribedCodeRef.current === code &&
-        lastSubscriptionSocketIdRef.current === socketId &&
-        socketId != null;
+  const subscribeToRoom = useCallback((rawCode, options = {}) => {
+    const sock = socketRef.current;
+    const code = normalizeCode(rawCode);
+    if (!code || !sock) return;
+    const force = options.force ?? false;
+    const socketId = sock.id ?? null;
+    const alreadySame =
+      lastSubscribedCodeRef.current === code &&
+      lastSubscriptionSocketIdRef.current === socketId &&
+      socketId != null;
 
-      if (!force && alreadySame) return;
+    if (!force && alreadySame) return;
 
-      lastSubscribedCodeRef.current = code;
-      sock.emit("room:subscribe", { code, game: AUCTION_GAME });
-      sock.emit("auction:sync", { code, game: AUCTION_GAME });
-      if (socketId) {
-        lastSubscriptionSocketIdRef.current = socketId;
-      }
-    },
-    []
-  );
+    lastSubscribedCodeRef.current = code;
+    sock.emit("room:subscribe", { code, game: AUCTION_GAME });
+    sock.emit("auction:sync", { code, game: AUCTION_GAME });
+    if (socketId) {
+      lastSubscriptionSocketIdRef.current = socketId;
+    }
+  }, []);
 
   // ---------- EXIT / BACK ----------
 
@@ -437,9 +425,7 @@ export default function Auction({
 
     instance.on("connect_error", (err) => {
       setConnecting(false);
-      pushError(
-        `Не удалось подключиться: ${err?.message || "ошибка соединения"}`
-      );
+      pushError(`Не удалось подключиться: ${err?.message || "ошибка соединения"}`);
     });
 
     instance.on("toast", (payload) => {
@@ -487,7 +473,7 @@ export default function Auction({
         // ignore
       }
     };
-  }, [apiBase, initData, pushError, pushToast, clearError]);
+  }, [apiBase, initData, pushError, pushToast, clearError, subscribeToRoom]);
 
   // Подписка по коду комнаты
   useEffect(() => {
@@ -516,9 +502,7 @@ export default function Auction({
   // Очистка таймеров тостов
   useEffect(
     () => () => {
-      toastTimersRef.current.forEach((timeout) =>
-        clearTimeout(timeout)
-      );
+      toastTimersRef.current.forEach((timeout) => clearTimeout(timeout));
       toastTimersRef.current.clear();
     },
     []
@@ -596,17 +580,14 @@ export default function Auction({
     setJoining(true);
     clearError();
     try {
-      const resp = await fetch(
-        `${apiBase}/api/rooms/${code}/join`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Telegram-Init-Data": initData,
-          },
-          body: JSON.stringify({ game: AUCTION_GAME }),
-        }
-      );
+      const resp = await fetch(`${apiBase}/api/rooms/${code}/join`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Telegram-Init-Data": initData,
+        },
+        body: JSON.stringify({ game: AUCTION_GAME }),
+      });
       const data = await resp.json().catch(() => ({}));
       if (!resp.ok) {
         const codeErr = data?.error || data?.message || "failed";
@@ -663,9 +644,7 @@ export default function Auction({
             already_started: "Аукцион уже запущен",
             wrong_game: "Это комната другого режима",
           };
-          pushError(
-            map[resp?.error] || "Не удалось запустить аукцион"
-          );
+          pushError(map[resp?.error] || "Не удалось запустить аукцион");
         }
       }
     );
@@ -673,35 +652,22 @@ export default function Auction({
 
   const pauseAuction = useCallback(() => {
     if (!socket || !room || !isOwner) return;
-    socket.emit(
-      "auction:pause",
-      { code: room.code, game: AUCTION_GAME },
-      () => {}
-    );
+    socket.emit("auction:pause", { code: room.code, game: AUCTION_GAME }, () => {});
   }, [socket, room, isOwner]);
 
   const resumeAuction = useCallback(() => {
     if (!socket || !room || !isOwner) return;
-    socket.emit(
-      "auction:resume",
-      { code: room.code, game: AUCTION_GAME },
-      () => {}
-    );
+    socket.emit("auction:resume", { code: room.code, game: AUCTION_GAME }, () => {});
   }, [socket, room, isOwner]);
 
   const forceNext = useCallback(() => {
     if (!socket || !room || !isOwner) return;
-    socket.emit(
-      "auction:next",
-      { code: room.code, game: AUCTION_GAME },
-      () => {}
-    );
+    socket.emit("auction:next", { code: room.code, game: AUCTION_GAME }, () => {});
   }, [socket, room, isOwner]);
 
   function setBidRelative(delta = 0) {
     setMyBid((prev) => {
-      const numericPrev =
-        Number(String(prev).replace(/\s/g, "")) || 0;
+      const numericPrev = Number(String(prev).replace(/\s/g, "")) || 0;
       const baseline =
         numericPrev > 0 ? numericPrev : baseBid > 0 ? baseBid : 0;
       const max = myBalance ?? initialBank;
@@ -741,9 +707,7 @@ export default function Auction({
       return;
     }
     if (amount > 0 && baseBid > 0 && amount < baseBid) {
-      pushError(
-        `Минимальная ставка ${moneyFormatter.format(baseBid)}$`
-      );
+      pushError(`Минимальная ставка ${moneyFormatter.format(baseBid)}$`);
       return;
     }
 
@@ -765,9 +729,7 @@ export default function Auction({
             bid_below_base: "Ставка ниже базовой",
             wrong_game: "Это комната другого режима",
           };
-          pushError(
-            map[resp?.error] || "Не удалось принять ставку"
-          );
+          pushError(map[resp?.error] || "Не удалось принять ставку");
         } else {
           clearError();
         }
@@ -778,10 +740,7 @@ export default function Auction({
   async function copyRoomCode() {
     if (!room?.code) return;
     try {
-      if (
-        typeof navigator !== "undefined" &&
-        navigator.clipboard?.writeText
-      ) {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(room.code);
         pushToast({ type: "info", text: "Код скопирован" });
       } else {
@@ -795,9 +754,7 @@ export default function Auction({
   async function shareRoomCode() {
     if (!room?.code) return;
     const base =
-      typeof window !== "undefined"
-        ? window.location?.origin || ""
-        : "";
+      typeof window !== "undefined" ? window.location?.origin || "" : "";
     const shareUrl = base
       ? `${base.replace(/\/+$/, "")}/?join=${encodeURIComponent(
           room.code
@@ -805,10 +762,7 @@ export default function Auction({
       : "";
 
     try {
-      if (
-        typeof navigator !== "undefined" &&
-        navigator.share
-      ) {
+      if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({
           text: `Код комнаты: ${room.code}`,
           url: shareUrl || undefined,
@@ -817,9 +771,7 @@ export default function Auction({
         typeof navigator !== "undefined" &&
         navigator.clipboard?.writeText
       ) {
-        await navigator.clipboard.writeText(
-          shareUrl || room.code
-        );
+        await navigator.clipboard.writeText(shareUrl || room.code);
       }
       pushToast({ type: "info", text: "Ссылка скопирована" });
     } catch {
@@ -863,15 +815,11 @@ export default function Auction({
               maxLength={6}
               placeholder="Например, 3F9K2B"
               value={codeInput}
-              onChange={(e) =>
-                setCodeInput(normalizeCode(e.target.value))
-              }
+              onChange={(e) => setCodeInput(normalizeCode(e.target.value))}
             />
           </label>
 
-          {error && (
-            <div className="field-error">{error}</div>
-          )}
+          {error && <div className="field-error">{error}</div>}
 
           <button
             type="button"
@@ -888,15 +836,11 @@ export default function Auction({
             onClick={createRoom}
             disabled={creating}
           >
-            {creating
-              ? "Создаём комнату..."
-              : "Создать новую комнату"}
+            {creating ? "Создаём комнату..." : "Создать новую комнату"}
           </button>
 
           {connecting && (
-            <div className="landing-connect">
-              Подключаемся к серверу...
-            </div>
+            <div className="landing-connect">Подключаемся к серверу...</div>
           )}
         </div>
       </motion.div>
@@ -914,6 +858,8 @@ export default function Auction({
         : playersOnline >= 5 || playersOnline === 0
         ? "игроков"
         : "игрока";
+    const readyTarget = Math.max(totalPlayers || 1, 1);
+    const showLobbyProgress = phase === "lobby";
 
     return (
       <header className="app-header">
@@ -933,9 +879,30 @@ export default function Auction({
               {playersOnline} {playersLabel}
             </span>
           </div>
-          <h1 className="app-header__room" title={roomTitle}>
-            {roomTitle}
-          </h1>
+
+          {showLobbyProgress ? (
+            <div className="app-header__progress">
+              <div className="app-header__progress-top">
+                <span className="app-header__progress-label">Готовность</span>
+                <span className="app-header__progress-value">
+                  {readyCount}/{readyTarget}
+                </span>
+              </div>
+              <div className="progress progress--header">
+                <div
+                  className="progress__fill"
+                  style={{
+                    width: `${Math.max(6, readyPercent)}%`,
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="app-header__subtitle" title={roomTitle}>
+              {roomTitle}
+            </div>
+          )}
+
           <div className="app-header__code-row">
             <button
               type="button"
@@ -947,9 +914,6 @@ export default function Auction({
                 {room.code || "------"}
               </span>
             </button>
-            <span className="app-header__hint">
-              нажми, чтобы скопировать
-            </span>
           </div>
         </div>
         <button
@@ -969,8 +933,7 @@ export default function Auction({
 
     const readyTarget = Math.max(totalPlayers || 1, 1);
     const myReady = !!currentPlayer?.ready;
-    const canStart =
-      readyCount >= readyTarget && totalPlayers >= 2;
+    const canStart = readyCount >= readyTarget && totalPlayers >= 2;
 
     const primaryLabel = isOwner
       ? "Начать игру"
@@ -989,69 +952,66 @@ export default function Auction({
 
     const sortedPlayers = safePlayers
       .slice()
-      .sort(
-        (a, b) =>
-          Number(b.ready) - Number(a.ready)
-      );
+      .sort((a, b) => Number(b.ready) - Number(a.ready));
 
     return (
       <div className="screen-body lobby-layout">
         <section className="card card--lobby-top">
           <div className="card-row">
-            <div>
-              <span className="label">Комната</span>
-              <h2 className="title">
-                Лобби · {totalPlayers} игрок
-                {totalPlayers === 1 ? "" : "ов"}
-              </h2>
-            </div>
-            {ownerPlayer && (
-              <div className="host-tag">
-                <span className="host-tag__icon">👑</span>
-                <div className="host-tag__text">
-                  <span className="label tiny">
-                    Хост
+            <div className="lobby-header">
+              <div className="lobby-header__top">
+                <span className="label">Комната</span>
+                <span className="lobby-header__count">
+                  {totalPlayers} игрок
+                  {totalPlayers === 1 ? "" : "ов"}
+                </span>
+              </div>
+              <div className="lobby-header__progress">
+                <div className="lobby-header__progress-row">
+                  <span className="lobby-header__progress-label">
+                    Готовность
                   </span>
-                  <span className="host-tag__name">
-                    {playerDisplayName(ownerPlayer)}
+                  <span className="lobby-header__progress-value">
+                    {readyCount}/{readyTarget}
                   </span>
                 </div>
+                <div className="progress progress--inline">
+                  <div
+                    className="progress__fill"
+                    style={{
+                      width: `${Math.max(6, readyPercent)}%`,
+                    }}
+                  />
+                </div>
               </div>
+            </div>
+            {isOwner && (
+              <button
+                type="button"
+                className="icon-btn icon-btn--ghost lobby-settings-btn"
+                aria-label="Настройки комнаты"
+              >
+                ⚙️
+              </button>
             )}
           </div>
 
           <div className="lobby-stats">
             <div className="lobby-stat">
-              <span className="lobby-stat__label">
-                Готовность
-              </span>
-              <span className="lobby-stat__value">
-                {readyCount}/{readyTarget}
-              </span>
-              <div className="progress">
-                <div
-                  className="progress__fill"
-                  style={{
-                    width: `${Math.max(6, readyPercent)}%`,
-                  }}
-                />
-              </div>
-            </div>
-            <div className="lobby-stat">
-              <span className="lobby-stat__label">
-                Банк на игрока
-              </span>
+              <span className="lobby-stat__label">Банк на игрока</span>
               <span className="lobby-stat__value">
                 {moneyFormatter.format(initialBank)}$
               </span>
             </div>
             <div className="lobby-stat">
-              <span className="lobby-stat__label">
-                Лотов
-              </span>
+              <span className="lobby-stat__label">Лотов</span>
               <span className="lobby-stat__value">
                 {slotMax != null ? slotMax : "—"}
               </span>
+            </div>
+            <div className="lobby-stat">
+              <span className="lobby-stat__label">Игроков</span>
+              <span className="lobby-stat__value">{totalPlayers}</span>
             </div>
           </div>
 
@@ -1072,9 +1032,7 @@ export default function Auction({
           <div className="card-row card-row--tight">
             <div>
               <span className="label">Игроки</span>
-              <h3 className="title-small">
-                Состав лобби
-              </h3>
+              <h3 className="title-small">Состав лобби</h3>
             </div>
             <span className="pill pill--tiny">
               {readyCount}/{readyTarget} готовы
@@ -1083,10 +1041,8 @@ export default function Auction({
           <div className="lobby-players-list">
             {sortedPlayers.map((p) => {
               const name = playerDisplayName(p);
-              const avatar =
-                p.user?.photo_url || p.user?.avatar || null;
-              const isHost =
-                ownerPlayer?.id === p.id;
+              const avatar = p.user?.photo_url || p.user?.avatar || null;
+              const isHost = ownerPlayer?.id === p.id;
               return (
                 <div
                   key={p.id}
@@ -1099,21 +1055,10 @@ export default function Auction({
                     .join(" ")}
                 >
                   <div className="lobby-player__avatar">
-                    {avatar ? (
-                      <img src={avatar} alt={name} />
-                    ) : (
-                      name.slice(0, 1)
-                    )}
+                    {avatar ? <img src={avatar} alt={name} /> : name.slice(0, 1)}
                   </div>
                   <div className="lobby-player__body">
-                    <div className="lobby-player__name">
-                      {name}
-                      {isHost && (
-                        <span className="chip chip--host">
-                          Хост
-                        </span>
-                      )}
-                    </div>
+                    <div className="lobby-player__name">{name}</div>
                     <div className="lobby-player__tags">
                       {p.ready ? "готов" : "ожидаем"}
                     </div>
@@ -1121,12 +1066,19 @@ export default function Auction({
                   <div className="lobby-player__status">
                     <span
                       className={
-                        p.ready
-                          ? "status-dot status-dot--ok"
-                          : "status-dot"
+                        p.ready ? "status-dot status-dot--ok" : "status-dot"
                       }
                     />
                   </div>
+                  {isHost && (
+                    <span
+                      className="chip chip--host"
+                      aria-label="Хост комнаты"
+                      title="Хост комнаты"
+                    >
+                      👑
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -1134,11 +1086,6 @@ export default function Auction({
         </section>
 
         <div className="bottom-bar bottom-bar--lobby">
-          <div className="bottom-bar__meta">
-            <strong>
-              {readyCount}/{readyTarget}
-            </strong>
-          </div>
           <button
             type="button"
             className="btn btn--primary btn--compact"
@@ -1156,8 +1103,7 @@ export default function Auction({
     if (!showGame) return null;
 
     const paused = !!auctionState?.paused;
-    const growth =
-      auctionState?.currentStep || auctionState?.growth || 0;
+    const growth = auctionState?.currentStep || auctionState?.growth || 0;
 
     return (
       <div className="screen-body game-layout">
@@ -1171,9 +1117,7 @@ export default function Auction({
             </div>
             <div className="lot-index">
               <span className="lot-index__num">
-                {slotIndex != null
-                  ? `#${slotIndex}`
-                  : "—"}
+                {slotIndex != null ? `#${slotIndex}` : "—"}
               </span>
               <span className="lot-index__suffix">
                 {slotMax ? `из ${slotMax}` : ""}
@@ -1183,59 +1127,39 @@ export default function Auction({
 
           <div className="lot-meta-row">
             <div className="lot-meta">
-              <span className="lot-meta__label">
-                Тип
-              </span>
+              <span className="lot-meta__label">Тип</span>
               <span className="lot-meta__value">
-                {currentSlot?.type === "lootbox"
-                  ? "кейс 🎁"
-                  : "лот 🎯"}
+                {currentSlot?.type === "lootbox" ? "кейс 🎁" : "лот 🎯"}
               </span>
             </div>
             <div className="lot-meta">
-              <span className="lot-meta__label">
-                Базовая ставка
-              </span>
+              <span className="lot-meta__label">Базовая ставка</span>
               <span className="lot-meta__value">
                 {moneyFormatter.format(baseBid || 0)}$
               </span>
             </div>
             <div className="lot-meta">
-              <span className="lot-meta__label">
-                Шаг
-              </span>
+              <span className="lot-meta__label">Шаг</span>
               <span className="lot-meta__value">
-                {growth > 0
-                  ? `+${moneyFormatter.format(
-                      growth
-                    )}$`
-                  : "—"}
+                {growth > 0 ? `+${moneyFormatter.format(growth)}$` : "—"}
               </span>
             </div>
           </div>
 
           <div className="lot-balance-row">
             <div className="lot-balance-card">
-              <span className="lot-balance-card__label">
-                Ваша ставка
-              </span>
+              <span className="lot-balance-card__label">Ваша ставка</span>
               <span className="lot-balance-card__value">
                 {myRoundBid != null
-                  ? `${moneyFormatter.format(
-                      myRoundBid
-                    )}$`
+                  ? `${moneyFormatter.format(myRoundBid)}$`
                   : "—"}
               </span>
             </div>
             <div className="lot-balance-card">
-              <span className="lot-balance-card__label">
-                Ваш баланс
-              </span>
+              <span className="lot-balance-card__label">Ваш баланс</span>
               <span className="lot-balance-card__value">
                 {myBalance != null
-                  ? `${moneyFormatter.format(
-                      myBalance
-                    )}$`
+                  ? `${moneyFormatter.format(myBalance)}$`
                   : "—"}
               </span>
             </div>
@@ -1260,9 +1184,7 @@ export default function Auction({
               {secsLeft != null ? secsLeft : "—"}
             </div>
             <div className="timer__body">
-              <span className="timer__label">
-                Время на ход
-              </span>
+              <span className="timer__label">Время на ход</span>
               <span className="timer__text">
                 {paused
                   ? "Пауза"
@@ -1285,29 +1207,20 @@ export default function Auction({
 
           {lastFinishedSlot && (
             <div className="lot-last">
-              <span className="label tiny">
-                Прошлый лот
-              </span>
+              <span className="label tiny">Прошлый лот</span>
               <div className="lot-last__content">
                 <span className="lot-last__name">
-                  #{(lastFinishedSlot.index ?? 0) + 1} ·{" "}
-                  {lastFinishedSlot.name}
+                  #{(lastFinishedSlot.index ?? 0) + 1} · {lastFinishedSlot.name}
                 </span>
                 <span className="lot-last__meta">
-                  {lastFinishedSlot.winnerPlayerId !=
-                  null
+                  {lastFinishedSlot.winnerPlayerId != null
                     ? `${playerDisplayName(
                         safePlayers.find(
-                          (p) =>
-                            p.id ===
-                            lastFinishedSlot.winnerPlayerId
+                          (p) => p.id === lastFinishedSlot.winnerPlayerId
                         )
                       )} · `
                     : ""}
-                  {moneyFormatter.format(
-                    lastFinishedSlot.winBid || 0
-                  )}
-                  $
+                  {moneyFormatter.format(lastFinishedSlot.winBid || 0)}$
                 </span>
               </div>
             </div>
@@ -1316,16 +1229,10 @@ export default function Auction({
 
         <section className="card card--bid">
           <div className="card-row card-row--tight">
-            <span className="label">
-              Ставка
-            </span>
+            <span className="label">Ставка</span>
             <span className="muted">
               Баланс:{" "}
-              {myBalance != null
-                ? `${moneyFormatter.format(
-                    myBalance
-                  )}$`
-                : "—"}
+              {myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "—"}
             </span>
           </div>
 
@@ -1336,9 +1243,7 @@ export default function Auction({
                 type="button"
                 className="pill pill--ghost"
                 onClick={() => setBidRelative(step)}
-                disabled={
-                  myBalance == null || myBalance <= 0
-                }
+                disabled={myBalance == null || myBalance <= 0}
               >
                 +{moneyFormatter.format(step)}
               </button>
@@ -1346,12 +1251,8 @@ export default function Auction({
             <button
               type="button"
               className="pill pill--ghost"
-              onClick={() =>
-                setBidRelative(myBalance || 0)
-              }
-              disabled={
-                myBalance == null || myBalance <= 0
-              }
+              onClick={() => setBidRelative(myBalance || 0)}
+              disabled={myBalance == null || myBalance <= 0}
             >
               All-in
             </button>
@@ -1371,9 +1272,7 @@ export default function Auction({
               placeholder="Сумма ставки"
               value={myBid}
               onChange={(e) =>
-                setMyBid(
-                  e.target.value.replace(/[^\d]/g, "")
-                )
+                setMyBid(e.target.value.replace(/[^\d]/g, ""))
               }
             />
           </div>
@@ -1392,9 +1291,7 @@ export default function Auction({
               onClick={() => sendBid()}
               disabled={busyBid || myBalance == null}
             >
-              {busyBid
-                ? "Отправляем..."
-                : "Сделать ставку"}
+              {busyBid ? "Отправляем..." : "Сделать ставку"}
             </button>
           </div>
 
@@ -1403,9 +1300,7 @@ export default function Auction({
               <button
                 type="button"
                 className="pill pill--ghost"
-                onClick={
-                  paused ? resumeAuction : pauseAuction
-                }
+                onClick={paused ? resumeAuction : pauseAuction}
               >
                 {paused ? "Продолжить" : "Пауза"}
               </button>
@@ -1428,11 +1323,7 @@ export default function Auction({
 
     const sorted = safePlayers
       .slice()
-      .sort(
-        (a, b) =>
-          (netWorths[b.id] ?? 0) -
-          (netWorths[a.id] ?? 0)
-      );
+      .sort((a, b) => (netWorths[b.id] ?? 0) - (netWorths[a.id] ?? 0));
 
     return (
       <div className="screen-body results-layout">
@@ -1447,12 +1338,10 @@ export default function Auction({
           <div className="results-list">
             {sorted.map((p) => {
               const name = playerDisplayName(p);
-              const avatar =
-                p.user?.photo_url || p.user?.avatar || null;
+              const avatar = p.user?.photo_url || p.user?.avatar || null;
               const balance = balances[p.id] ?? 0;
               const basketValue = basketTotals[p.id] ?? 0;
-              const netWorth =
-                netWorths[p.id] ?? balance + basketValue;
+              const netWorth = netWorths[p.id] ?? balance + basketValue;
               const isWinner = winners.includes(p.id);
               return (
                 <div
@@ -1473,12 +1362,9 @@ export default function Auction({
                       )}
                     </div>
                     <div className="result-row__info">
-                      <span className="result-row__name">
-                        {name}
-                      </span>
+                      <span className="result-row__name">{name}</span>
                       <span className="result-row__money">
-                        {moneyFormatter.format(netWorth)}
-                        $
+                        {moneyFormatter.format(netWorth)}$
                       </span>
                       <span className="result-row__meta muted">
                         Баланс {moneyFormatter.format(balance)}$ · Покупки{" "}
@@ -1487,9 +1373,7 @@ export default function Auction({
                     </div>
                   </div>
                   {isWinner && (
-                    <span className="chip chip--winner">
-                      Победитель
-                    </span>
+                    <span className="chip chip--winner">Победитель</span>
                   )}
                 </div>
               );
@@ -1522,21 +1406,12 @@ export default function Auction({
   const renderToastStack = () => {
     if (!toastStack.length) return null;
     return (
-      <div
-        className="toast-stack"
-        role="status"
-        aria-live="polite"
-      >
+      <div className="toast-stack" role="status" aria-live="polite">
         <AnimatePresence initial={false}>
           {toastStack.map((item) => (
             <motion.div
               key={item.id}
-              className={[
-                "toast",
-                item.type === "error"
-                  ? "toast--error"
-                  : "",
-              ]
+              className={["toast", item.type === "error" ? "toast--error" : ""]
                 .filter(Boolean)
                 .join(" ")}
               initial={{ opacity: 0, y: -8, scale: 0.96 }}
@@ -1544,9 +1419,7 @@ export default function Auction({
               exit={{ opacity: 0, y: -8, scale: 0.96 }}
               transition={{ duration: 0.18 }}
             >
-              <span className="toast__text">
-                {item.text}
-              </span>
+              <span className="toast__text">{item.text}</span>
               <button
                 type="button"
                 className="toast__close"
