@@ -32,22 +32,9 @@
 
   --transition-fast: 0.16s ease-out;
   --transition-medium: 0.24s ease-out;
-}
 
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #e5edff;
-    --bg-elevated: #f1f5ff;
-    --bg-soft: rgba(241, 245, 255, 0.92);
-    --card: #ffffff;
-    --card-soft: #f9fafb;
-    --border-subtle: rgba(148, 163, 184, 0.4);
-    --border-strong: rgba(148, 163, 184, 0.9);
-    --text: #111827;
-    --muted: #6b7280;
-    --shadow-soft: 0 16px 34px rgba(15, 23, 42, 0.22);
-    --shadow-hard: 0 30px 70px rgba(15, 23, 42, 0.3);
-  }
+  /* Force dark theme so text stays readable on dark backgrounds across devices */
+  color-scheme: dark;
 }
 
 /* RESET */
