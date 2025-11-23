@@ -1427,17 +1427,17 @@ export default function Auction({
 
     return (
       <div className="screen-body game-layout">
-        <section className="lot-hero card card--lot" aria-label="������� ���">
+        <section className="lot-hero card card--lot" aria-label="Текущий лот">
           <div className="lot-hero__index">
             <span className="lot-index__num">
               {slotIndex != null ? `#${slotIndex}` : "-"}
             </span>
             <span className="lot-index__suffix">
-              {slotMax ? `�� ${slotMax}` : ""}
+              {slotMax ? `из ${slotMax}` : ""}
             </span>
           </div>
           <div className="lot-hero__name">
-            {currentSlot?.name || "��� ��������"}
+            {currentSlot?.name || "Нет названия"}
           </div>
           <div className="lot-hero__emoji-wrap">
             <AnimatePresence initial={false} mode="popLayout">
@@ -1469,7 +1469,7 @@ export default function Auction({
 
           <div className="bid-stats">
             <div className="bid-stat">
-              <span className="bid-stat__label">���� ������</span>
+              <span className="bid-stat__label">Ваша ставка</span>
               <span className="bid-stat__value">
                 {myRoundBid != null
                   ? `${moneyFormatter.format(myRoundBid)}$`
@@ -1477,7 +1477,7 @@ export default function Auction({
               </span>
             </div>
             <div className="bid-stat">
-              <span className="bid-stat__label">������</span>
+              <span className="bid-stat__label">Баланс</span>
               <span className="bid-stat__value">
                 {myBalance != null
                   ? `${moneyFormatter.format(myBalance)}$`
