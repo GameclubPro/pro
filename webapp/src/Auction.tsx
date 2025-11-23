@@ -208,6 +208,12 @@ export default function Auction({
     return `База ${moneyFormatter.format(baseBid)}$`;
   }, [baseBid, leadingBid?.amount, leadingPlayerName, moneyFormatter]);
 
+  const secsLeft = useMemo(() => {
+    if (!deadlineAtRef.current) return null;
+    const diff = Math.ceil((deadlineAtRef.current - Date.now()) / 1000);
+    return Math.max(0, diff);
+  }, [nowTick]);
+
   const heroCountdown = secsLeft != null && secsLeft <= 3 ? secsLeft : null;
 
   const slotMax = useMemo(() => {
@@ -392,12 +398,6 @@ export default function Auction({
       0
     );
   }, [netWorths]);
-
-  const secsLeft = useMemo(() => {
-    if (!deadlineAtRef.current) return null;
-    const diff = Math.ceil((deadlineAtRef.current - Date.now()) / 1000);
-    return Math.max(0, diff);
-  }, [nowTick]);
 
   const showLanding = !room;
   const showLobby = !showLanding && phase === "lobby";
