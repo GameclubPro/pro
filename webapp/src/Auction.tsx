@@ -7,6 +7,11 @@ const INITIAL_BANK = 1_000_000;
 const CODE_ALPHABET_RE = /[^A-HJKMNPQRSTUVWXYZ23456789]/g;
 const BID_PRESETS = [1_000, 5_000, 10_000, 25_000, 50_000];
 const AUCTION_GAME = "AUCTION";
+const MIN_SLOTS = 10;
+const MAX_SLOTS = 50;
+const MIN_BUDGET = 100_000;
+const MAX_BUDGET = 5_000_000;
+const BUDGET_STEP = 50_000;
 
 const PHASE_LABEL: Record<string, string> = {
   lobby: "Лобби",
@@ -112,6 +117,11 @@ export default function Auction({
   const [settingsSlots, setSettingsSlots] = useState<number>(30);
   const [settingsBudget, setSettingsBudget] = useState<number>(INITIAL_BANK);
   const [savingSettings, setSavingSettings] = useState(false);
+  const [settingsDirty, setSettingsDirty] = useState(false);
+  const lastSyncedSettingsRef = useRef({
+    slots: settingsSlots,
+    budget: settingsBudget,
+  });
 
   const deadlineAtRef = useRef<number | null>(null);
   const [nowTick, setNowTick] = useState(0);
@@ -174,6 +184,24 @@ export default function Auction({
   ]);
 
   const initialBank = auctionState?.rules?.initialBalance || INITIAL_BANK;
+  const slotsProgress = useMemo(
+    () =>
+      ((clamp(settingsSlots, MIN_SLOTS, MAX_SLOTS) - MIN_SLOTS) /
+        (MAX_SLOTS - MIN_SLOTS)) *
+      100,
+    [settingsSlots]
+  );
+  const budgetProgress = useMemo(
+    () =>
+      ((clamp(settingsBudget, MIN_BUDGET, MAX_BUDGET) - MIN_BUDGET) /
+        (MAX_BUDGET - MIN_BUDGET)) *
+      100,
+    [settingsBudget]
+  );
+  const settingsInSync =
+    !settingsDirty &&
+    settingsSlots === lastSyncedSettingsRef.current.slots &&
+    settingsBudget === lastSyncedSettingsRef.current.budget;
 
   useEffect(() => {
     if (settingsOpen) return;
@@ -183,13 +211,61 @@ export default function Auction({
         : Array.isArray(auctionState?.slots)
         ? auctionState.slots.length || 30
         : 30;
-    setSettingsSlots(nextSlots);
+    setSettingsSlots(clamp(nextSlots, MIN_SLOTS, MAX_SLOTS));
   }, [slotMax, auctionState?.slots, settingsOpen]);
 
   useEffect(() => {
     if (settingsOpen) return;
-    setSettingsBudget(initialBank || INITIAL_BANK);
+    setSettingsBudget(
+      clamp(initialBank || INITIAL_BANK, MIN_BUDGET, MAX_BUDGET)
+    );
   }, [initialBank, settingsOpen]);
+
+  useEffect(() => {
+    const nextSlots = clamp(
+      Math.round(
+        Number(
+          slotMax ??
+            (Array.isArray(auctionState?.slots)
+              ? auctionState.slots.length
+              : null) ??
+            lastSyncedSettingsRef.current.slots ??
+            MIN_SLOTS
+        ) || MIN_SLOTS
+      ),
+      MIN_SLOTS,
+      MAX_SLOTS
+    );
+    const nextBudget = clamp(
+      Math.round(
+        Number(
+          auctionState?.rules?.initialBalance ??
+            initialBank ??
+            lastSyncedSettingsRef.current.budget ??
+            MIN_BUDGET
+        ) || MIN_BUDGET
+      ),
+      MIN_BUDGET,
+      MAX_BUDGET
+    );
+    const { slots: prevSlots, budget: prevBudget } =
+      lastSyncedSettingsRef.current;
+    if (prevSlots !== nextSlots || prevBudget !== nextBudget) {
+      lastSyncedSettingsRef.current = { slots: nextSlots, budget: nextBudget };
+      if (!settingsOpen || !settingsDirty) {
+        setSettingsSlots(nextSlots);
+        setSettingsBudget(nextBudget);
+        setSettingsDirty(false);
+      }
+    }
+  }, [
+    auctionState?.rules?.initialBalance,
+    auctionState?.slots,
+    initialBank,
+    slotMax,
+    settingsDirty,
+    settingsOpen,
+  ]);
 
   const safePlayers = useMemo(
     () => ensureArray<any>(players).filter(Boolean),
@@ -739,16 +815,47 @@ export default function Auction({
     });
   }
 
+  const openSettings = useCallback(() => {
+    const { slots, budget } = lastSyncedSettingsRef.current;
+    setSettingsSlots(slots);
+    setSettingsBudget(budget);
+    setSettingsDirty(false);
+    setSettingsOpen(true);
+  }, []);
+
+  const closeSettings = useCallback(() => {
+    const { slots, budget } = lastSyncedSettingsRef.current;
+    setSettingsSlots(slots);
+    setSettingsBudget(budget);
+    setSettingsDirty(false);
+    setSettingsOpen(false);
+  }, []);
+
+  const handleSlotsChange = useCallback((value: number) => {
+    setSettingsSlots(clamp(Math.round(value), MIN_SLOTS, MAX_SLOTS));
+    setSettingsDirty(true);
+  }, []);
+
+  const handleBudgetChange = useCallback((value: number) => {
+    const snapped = Math.round(value / BUDGET_STEP) * BUDGET_STEP;
+    setSettingsBudget(clamp(snapped, MIN_BUDGET, MAX_BUDGET));
+    setSettingsDirty(true);
+  }, []);
+
   const saveSettings = useCallback(() => {
     if (!socket || !room || !isOwner) {
       pushError("Settings are unavailable right now.");
       return;
     }
-    const nextSlots = clamp(Math.round(Number(settingsSlots) || 0), 10, 50);
+    const nextSlots = clamp(
+      Math.round(Number(settingsSlots) || 0),
+      MIN_SLOTS,
+      MAX_SLOTS
+    );
     const nextBudget = clamp(
       Math.round(Number(settingsBudget) || 0),
-      100_000,
-      5_000_000
+      MIN_BUDGET,
+      MAX_BUDGET
     );
     setSettingsSlots(nextSlots);
     setSettingsBudget(nextBudget);
@@ -776,6 +883,11 @@ export default function Auction({
             initialBalance: nextBudget,
           },
         }));
+        lastSyncedSettingsRef.current = {
+          slots: nextSlots,
+          budget: nextBudget,
+        };
+        setSettingsDirty(false);
         pushToast({ text: "Settings updated" });
         setSettingsOpen(false);
       }
@@ -1156,7 +1268,7 @@ export default function Auction({
                 type="button"
                 className="icon-btn icon-btn--ghost lobby-settings"
                 aria-label="Настройки комнаты"
-                onClick={() => setSettingsOpen(true)}
+                onClick={openSettings}
               >
                 ⚙️
               </button>
@@ -1578,7 +1690,10 @@ export default function Auction({
   const renderSettingsModal = () => {
     if (!settingsOpen) return null;
     return (
-      <div className="modal-backdrop" onClick={() => (!savingSettings ? setSettingsOpen(false) : null)}>
+      <div
+        className="modal-backdrop"
+        onClick={() => (!savingSettings ? closeSettings() : null)}
+      >
         <div
           className="modal"
           onClick={(e) => e.stopPropagation()}
@@ -1587,51 +1702,121 @@ export default function Auction({
         >
           <div className="modal__head">
             <div>
-              <h3 className="modal__title">Auction settings</h3>
-              <p className="modal__subtitle">Tune lots count and starting bank for the room.</p>
+              <h3 className="modal__title">Неоновые настройки</h3>
+              <p className="modal__subtitle">
+                Тёмная тема с неоновыми ползунками. После сохранения сервер синхронизирует правила игры.
+              </p>
             </div>
             <button
               type="button"
               className="icon-btn icon-btn--ghost"
               aria-label="Close"
-              onClick={() => setSettingsOpen(false)}
+              onClick={closeSettings}
               disabled={savingSettings}
             >
               X
             </button>
           </div>
-          <div className="modal__fields">
-            <label className="field">
-              <span className="field-label">Lots count</span>
-              <input
-                className="text-input"
-                type="number"
-                min={10}
-                max={50}
-                value={settingsSlots}
-                onChange={(e) => setSettingsSlots(Number(e.target.value) || 0)}
-              />
-              <span className="muted">From 10 to 50</span>
-            </label>
-            <label className="field">
-              <span className="field-label">Player budget</span>
-              <input
-                className="text-input"
-                type="number"
-                min={100_000}
-                max={5_000_000}
-                step={50_000}
-                value={settingsBudget}
-                onChange={(e) => setSettingsBudget(Number(e.target.value) || 0)}
-              />
-              <span className="muted">From 100 000 to 5 000 000</span>
-            </label>
+          <div className="settings-panel">
+            <div className="settings-sync">
+              <div>
+                <p className="settings-sync__label">Синхронизация</p>
+                <p className="settings-sync__hint">
+                  Значения подтягиваются с сервера и применяются в игровой логике сразу после сохранения.
+                </p>
+              </div>
+              <span
+                className={`sync-pill ${
+                  settingsInSync ? "sync-pill--ok" : "sync-pill--pending"
+                }`}
+              >
+                {settingsInSync ? "Синхронизировано" : "Есть черновик"}
+              </span>
+            </div>
+
+            <div className="settings-grid">
+              <label className="slider-field" htmlFor="auction-slots">
+                <div className="slider-field__top">
+                  <div>
+                    <span className="field-label">Количество лотов</span>
+                    <span className="slider-field__hint">
+                      Управляет длительностью партии и скоростью закупки.
+                    </span>
+                  </div>
+                  <span className="slider-field__value">{settingsSlots}</span>
+                </div>
+                <div className="slider-field__control">
+                  <div className="slider-field__rail">
+                    <div
+                      className="slider-field__progress"
+                      style={{ width: `${slotsProgress}%` }}
+                    />
+                  </div>
+                  <input
+                    id="auction-slots"
+                    className="slider-field__input"
+                    type="range"
+                    min={MIN_SLOTS}
+                    max={MAX_SLOTS}
+                    step={1}
+                    value={settingsSlots}
+                    onChange={(e) =>
+                      handleSlotsChange(Number(e.target.value) || MIN_SLOTS)
+                    }
+                    style={{ ["--progress" as string]: `${slotsProgress}%` }}
+                  />
+                </div>
+                <div className="slider-field__footer">
+                  <span>{MIN_SLOTS}</span>
+                  <span>{MAX_SLOTS}</span>
+                </div>
+              </label>
+
+              <label className="slider-field" htmlFor="auction-budget">
+                <div className="slider-field__top">
+                  <div>
+                    <span className="field-label">Бюджет игрока</span>
+                    <span className="slider-field__hint">
+                      Начальный банк, синхронизируется с сервером и балансами.
+                    </span>
+                  </div>
+                  <span className="slider-field__value">
+                    {moneyFormatter.format(settingsBudget)}$
+                  </span>
+                </div>
+                <div className="slider-field__control">
+                  <div className="slider-field__rail">
+                    <div
+                      className="slider-field__progress"
+                      style={{ width: `${budgetProgress}%` }}
+                    />
+                  </div>
+                  <input
+                    id="auction-budget"
+                    className="slider-field__input"
+                    type="range"
+                    min={MIN_BUDGET}
+                    max={MAX_BUDGET}
+                    step={BUDGET_STEP}
+                    value={settingsBudget}
+                    onChange={(e) =>
+                      handleBudgetChange(Number(e.target.value) || MIN_BUDGET)
+                    }
+                    style={{ ["--progress" as string]: `${budgetProgress}%` }}
+                  />
+                </div>
+                <div className="slider-field__footer">
+                  <span>{moneyFormatter.format(MIN_BUDGET)}$</span>
+                  <span>{moneyFormatter.format(MAX_BUDGET)}$</span>
+                </div>
+              </label>
+            </div>
           </div>
           <div className="modal__actions">
             <button
               type="button"
               className="btn btn--ghost btn--compact"
-              onClick={() => setSettingsOpen(false)}
+              onClick={closeSettings}
               disabled={savingSettings}
             >
               Cancel
