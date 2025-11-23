@@ -167,6 +167,12 @@ export default function Auction({
     currentSlot && typeof currentSlot.index === "number"
       ? currentSlot.index + 1
       : null;
+  const lotEmoji = useMemo(() => {
+    const name = currentSlot?.name || "";
+    const match = name.match(/([\u{1F300}-\u{1FAFF}])/u);
+    if (match?.[0]) return match[0];
+    return currentSlot?.type === "lootbox" ? "🎁" : "🏆";
+  }, [currentSlot?.name, currentSlot?.type]);
 
   const slotMax = useMemo(() => {
     const raw =
@@ -1448,36 +1454,12 @@ export default function Auction({
             </div>
           </div>
 
-          <div className="lot-balance-row">
-            <div className="lot-balance-card">
-              <span className="lot-balance-card__label">Ваша ставка</span>
-              <span className="lot-balance-card__value">
-                {myRoundBid != null
-                  ? `${moneyFormatter.format(myRoundBid)}$`
-                  : "—"}
-              </span>
+          <div className="lot-hero" aria-label="Текущий лот">
+            <div className="lot-hero__name">
+              {currentSlot?.name || "Без названия"}
             </div>
-            <div className="lot-balance-card">
-              <span className="lot-balance-card__label">Ваш баланс</span>
-              <span className="lot-balance-card__value">
-                {myBalance != null
-                  ? `${moneyFormatter.format(myBalance)}$`
-                  : "—"}
-              </span>
-            </div>
-            <div className="lot-balance-card">
-              <span className="lot-balance-card__label">
-                Состояние (баланс + покупки)
-              </span>
-              <span className="lot-balance-card__value">
-                {myNetWorth != null
-                  ? `${moneyFormatter.format(myNetWorth)}$`
-                  : "—"}
-              </span>
-              <span className="muted">
-                Баланс {moneyFormatter.format(myBalance ?? 0)}$ · Покупки{" "}
-                {moneyFormatter.format(myBasketTotal ?? 0)}$
-              </span>
+            <div className="lot-hero__emoji" aria-hidden="true">
+              {lotEmoji}
             </div>
           </div>
 
@@ -1532,12 +1514,36 @@ export default function Auction({
         <section className="card card--bid">
           <div className="card-row card-row--tight">
             <span className="label">Ставка</span>
-            <span className="muted">
-              Баланс:{" "}
-              {myBalance != null
-                ? `${moneyFormatter.format(myBalance)}$`
-                : "—"}
-            </span>
+          </div>
+
+          <div className="bid-stats">
+            <div className="bid-stat">
+              <span className="bid-stat__label">Ваша ставка</span>
+              <span className="bid-stat__value">
+                {myRoundBid != null
+                  ? `${moneyFormatter.format(myRoundBid)}$`
+                  : "—"}
+              </span>
+            </div>
+            <div className="bid-stat">
+              <span className="bid-stat__label">Баланс</span>
+              <span className="bid-stat__value">
+                {myBalance != null
+                  ? `${moneyFormatter.format(myBalance)}$`
+                  : "—"}
+              </span>
+            </div>
+            <div className="bid-stat">
+              <span className="bid-stat__label">Состояние</span>
+              <span className="bid-stat__value">
+                {myNetWorth != null
+                  ? `${moneyFormatter.format(myNetWorth)}$`
+                  : "—"}
+              </span>
+              <span className="bid-stat__hint">
+                Покупки {moneyFormatter.format(myBasketTotal ?? 0)}$
+              </span>
+            </div>
           </div>
 
           <div className="quick-bids">

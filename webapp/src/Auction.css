@@ -1044,30 +1044,29 @@ textarea {
   font-weight: 600;
 }
 
-.lot-balance-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 8px;
-}
-
-.lot-balance-card {
-  padding: 8px 10px;
+.lot-hero {
+  margin: 10px 0 6px;
+  padding: 10px 12px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
-  background: rgba(15, 23, 42, 0.98);
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+  background: radial-gradient(circle at 40% 20%, rgba(56, 189, 248, 0.12), transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(168, 85, 247, 0.12), transparent 40%),
+    rgba(15, 23, 42, 0.96);
+  display: grid;
+  justify-items: center;
+  gap: 6px;
 }
 
-.lot-balance-card__label {
-  font-size: 11px;
-  color: var(--muted);
+.lot-hero__name {
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
 }
 
-.lot-balance-card__value {
-  font-size: 15px;
-  font-weight: 700;
+.lot-hero__emoji {
+  font-size: 72px;
+  line-height: 1;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.4));
 }
 
 .timer {
@@ -1139,6 +1138,39 @@ textarea {
 
 .card--bid {
   gap: 10px;
+}
+
+.bid-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.bid-stat {
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: rgba(15, 23, 42, 0.96);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bid-stat__label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.bid-stat__value {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.bid-stat__hint {
+  font-size: 11px;
+  color: var(--muted);
 }
 
 .quick-bids {
@@ -1328,6 +1360,50 @@ button:active:not(:disabled) {
 
 /* RESPONSIVE */
 
+@media (max-width: 540px) {
+  .card--lot {
+    text-align: center;
+  }
+
+  .card--lot .card-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .lot-index {
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lot-hero__emoji {
+    font-size: 96px;
+  }
+
+  .lot-meta-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bid-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bid-stats .bid-stat:last-child {
+    grid-column: span 2;
+  }
+
+  .quick-bids {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bid-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 400px) {
   .auction-app {
     padding-inline: 10px;
@@ -1340,10 +1416,6 @@ button:active:not(:disabled) {
 
   .lot-meta-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .lot-balance-row {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .card {
