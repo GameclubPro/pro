@@ -997,7 +997,7 @@ textarea {
 }
 
 .card--lot {
-  padding-bottom: 10px;
+  padding-bottom: 0;
 }
 
 .lot-index {
@@ -1025,16 +1025,16 @@ textarea {
 }
 
 .lot-hero {
-  margin: 10px 0 6px;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border-subtle);
   background: radial-gradient(circle at 40% 20%, rgba(56, 189, 248, 0.12), transparent 50%),
     radial-gradient(circle at 70% 70%, rgba(168, 85, 247, 0.12), transparent 40%),
     rgba(15, 23, 42, 0.96);
   display: grid;
   justify-items: center;
-  gap: 8px;
+  gap: 10px;
   position: relative;
 }
 
@@ -1048,6 +1048,8 @@ textarea {
   position: relative;
   display: grid;
   place-items: center;
+  width: 100%;
+  min-height: 180px;
 }
 
 .lot-hero__emoji {
@@ -1068,14 +1070,17 @@ textarea {
 
 .lot-hero__timer {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  display: grid;
+  place-items: center;
   font-size: 120px;
   font-weight: 800;
   color: rgba(255, 255, 255, 0.6);
   text-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
   pointer-events: none;
+  line-height: 1;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .lot-last {
@@ -1114,7 +1119,7 @@ textarea {
 
 .bid-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -1354,12 +1359,12 @@ button:active:not(:disabled) {
     font-size: 96px;
   }
 
-  .bid-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .lot-hero__emoji-wrap {
+    min-height: 150px;
   }
 
-  .bid-stats .bid-stat:last-child {
-    grid-column: span 2;
+  .bid-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .quick-bids {

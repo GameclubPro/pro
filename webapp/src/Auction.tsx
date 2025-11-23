@@ -124,7 +124,7 @@ export default function Auction({
   });
 
   const deadlineAtRef = useRef<number | null>(null);
-  const [nowTick, setNowTick] = useState(0);
+  const [nowTick, setNowTick] = useState(() => Date.now());
   const toastTimersRef = useRef<Map<string, any>>(new Map());
   const lastSubscribedCodeRef = useRef<string | null>(null);
   const lastSubscriptionSocketIdRef = useRef<string | null>(null);
@@ -210,11 +210,12 @@ export default function Auction({
 
   const secsLeft = useMemo(() => {
     if (!deadlineAtRef.current) return null;
-    const diff = Math.ceil((deadlineAtRef.current - Date.now()) / 1000);
+    const diff = Math.ceil((deadlineAtRef.current - nowTick) / 1000);
     return Math.max(0, diff);
   }, [nowTick]);
 
-  const heroCountdown = secsLeft != null && secsLeft <= 3 ? secsLeft : null;
+  const heroCountdown =
+    secsLeft != null && secsLeft > 0 && secsLeft <= 3 ? secsLeft : null;
 
   const slotMax = useMemo(() => {
     const raw =
@@ -332,18 +333,6 @@ export default function Auction({
     });
     return map;
   }, [auctionState?.netWorths, safePlayers, balances, basketTotals]);
-
-  const myBasketTotal =
-    myPlayerId != null ? basketTotals[myPlayerId] ?? 0 : null;
-
-  const myNetWorth = useMemo(() => {
-    if (myPlayerId == null) return null;
-    const from = netWorths[myPlayerId];
-    if (typeof from === "number") return from;
-    const balance = myBalance ?? 0;
-    const basket = basketTotals[myPlayerId] ?? 0;
-    return balance + basket;
-  }, [myBalance, myPlayerId, netWorths, basketTotals]);
 
   const currentPlayer = useMemo(
     () => safePlayers.find((p) => p.id === myPlayerId) || null,
@@ -533,13 +522,14 @@ export default function Auction({
       return;
     }
     deadlineAtRef.current = Date.now() + Math.max(0, ms);
+    setNowTick(Date.now());
   }, [auctionState?.timeLeftMs, phase]);
 
   useEffect(() => {
     if (!deadlineAtRef.current) return;
-    const timer = setInterval(() => {
-      setNowTick((tick) => (tick + 1) % 1_000_000);
-    }, 250);
+    const tick = () => setNowTick(Date.now());
+    tick();
+    const timer = setInterval(tick, 200);
     return () => clearInterval(timer);
   }, [auctionState?.phase, auctionState?.timeLeftMs]);
 
@@ -1437,42 +1427,40 @@ export default function Auction({
 
     return (
       <div className="screen-body game-layout">
-        <section className="card card--lot">
-          <div className="lot-hero" aria-label="Текущий лот">
-            <div className="lot-hero__index">
-              <span className="lot-index__num">
-                {slotIndex != null ? `#${slotIndex}` : "—"}
-              </span>
-              <span className="lot-index__suffix">
-                {slotMax ? `из ${slotMax}` : ""}
-              </span>
+        <section className="lot-hero card card--lot" aria-label="������� ���">
+          <div className="lot-hero__index">
+            <span className="lot-index__num">
+              {slotIndex != null ? `#${slotIndex}` : "-"}
+            </span>
+            <span className="lot-index__suffix">
+              {slotMax ? `�� ${slotMax}` : ""}
+            </span>
+          </div>
+          <div className="lot-hero__name">
+            {currentSlot?.name || "��� ��������"}
+          </div>
+          <div className="lot-hero__emoji-wrap">
+            <AnimatePresence initial={false} mode="popLayout">
+              {heroCountdown != null && (
+                <motion.div
+                  key={heroCountdown}
+                  className="lot-hero__timer"
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 0.65, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.1 }}
+                  transition={{ duration: 0.35 }}
+                  aria-hidden="true"
+                >
+                  {heroCountdown}
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <div className="lot-hero__emoji" aria-hidden="true">
+              {lotEmoji}
             </div>
-            <div className="lot-hero__name">
-              {currentSlot?.name || "Без названия"}
-            </div>
-            <div className="lot-hero__emoji-wrap">
-              <AnimatePresence initial={false} mode="popLayout">
-                {heroCountdown != null && (
-                  <motion.div
-                    key={heroCountdown}
-                    className="lot-hero__timer"
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 0.65, scale: 1 }}
-                    exit={{ opacity: 0, scale: 1.1 }}
-                    transition={{ duration: 0.35 }}
-                    aria-hidden="true"
-                  >
-                    {heroCountdown}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <div className="lot-hero__emoji" aria-hidden="true">
-                {lotEmoji}
-              </div>
-            </div>
-            <div className="lot-hero__bid">
-              {heroBidText}
-            </div>
+          </div>
+          <div className="lot-hero__bid">
+            {heroBidText}
           </div>
         </section>
 
@@ -1481,30 +1469,19 @@ export default function Auction({
 
           <div className="bid-stats">
             <div className="bid-stat">
-              <span className="bid-stat__label">Ваша ставка</span>
+              <span className="bid-stat__label">���� ������</span>
               <span className="bid-stat__value">
                 {myRoundBid != null
                   ? `${moneyFormatter.format(myRoundBid)}$`
-                  : "—"}
+                  : "-"}
               </span>
             </div>
             <div className="bid-stat">
-              <span className="bid-stat__label">Баланс</span>
+              <span className="bid-stat__label">������</span>
               <span className="bid-stat__value">
                 {myBalance != null
                   ? `${moneyFormatter.format(myBalance)}$`
-                  : "—"}
-              </span>
-            </div>
-            <div className="bid-stat">
-              <span className="bid-stat__label">Состояние</span>
-              <span className="bid-stat__value">
-                {myNetWorth != null
-                  ? `${moneyFormatter.format(myNetWorth)}$`
-                  : "—"}
-              </span>
-              <span className="bid-stat__hint">
-                Покупки {moneyFormatter.format(myBasketTotal ?? 0)}$
+                  : "-"}
               </span>
             </div>
           </div>
