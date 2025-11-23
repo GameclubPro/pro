@@ -28,7 +28,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
   const DEFAULT_RULES = Object.freeze({
     initialBalance: 1_000_000,
     maxSlots: 30,
-    timePerSlotSec: 9, // по умолчанию: счёт 3–2–1, каждые ~3 секунды
+    timePerSlotSec: 3, // per-slot countdown in seconds (3-2-1 by default)
   });
 
   const LOT_ITEMS = [
@@ -739,7 +739,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     const safeRules = {};
     const r = payload.rules || {};
     if (r.timePerSlotSec != null) {
-      const v = Math.max(5, Math.min(120, Number(r.timePerSlotSec) || 25));
+      const v = Math.max(3, Math.min(120, Number(r.timePerSlotSec) || 3));
       safeRules.timePerSlotSec = v;
     }
     if (r.maxSlots != null) {
@@ -868,4 +868,3 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
 }
 
 module.exports = { createAuctionEngine };
-

@@ -47,17 +47,6 @@ function ensurePlainObject<T extends object>(value: unknown): T {
   return EMPTY_OBJECT as T;
 }
 
-function formatSecondsShort(totalSeconds: number | null | undefined) {
-  if (totalSeconds == null || Number.isNaN(totalSeconds)) return "--";
-  const safe = Math.max(0, Math.floor(totalSeconds));
-  const minutes = Math.floor(safe / 60);
-  const seconds = safe % 60;
-  if (minutes > 0) {
-    return `${minutes}:${String(seconds).padStart(2, "0")}`;
-  }
-  return `${seconds}s`;
-}
-
 const SERVER_ERROR_MESSAGES: Record<string, string> = {
   initData_required: "Открой игру из Telegram — нет initData.",
   bad_signature: "Подпись Telegram не сошлась. Запусти игру заново из бота.",
@@ -124,6 +113,7 @@ export default function Auction({
 
   const [busyBid, setBusyBid] = useState(false);
   const [myBid, setMyBid] = useState("");
+  const [bidPanelOpen, setBidPanelOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSlots, setSettingsSlots] = useState<number>(30);
   const [settingsBudget, setSettingsBudget] = useState<number>(INITIAL_BANK);
@@ -233,20 +223,7 @@ export default function Auction({
   }, [auctionState?.timeLeftMs, nowTick, paused]);
 
   const heroCountdown =
-    !paused && secsLeft != null && secsLeft > 0 && secsLeft <= 3
-      ? secsLeft
-      : null;
-
-  const formattedTimeLeft = useMemo(
-    () => formatSecondsShort(secsLeft),
-    [secsLeft]
-  );
-
-  const timePerSlotSec = useMemo(() => {
-    const raw = Number(auctionState?.rules?.timePerSlotSec);
-    return Number.isFinite(raw) ? raw : null;
-  }, [auctionState?.rules?.timePerSlotSec]);
-
+    !paused && secsLeft != null && secsLeft >= 0 ? secsLeft : null;
   const slotMax = useMemo(() => {
     const raw =
       auctionState?.maxSlots ??
@@ -261,18 +238,6 @@ export default function Auction({
     auctionState?.totalSlots,
     auctionState?.slots,
   ]);
-
-  const slotProgress = useMemo(() => {
-    if (!slotIndex || !slotMax) return null;
-    return Math.max(0, Math.min(100, (slotIndex / slotMax) * 100));
-  }, [slotIndex, slotMax]);
-
-  const timeProgress = useMemo(() => {
-    if (paused) return null;
-    if (timePerSlotSec == null || secsLeft == null) return null;
-    const ratio = Math.max(0, Math.min(1, secsLeft / timePerSlotSec));
-    return ratio * 100;
-  }, [paused, secsLeft, timePerSlotSec]);
 
   const isBiddingLocked = paused || phase !== "in_progress";
 
@@ -291,6 +256,15 @@ export default function Auction({
       100,
     [settingsBudget]
   );
+
+  const openBidPanel = useCallback(() => {
+    if (isBiddingLocked) return;
+    setBidPanelOpen(true);
+  }, [isBiddingLocked]);
+
+  const closeBidPanel = useCallback(() => {
+    setBidPanelOpen(false);
+  }, []);
 
   useEffect(() => {
     if (settingsOpen) return;
@@ -585,6 +559,62 @@ export default function Auction({
     const timer = setInterval(tick, 200);
     return () => clearInterval(timer);
   }, [auctionState?.phase, auctionState?.timeLeftMs, paused]);
+
+  useEffect(() => {
+    if (!bidPanelOpen) return;
+    if (isBiddingLocked) {
+      setBidPanelOpen(false);
+    }
+  }, [bidPanelOpen, isBiddingLocked]);
+
+  useEffect(() => {
+    if (settingsOpen && bidPanelOpen) {
+      setBidPanelOpen(false);
+    }
+  }, [bidPanelOpen, settingsOpen]);
+
+  useEffect(() => {
+    if (!bidPanelOpen) return;
+    const handleHotkey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeBidPanel();
+        return;
+      }
+      if (isBiddingLocked) return;
+      if (e.key === "Enter") {
+        e.preventDefault();
+        sendBid();
+        return;
+      }
+      const digit = Number(e.key);
+      if (Number.isFinite(digit) && digit >= 1 && digit <= BID_PRESETS.length) {
+        e.preventDefault();
+        setBidRelative(BID_PRESETS[digit - 1]);
+        return;
+      }
+      const lower = e.key.toLowerCase();
+      if (lower === "a") {
+        e.preventDefault();
+        setBidRelative(myBalance || 0);
+        return;
+      }
+      if (lower === "p") {
+        e.preventDefault();
+        sendPass();
+      }
+    };
+    window.addEventListener("keydown", handleHotkey);
+    return () => window.removeEventListener("keydown", handleHotkey);
+  }, [
+    bidPanelOpen,
+    closeBidPanel,
+    isBiddingLocked,
+    myBalance,
+    sendBid,
+    sendPass,
+    setBidRelative,
+  ]);
 
   // Создание socket.io
   useEffect(() => {
@@ -1477,80 +1507,17 @@ export default function Auction({
 
   const renderGameContent = () => {
     if (!showGame) return null;
+    const statTabIndex = isBiddingLocked ? -1 : 0;
+    const handleStatKeyDown = (e: any) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        openBidPanel();
+      }
+    };
 
     return (
       <div className="screen-body game-layout">
-        <section className="card card--hud">
-          <div className="game-hud">
-            <div
-              className={[
-                "hud-timer",
-                paused ? "hud-timer--paused" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              <div className="hud-timer__top">
-                <span className="hud-timer__label">
-                  {paused ? "Pause" : "Timer"}
-                </span>
-                {timePerSlotSec != null && (
-                  <span className="hud-timer__hint">
-                    ~{timePerSlotSec}s/lot
-                  </span>
-                )}
-              </div>
-              <div className="hud-timer__value">{formattedTimeLeft}</div>
-              <div className="progress progress--inline hud-timer__progress">
-                <div
-                  className="progress__fill"
-                  style={{
-                    width: `${timeProgress != null ? timeProgress : 0}%`,
-                  }}
-                />
-              </div>
-              {paused && (
-                <span className="hud-timer__badge">Timer paused</span>
-              )}
-            </div>
-
-            <div className="hud-chip">
-              <span className="hud-chip__label">Round</span>
-              <span className="hud-chip__value">
-                {slotIndex != null && slotMax
-                  ? `${slotIndex}/${slotMax}`
-                  : slotIndex ?? "-"}
-              </span>
-              {slotProgress != null && (
-                <div className="progress progress--inline hud-chip__progress">
-                  <div
-                    className="progress__fill"
-                    style={{ width: `${slotProgress}%` }}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="hud-chip">
-              <span className="hud-chip__label">Balance</span>
-              <span className="hud-chip__value">
-                {myBalance != null
-                  ? `${moneyFormatter.format(myBalance)}$`
-                  : "-"}
-              </span>
-              <span className="hud-chip__hint">
-                {leadingBid?.amount != null
-                  ? `${moneyFormatter.format(leadingBid.amount)}$ - ${
-                      leadingPlayerName || "Leader"
-                    }`
-                  : baseBid > 0
-                  ? `Base ${moneyFormatter.format(baseBid)}$`
-                  : "Waiting for bids"}
-              </span>
-            </div>
-          </div>
-        </section>
-        <section className="lot-hero card card--lot" aria-label="Текущий лот">
+        <section className="lot-hero card card--lot" aria-label="Главный лот">
           <div className="lot-hero__index">
             <span className="lot-index__num">
               {slotIndex != null ? `#${slotIndex}` : "-"}
@@ -1566,12 +1533,12 @@ export default function Auction({
             <AnimatePresence initial={false} mode="popLayout">
               {heroCountdown != null && (
                 <motion.div
-                  key={heroCountdown}
+                  key={`${slotIndex ?? "lot"}-${heroCountdown}`}
                   className="lot-hero__timer"
-                  initial={{ opacity: 0, scale: 0.85 }}
-                  animate={{ opacity: 0.65, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.1 }}
-                  transition={{ duration: 0.35 }}
+                  initial={{ opacity: 0, scale: 0.86 }}
+                  animate={{ opacity: 0.78, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.08 }}
+                  transition={{ duration: 0.22 }}
                   aria-hidden="true"
                 >
                   {heroCountdown}
@@ -1588,74 +1555,81 @@ export default function Auction({
         </section>
 
         <section className="card card--bid">
-          <span className="label">Ставка</span>
+          <span className="label">Ставки</span>
 
           {isBiddingLocked && (
             <div className="callout">
               {paused
-                ? "Game is paused — bids are temporarily locked."
+                ? "Game is paused - bids are temporarily locked."
                 : "Bids are available only while the round is running."}
             </div>
           )}
 
           <div className="bid-stats">
-            <div className="bid-stat">
-              <span className="bid-stat__label">Ваша ставка</span>
+            <div
+              className={[
+                "bid-stat",
+                "bid-stat--action",
+                isBiddingLocked ? "bid-stat--disabled" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              role="button"
+              tabIndex={statTabIndex}
+              onClick={openBidPanel}
+              onKeyDown={handleStatKeyDown}
+              aria-pressed={bidPanelOpen}
+            >
+              <div className="bid-stat__top">
+                <span className="bid-stat__label">Ваша ставка</span>
+                <span className="bid-stat__badge">HOT</span>
+              </div>
               <span className="bid-stat__value">
                 {myRoundBid != null
                   ? `${moneyFormatter.format(myRoundBid)}$`
                   : "-"}
               </span>
+              <span className="bid-stat__hint">Открыть быстрые ставки</span>
             </div>
-            <div className="bid-stat">
-              <span className="bid-stat__label">Баланс</span>
+            <div
+              className={[
+                "bid-stat",
+                "bid-stat--action",
+                "bid-stat--secondary",
+                isBiddingLocked ? "bid-stat--disabled" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              role="button"
+              tabIndex={statTabIndex}
+              onClick={openBidPanel}
+              onKeyDown={handleStatKeyDown}
+              aria-pressed={bidPanelOpen}
+            >
+              <div className="bid-stat__top">
+                <span className="bid-stat__label">Баланс</span>
+                <span className="bid-stat__badge bid-stat__badge--ghost">
+                  {slotIndex != null && slotMax ? `${slotIndex}/${slotMax}` : ""}
+                </span>
+              </div>
               <span className="bid-stat__value">
                 {myBalance != null
                   ? `${moneyFormatter.format(myBalance)}$`
                   : "-"}
               </span>
+              <span className="bid-stat__hint">1–5, A, P — горячие клавиши</span>
             </div>
           </div>
 
-          <div className="quick-bids">
-            {BID_PRESETS.map((step) => (
-              <button
-                key={step}
-                type="button"
-                className="pill pill--ghost"
-                onClick={() => setBidRelative(step)}
-                disabled={
-                  isBiddingLocked || myBalance == null || myBalance <= 0
-                }
-              >
-                +{moneyFormatter.format(step)}
-              </button>
-            ))}
-            <button
-              type="button"
-              className="pill pill--ghost"
-              onClick={() => setBidRelative(myBalance || 0)}
-              disabled={
-                isBiddingLocked || myBalance == null || myBalance <= 0
-              }
-            >
-              Ва-банк
-            </button>
-            <button
-              type="button"
-              className="pill pill--ghost"
-              onClick={sendPass}
-              disabled={isBiddingLocked}
-            >
-              Пас
-            </button>
-          </div>
+          <p className="bid-inline-hint">
+            Нажмите на любую карточку, чтобы открыть окно быстрых ставок и ввод суммы.
+          </p>
 
           <div className="bid-input-row">
             <input
               className="text-input"
               inputMode="numeric"
-              placeholder="Сумма ставки"
+              placeholder="Введите ставку"
               value={myBid}
               onChange={(e) =>
                 setMyBid(e.target.value.replace(/[^\d]/g, ""))
@@ -1669,7 +1643,7 @@ export default function Auction({
               className="btn btn--ghost"
               onClick={() => setMyBid("")}
             >
-              Сбросить
+              Очистить
             </button>
             <button
               type="button"
@@ -1677,7 +1651,7 @@ export default function Auction({
               onClick={() => sendBid()}
               disabled={busyBid || myBalance == null || isBiddingLocked}
             >
-              {busyBid ? "Отправляем..." : "Сделать ставку"}
+              {busyBid ? "Отправляем..." : "Отправить ставку"}
             </button>
           </div>
 
@@ -1706,7 +1680,7 @@ export default function Auction({
             <span className="label tiny">Прошлый лот</span>
             <div className="lot-last__content">
               <span className="lot-last__name">
-                #{(lastFinishedSlot.index ?? 0) + 1} · {lastFinishedSlot.name}
+                #{(lastFinishedSlot.index ?? 0) + 1} — {lastFinishedSlot.name}
               </span>
               <span className="lot-last__meta">
                 {lastFinishedSlot.winnerPlayerId != null
@@ -1714,13 +1688,114 @@ export default function Auction({
                       safePlayers.find(
                         (p) => p.id === lastFinishedSlot.winnerPlayerId
                       )
-                    )} · `
+                    )} • `
                   : ""}
                 {moneyFormatter.format(lastFinishedSlot.winBid || 0)}$
               </span>
             </div>
           </section>
         )}
+      </div>
+    );
+  };
+
+  const renderBidPanel = () => {
+    if (!bidPanelOpen || isBiddingLocked) return null;
+
+    const hotkeyButtons = [
+      ...BID_PRESETS.map((step, idx) => ({
+        key: `${idx + 1}`,
+        label: `+${moneyFormatter.format(step)}$`,
+        action: () => setBidRelative(step),
+        disabled: myBalance == null || myBalance <= 0,
+      })),
+      {
+        key: "A",
+        label: "Все деньги",
+        action: () => setBidRelative(myBalance || 0),
+        disabled: myBalance == null || myBalance <= 0,
+      },
+      { key: "P", label: "Пас", action: sendPass, disabled: false },
+    ];
+
+    return (
+      <div
+        className="modal-backdrop modal-backdrop--bid"
+        onClick={() => (!busyBid ? closeBidPanel() : null)}
+      >
+        <div
+          className="modal bid-modal"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Быстрые ставки"
+        >
+          <div className="bid-modal__head">
+            <div>
+              <span className="label tiny">Быстрые ставки</span>
+              <h3 className="bid-modal__title">
+                Введите сумму или нажмите клавишу
+              </h3>
+              <p className="bid-modal__subtitle">
+                1–5 — пресеты, A — ва-банк, P — пас, Enter — отправить, Esc —
+                закрыть.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="icon-btn icon-btn--ghost"
+              aria-label="Закрыть"
+              onClick={closeBidPanel}
+              disabled={busyBid}
+            >
+              X
+            </button>
+          </div>
+
+          <div className="bid-modal__body">
+            <div className="bid-modal__input-row">
+              <input
+                className="text-input text-input--lg"
+                inputMode="numeric"
+                autoFocus
+                placeholder="Введите ставку"
+                value={myBid}
+                onChange={(e) =>
+                  setMyBid(e.target.value.replace(/[^\d]/g, ""))
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    sendBid();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={() => sendBid()}
+                disabled={busyBid || myBalance == null || isBiddingLocked}
+              >
+                {busyBid ? "Отправляем..." : "Отправить"}
+              </button>
+            </div>
+
+            <div className="bid-hotkeys">
+              {hotkeyButtons.map((btn) => (
+                <button
+                  key={btn.key}
+                  type="button"
+                  className="bid-hotkey"
+                  onClick={() => btn.action()}
+                  disabled={isBiddingLocked || busyBid || btn.disabled}
+                >
+                  <span className="bid-hotkey__key">{btn.key}</span>
+                  <span className="bid-hotkey__label">{btn.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   };
@@ -1984,6 +2059,7 @@ export default function Auction({
           </main>
         </div>
       )}
+      {renderBidPanel()}
       {renderSettingsModal()}
       {renderToastStack()}
     </div>
