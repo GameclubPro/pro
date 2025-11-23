@@ -108,6 +108,10 @@ export default function Auction({
 
   const [busyBid, setBusyBid] = useState(false);
   const [myBid, setMyBid] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsSlots, setSettingsSlots] = useState<number>(30);
+  const [settingsBudget, setSettingsBudget] = useState<number>(INITIAL_BANK);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   const deadlineAtRef = useRef<number | null>(null);
   const [nowTick, setNowTick] = useState(0);
@@ -161,7 +165,7 @@ export default function Auction({
       auctionState?.totalSlots ??
       (Array.isArray(auctionState?.slots) ? auctionState.slots.length : null);
     const num = Number(raw);
-    return Number.isFinite(num) ? num : null;
+    return Number.isFinite(num) && num > 0 ? num : null;
   }, [
     auctionState?.maxSlots,
     auctionState?.rules?.maxSlots,
@@ -170,6 +174,22 @@ export default function Auction({
   ]);
 
   const initialBank = auctionState?.rules?.initialBalance || INITIAL_BANK;
+
+  useEffect(() => {
+    if (settingsOpen) return;
+    const nextSlots =
+      slotMax && slotMax > 0
+        ? slotMax
+        : Array.isArray(auctionState?.slots)
+        ? auctionState.slots.length || 30
+        : 30;
+    setSettingsSlots(nextSlots);
+  }, [slotMax, auctionState?.slots, settingsOpen]);
+
+  useEffect(() => {
+    if (settingsOpen) return;
+    setSettingsBudget(initialBank || INITIAL_BANK);
+  }, [initialBank, settingsOpen]);
 
   const safePlayers = useMemo(
     () => ensureArray<any>(players).filter(Boolean),
@@ -719,6 +739,57 @@ export default function Auction({
     });
   }
 
+  const saveSettings = useCallback(() => {
+    if (!socket || !room || !isOwner) {
+      pushError("Settings are unavailable right now.");
+      return;
+    }
+    const nextSlots = clamp(Math.round(Number(settingsSlots) || 0), 10, 50);
+    const nextBudget = clamp(
+      Math.round(Number(settingsBudget) || 0),
+      100_000,
+      5_000_000
+    );
+    setSettingsSlots(nextSlots);
+    setSettingsBudget(nextBudget);
+    setSavingSettings(true);
+    socket.emit(
+      "auction:update_rules",
+      {
+        code: room.code,
+        game: AUCTION_GAME,
+        rules: { maxSlots: nextSlots, initialBalance: nextBudget },
+      },
+      (resp: any) => {
+        setSavingSettings(false);
+        if (!resp || !resp.ok) {
+          pushError("Failed to save settings.");
+          return;
+        }
+        setAuctionState((prev: any) => ({
+          ...(prev || {}),
+          maxSlots: nextSlots,
+          totalSlots: nextSlots,
+          rules: {
+            ...(prev?.rules || {}),
+            maxSlots: nextSlots,
+            initialBalance: nextBudget,
+          },
+        }));
+        pushToast({ text: "Settings updated" });
+        setSettingsOpen(false);
+      }
+    );
+  }, [
+    socket,
+    room,
+    isOwner,
+    settingsSlots,
+    settingsBudget,
+    pushError,
+    pushToast,
+  ]);
+
   function sendPass() {
     setMyBid("");
     sendBid(0);
@@ -861,7 +932,7 @@ export default function Auction({
 
         <div className="landing-form">
           <label className="field">
-            <span className="field-label">Код комнаты</span>
+              <span className="field-label">Lots count</span>
             <input
               className="text-input text-input--large"
               type="text"
@@ -1040,6 +1111,11 @@ export default function Auction({
 
     // порядок игроков больше не зависит от ready — они не прыгают
     const sortedPlayers = safePlayers.slice();
+    const slotsDisplay =
+      slotMax ??
+      (Array.isArray(auctionState?.slots) && auctionState.slots.length > 0
+        ? auctionState.slots.length
+        : 30);
 
     return (
       <div className="screen-body lobby-layout">
@@ -1080,12 +1156,7 @@ export default function Auction({
                 type="button"
                 className="icon-btn icon-btn--ghost lobby-settings"
                 aria-label="Настройки комнаты"
-                onClick={() =>
-                  pushToast({
-                    type: "info",
-                    text: "Настройки скоро будут 😉",
-                  })
-                }
+                onClick={() => setSettingsOpen(true)}
               >
                 ⚙️
               </button>
@@ -1102,7 +1173,7 @@ export default function Auction({
             <div className="lobby-stat">
               <span className="lobby-stat__label">Лотов</span>
               <span className="lobby-stat__value">
-                {slotMax != null ? slotMax : "—"}
+                {slotsDisplay}
               </span>
             </div>
           </div>
@@ -1504,6 +1575,81 @@ export default function Auction({
     );
   };
 
+  const renderSettingsModal = () => {
+    if (!settingsOpen) return null;
+    return (
+      <div className="modal-backdrop" onClick={() => (!savingSettings ? setSettingsOpen(false) : null)}>
+        <div
+          className="modal"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="modal__head">
+            <div>
+              <h3 className="modal__title">Auction settings</h3>
+              <p className="modal__subtitle">Tune lots count and starting bank for the room.</p>
+            </div>
+            <button
+              type="button"
+              className="icon-btn icon-btn--ghost"
+              aria-label="Close"
+              onClick={() => setSettingsOpen(false)}
+              disabled={savingSettings}
+            >
+              X
+            </button>
+          </div>
+          <div className="modal__fields">
+            <label className="field">
+              <span className="field-label">Lots count</span>
+              <input
+                className="text-input"
+                type="number"
+                min={10}
+                max={50}
+                value={settingsSlots}
+                onChange={(e) => setSettingsSlots(Number(e.target.value) || 0)}
+              />
+              <span className="muted">From 10 to 50</span>
+            </label>
+            <label className="field">
+              <span className="field-label">Player budget</span>
+              <input
+                className="text-input"
+                type="number"
+                min={100_000}
+                max={5_000_000}
+                step={50_000}
+                value={settingsBudget}
+                onChange={(e) => setSettingsBudget(Number(e.target.value) || 0)}
+              />
+              <span className="muted">From 100 000 to 5 000 000</span>
+            </label>
+          </div>
+          <div className="modal__actions">
+            <button
+              type="button"
+              className="btn btn--ghost btn--compact"
+              onClick={() => setSettingsOpen(false)}
+              disabled={savingSettings}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn--primary btn--compact"
+              onClick={saveSettings}
+              disabled={savingSettings}
+            >
+              {savingSettings ? "Saving..." : "Save"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderToastStack = () => {
     if (!toastStack.length) return null;
     return (
@@ -1561,6 +1707,7 @@ export default function Auction({
           </main>
         </div>
       )}
+      {renderSettingsModal()}
       {renderToastStack()}
     </div>
   );
