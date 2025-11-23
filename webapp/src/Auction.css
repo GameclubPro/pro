@@ -1557,3 +1557,36 @@ button:active:not(:disabled) {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
+
+.modal__actions .btn {
+  border-radius: var(--radius-md);
+  background: linear-gradient(160deg, #0b1220, #0f172a);
+  border-color: rgba(148, 163, 184, 0.55);
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.65);
+  letter-spacing: 0.12em;
+}
+
+.modal__actions .btn--ghost {
+  background: linear-gradient(
+    155deg,
+    rgba(8, 12, 22, 0.96),
+    rgba(4, 7, 15, 0.94)
+  );
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.6);
+}
+
+.modal__actions .btn--primary {
+  background: linear-gradient(150deg, #111827, #0ea5e9);
+  color: #e0f2fe;
+  border-color: rgba(14, 165, 233, 0.7);
+  box-shadow: 0 14px 30px rgba(8, 47, 73, 0.55);
+}
+
+.modal__actions .btn:hover:not(:disabled) {
+  box-shadow: 0 12px 28px rgba(2, 6, 23, 0.75);
+}
+
+.modal__actions .btn:active:not(:disabled) {
+  transform: translateY(0);
+}

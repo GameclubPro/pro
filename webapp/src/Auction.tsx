@@ -889,12 +889,12 @@ export default function Auction({
       setSavingSettings(false);
       pushToast({
         type: "info",
-        text: "Сохранили локально. Сервер долго отвечает.",
+        text: "Применили локально, ждём ответ сервера.",
         duration: 3200,
       });
     }, 4500);
     socket.emit(
-      "auction:update_rules",
+      "auction:configure",
       {
         code: room.code,
         game: AUCTION_GAME,
