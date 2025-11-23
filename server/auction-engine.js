@@ -494,9 +494,6 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       }
 
       const roomPlayers = roomPlayersList(room);
-      if (roomPlayers.length < 2) {
-        return { ok: false, error: 'need_at_least_2_players' };
-      }
 
       const existing = states.get(room.id);
       if (existing && existing.phase === 'in_progress') {
@@ -507,7 +504,8 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       const participants = roomPlayers.filter(
         (p) => p.ready || p.userId === room.ownerId
       );
-      if (participants.length < 2) {
+      const required = Math.min(2, Math.max(1, roomPlayers.length));
+      if (participants.length < required) {
         return { ok: false, error: 'need_ready_players' };
       }
 

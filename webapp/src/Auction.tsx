@@ -1248,7 +1248,7 @@ export default function Auction({
 
     const readyTarget = Math.max(totalPlayers || 1, 1);
     const myReady = !!currentPlayer?.ready;
-    const canStart = readyCount >= readyTarget && totalPlayers >= 2;
+    const canStart = readyCount >= readyTarget;
 
     const primaryLabel = isOwner
       ? "Начать игру"
@@ -1388,14 +1388,12 @@ export default function Auction({
 
           <p className="lobby-hint">
             {isOwner
-              ? readyCount < 2
-                ? "Нужно минимум 2 игрока, чтобы начать."
-                : canStart
-                ? "Все готовы, можно запускать."
-                : "Ждём, пока все отметят готовность."
+              ? canStart
+                ? "All set — you can start even solo."
+                : "Waiting for players to press ready."
               : myReady
-              ? "Вы отметили, что готовы. Ждём остальных."
-              : "Нажмите «Я готов», когда будете готовы к торгам."}
+              ? "You are ready, waiting for others."
+              : "Press Ready to join from the start."}
           </p>
         </section>
 
