@@ -47,6 +47,17 @@ function ensurePlainObject<T extends object>(value: unknown): T {
   return EMPTY_OBJECT as T;
 }
 
+function formatSecondsShort(totalSeconds: number | null | undefined) {
+  if (totalSeconds == null || Number.isNaN(totalSeconds)) return "--";
+  const safe = Math.max(0, Math.floor(totalSeconds));
+  const minutes = Math.floor(safe / 60);
+  const seconds = safe % 60;
+  if (minutes > 0) {
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  }
+  return `${seconds}s`;
+}
+
 const SERVER_ERROR_MESSAGES: Record<string, string> = {
   initData_required: "Открой игру из Telegram — нет initData.",
   bad_signature: "Подпись Telegram не сошлась. Запусти игру заново из бота.",
@@ -124,6 +135,7 @@ export default function Auction({
   });
 
   const deadlineAtRef = useRef<number | null>(null);
+  const pauseLeftRef = useRef<number | null>(null);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const toastTimersRef = useRef<Map<string, any>>(new Map());
   const lastSubscribedCodeRef = useRef<string | null>(null);
@@ -139,6 +151,7 @@ export default function Auction({
 
   const phase: "lobby" | "in_progress" | "finished" | string =
     auctionState?.phase || "lobby";
+  const paused = !!auctionState?.paused;
   const myPlayerId = selfInfo?.roomPlayerId ?? null;
 
   const balances = useMemo(
@@ -209,13 +222,30 @@ export default function Auction({
   }, [baseBid, leadingBid?.amount, leadingPlayerName, moneyFormatter]);
 
   const secsLeft = useMemo(() => {
+    if (paused) {
+      const ms = pauseLeftRef.current ?? (auctionState?.timeLeftMs ?? null);
+      if (ms == null) return null;
+      return Math.max(0, Math.ceil(ms / 1000));
+    }
     if (!deadlineAtRef.current) return null;
     const diff = Math.ceil((deadlineAtRef.current - nowTick) / 1000);
     return Math.max(0, diff);
-  }, [nowTick]);
+  }, [auctionState?.timeLeftMs, nowTick, paused]);
 
   const heroCountdown =
-    secsLeft != null && secsLeft > 0 && secsLeft <= 3 ? secsLeft : null;
+    !paused && secsLeft != null && secsLeft > 0 && secsLeft <= 3
+      ? secsLeft
+      : null;
+
+  const formattedTimeLeft = useMemo(
+    () => formatSecondsShort(secsLeft),
+    [secsLeft]
+  );
+
+  const timePerSlotSec = useMemo(() => {
+    const raw = Number(auctionState?.rules?.timePerSlotSec);
+    return Number.isFinite(raw) ? raw : null;
+  }, [auctionState?.rules?.timePerSlotSec]);
 
   const slotMax = useMemo(() => {
     const raw =
@@ -231,6 +261,20 @@ export default function Auction({
     auctionState?.totalSlots,
     auctionState?.slots,
   ]);
+
+  const slotProgress = useMemo(() => {
+    if (!slotIndex || !slotMax) return null;
+    return Math.max(0, Math.min(100, (slotIndex / slotMax) * 100));
+  }, [slotIndex, slotMax]);
+
+  const timeProgress = useMemo(() => {
+    if (paused) return null;
+    if (timePerSlotSec == null || secsLeft == null) return null;
+    const ratio = Math.max(0, Math.min(1, secsLeft / timePerSlotSec));
+    return ratio * 100;
+  }, [paused, secsLeft, timePerSlotSec]);
+
+  const isBiddingLocked = paused || phase !== "in_progress";
 
   const initialBank = auctionState?.rules?.initialBalance || INITIAL_BANK;
   const slotsProgress = useMemo(
@@ -519,19 +563,28 @@ export default function Auction({
     const ms = auctionState?.timeLeftMs;
     if (ms == null) {
       deadlineAtRef.current = null;
+      pauseLeftRef.current = null;
       return;
     }
-    deadlineAtRef.current = Date.now() + Math.max(0, ms);
+    const safeMs = Math.max(0, ms);
+    if (paused) {
+      pauseLeftRef.current = safeMs;
+      deadlineAtRef.current = null;
+      setNowTick(Date.now());
+      return;
+    }
+    pauseLeftRef.current = null;
+    deadlineAtRef.current = Date.now() + safeMs;
     setNowTick(Date.now());
-  }, [auctionState?.timeLeftMs, phase]);
+  }, [auctionState?.timeLeftMs, paused, phase]);
 
   useEffect(() => {
-    if (!deadlineAtRef.current) return;
+    if (!deadlineAtRef.current || paused) return;
     const tick = () => setNowTick(Date.now());
     tick();
     const timer = setInterval(tick, 200);
     return () => clearInterval(timer);
-  }, [auctionState?.phase, auctionState?.timeLeftMs]);
+  }, [auctionState?.phase, auctionState?.timeLeftMs, paused]);
 
   // Создание socket.io
   useEffect(() => {
@@ -949,6 +1002,10 @@ export default function Auction({
   function sendBid(forcedAmount?: number | null) {
     if (!socket || !room || !selfInfo) return;
     if (!auctionState || auctionState.phase !== "in_progress") return;
+    if (paused) {
+      pushToast({ type: "info", text: "Game is paused" });
+      return;
+    }
 
     const now = Date.now();
     if (now - lastBidAtRef.current < 800) {
@@ -1423,10 +1480,78 @@ export default function Auction({
   const renderGameContent = () => {
     if (!showGame) return null;
 
-    const paused = !!auctionState?.paused;
-
     return (
       <div className="screen-body game-layout">
+        <section className="card card--hud">
+          <div className="game-hud">
+            <div
+              className={[
+                "hud-timer",
+                paused ? "hud-timer--paused" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <div className="hud-timer__top">
+                <span className="hud-timer__label">
+                  {paused ? "Pause" : "Timer"}
+                </span>
+                {timePerSlotSec != null && (
+                  <span className="hud-timer__hint">
+                    ~{timePerSlotSec}s/lot
+                  </span>
+                )}
+              </div>
+              <div className="hud-timer__value">{formattedTimeLeft}</div>
+              <div className="progress progress--inline hud-timer__progress">
+                <div
+                  className="progress__fill"
+                  style={{
+                    width: `${timeProgress != null ? timeProgress : 0}%`,
+                  }}
+                />
+              </div>
+              {paused && (
+                <span className="hud-timer__badge">Timer paused</span>
+              )}
+            </div>
+
+            <div className="hud-chip">
+              <span className="hud-chip__label">Round</span>
+              <span className="hud-chip__value">
+                {slotIndex != null && slotMax
+                  ? `${slotIndex}/${slotMax}`
+                  : slotIndex ?? "-"}
+              </span>
+              {slotProgress != null && (
+                <div className="progress progress--inline hud-chip__progress">
+                  <div
+                    className="progress__fill"
+                    style={{ width: `${slotProgress}%` }}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="hud-chip">
+              <span className="hud-chip__label">Balance</span>
+              <span className="hud-chip__value">
+                {myBalance != null
+                  ? `${moneyFormatter.format(myBalance)}$`
+                  : "-"}
+              </span>
+              <span className="hud-chip__hint">
+                {leadingBid?.amount != null
+                  ? `${moneyFormatter.format(leadingBid.amount)}$ - ${
+                      leadingPlayerName || "Leader"
+                    }`
+                  : baseBid > 0
+                  ? `Base ${moneyFormatter.format(baseBid)}$`
+                  : "Waiting for bids"}
+              </span>
+            </div>
+          </div>
+        </section>
         <section className="lot-hero card card--lot" aria-label="Текущий лот">
           <div className="lot-hero__index">
             <span className="lot-index__num">
@@ -1467,6 +1592,14 @@ export default function Auction({
         <section className="card card--bid">
           <span className="label">Ставка</span>
 
+          {isBiddingLocked && (
+            <div className="callout">
+              {paused
+                ? "Game is paused — bids are temporarily locked."
+                : "Bids are available only while the round is running."}
+            </div>
+          )}
+
           <div className="bid-stats">
             <div className="bid-stat">
               <span className="bid-stat__label">Ваша ставка</span>
@@ -1493,7 +1626,9 @@ export default function Auction({
                 type="button"
                 className="pill pill--ghost"
                 onClick={() => setBidRelative(step)}
-                disabled={myBalance == null || myBalance <= 0}
+                disabled={
+                  isBiddingLocked || myBalance == null || myBalance <= 0
+                }
               >
                 +{moneyFormatter.format(step)}
               </button>
@@ -1502,7 +1637,9 @@ export default function Auction({
               type="button"
               className="pill pill--ghost"
               onClick={() => setBidRelative(myBalance || 0)}
-              disabled={myBalance == null || myBalance <= 0}
+              disabled={
+                isBiddingLocked || myBalance == null || myBalance <= 0
+              }
             >
               Ва-банк
             </button>
@@ -1510,6 +1647,7 @@ export default function Auction({
               type="button"
               className="pill pill--ghost"
               onClick={sendPass}
+              disabled={isBiddingLocked}
             >
               Пас
             </button>
@@ -1539,7 +1677,7 @@ export default function Auction({
               type="button"
               className="btn btn--primary"
               onClick={() => sendBid()}
-              disabled={busyBid || myBalance == null}
+              disabled={busyBid || myBalance == null || isBiddingLocked}
             >
               {busyBid ? "Отправляем..." : "Сделать ставку"}
             </button>

@@ -168,7 +168,9 @@ textarea {
   display: flex;
   flex-direction: column;
   margin-top: 4px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 6px;
 }
 
 .screen-body {
@@ -177,7 +179,7 @@ textarea {
   flex-direction: column;
   gap: 10px;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .screen {
@@ -496,6 +498,16 @@ textarea {
   box-shadow:
     0 0 0 1px rgba(56, 189, 248, 0.7),
     0 0 0 12px rgba(56, 189, 248, 0.08);
+}
+
+.callout {
+  margin: 2px 0 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 13px;
+  color: var(--muted);
 }
 
 /* CARDS & ROWS */
@@ -996,6 +1008,109 @@ textarea {
   align-items: start;
 }
 
+.card--hud {
+  grid-column: 1 / -1;
+}
+
+.game-hud {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.hud-timer {
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.96));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hud-timer--paused {
+  border-color: rgba(248, 113, 113, 0.7);
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.14), rgba(15, 23, 42, 0.96));
+}
+
+.hud-timer--paused .progress__fill {
+  background: linear-gradient(90deg, var(--accent-danger), #f97316);
+}
+
+.hud-timer__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hud-timer__label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hud-timer__hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.hud-timer__value {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.hud-timer__progress {
+  margin-top: 2px;
+}
+
+.hud-timer__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(248, 113, 113, 0.5);
+  background: rgba(248, 113, 113, 0.12);
+  color: #fecdd3;
+  font-size: 12px;
+  align-self: flex-start;
+}
+
+.hud-chip {
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: rgba(15, 23, 42, 0.92);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 100%;
+}
+
+.hud-chip__label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hud-chip__value {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.hud-chip__hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.hud-chip__progress {
+  margin-top: 6px;
+}
+
 .card--lot {
   padding-bottom: 0;
 }
@@ -1111,6 +1226,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  grid-column: 1 / -1;
 }
 
 .card--bid {
@@ -1361,6 +1477,14 @@ button:active:not(:disabled) {
 
   .lot-hero__emoji-wrap {
     min-height: 150px;
+  }
+
+  .game-hud {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+
+  .hud-timer__value {
+    font-size: 21px;
   }
 
   .bid-stats {
