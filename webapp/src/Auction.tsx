@@ -150,6 +150,10 @@ export default function Auction({
     [auctionState?.basketTotals]
   );
   const myBalance = myPlayerId != null ? balances[myPlayerId] ?? null : null;
+  const safePlayers = useMemo(
+    () => ensureArray<any>(players).filter(Boolean),
+    [players]
+  );
 
   const currentBids = useMemo(
     () => ensurePlainObject<Record<number, number>>(auctionState?.currentBids),
@@ -173,6 +177,17 @@ export default function Auction({
     if (match?.[0]) return match[0];
     return currentSlot?.type === "lootbox" ? "🎁" : "🏆";
   }, [currentSlot?.name, currentSlot?.type]);
+
+  const heroBidText = useMemo(() => {
+    if (leadingBid?.amount != null) {
+      return leadingPlayerName
+        ? `${moneyFormatter.format(leadingBid.amount)}$ · ${leadingPlayerName}`
+        : `${moneyFormatter.format(leadingBid.amount)}$`;
+    }
+    return `База ${moneyFormatter.format(baseBid)}$`;
+  }, [baseBid, leadingBid?.amount, leadingPlayerName, moneyFormatter]);
+
+  const heroCountdown = secsLeft != null && secsLeft <= 3 ? secsLeft : null;
 
   const slotMax = useMemo(() => {
     const raw =
@@ -269,10 +284,27 @@ export default function Auction({
     settingsOpen,
   ]);
 
-  const safePlayers = useMemo(
-    () => ensureArray<any>(players).filter(Boolean),
-    [players]
-  );
+  const leadingBid = useMemo(() => {
+    let topAmount: number | null = null;
+    let topPlayerId: number | null = null;
+    Object.entries(currentBids || {}).forEach(([pid, val]) => {
+      const num = Number(val);
+      if (!Number.isFinite(num) || num < 0) return;
+      if (topAmount == null || num > topAmount) {
+        topAmount = num;
+        topPlayerId = Number(pid);
+      }
+    });
+    return topAmount != null && topPlayerId != null
+      ? { amount: topAmount, playerId: topPlayerId }
+      : null;
+  }, [currentBids]);
+
+  const leadingPlayerName = useMemo(() => {
+    if (!leadingBid?.playerId) return null;
+    const p = safePlayers.find((pl) => pl.id === leadingBid.playerId);
+    return p ? playerDisplayName(p) : null;
+  }, [leadingBid?.playerId, safePlayers]);
 
   const netWorths = useMemo(() => {
     const fromState = ensurePlainObject<Record<number, number>>(
@@ -367,14 +399,6 @@ export default function Auction({
     const diff = Math.ceil((deadlineAtRef.current - Date.now()) / 1000);
     return Math.max(0, diff);
   }, [nowTick]);
-
-  const timePerSlot = auctionState?.rules?.timePerSlotSec || 0;
-
-  const progressPct = useMemo(() => {
-    if (secsLeft == null || !timePerSlot) return null;
-    const spent = Math.max(0, timePerSlot - secsLeft);
-    return Math.min(100, Math.round((spent / timePerSlot) * 100));
-  }, [secsLeft, timePerSlot]);
 
   const showLanding = !room;
   const showLobby = !showLanding && phase === "lobby";
@@ -1411,19 +1435,12 @@ export default function Auction({
     if (!showGame) return null;
 
     const paused = !!auctionState?.paused;
-    const growth = auctionState?.currentStep || auctionState?.growth || 0;
 
     return (
       <div className="screen-body game-layout">
         <section className="card card--lot">
-          <div className="card-row">
-            <div>
-              <span className="label">Текущий лот</span>
-              <h2 className="title">
-                {currentSlot?.name || "Без названия"}
-              </h2>
-            </div>
-            <div className="lot-index">
+          <div className="lot-hero" aria-label="Текущий лот">
+            <div className="lot-hero__index">
               <span className="lot-index__num">
                 {slotIndex != null ? `#${slotIndex}` : "—"}
               </span>
@@ -1431,90 +1448,37 @@ export default function Auction({
                 {slotMax ? `из ${slotMax}` : ""}
               </span>
             </div>
-          </div>
-
-          <div className="lot-meta-row">
-            <div className="lot-meta">
-              <span className="lot-meta__label">Тип</span>
-              <span className="lot-meta__value">
-                {currentSlot?.type === "lootbox" ? "кейс 🎁" : "лот 🎯"}
-              </span>
-            </div>
-            <div className="lot-meta">
-              <span className="lot-meta__label">Базовая ставка</span>
-              <span className="lot-meta__value">
-                {moneyFormatter.format(baseBid || 0)}$
-              </span>
-            </div>
-            <div className="lot-meta">
-              <span className="lot-meta__label">Шаг</span>
-              <span className="lot-meta__value">
-                {growth > 0 ? `+${moneyFormatter.format(growth)}$` : "—"}
-              </span>
-            </div>
-          </div>
-
-          <div className="lot-hero" aria-label="Текущий лот">
             <div className="lot-hero__name">
               {currentSlot?.name || "Без названия"}
             </div>
-            <div className="lot-hero__emoji" aria-hidden="true">
-              {lotEmoji}
-            </div>
-          </div>
-
-          <div className="timer">
-            <div className="timer__value">
-              {secsLeft != null ? secsLeft : "—"}
-            </div>
-            <div className="timer__body">
-              <span className="timer__label">Время на ход</span>
-              <span className="timer__text">
-                {paused
-                  ? "Пауза"
-                  : timePerSlot
-                  ? `${timePerSlot} сек. на лот`
-                  : "Ожидание"}
-              </span>
-              {progressPct != null && (
-                <div className="progress">
-                  <div
-                    className="progress__fill"
-                    style={{
-                      width: `${progressPct}%`,
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {lastFinishedSlot && (
-            <div className="lot-last">
-              <span className="label tiny">Прошлый лот</span>
-              <div className="lot-last__content">
-                <span className="lot-last__name">
-                  #{(lastFinishedSlot.index ?? 0) + 1} · {lastFinishedSlot.name}
-                </span>
-                <span className="lot-last__meta">
-                  {lastFinishedSlot.winnerPlayerId != null
-                    ? `${playerDisplayName(
-                        safePlayers.find(
-                          (p) => p.id === lastFinishedSlot.winnerPlayerId
-                        )
-                      )} · `
-                    : ""}
-                  {moneyFormatter.format(lastFinishedSlot.winBid || 0)}$
-                </span>
+            <div className="lot-hero__emoji-wrap">
+              <AnimatePresence initial={false} mode="popLayout">
+                {heroCountdown != null && (
+                  <motion.div
+                    key={heroCountdown}
+                    className="lot-hero__timer"
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    animate={{ opacity: 0.65, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.1 }}
+                    transition={{ duration: 0.35 }}
+                    aria-hidden="true"
+                  >
+                    {heroCountdown}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              <div className="lot-hero__emoji" aria-hidden="true">
+                {lotEmoji}
               </div>
             </div>
-          )}
+            <div className="lot-hero__bid">
+              {heroBidText}
+            </div>
+          </div>
         </section>
 
         <section className="card card--bid">
-          <div className="card-row card-row--tight">
-            <span className="label">Ставка</span>
-          </div>
+          <span className="label">Ставка</span>
 
           <div className="bid-stats">
             <div className="bid-stat">
@@ -1624,6 +1588,27 @@ export default function Auction({
             </div>
           )}
         </section>
+
+        {lastFinishedSlot && (
+          <section className="card card--last">
+            <span className="label tiny">Прошлый лот</span>
+            <div className="lot-last__content">
+              <span className="lot-last__name">
+                #{(lastFinishedSlot.index ?? 0) + 1} · {lastFinishedSlot.name}
+              </span>
+              <span className="lot-last__meta">
+                {lastFinishedSlot.winnerPlayerId != null
+                  ? `${playerDisplayName(
+                      safePlayers.find(
+                        (p) => p.id === lastFinishedSlot.winnerPlayerId
+                      )
+                    )} · `
+                  : ""}
+                {moneyFormatter.format(lastFinishedSlot.winBid || 0)}$
+              </span>
+            </div>
+          </section>
+        )}
       </div>
     );
   };

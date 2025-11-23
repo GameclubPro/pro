@@ -1001,9 +1001,17 @@ textarea {
 }
 
 .lot-index {
+  position: absolute;
+  top: 10px;
+  right: 10px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(2, 6, 23, 0.7);
+  box-shadow: 0 10px 28px rgba(2, 6, 23, 0.55);
 }
 
 .lot-index__num {
@@ -1016,34 +1024,6 @@ textarea {
   color: var(--muted);
 }
 
-.lot-meta-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.lot-meta {
-  padding: 8px 9px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
-  background: rgba(15, 23, 42, 0.98);
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.lot-meta__label {
-  font-size: 11px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.lot-meta__value {
-  font-size: 14px;
-  font-weight: 600;
-}
-
 .lot-hero {
   margin: 10px 0 6px;
   padding: 10px 12px;
@@ -1054,7 +1034,8 @@ textarea {
     rgba(15, 23, 42, 0.96);
   display: grid;
   justify-items: center;
-  gap: 6px;
+  gap: 8px;
+  position: relative;
 }
 
 .lot-hero__name {
@@ -1063,53 +1044,38 @@ textarea {
   text-align: center;
 }
 
+.lot-hero__emoji-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
 .lot-hero__emoji {
   font-size: 72px;
   line-height: 1;
   filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.4));
 }
 
-.timer {
-  margin-top: 4px;
-  padding: 8px 9px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
-  background: rgba(15, 23, 42, 0.98);
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.timer__value {
-  width: 42px;
-  height: 42px;
+.lot-hero__bid {
+  font-size: 15px;
+  font-weight: 700;
+  padding: 8px 12px;
   border-radius: 999px;
-  display: grid;
-  place-items: center;
-  font-size: 18px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
+}
+
+.lot-hero__timer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 120px;
   font-weight: 800;
-  background: radial-gradient(
-    circle,
-    rgba(251, 191, 36, 0.4),
-    rgba(56, 189, 248, 0.35)
-  );
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.9);
-}
-
-.timer__body {
-  flex: 1;
-  min-width: 0;
-}
-
-.timer__label {
-  font-size: 11px;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.timer__text {
-  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  text-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
 }
 
 .lot-last {
@@ -1134,6 +1100,12 @@ textarea {
 
 .lot-last__meta {
   color: var(--muted);
+}
+
+.card--last {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .card--bid {
@@ -1382,10 +1354,6 @@ button:active:not(:disabled) {
     font-size: 96px;
   }
 
-  .lot-meta-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .bid-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1412,10 +1380,6 @@ button:active:not(:disabled) {
 
   .landing-card {
     padding-inline: 16px;
-  }
-
-  .lot-meta-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .card {
