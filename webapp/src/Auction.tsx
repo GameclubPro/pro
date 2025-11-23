@@ -164,6 +164,27 @@ export default function Auction({
     const value = currentBids[myPlayerId];
     return typeof value === "number" ? value : null;
   }, [currentBids, myPlayerId]);
+  const leadingBid = useMemo(() => {
+    let topAmount: number | null = null;
+    let topPlayerId: number | null = null;
+    Object.entries(currentBids || {}).forEach(([pid, val]) => {
+      const num = Number(val);
+      if (!Number.isFinite(num) || num < 0) return;
+      if (topAmount == null || num > topAmount) {
+        topAmount = num;
+        topPlayerId = Number(pid);
+      }
+    });
+    return topAmount != null && topPlayerId != null
+      ? { amount: topAmount, playerId: topPlayerId }
+      : null;
+  }, [currentBids]);
+
+  const leadingPlayerName = useMemo(() => {
+    if (!leadingBid?.playerId) return null;
+    const p = safePlayers.find((pl) => pl.id === leadingBid.playerId);
+    return p ? playerDisplayName(p) : null;
+  }, [leadingBid?.playerId, safePlayers]);
 
   const currentSlot = auctionState?.currentSlot || null;
   const baseBid = currentSlot?.basePrice || 0;
@@ -283,28 +304,6 @@ export default function Auction({
     settingsDirty,
     settingsOpen,
   ]);
-
-  const leadingBid = useMemo(() => {
-    let topAmount: number | null = null;
-    let topPlayerId: number | null = null;
-    Object.entries(currentBids || {}).forEach(([pid, val]) => {
-      const num = Number(val);
-      if (!Number.isFinite(num) || num < 0) return;
-      if (topAmount == null || num > topAmount) {
-        topAmount = num;
-        topPlayerId = Number(pid);
-      }
-    });
-    return topAmount != null && topPlayerId != null
-      ? { amount: topAmount, playerId: topPlayerId }
-      : null;
-  }, [currentBids]);
-
-  const leadingPlayerName = useMemo(() => {
-    if (!leadingBid?.playerId) return null;
-    const p = safePlayers.find((pl) => pl.id === leadingBid.playerId);
-    return p ? playerDisplayName(p) : null;
-  }, [leadingBid?.playerId, safePlayers]);
 
   const netWorths = useMemo(() => {
     const fromState = ensurePlainObject<Record<number, number>>(
