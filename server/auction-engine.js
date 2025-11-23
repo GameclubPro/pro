@@ -652,8 +652,46 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     const room = await getRoomWithPlayers(code);
     if (!room) return null;
     const state = states.get(room.id);
-    if (!state) return null;
-    return buildPublicState(state, room);
+    if (state) return buildPublicState(state, room);
+
+    // Lobby-only snapshot so players see current presets before the game starts
+    const preset = presets.get(room.id) || {};
+    const rules = {
+      ...DEFAULT_RULES,
+      ...(preset.rules || {}),
+    };
+    const slotCount = Array.isArray(preset.slots) && preset.slots.length
+      ? preset.slots.length
+      : rules.maxSlots || DEFAULT_RULES.maxSlots;
+    const slots = Array.isArray(preset.slots) && preset.slots.length
+      ? preset.slots.map((s, i) => ({
+          index: i,
+          type: s.type === 'lootbox' ? 'lootbox' : 'lot',
+          name: String(s.name || `Lot ${i + 1}`),
+          basePrice: Number.isFinite(Number(s.basePrice))
+            ? Math.max(0, Math.floor(Number(s.basePrice)))
+            : undefined,
+        }))
+      : Array.from({ length: slotCount }, (_v, i) => ({
+          index: i,
+          type: 'lot',
+          name: `Lot ${i + 1}`,
+          basePrice: undefined,
+        }));
+
+    return {
+      code: room.code,
+      phase: 'lobby',
+      rules,
+      slots,
+      totalSlots: slotCount,
+      maxSlots: slotCount,
+      balances: {},
+      currentBids: {},
+      activePlayerIds: [],
+      history: [],
+      basketTotals: {},
+    };
   }
 
   function clearRoomStateById(roomId) {
