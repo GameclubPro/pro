@@ -198,10 +198,6 @@ export default function Auction({
       100,
     [settingsBudget]
   );
-  const settingsInSync =
-    !settingsDirty &&
-    settingsSlots === lastSyncedSettingsRef.current.slots &&
-    settingsBudget === lastSyncedSettingsRef.current.budget;
 
   useEffect(() => {
     if (settingsOpen) return;
@@ -842,9 +838,36 @@ export default function Auction({
     setSettingsDirty(true);
   }, []);
 
+  const applySettings = useCallback((slots: number, budget: number) => {
+    const nextSlots = clamp(
+      Math.round(Number(slots) || MIN_SLOTS),
+      MIN_SLOTS,
+      MAX_SLOTS
+    );
+    const nextBudget = clamp(
+      Math.round(Number(budget) || MIN_BUDGET),
+      MIN_BUDGET,
+      MAX_BUDGET
+    );
+    setSettingsSlots(nextSlots);
+    setSettingsBudget(nextBudget);
+    setAuctionState((prev: any) => ({
+      ...(prev || {}),
+      maxSlots: nextSlots,
+      totalSlots: nextSlots,
+      rules: {
+        ...(prev?.rules || {}),
+        maxSlots: nextSlots,
+        initialBalance: nextBudget,
+      },
+    }));
+    lastSyncedSettingsRef.current = { slots: nextSlots, budget: nextBudget };
+    setSettingsDirty(false);
+  }, []);
+
   const saveSettings = useCallback(() => {
     if (!socket || !room || !isOwner) {
-      pushError("Settings are unavailable right now.");
+      pushError("Настройки сейчас недоступны.");
       return;
     }
     const nextSlots = clamp(
@@ -857,9 +880,19 @@ export default function Auction({
       MIN_BUDGET,
       MAX_BUDGET
     );
-    setSettingsSlots(nextSlots);
-    setSettingsBudget(nextBudget);
+    const previous = { ...lastSyncedSettingsRef.current };
+
+    applySettings(nextSlots, nextBudget);
     setSavingSettings(true);
+    setSettingsOpen(false);
+    const timeoutId = setTimeout(() => {
+      setSavingSettings(false);
+      pushToast({
+        type: "info",
+        text: "Сохранили локально. Сервер долго отвечает.",
+        duration: 3200,
+      });
+    }, 4500);
     socket.emit(
       "auction:update_rules",
       {
@@ -868,28 +901,14 @@ export default function Auction({
         rules: { maxSlots: nextSlots, initialBalance: nextBudget },
       },
       (resp: any) => {
+        clearTimeout(timeoutId);
         setSavingSettings(false);
         if (!resp || !resp.ok) {
-          pushError("Failed to save settings.");
+          applySettings(previous.slots, previous.budget);
+          pushError("Не удалось сохранить настройки.");
           return;
         }
-        setAuctionState((prev: any) => ({
-          ...(prev || {}),
-          maxSlots: nextSlots,
-          totalSlots: nextSlots,
-          rules: {
-            ...(prev?.rules || {}),
-            maxSlots: nextSlots,
-            initialBalance: nextBudget,
-          },
-        }));
-        lastSyncedSettingsRef.current = {
-          slots: nextSlots,
-          budget: nextBudget,
-        };
-        setSettingsDirty(false);
-        pushToast({ text: "Settings updated" });
-        setSettingsOpen(false);
+        pushToast({ text: "Настройки обновлены" });
       }
     );
   }, [
@@ -898,6 +917,7 @@ export default function Auction({
     isOwner,
     settingsSlots,
     settingsBudget,
+    applySettings,
     pushError,
     pushToast,
   ]);
@@ -1044,7 +1064,7 @@ export default function Auction({
 
         <div className="landing-form">
           <label className="field">
-              <span className="field-label">Lots count</span>
+            <span className="field-label">Код комнаты</span>
             <input
               className="text-input text-input--large"
               type="text"
@@ -1538,7 +1558,7 @@ export default function Auction({
               onClick={() => setBidRelative(myBalance || 0)}
               disabled={myBalance == null || myBalance <= 0}
             >
-              All‑in
+              Ва-банк
             </button>
             <button
               type="button"
@@ -1701,16 +1721,11 @@ export default function Auction({
           aria-modal="true"
         >
           <div className="modal__head">
-            <div>
-              <h3 className="modal__title">Неоновые настройки</h3>
-              <p className="modal__subtitle">
-                Тёмная тема с неоновыми ползунками. После сохранения сервер синхронизирует правила игры.
-              </p>
-            </div>
+            <h3 className="modal__title">Настройки комнаты</h3>
             <button
               type="button"
               className="icon-btn icon-btn--ghost"
-              aria-label="Close"
+              aria-label="Закрыть"
               onClick={closeSettings}
               disabled={savingSettings}
             >
@@ -1718,31 +1733,10 @@ export default function Auction({
             </button>
           </div>
           <div className="settings-panel">
-            <div className="settings-sync">
-              <div>
-                <p className="settings-sync__label">Синхронизация</p>
-                <p className="settings-sync__hint">
-                  Значения подтягиваются с сервера и применяются в игровой логике сразу после сохранения.
-                </p>
-              </div>
-              <span
-                className={`sync-pill ${
-                  settingsInSync ? "sync-pill--ok" : "sync-pill--pending"
-                }`}
-              >
-                {settingsInSync ? "Синхронизировано" : "Есть черновик"}
-              </span>
-            </div>
-
             <div className="settings-grid">
               <label className="slider-field" htmlFor="auction-slots">
                 <div className="slider-field__top">
-                  <div>
-                    <span className="field-label">Количество лотов</span>
-                    <span className="slider-field__hint">
-                      Управляет длительностью партии и скоростью закупки.
-                    </span>
-                  </div>
+                  <span className="field-label">Количество лотов</span>
                   <span className="slider-field__value">{settingsSlots}</span>
                 </div>
                 <div className="slider-field__control">
@@ -1774,12 +1768,7 @@ export default function Auction({
 
               <label className="slider-field" htmlFor="auction-budget">
                 <div className="slider-field__top">
-                  <div>
-                    <span className="field-label">Бюджет игрока</span>
-                    <span className="slider-field__hint">
-                      Начальный банк, синхронизируется с сервером и балансами.
-                    </span>
-                  </div>
+                  <span className="field-label">Бюджет игрока</span>
                   <span className="slider-field__value">
                     {moneyFormatter.format(settingsBudget)}$
                   </span>
@@ -1819,7 +1808,7 @@ export default function Auction({
               onClick={closeSettings}
               disabled={savingSettings}
             >
-              Cancel
+              Отмена
             </button>
             <button
               type="button"
@@ -1827,7 +1816,7 @@ export default function Auction({
               onClick={saveSettings}
               disabled={savingSettings}
             >
-              {savingSettings ? "Saving..." : "Save"}
+              {savingSettings ? "Сохраняем..." : "Сохранить"}
             </button>
           </div>
         </div>

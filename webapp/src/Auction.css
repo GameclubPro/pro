@@ -1385,7 +1385,7 @@ button:active:not(:disabled) {
 
 .modal__head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
@@ -1393,12 +1393,6 @@ button:active:not(:disabled) {
 .modal__title {
   margin: 0;
   font-size: 18px;
-}
-
-.modal__subtitle {
-  margin: 4px 0 0;
-  color: var(--muted);
-  font-size: 13px;
 }
 
 .modal__fields {
@@ -1410,65 +1404,6 @@ button:active:not(:disabled) {
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-.settings-sync {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-strong);
-  background: linear-gradient(
-      120deg,
-      rgba(14, 165, 233, 0.14),
-      rgba(79, 70, 229, 0.12),
-      rgba(15, 23, 42, 0.92)
-    ),
-    radial-gradient(circle at 25% 20%, rgba(56, 189, 248, 0.12), transparent 40%),
-    radial-gradient(circle at 85% 80%, rgba(168, 85, 247, 0.12), transparent 35%);
-  box-shadow: 0 10px 28px rgba(56, 189, 248, 0.16);
-}
-
-.settings-sync__label {
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.settings-sync__hint {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.sync-pill {
-  padding: 8px 12px;
-  border-radius: 999px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-size: 11px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(15, 23, 42, 0.92);
-  box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
-}
-
-.sync-pill--ok {
-  color: #22c55e;
-  background: radial-gradient(circle at 30% 30%, rgba(34, 197, 94, 0.2), transparent 65%),
-    rgba(15, 23, 42, 0.92);
-  border-color: rgba(34, 197, 94, 0.5);
-  box-shadow: 0 0 18px rgba(34, 197, 94, 0.35);
-}
-
-.sync-pill--pending {
-  color: #fcd34d;
-  border-color: rgba(252, 211, 77, 0.5);
-  box-shadow: 0 0 18px rgba(252, 211, 77, 0.2);
 }
 
 .settings-grid {
@@ -1506,16 +1441,9 @@ button:active:not(:disabled) {
 
 .slider-field__top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-}
-
-.slider-field__hint {
-  display: block;
-  margin-top: 2px;
-  color: var(--muted);
-  font-size: 12px;
 }
 
 .slider-field__value {
@@ -1528,11 +1456,18 @@ button:active:not(:disabled) {
 .slider-field__control {
   position: relative;
   margin-top: 12px;
+  height: 42px;
+  display: flex;
+  align-items: center;
 }
 
 .slider-field__rail {
-  position: relative;
-  height: 12px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 10px;
+  top: 50%;
+  transform: translateY(-50%);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
   overflow: hidden;
@@ -1550,19 +1485,21 @@ button:active:not(:disabled) {
 
 .slider-field__input {
   position: absolute;
-  inset: -8px 0;
+  inset: 0;
   width: 100%;
-  height: calc(100% + 16px);
+  height: 100%;
   background: transparent;
   appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
+  margin: 0;
 }
 
 .slider-field__input::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 22px;
   height: 22px;
+  margin-top: -6px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.4);
   background: radial-gradient(circle at 30% 30%, #e0f2fe, #38bdf8 60%, #1d4ed8 100%);
@@ -1598,12 +1535,12 @@ button:active:not(:disabled) {
 
 .slider-field__input::-webkit-slider-runnable-track {
   background: transparent;
-  height: 12px;
+  height: 10px;
 }
 
 .slider-field__input::-moz-range-track {
   background: transparent;
-  height: 12px;
+  height: 10px;
 }
 
 .slider-field__footer {
