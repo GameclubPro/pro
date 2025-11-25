@@ -271,6 +271,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     // подчищаем связь с комнатой и фазу перед отдачей наружу
     normalizeParticipants(state, room);
     ensureConsistentPhase(state);
+    const nowMs = Date.now();
 
     const roomPlayers = roomPlayersList(room);
     const netWorths = {};
@@ -358,8 +359,10 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       timeLeftMs: state.paused
         ? state.pauseLeftMs ?? null
         : state.slotDeadlineAtMs != null
-          ? Math.max(0, state.slotDeadlineAtMs - Date.now())
+          ? Math.max(0, state.slotDeadlineAtMs - nowMs)
           : null,
+      slotDeadlineAtMs: state.paused ? null : state.slotDeadlineAtMs || null,
+      serverNowMs: nowMs,
       bidFeed: Array.isArray(state.bidFeed) ? state.bidFeed.slice(-8) : [],
     };
   }

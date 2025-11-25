@@ -534,23 +534,75 @@ export default function Auction({
 
   // Таймер раунда
   useEffect(() => {
-    const ms = auctionState?.timeLeftMs;
-    if (ms == null) {
+    const rawLeft = auctionState?.timeLeftMs;
+    const rawServerNow =
+      auctionState?.serverNowMs ??
+      auctionState?.serverNow ??
+      auctionState?.syncedAt ??
+      null;
+    const serverNowMs =
+      typeof rawServerNow === "number" && Number.isFinite(rawServerNow)
+        ? rawServerNow
+        : null;
+    const rawDeadline =
+      paused || phase !== "in_progress"
+        ? null
+        : auctionState?.slotDeadlineAtMs ?? auctionState?.slotDeadlineAt ?? null;
+    const slotDeadlineMs =
+      typeof rawDeadline === "number" && Number.isFinite(rawDeadline)
+        ? rawDeadline
+        : null;
+
+    if (rawLeft == null && slotDeadlineMs == null) {
       deadlineAtRef.current = null;
       pauseLeftRef.current = null;
       return;
     }
-    const safeMs = Math.max(0, ms);
+
+    let leftMs: number | null = null;
+
+    if (!paused && slotDeadlineMs != null && serverNowMs != null) {
+      leftMs = Math.max(0, slotDeadlineMs - serverNowMs);
+    }
+
+    if (leftMs == null && rawLeft != null) {
+      const numeric = Number(rawLeft);
+      if (Number.isFinite(numeric)) {
+        leftMs = Math.max(0, numeric);
+      }
+    }
+
+    if (leftMs == null) {
+      deadlineAtRef.current = null;
+      pauseLeftRef.current = null;
+      return;
+    }
+
+    if (!paused && serverNowMs != null) {
+      const transitLag = Math.max(0, Date.now() - serverNowMs);
+      leftMs = Math.max(0, leftMs - transitLag);
+    }
+
     if (paused) {
-      pauseLeftRef.current = safeMs;
+      pauseLeftRef.current = leftMs;
       deadlineAtRef.current = null;
       setNowTick(Date.now());
       return;
     }
+
     pauseLeftRef.current = null;
-    deadlineAtRef.current = Date.now() + safeMs;
+    deadlineAtRef.current = Date.now() + leftMs;
     setNowTick(Date.now());
-  }, [auctionState?.timeLeftMs, paused, phase]);
+  }, [
+    auctionState?.timeLeftMs,
+    auctionState?.slotDeadlineAtMs,
+    auctionState?.slotDeadlineAt,
+    auctionState?.serverNowMs,
+    auctionState?.serverNow,
+    auctionState?.syncedAt,
+    paused,
+    phase,
+  ]);
 
   useEffect(() => {
     if (!deadlineAtRef.current || paused) return;
@@ -558,7 +610,14 @@ export default function Auction({
     tick();
     const timer = setInterval(tick, 200);
     return () => clearInterval(timer);
-  }, [auctionState?.phase, auctionState?.timeLeftMs, paused]);
+  }, [
+    auctionState?.phase,
+    auctionState?.timeLeftMs,
+    auctionState?.slotDeadlineAtMs,
+    auctionState?.slotDeadlineAt,
+    auctionState?.serverNowMs,
+    paused,
+  ]);
 
   useEffect(() => {
     if (!bidPanelOpen) return;
