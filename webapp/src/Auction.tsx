@@ -142,6 +142,7 @@ export default function Auction({
   const phase: "lobby" | "in_progress" | "finished" | string =
     auctionState?.phase || "lobby";
   const paused = !!auctionState?.paused;
+  const isBiddingLocked = paused || phase !== "in_progress";
   const myPlayerId = selfInfo?.roomPlayerId ?? null;
 
   const balances = useMemo(
@@ -271,8 +272,6 @@ export default function Auction({
     auctionState?.totalSlots,
     auctionState?.slots,
   ]);
-
-  const isBiddingLocked = paused || phase !== "in_progress";
 
   const initialBank = auctionState?.rules?.initialBalance || INITIAL_BANK;
   const slotsProgress = useMemo(
