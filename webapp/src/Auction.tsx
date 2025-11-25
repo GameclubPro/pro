@@ -239,6 +239,7 @@ export default function Auction({
     !paused && countdownLeft != null && countdownLeft >= 0
       ? Math.min(countdownStartFrom, countdownLeft)
       : null;
+  const countdownStepSec = countdownStepMs / 1000;
   const slotMax = useMemo(() => {
     const raw =
       auctionState?.maxSlots ??
@@ -1610,9 +1611,17 @@ export default function Auction({
                   key={`${slotIndex ?? "lot"}-${heroCountdown}`}
                   className="lot-hero__timer"
                   initial={{ opacity: 0, scale: 0.6, y: -12 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.82, y: 10 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  animate={{
+                    opacity: [0, 1, 1, 0],
+                    scale: [0.6, 1, 1, 0.9],
+                    y: [-12, 0, 0, 8],
+                  }}
+                  exit={{ opacity: 0, scale: 0.8, y: 10, transition: { duration: 0.12 } }}
+                  transition={{
+                    duration: countdownStepSec,
+                    times: [0, 0.15, 0.85, 1],
+                    ease: "easeInOut",
+                  }}
                   aria-hidden="true"
                 >
                   {heroCountdown}
