@@ -1609,10 +1609,10 @@ export default function Auction({
                 <motion.div
                   key={`${slotIndex ?? "lot"}-${heroCountdown}`}
                   className="lot-hero__timer"
-                  initial={{ opacity: 0, scale: 0.86 }}
-                  animate={{ opacity: 0.78, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.08 }}
-                  transition={{ duration: 0.22 }}
+                  initial={{ opacity: 0, scale: 0.6, y: -12 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.82, y: 10 }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
                   aria-hidden="true"
                 >
                   {heroCountdown}

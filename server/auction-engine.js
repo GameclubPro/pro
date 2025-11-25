@@ -226,12 +226,13 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         });
         if (!room || room.game !== RoomGame.AUCTION) return;
         // финалим слот на основании имеющихся ставок (кто не поставил — считается пас)
-        const publicState = resolveSlotNow(state, room);
+        resolveSlotNow(state, room);
         if (state.phase === 'in_progress') {
           scheduleTimer(state);
         } else {
           clearTimer(state.roomId);
         }
+        const publicState = buildPublicState(state, room);
         if (onState && publicState) onState(publicState);
       });
     } catch (e) {
@@ -614,18 +615,13 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         state.bidFeed = state.bidFeed.slice(-16);
       }
 
-      const publicState =
-        resolveSlotIfReady(state, room) ||
-        buildPublicState(state, room);
-
-      // если слот закрылся — запланируем таймер следующего слота
       if (state.phase === 'in_progress') {
-        // если развязка наступила раньше таймера — перезапускаем под новый слот
         scheduleTimer(state);
       } else {
         clearTimer(state.roomId);
       }
 
+      const publicState = buildPublicState(state, room);
       if (onState && publicState) onState(publicState);
       return { ok: true, state: publicState };
     };
@@ -835,7 +831,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         return { ok: false, error: 'not_running' };
       }
 
-      const pub = resolveSlotNow(state, room);
+      resolveSlotNow(state, room);
 
       if (state.phase === 'in_progress') {
         scheduleTimer(state);
@@ -843,8 +839,9 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         clearTimer(state.roomId);
       }
 
-      if (onState) onState(pub);
-      return { ok: true, state: pub };
+      const publicState = buildPublicState(state, room);
+      if (onState) onState(publicState);
+      return { ok: true, state: publicState };
     });
   }
 
