@@ -14,7 +14,6 @@ const MAX_BUDGET = 5_000_000;
 const BUDGET_STEP = 50_000;
 const COUNTDOWN_STEP_MS = 4_000;
 const COUNTDOWN_START_FROM = 3;
-
 const PHASE_LABEL: Record<string, string> = {
   lobby: "Лобби",
   in_progress: "Торги",
@@ -115,7 +114,6 @@ export default function Auction({
 
   const [busyBid, setBusyBid] = useState(false);
   const [myBid, setMyBid] = useState("");
-  const [bidPanelOpen, setBidPanelOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSlots, setSettingsSlots] = useState<number>(30);
   const [settingsBudget, setSettingsBudget] = useState<number>(INITIAL_BANK);
@@ -213,6 +211,25 @@ export default function Auction({
     return `База ${moneyFormatter.format(baseBid)}$`;
   }, [baseBid, leadingBid?.amount, leadingPlayerName, moneyFormatter]);
 
+  const quickBidButtons = useMemo(
+    () => [
+      ...BID_PRESETS.map((step, idx) => ({
+        key: `${idx + 1}`,
+        label: `+${moneyFormatter.format(step)}$`,
+        action: () => setBidRelative(step),
+        disabled: isBiddingLocked || busyBid || myBalance == null || myBalance <= 0,
+      })),
+      {
+        key: "A",
+        label: "Всё",
+        action: () => setBidRelative(myBalance || 0),
+        disabled: isBiddingLocked || busyBid || myBalance == null || myBalance <= 0,
+      },
+      { key: "P", label: "Пас", action: sendPass, disabled: isBiddingLocked || busyBid },
+    ],
+    [busyBid, isBiddingLocked, moneyFormatter, myBalance, sendPass, setBidRelative]
+  );
+
   const countdownStepMs = useMemo(() => {
     const raw = Number(auctionState?.countdownStepMs);
     return Number.isFinite(raw) && raw > 0 ? raw : COUNTDOWN_STEP_MS;
@@ -272,15 +289,6 @@ export default function Auction({
       100,
     [settingsBudget]
   );
-
-  const openBidPanel = useCallback(() => {
-    if (isBiddingLocked) return;
-    setBidPanelOpen(true);
-  }, [isBiddingLocked]);
-
-  const closeBidPanel = useCallback(() => {
-    setBidPanelOpen(false);
-  }, []);
 
   useEffect(() => {
     if (settingsOpen) return;
@@ -633,62 +641,6 @@ export default function Auction({
     auctionState?.slotDeadlineAt,
     auctionState?.serverNowMs,
     paused,
-  ]);
-
-  useEffect(() => {
-    if (!bidPanelOpen) return;
-    if (isBiddingLocked) {
-      setBidPanelOpen(false);
-    }
-  }, [bidPanelOpen, isBiddingLocked]);
-
-  useEffect(() => {
-    if (settingsOpen && bidPanelOpen) {
-      setBidPanelOpen(false);
-    }
-  }, [bidPanelOpen, settingsOpen]);
-
-  useEffect(() => {
-    if (!bidPanelOpen) return;
-    const handleHotkey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        closeBidPanel();
-        return;
-      }
-      if (isBiddingLocked) return;
-      if (e.key === "Enter") {
-        e.preventDefault();
-        sendBid();
-        return;
-      }
-      const digit = Number(e.key);
-      if (Number.isFinite(digit) && digit >= 1 && digit <= BID_PRESETS.length) {
-        e.preventDefault();
-        setBidRelative(BID_PRESETS[digit - 1]);
-        return;
-      }
-      const lower = e.key.toLowerCase();
-      if (lower === "a") {
-        e.preventDefault();
-        setBidRelative(myBalance || 0);
-        return;
-      }
-      if (lower === "p") {
-        e.preventDefault();
-        sendPass();
-      }
-    };
-    window.addEventListener("keydown", handleHotkey);
-    return () => window.removeEventListener("keydown", handleHotkey);
-  }, [
-    bidPanelOpen,
-    closeBidPanel,
-    isBiddingLocked,
-    myBalance,
-    sendBid,
-    sendPass,
-    setBidRelative,
   ]);
 
   // Создание socket.io
@@ -1582,23 +1534,20 @@ export default function Auction({
 
   const renderGameContent = () => {
     if (!showGame) return null;
-    const statTabIndex = isBiddingLocked ? -1 : 0;
-    const handleStatKeyDown = (e: any) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        openBidPanel();
-      }
-    };
-
     return (
       <div className="screen-body game-layout">
         <section className="lot-hero card card--lot" aria-label="Главный лот">
           <div className="lot-hero__index">
-            <span className="lot-index__num">
-              {slotIndex != null ? `#${slotIndex}` : "-"}
-            </span>
-            <span className="lot-index__suffix">
-              {slotMax ? `из ${slotMax}` : ""}
+            <div className="lot-index__meta">
+              <span className="lot-index__num">
+                {slotIndex != null ? `#${slotIndex}` : "-"}
+              </span>
+              <span className="lot-index__suffix">
+                {slotMax ? `из ${slotMax}` : ""}
+              </span>
+            </div>
+            <span className="lot-index__balance" aria-label="Баланс">
+              💲 {myBalance != null ? moneyFormatter.format(myBalance) : "-"}
             </span>
           </div>
           <div className="lot-hero__name">
@@ -1648,64 +1597,8 @@ export default function Auction({
             </div>
           )}
 
-          <div className="bid-stats">
-            <div
-              className={[
-                "bid-stat",
-                "bid-stat--action",
-                isBiddingLocked ? "bid-stat--disabled" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              role="button"
-              tabIndex={statTabIndex}
-              onClick={openBidPanel}
-              onKeyDown={handleStatKeyDown}
-              aria-pressed={bidPanelOpen}
-            >
-              <div className="bid-stat__top">
-                <span className="bid-stat__label">Ваша ставка</span>
-                <span className="bid-stat__badge">HOT</span>
-              </div>
-              <span className="bid-stat__value">
-                {myRoundBid != null
-                  ? `${moneyFormatter.format(myRoundBid)}$`
-                  : "-"}
-              </span>
-              <span className="bid-stat__hint">Открыть быстрые ставки</span>
-            </div>
-            <div
-              className={[
-                "bid-stat",
-                "bid-stat--action",
-                "bid-stat--secondary",
-                isBiddingLocked ? "bid-stat--disabled" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-              role="button"
-              tabIndex={statTabIndex}
-              onClick={openBidPanel}
-              onKeyDown={handleStatKeyDown}
-              aria-pressed={bidPanelOpen}
-            >
-              <div className="bid-stat__top">
-                <span className="bid-stat__label">Баланс</span>
-                <span className="bid-stat__badge bid-stat__badge--ghost">
-                  {slotIndex != null && slotMax ? `${slotIndex}/${slotMax}` : ""}
-                </span>
-              </div>
-              <span className="bid-stat__value">
-                {myBalance != null
-                  ? `${moneyFormatter.format(myBalance)}$`
-                  : "-"}
-              </span>
-              <span className="bid-stat__hint">1–5, A, P — горячие клавиши</span>
-            </div>
-          </div>
-
           <p className="bid-inline-hint">
-            Нажмите на любую карточку, чтобы открыть окно быстрых ставок и ввод суммы.
+            Используйте быстрые кнопки или введите сумму вручную.
           </p>
 
           <div className="bid-input-row">
@@ -1718,6 +1611,20 @@ export default function Auction({
                 setMyBid(e.target.value.replace(/[^\d]/g, ""))
               }
             />
+            <div className="quick-bids" aria-label="Быстрые ставки">
+              {quickBidButtons.map((btn) => (
+                <button
+                  key={btn.key}
+                  type="button"
+                  className="quick-bid"
+                  onClick={() => btn.action()}
+                  disabled={btn.disabled}
+                >
+                  <span className="quick-bid__label">{btn.label}</span>
+                  <span className="quick-bid__key">{btn.key}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="bid-actions">
@@ -1778,107 +1685,6 @@ export default function Auction({
             </div>
           </section>
         )}
-      </div>
-    );
-  };
-
-  const renderBidPanel = () => {
-    if (!bidPanelOpen || isBiddingLocked) return null;
-
-    const hotkeyButtons = [
-      ...BID_PRESETS.map((step, idx) => ({
-        key: `${idx + 1}`,
-        label: `+${moneyFormatter.format(step)}$`,
-        action: () => setBidRelative(step),
-        disabled: myBalance == null || myBalance <= 0,
-      })),
-      {
-        key: "A",
-        label: "Все деньги",
-        action: () => setBidRelative(myBalance || 0),
-        disabled: myBalance == null || myBalance <= 0,
-      },
-      { key: "P", label: "Пас", action: sendPass, disabled: false },
-    ];
-
-    return (
-      <div
-        className="modal-backdrop modal-backdrop--bid"
-        onClick={() => (!busyBid ? closeBidPanel() : null)}
-      >
-        <div
-          className="modal bid-modal"
-          onClick={(e) => e.stopPropagation()}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Быстрые ставки"
-        >
-          <div className="bid-modal__head">
-            <div>
-              <span className="label tiny">Быстрые ставки</span>
-              <h3 className="bid-modal__title">
-                Введите сумму или нажмите клавишу
-              </h3>
-              <p className="bid-modal__subtitle">
-                1–5 — пресеты, A — ва-банк, P — пас, Enter — отправить, Esc —
-                закрыть.
-              </p>
-            </div>
-            <button
-              type="button"
-              className="icon-btn icon-btn--ghost"
-              aria-label="Закрыть"
-              onClick={closeBidPanel}
-              disabled={busyBid}
-            >
-              X
-            </button>
-          </div>
-
-          <div className="bid-modal__body">
-            <div className="bid-modal__input-row">
-              <input
-                className="text-input text-input--lg"
-                inputMode="numeric"
-                autoFocus
-                placeholder="Введите ставку"
-                value={myBid}
-                onChange={(e) =>
-                  setMyBid(e.target.value.replace(/[^\d]/g, ""))
-                }
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    sendBid();
-                  }
-                }}
-              />
-              <button
-                type="button"
-                className="btn btn--primary"
-                onClick={() => sendBid()}
-                disabled={busyBid || myBalance == null || isBiddingLocked}
-              >
-                {busyBid ? "Отправляем..." : "Отправить"}
-              </button>
-            </div>
-
-            <div className="bid-hotkeys">
-              {hotkeyButtons.map((btn) => (
-                <button
-                  key={btn.key}
-                  type="button"
-                  className="bid-hotkey"
-                  onClick={() => btn.action()}
-                  disabled={isBiddingLocked || busyBid || btn.disabled}
-                >
-                  <span className="bid-hotkey__key">{btn.key}</span>
-                  <span className="bid-hotkey__label">{btn.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
       </div>
     );
   };
@@ -2142,7 +1948,6 @@ export default function Auction({
           </main>
         </div>
       )}
-      {renderBidPanel()}
       {renderSettingsModal()}
       {renderToastStack()}
     </div>
