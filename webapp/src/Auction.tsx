@@ -119,6 +119,7 @@ export default function Auction({
   const [settingsBudget, setSettingsBudget] = useState<number>(INITIAL_BANK);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsDirty, setSettingsDirty] = useState(false);
+  const [basketPlayerId, setBasketPlayerId] = useState<number | null>(null);
   const lastSyncedSettingsRef = useRef({
     slots: settingsSlots,
     budget: settingsBudget,
@@ -153,6 +154,16 @@ export default function Auction({
     () => ensurePlainObject<Record<number, number>>(auctionState?.basketTotals),
     [auctionState?.basketTotals]
   );
+  const baskets = useMemo(() => {
+    const source = ensurePlainObject<Record<string, any[]>>(auctionState?.baskets);
+    const map: Record<number, any[]> = {};
+    Object.entries(source).forEach(([pid, items]) => {
+      const id = Number(pid);
+      if (!Number.isFinite(id)) return;
+      map[id] = ensureArray<any>(items);
+    });
+    return map;
+  }, [auctionState?.baskets]);
   const myBalance = myPlayerId != null ? balances[myPlayerId] ?? null : null;
   const safePlayers = useMemo(
     () => ensureArray<any>(players).filter(Boolean),
@@ -405,6 +416,19 @@ export default function Auction({
     ? Math.round((readyCount / Math.max(totalPlayers, 1)) * 100)
     : 0;
 
+  const basketPlayer = useMemo(
+    () =>
+      basketPlayerId != null
+        ? safePlayers.find((p) => p.id === basketPlayerId) || null
+        : null,
+    [basketPlayerId, safePlayers]
+  );
+  const basketItems = useMemo(
+    () =>
+      basketPlayerId != null ? baskets[basketPlayerId] || EMPTY_ARRAY : EMPTY_ARRAY,
+    [basketPlayerId, baskets]
+  );
+
   const safeHistory = useMemo(
     () =>
       ensureArray<any>(auctionState?.history).filter(
@@ -552,6 +576,12 @@ export default function Auction({
       goBack?.();
     }
   }, [phase, leaveRoom, goBack]);
+
+  useEffect(() => {
+    if (basketPlayerId != null && !safePlayers.some((p) => p.id === basketPlayerId)) {
+      setBasketPlayerId(null);
+    }
+  }, [basketPlayerId, safePlayers]);
 
   // ---------- EFFECTS ----------
 
@@ -1664,6 +1694,91 @@ export default function Auction({
           )}
         </section>
 
+        <section className="card card--players-live">
+          <div className="card-row card-row--tight">
+            <div>
+              <span className="label">Игроки</span>
+              <h3 className="title-small">Ставки и корзины</h3>
+              <p className="muted">Тап по игроку — откроется его корзина</p>
+            </div>
+            <span className="pill pill--tiny">{safePlayers.length} игроков</span>
+          </div>
+
+          <div className="live-players-grid">
+            {safePlayers.length === 0 && (
+              <div className="empty-note">Никого нет, ждём подключения.</div>
+            )}
+            {safePlayers.map((p) => {
+              const name = playerDisplayName(p);
+              const avatar = p.user?.photo_url || p.user?.avatar || "";
+              const balance = balances[p.id] ?? 0;
+              const basketValue = basketTotals[p.id] ?? 0;
+              const netWorth = netWorths[p.id] ?? balance + basketValue;
+              const bidValue = Number(currentBids[p.id] ?? 0) || null;
+              const isHost = ownerPlayer?.id === p.id;
+              const isSelf = myPlayerId === p.id;
+              const isLeading = leadingBid?.playerId === p.id;
+
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={[
+                    "live-player",
+                    isHost ? "live-player--host" : "",
+                    isLeading ? "live-player--leading" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={() => setBasketPlayerId(p.id)}
+                >
+                  <div className="live-player__top">
+                    <div className="live-player__avatar" aria-hidden>
+                      {avatar ? <img src={avatar} alt={name} /> : name.slice(0, 1)}
+                    </div>
+                    <div className="live-player__titles">
+                      <div className="live-player__name">{name}</div>
+                      <div className="live-player__tags">
+                        {isHost && <span className="chip chip--tiny">Хост</span>}
+                        {isSelf && <span className="chip chip--tiny chip--me">Я</span>}
+                        {isLeading && (
+                          <span className="chip chip--tiny chip--glow">Лидер</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="live-player__worth" aria-label="Состояние">
+                      {moneyFormatter.format(netWorth)}$
+                    </div>
+                  </div>
+
+                  <div className="live-player__stats">
+                    <div className="live-player__stat">
+                      <span className="live-player__stat-label">Ставка</span>
+                      <span className="live-player__stat-value">
+                        {bidValue != null && bidValue > 0
+                          ? `${moneyFormatter.format(bidValue)}$`
+                          : "—"}
+                      </span>
+                    </div>
+                    <div className="live-player__stat">
+                      <span className="live-player__stat-label">Баланс</span>
+                      <span className="live-player__stat-value">
+                        {moneyFormatter.format(balance)}$
+                      </span>
+                    </div>
+                    <div className="live-player__stat">
+                      <span className="live-player__stat-label">Корзина</span>
+                      <span className="live-player__stat-value live-player__stat-value--pill">
+                        {moneyFormatter.format(basketValue)}$
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
         {lastFinishedSlot && (
           <section className="card card--last">
             <span className="label tiny">Прошлый лот</span>
@@ -1769,6 +1884,100 @@ export default function Auction({
             </button>
           </div>
         </section>
+      </div>
+    );
+  };
+
+  const renderBasketModal = () => {
+    if (!basketPlayer) return null;
+    const name = playerDisplayName(basketPlayer);
+    const avatar = basketPlayer.user?.photo_url || basketPlayer.user?.avatar || "";
+    const basketValue = basketTotals[basketPlayer.id] ?? 0;
+    const balance = balances[basketPlayer.id] ?? 0;
+    const worth = netWorths[basketPlayer.id] ?? balance + basketValue;
+
+    return (
+      <div
+        className="basket-modal"
+        role="dialog"
+        aria-modal="true"
+        onClick={() => setBasketPlayerId(null)}
+      >
+        <div className="basket-panel" onClick={(e) => e.stopPropagation()}>
+          <div className="basket-head">
+            <div className="basket-head__avatar" aria-hidden>
+              {avatar ? <img src={avatar} alt={name} /> : name.slice(0, 1)}
+            </div>
+            <div className="basket-head__info">
+              <div className="basket-head__name">{name}</div>
+              <div className="basket-head__meta">
+                <span>Корзина: {moneyFormatter.format(basketValue)}$</span>
+                <span>Баланс: {moneyFormatter.format(balance)}$</span>
+                <span>Состояние: {moneyFormatter.format(worth)}$</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="icon-btn icon-btn--ghost basket-close"
+              aria-label="Закрыть корзину"
+              onClick={() => setBasketPlayerId(null)}
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="basket-items">
+            {basketItems.length === 0 && (
+              <div className="basket-empty">Корзина пустая.</div>
+            )}
+              {basketItems.map((item, idx) => {
+              const key = `${item.index ?? idx}-${item.name ?? idx}`;
+              const paid = Number(item.paid ?? 0) || 0;
+              const base = Number(item.basePrice ?? 0) || 0;
+              const value = Number(item.value ?? (paid || base)) || 0;
+              const effect = item.effect;
+              const effectClass =
+                effect?.kind === "penalty"
+                  ? "basket-item__effect--bad"
+                  : effect?.kind === "money"
+                  ? "basket-item__effect--good"
+                  : "";
+
+              return (
+                <div className="basket-item" key={key}>
+                  <div className="basket-item__head">
+                    <span className="basket-item__tag">
+                      {item.type === "lootbox" ? "Лутбокс" : "Лот"}
+                    </span>
+                    <span className="basket-item__price">
+                      {moneyFormatter.format(value)}$
+                    </span>
+                  </div>
+                  <div className="basket-item__title">{item.name || "Без названия"}</div>
+                  <div className="basket-item__meta">
+                    <span>Оплачено: {moneyFormatter.format(paid)}$</span>
+                    {base > 0 && (
+                      <span>Старт: {moneyFormatter.format(base)}$</span>
+                    )}
+                  </div>
+                  {effect && (
+                    <div
+                      className={["basket-item__effect", effectClass]
+                        .filter(Boolean)
+                        .join(" ")}
+                    >
+                      {effect.kind === "penalty"
+                        ? `Штраф ${moneyFormatter.format(Math.abs(effect.delta || 0))}$`
+                        : effect.kind === "money"
+                        ? `Бонус ${moneyFormatter.format(Math.abs(effect.delta || 0))}$`
+                        : "Пусто"}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     );
   };
@@ -1947,8 +2156,11 @@ export default function Auction({
           </main>
         </div>
       )}
+      {renderBasketModal()}
       {renderSettingsModal()}
       {renderToastStack()}
     </div>
   );
 }
+
+
