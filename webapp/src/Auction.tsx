@@ -5,7 +5,7 @@ import "./Auction.css";
 
 const INITIAL_BANK = 1_000_000;
 const CODE_ALPHABET_RE = /[^A-HJKMNPQRSTUVWXYZ23456789]/g;
-const BID_PRESETS = [1_000, 5_000, 10_000, 25_000, 50_000];
+const BID_PRESETS = [1_000, 10_000, 100_000];
 const AUCTION_GAME = "AUCTION";
 const MIN_SLOTS = 10;
 const MAX_SLOTS = 50;
@@ -114,6 +114,7 @@ export default function Auction({
 
   const [busyBid, setBusyBid] = useState(false);
   const [myBid, setMyBid] = useState("");
+  const [bidPanelOpen, setBidPanelOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSlots, setSettingsSlots] = useState<number>(30);
   const [settingsBudget, setSettingsBudget] = useState<number>(INITIAL_BANK);
@@ -224,22 +225,14 @@ export default function Auction({
   }, [baseBid, leadingBid?.amount, leadingPlayerName, moneyFormatter]);
 
   const quickBidButtons = useMemo(
-    () => [
-      ...BID_PRESETS.map((step, idx) => ({
+    () =>
+      BID_PRESETS.map((step, idx) => ({
         key: `${idx + 1}`,
         label: `+${moneyFormatter.format(step)}$`,
         action: () => setBidRelative(step),
         disabled: isBiddingLocked || busyBid || myBalance == null || myBalance <= 0,
       })),
-      {
-        key: "A",
-        label: "Всё",
-        action: () => setBidRelative(myBalance || 0),
-        disabled: isBiddingLocked || busyBid || myBalance == null || myBalance <= 0,
-      },
-      { key: "P", label: "Пас", action: sendPass, disabled: isBiddingLocked || busyBid },
-    ],
-    [busyBid, isBiddingLocked, moneyFormatter, myBalance, sendPass, setBidRelative]
+    [busyBid, isBiddingLocked, moneyFormatter, myBalance, setBidRelative]
   );
 
   const countdownStepMs = useMemo(() => {
@@ -1613,88 +1606,128 @@ export default function Auction({
           <div className="lot-hero__bid">
             {heroBidText}
           </div>
+          <div className="bid-cta">
+            <button
+              type="button"
+              className="btn hero-bid-btn"
+              onClick={() => setBidPanelOpen((prev) => !prev)}
+              aria-expanded={bidPanelOpen}
+            >
+              <span className="hero-bid-btn__glow" aria-hidden />
+              <span className="hero-bid-btn__icon" aria-hidden>
+                ⚡
+              </span>
+              <span className="hero-bid-btn__label">
+                {bidPanelOpen ? "Скрыть панель" : "Сделать ставку"}
+              </span>
+            </button>
+          </div>
         </section>
 
-        <section className="card card--bid">
-          <span className="label">Ставки</span>
+        <AnimatePresence initial={false}>
+          {bidPanelOpen && (
+            <motion.section
+              className="card card--bid"
+              initial={{ opacity: 0, y: 14, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              transition={{ duration: 0.24, ease: "easeOut" }}
+            >
+              <span className="label">Ставки</span>
 
-          {isBiddingLocked && (
-            <div className="callout">
-              {paused
-                ? "Game is paused - bids are temporarily locked."
-                : "Bids are available only while the round is running."}
-            </div>
-          )}
+              {isBiddingLocked && (
+                <div className="callout">
+                  {paused
+                    ? "Game is paused - bids are temporarily locked."
+                    : "Bids are available only while the round is running."}
+                </div>
+              )}
 
-          <p className="bid-inline-hint">
-            Используйте быстрые кнопки или введите сумму вручную.
-          </p>
+              <p className="bid-inline-hint">
+                Используйте быстрые кнопки или введите сумму вручную.
+              </p>
 
-          <div className="bid-input-row">
-            <input
-              className="text-input"
-              inputMode="numeric"
-              placeholder="Введите ставку"
-              value={myBid}
-              onChange={(e) =>
-                setMyBid(e.target.value.replace(/[^\d]/g, ""))
-              }
-            />
-            <div className="quick-bids" aria-label="Быстрые ставки">
-              {quickBidButtons.map((btn) => (
+              <div className="bid-input-row">
+                <input
+                  className="text-input"
+                  inputMode="numeric"
+                  placeholder="Введите ставку"
+                  value={myBid}
+                  onChange={(e) =>
+                    setMyBid(e.target.value.replace(/[^\d]/g, ""))
+                  }
+                />
+                <div className="quick-bids" aria-label="Быстрые ставки">
+                  {quickBidButtons.map((btn) => (
+                    <button
+                      key={btn.key}
+                      type="button"
+                      className="quick-bid"
+                      onClick={() => btn.action()}
+                      disabled={btn.disabled}
+                    >
+                      <span className="quick-bid__label">{btn.label}</span>
+                      <span className="quick-bid__key">{btn.key}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bid-actions bid-actions--primary">
                 <button
-                  key={btn.key}
                   type="button"
-                  className="quick-bid"
-                  onClick={() => btn.action()}
-                  disabled={btn.disabled}
+                  className="btn btn--primary btn--wide"
+                  onClick={() => sendBid()}
+                  disabled={busyBid || myBalance == null || isBiddingLocked}
                 >
-                  <span className="quick-bid__label">{btn.label}</span>
-                  <span className="quick-bid__key">{btn.key}</span>
+                  {busyBid ? "Отправляем..." : "Отправить ставку"}
                 </button>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          <div className="bid-actions">
-            <button
-              type="button"
-              className="btn btn--ghost"
-              onClick={() => setMyBid("")}
-            >
-              Очистить
-            </button>
-            <button
-              type="button"
-              className="btn btn--primary"
-              onClick={() => sendBid()}
-              disabled={busyBid || myBalance == null || isBiddingLocked}
-            >
-              {busyBid ? "Отправляем..." : "Отправить ставку"}
-            </button>
-          </div>
+              <div className="bid-actions bid-actions--secondary">
+                <button
+                  type="button"
+                  className="btn bid-action bid-action--pass"
+                  onClick={sendPass}
+                  disabled={isBiddingLocked || busyBid}
+                >
+                  Пас
+                </button>
+                <button
+                  type="button"
+                  className="btn bid-action bid-action--allin"
+                  onClick={() => sendBid(myBalance || 0)}
+                  disabled={
+                    isBiddingLocked || busyBid || myBalance == null || myBalance <= 0
+                  }
+                >
+                  Вабанк
+                </button>
+              </div>
 
-          {isOwner && (
-            <div className="owner-controls">
-              <button
-                type="button"
-                className="pill pill--ghost"
-                onClick={paused ? resumeAuction : pauseAuction}
-              >
-                {paused ? "Продолжить" : "Пауза"}
-              </button>
-              <button
-                type="button"
-                className="pill pill--ghost"
-                onClick={forceNext}
-              >
-                Следующий лот
-              </button>
-            </div>
+              {isOwner && (
+                <div className="owner-controls">
+                  <button
+                    type="button"
+                    className="pill pill--ghost"
+                    onClick={paused ? resumeAuction : pauseAuction}
+                  >
+                    {paused ? "Продолжить" : "Пауза"}
+                  </button>
+                  <button
+                    type="button"
+                    className="pill pill--ghost"
+                    onClick={forceNext}
+                  >
+                    Следующий лот
+                  </button>
+                </div>
+              )}
+            </motion.section>
           )}
-        </section>
+        </AnimatePresence>
 
-                                        <section className="card card--players-live">
+        <section className="card card--players-live">
           <div className="card-row card-row--tight">
             <div>
               <span className="label">Игроки</span>
