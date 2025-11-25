@@ -3,6 +3,9 @@
 const { randomInt } = require('crypto');
 const { RoomGame } = require('@prisma/client');
 
+const COUNTDOWN_START_FROM = 3;
+const COUNTDOWN_STEP_MS = 4_000;
+
 /**
  * createAuctionEngine
  * @param {object} deps
@@ -28,7 +31,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
   const DEFAULT_RULES = Object.freeze({
     initialBalance: 1_000_000,
     maxSlots: 30,
-    timePerSlotSec: 3, // per-slot countdown in seconds (3-2-1 by default)
+    timePerSlotSec: COUNTDOWN_START_FROM * (COUNTDOWN_STEP_MS / 1000), // full window before auto-close
   });
 
   const LOT_ITEMS = [
@@ -201,16 +204,12 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       state.slotDeadlineAtMs = null;
       return;
     }
-    const sec = Number(state.rules?.timePerSlotSec || 0);
-    if (!Number.isFinite(sec) || sec <= 0) {
-      state.slotDeadlineAtMs = null;
-      return;
-    }
-    state.slotDeadlineAtMs = Date.now() + sec * 1000;
+    const durationMs = COUNTDOWN_START_FROM * COUNTDOWN_STEP_MS;
+    state.slotDeadlineAtMs = Date.now() + durationMs;
     const handle = setTimeout(() => {
       // безопасно завершаем слот по таймеру
       finalizeByTimer(state.roomId).catch(() => {});
-    }, sec * 1000 + 25);
+    }, durationMs + 25);
     timers.set(state.roomId, handle);
   }
 
@@ -363,6 +362,8 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
           : null,
       slotDeadlineAtMs: state.paused ? null : state.slotDeadlineAtMs || null,
       serverNowMs: nowMs,
+      countdownStartFrom: COUNTDOWN_START_FROM,
+      countdownStepMs: COUNTDOWN_STEP_MS,
       bidFeed: Array.isArray(state.bidFeed) ? state.bidFeed.slice(-8) : [],
     };
   }
@@ -386,18 +387,8 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       ensureConsistentPhase(state);
       return buildPublicState(state, room);
     }
-
-    const activeAlive = state.activePlayerIds.filter(
-      (pid) => (state.balances[pid] || 0) > 0
-    );
-    const needFrom = activeAlive.length ? activeAlive : state.activePlayerIds;
-
-    const allHaveBids = needFrom.every((pid) =>
-      Object.prototype.hasOwnProperty.call(state.currentBids, pid)
-    );
-    if (!allHaveBids) return null;
-
-    return resolveSlotNow(state, room);
+    // основной сценарий: слот закрывается по таймеру, поэтому ждём тика таймера
+    return null;
   }
 
   function resolveSlotNow(state, room) {

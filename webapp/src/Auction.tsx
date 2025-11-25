@@ -12,6 +12,8 @@ const MAX_SLOTS = 50;
 const MIN_BUDGET = 100_000;
 const MAX_BUDGET = 5_000_000;
 const BUDGET_STEP = 50_000;
+const COUNTDOWN_STEP_MS = 4_000;
+const COUNTDOWN_START_FROM = 3;
 
 const PHASE_LABEL: Record<string, string> = {
   lobby: "Лобби",
@@ -211,19 +213,32 @@ export default function Auction({
     return `База ${moneyFormatter.format(baseBid)}$`;
   }, [baseBid, leadingBid?.amount, leadingPlayerName, moneyFormatter]);
 
-  const secsLeft = useMemo(() => {
+  const countdownStepMs = useMemo(() => {
+    const raw = Number(auctionState?.countdownStepMs);
+    return Number.isFinite(raw) && raw > 0 ? raw : COUNTDOWN_STEP_MS;
+  }, [auctionState?.countdownStepMs]);
+
+  const countdownStartFrom = useMemo(() => {
+    const raw = Number(auctionState?.countdownStartFrom);
+    return Number.isFinite(raw) && raw > 0 ? raw : COUNTDOWN_START_FROM;
+  }, [auctionState?.countdownStartFrom]);
+
+  const countdownLeft = useMemo(() => {
+    if (countdownStepMs <= 0) return null;
     if (paused) {
       const ms = pauseLeftRef.current ?? (auctionState?.timeLeftMs ?? null);
       if (ms == null) return null;
-      return Math.max(0, Math.ceil(ms / 1000));
+      return Math.max(0, Math.ceil(ms / countdownStepMs));
     }
     if (!deadlineAtRef.current) return null;
-    const diff = Math.ceil((deadlineAtRef.current - nowTick) / 1000);
-    return Math.max(0, diff);
-  }, [auctionState?.timeLeftMs, nowTick, paused]);
+    const diffMs = deadlineAtRef.current - nowTick;
+    return Math.max(0, Math.ceil(diffMs / countdownStepMs));
+  }, [auctionState?.timeLeftMs, countdownStepMs, nowTick, paused]);
 
   const heroCountdown =
-    !paused && secsLeft != null && secsLeft >= 0 ? secsLeft : null;
+    !paused && countdownLeft != null && countdownLeft >= 0
+      ? Math.min(countdownStartFrom, countdownLeft)
+      : null;
   const slotMax = useMemo(() => {
     const raw =
       auctionState?.maxSlots ??
