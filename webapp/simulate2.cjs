@@ -1,3 +1,7 @@
-const iconv=require('iconv-lite');
-const orig='ÀÓ··Ë';
-console.log(iconv.decode(Buffer.from(orig,'utf8'),'latin1'));
+const iconv = require("iconv-lite");
+
+const original = "–ò–≥—Ä—ã";
+const utf8Bytes = Buffer.from(original, "utf8");
+
+console.log("misread as latin1", iconv.decode(utf8Bytes, "latin1"));
+console.log("misread as cp866", iconv.decode(utf8Bytes, "cp866"));

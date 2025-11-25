@@ -1,5 +1,8 @@
-const iconv=require('iconv-lite');
-const sample='¦þüýðªð';
-const bytes=iconv.encode(sample,'cp866');
-console.log('cp866 bytes', bytes);
-console.log('decode cp1251', iconv.decode(bytes,'win1251'));
+const iconv = require("iconv-lite");
+
+const correct = "ÐŸÑ€Ð¸Ð²ÐµÑ‚";
+const cp1251Bytes = iconv.encode(correct, "win1251");
+const garbled = iconv.decode(cp1251Bytes, "latin1");
+const recovered = iconv.decode(iconv.encode(garbled, "latin1"), "win1251");
+
+console.log({ correct, garbled, recovered });

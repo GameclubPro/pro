@@ -1,1 +1,12 @@
-const {TextDecoder, TextEncoder}=require('util');\nconst enc=new TextEncoder();\nconst dec=new TextDecoder('windows-1251');\nconst s='þöøôðýõø';\nconst bytes=enc.encode(s);\nconsole.log(bytes);\nconsole.log(dec.decode(bytes));\n
+const { TextDecoder, TextEncoder } = require("util");
+
+const sample = "ÐŸÑ€Ð¸Ð²ÐµÑ‚";
+const encoder = new TextEncoder(); // utf-8 encoder
+const utf8Bytes = encoder.encode(sample);
+
+console.log("utf8 bytes", utf8Bytes);
+console.log("decoded as utf8", new TextDecoder("utf-8").decode(utf8Bytes));
+console.log(
+  "decoded as windows-1251 (expected gibberish)",
+  new TextDecoder("windows-1251").decode(utf8Bytes),
+);

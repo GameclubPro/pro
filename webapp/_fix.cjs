@@ -1,6 +1,10 @@
-const {TextDecoder}=require('util');
-const corrupted='þöøôðýøõ';
-const bytes=Uint8Array.from([...corrupted].map(ch=>ch.charCodeAt(0)));
-const dec=new TextDecoder('utf-8');
-console.log('bytes', bytes);
-console.log('decoded as utf8 from codepoints:', dec.decode(bytes));
+const { TextDecoder } = require("util");
+
+// CP1251 bytes for "Ð˜Ð³Ñ€Ð¾ÐºÐ¸"
+const cp1251Bytes = Uint8Array.from([0xc8, 0xe3, 0xf0, 0xee, 0xea, 0xe8]);
+
+const cp1251Decoder = new TextDecoder("windows-1251");
+const utf8Decoder = new TextDecoder("utf-8", { fatal: false });
+
+console.log("cp1251 -> text", cp1251Decoder.decode(cp1251Bytes));
+console.log("cp1251 misread as utf8", utf8Decoder.decode(cp1251Bytes));

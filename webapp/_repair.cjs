@@ -1,5 +1,8 @@
-const {TextDecoder}=require('util');
-const corrupted='þöøôðýøõ';
-const bytes=Buffer.from(corrupted, 'utf8');
-const dec=new TextDecoder('windows-1251');
-console.log(dec.decode(bytes));
+const iconv = require("iconv-lite");
+
+const correct = "Ð˜Ð³Ñ€Ð¾ÐºÐ¸";
+const cp866Bytes = iconv.encode(correct, "cp866");
+const garbled = iconv.decode(cp866Bytes, "win1251");
+const restored = iconv.decode(iconv.encode(garbled, "win1251"), "cp866");
+
+console.log({ correct, garbled, restored });

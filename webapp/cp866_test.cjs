@@ -1,6 +1,8 @@
-const iconv=require('iconv-lite');
-const s='Ló¨þúø';
-const buf=iconv.encode(s,'cp866');
-console.log('cp866 bytes',buf);
-console.log('decoded utf8', buf.toString('utf8'));
-console.log('decode cp1251', iconv.decode(buf,'win1251'));
+const { TextDecoder } = require("util");
+
+// "Ð˜Ð³Ñ€Ð¾ÐºÐ¸" encoded as CP866
+const cp866Bytes = Uint8Array.from([0x88, 0xa3, 0xe0, 0xae, 0xaa, 0xa8]);
+
+console.log("ibm866 ->", new TextDecoder("ibm866").decode(cp866Bytes));
+console.log("utf8 ->", new TextDecoder("utf-8", { fatal: false }).decode(cp866Bytes));
+console.log("windows-1251 ->", new TextDecoder("windows-1251").decode(cp866Bytes));

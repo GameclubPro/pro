@@ -1,5 +1,8 @@
-const iconv=require('iconv-lite');
-const orig='Èãðîêè';
-const bytes=iconv.encode(orig,'win1251');
-const wrong=iconv.decode(bytes,'cp866');
-console.log('wrong', wrong);
+const iconv = require("iconv-lite");
+
+const word = "Ð˜Ð³Ñ€Ð¾ÐºÐ¸";
+const cp1251 = iconv.encode(word, "win1251");
+const misread = iconv.decode(cp1251, "cp866");
+
+console.log("cp1251 bytes", cp1251);
+console.log("misread as cp866", misread);
