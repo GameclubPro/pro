@@ -1712,7 +1712,6 @@ export default function Auction({
               const name = playerDisplayName(p);
               const avatar = p.user?.photo_url || p.user?.avatar || "";
               const balance = balances[p.id] ?? 0;
-              const basketValue = basketTotals[p.id] ?? 0;
               const bidValue = Number(currentBids[p.id] ?? 0) || null;
               const isHost = ownerPlayer?.id === p.id;
               const isSelf = myPlayerId === p.id;
@@ -1725,8 +1724,10 @@ export default function Auction({
                   className={[
                     "lobby-player",
                     "lobby-player-btn",
+                    "lobby-player--ingame",
                     isHost ? "lobby-player--host" : "",
                     isLeading ? "lobby-player--ready" : "",
+                    isSelf ? "lobby-player--self" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
@@ -1737,25 +1738,22 @@ export default function Auction({
                   </div>
                   <div className="lobby-player__body">
                     <div className="lobby-player__name">{name}</div>
-                    <div className="lobby-player__tags">
-                      {isSelf ? "Я · " : ""}
-                      Баланс {moneyFormatter.format(balance)}$ · Корзина {moneyFormatter.format(basketValue)}$
-                      {bidValue && bidValue > 0 ? ` · Ставка ${moneyFormatter.format(bidValue)}$` : ""}
+                    <div className="lobby-player__tags lobby-player__tags--auction">
+                      <span className="auction-meta-tag">
+                        <span className="auction-meta-tag__icon">💰</span>
+                        {moneyFormatter.format(balance)}$
+                      </span>
+                      {bidValue && bidValue > 0 ? (
+                        <span className="auction-meta-tag auction-meta-tag--bid">
+                          <span className="auction-meta-tag__icon">⚡</span>
+                          {moneyFormatter.format(bidValue)}$
+                        </span>
+                      ) : null}
                     </div>
-                  </div>
-                  <div className="lobby-player__status">
-                    <span
-                      className={[
-                        "status-dot",
-                        isLeading ? "status-dot--ok" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                    />
                   </div>
                   {isHost && (
                     <span className="chip chip--host" aria-label="Хост" title="Хост комнаты">
-                      ⭐
+                      👑
                     </span>
                   )}
                 </button>

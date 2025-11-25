@@ -901,13 +901,14 @@ textarea {
   margin-top: 10px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  gap: 10px;
   padding-right: 2px;
   overflow-y: auto;
 }
 .lobby-players-list--ingame {
   margin-top: 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 .lobby-player-btn {
   background: none;
@@ -917,6 +918,11 @@ textarea {
   text-align: left;
   color: inherit;
   cursor: pointer;
+  transition:
+    transform var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-medium),
+    background var(--transition-medium);
 }
 .lobby-player-btn:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--accent-main) 60%, transparent);
@@ -932,6 +938,37 @@ textarea {
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
   background: rgba(15, 23, 42, 0.96);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-medium),
+    box-shadow var(--transition-medium),
+    transform var(--transition-fast);
+}
+
+.lobby-player--ingame {
+  padding: 10px 11px;
+  background: radial-gradient(circle at 100% 20%, rgba(56, 189, 248, 0.08), transparent 32%),
+    linear-gradient(135deg, rgba(148, 163, 184, 0.08), rgba(15, 23, 42, 0.95));
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 70%, transparent);
+  box-shadow:
+    0 12px 32px rgba(2, 6, 23, 0.6),
+    0 1px 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+.lobby-player-btn.lobby-player--ingame:hover,
+.lobby-player-btn.lobby-player--ingame:focus-visible {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent-main) 45%, rgba(148, 163, 184, 0.45));
+  box-shadow:
+    0 16px 36px rgba(2, 6, 23, 0.75),
+    0 0 0 1px color-mix(in srgb, var(--accent-main) 28%, transparent);
+}
+
+.lobby-player--self {
+  border-color: color-mix(in srgb, var(--accent-main) 70%, var(--border-subtle));
+  box-shadow:
+    0 14px 32px rgba(56, 189, 248, 0.18),
+    0 0 0 1px color-mix(in srgb, var(--accent-main) 35%, transparent);
 }
 
 .lobby-player--ready {
@@ -959,6 +996,14 @@ textarea {
   font-size: 14px;
 }
 
+.lobby-player--ingame .lobby-player__avatar {
+  width: 38px;
+  height: 38px;
+  border: 1px solid color-mix(in srgb, var(--accent-main) 30%, rgba(148, 163, 184, 0.45));
+  background: linear-gradient(160deg, rgba(56, 189, 248, 0.16), rgba(15, 23, 42, 0.92));
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.6);
+}
+
 .lobby-player__avatar img {
   width: 100%;
   height: 100%;
@@ -978,9 +1023,47 @@ textarea {
   text-overflow: ellipsis;
 }
 
+.lobby-player--ingame .lobby-player__name {
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+
 .lobby-player__tags {
   font-size: 11px;
   color: var(--muted);
+}
+
+.lobby-player__tags--auction {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.auction-meta-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 75%, transparent);
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.08), rgba(15, 23, 42, 0.9));
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.auction-meta-tag__icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.auction-meta-tag--bid {
+  border-color: color-mix(in srgb, var(--accent-main) 55%, rgba(148, 163, 184, 0.4));
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(15, 23, 42, 0.92));
+  color: var(--text);
+  box-shadow: 0 12px 30px rgba(56, 189, 248, 0.14);
 }
 
 .lobby-player__status {
