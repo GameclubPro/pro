@@ -1519,7 +1519,7 @@ export default function Auction({
                   <div className="lobby-player__body">
                     <div className="lobby-player__name">{name}</div>
                     <div className="lobby-player__tags">
-                      {p.ready ? "готов" : "ожидаем"}
+                      {p.ready ? "Готов" : "Ожидание"}
                     </div>
                   </div>
                   <div className="lobby-player__status">
@@ -1694,7 +1694,7 @@ export default function Auction({
           )}
         </section>
 
-        <section className="card card--players-live">
+                                        <section className="card card--players-live">
           <div className="card-row card-row--tight">
             <div>
               <span className="label">Игроки</span>
@@ -1704,7 +1704,7 @@ export default function Auction({
             <span className="pill pill--tiny">{safePlayers.length} игроков</span>
           </div>
 
-          <div className="live-players-grid">
+          <div className="lobby-players-list lobby-players-list--ingame">
             {safePlayers.length === 0 && (
               <div className="empty-note">Никого нет, ждём подключения.</div>
             )}
@@ -1713,7 +1713,6 @@ export default function Auction({
               const avatar = p.user?.photo_url || p.user?.avatar || "";
               const balance = balances[p.id] ?? 0;
               const basketValue = basketTotals[p.id] ?? 0;
-              const netWorth = netWorths[p.id] ?? balance + basketValue;
               const bidValue = Number(currentBids[p.id] ?? 0) || null;
               const isHost = ownerPlayer?.id === p.id;
               const isSelf = myPlayerId === p.id;
@@ -1724,62 +1723,46 @@ export default function Auction({
                   key={p.id}
                   type="button"
                   className={[
-                    "live-player",
-                    isHost ? "live-player--host" : "",
-                    isLeading ? "live-player--leading" : "",
+                    "lobby-player",
+                    "lobby-player-btn",
+                    isHost ? "lobby-player--host" : "",
+                    isLeading ? "lobby-player--ready" : "",
                   ]
                     .filter(Boolean)
                     .join(" ")}
                   onClick={() => setBasketPlayerId(p.id)}
                 >
-                  <div className="live-player__top">
-                    <div className="live-player__avatar" aria-hidden>
-                      {avatar ? <img src={avatar} alt={name} /> : name.slice(0, 1)}
-                    </div>
-                    <div className="live-player__titles">
-                      <div className="live-player__name">{name}</div>
-                      <div className="live-player__tags">
-                        {isHost && <span className="chip chip--tiny">Хост</span>}
-                        {isSelf && <span className="chip chip--tiny chip--me">Я</span>}
-                        {isLeading && (
-                          <span className="chip chip--tiny chip--glow">Лидер</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="live-player__worth" aria-label="Состояние">
-                      {moneyFormatter.format(netWorth)}$
+                  <div className="lobby-player__avatar" aria-hidden>
+                    {avatar ? <img src={avatar} alt={name} /> : name.slice(0, 1)}
+                  </div>
+                  <div className="lobby-player__body">
+                    <div className="lobby-player__name">{name}</div>
+                    <div className="lobby-player__tags">
+                      {isSelf ? "Я · " : ""}
+                      Баланс {moneyFormatter.format(balance)}$ · Корзина {moneyFormatter.format(basketValue)}$
+                      {bidValue && bidValue > 0 ? ` · Ставка ${moneyFormatter.format(bidValue)}$` : ""}
                     </div>
                   </div>
-
-                  <div className="live-player__stats">
-                    <div className="live-player__stat">
-                      <span className="live-player__stat-label">Ставка</span>
-                      <span className="live-player__stat-value">
-                        {bidValue != null && bidValue > 0
-                          ? `${moneyFormatter.format(bidValue)}$`
-                          : "—"}
-                      </span>
-                    </div>
-                    <div className="live-player__stat">
-                      <span className="live-player__stat-label">Баланс</span>
-                      <span className="live-player__stat-value">
-                        {moneyFormatter.format(balance)}$
-                      </span>
-                    </div>
-                    <div className="live-player__stat">
-                      <span className="live-player__stat-label">Корзина</span>
-                      <span className="live-player__stat-value live-player__stat-value--pill">
-                        {moneyFormatter.format(basketValue)}$
-                      </span>
-                    </div>
+                  <div className="lobby-player__status">
+                    <span
+                      className={[
+                        "status-dot",
+                        isLeading ? "status-dot--ok" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                    />
                   </div>
+                  {isHost && (
+                    <span className="chip chip--host" aria-label="Хост" title="Хост комнаты">
+                      ⭐
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
-        </section>
-
-        {lastFinishedSlot && (
+        </section>{lastFinishedSlot && (
           <section className="card card--last">
             <span className="label tiny">Прошлый лот</span>
             <div className="lot-last__content">
@@ -2162,5 +2145,15 @@ export default function Auction({
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
 
 

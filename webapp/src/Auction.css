@@ -905,6 +905,23 @@ textarea {
   padding-right: 2px;
   overflow-y: auto;
 }
+.lobby-players-list--ingame {
+  margin-top: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.lobby-player-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.lobby-player-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent-main) 60%, transparent);
+  outline-offset: 2px;
+}
 
 .lobby-player {
   position: relative;
