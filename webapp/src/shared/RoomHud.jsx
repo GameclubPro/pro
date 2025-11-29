@@ -135,7 +135,7 @@ export function Chip({ text, tone }) {
   return <span className={`mf-chip ${tone || ""}`}>{text}</span>;
 }
 
-export const TimerHUD = memo(function TimerHUD({ timer }) {
+export const TimerHUD = memo(function TimerHUD({ timer, className = "" }) {
   const endsAtMs = toMs(timer?.endsAt) || 0;
   const serverAtMs = toMs(timer?.serverTime) || 0;
   const animKey = endsAtMs;
@@ -161,10 +161,11 @@ export const TimerHUD = memo(function TimerHUD({ timer }) {
   const msLeft = Math.max(0, endsAtMs - (Date.now() - (skewRef.current || 0)));
   const leftText = fmtMs(msLeft);
   const critical = msLeft <= 5000;
+  const cls = ["mf-timer", critical ? "critical" : "", className].filter(Boolean).join(" ");
 
   return (
     <div
-      className={`mf-timer ${critical ? "critical" : ""}`}
+      className={cls}
       role="timer"
       aria-live="polite"
       aria-atomic="true"
@@ -215,19 +216,17 @@ export function GameStage({ phase, dayNumber, timer, animate = false }) {
       </div>
 
       <div className="mf-gs-bottom">
-        <div className="mf-gs-timer-card">
-          {timer ? (
-            <TimerHUD timer={timer} />
-          ) : (
-            <div className="mf-timer skeleton" aria-hidden="true">
-              <span className="mf-timer-icon">⏳</span>
-              <span className="mf-timer-text">—</span>
-              <div className="mf-timer-bar">
-                <i />
-              </div>
+        {timer ? (
+          <TimerHUD timer={timer} className="mf-gs-timer-card" />
+        ) : (
+          <div className="mf-timer mf-gs-timer-card skeleton" aria-hidden="true">
+            <span className="mf-timer-icon">⏳</span>
+            <span className="mf-timer-text">—</span>
+            <div className="mf-timer-bar">
+              <i />
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="mf-gs-daycard" aria-label="День игры">
           <div className="label">День</div>
