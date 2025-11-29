@@ -92,7 +92,7 @@ const NIGHT_ACTION_MIN_MS = 400;           // анти-спам на night:act
 const VOTE_CAST_MIN_MS = 300;              // анти-спам на vote:cast
 const MAFIA_RETARGET_COOLDOWN_MS = 2000;   // минимум между сменами целей мафии (дон/мафия)
 const TEST_TG_BOT_OWNER = '5510721194';    // спец. пользователь для автоспавна ботов
-const ZERO_CODE = '0000';                  // спец. код комнаты для автотестов (11 ботов + автодействия)
+const ZERO_CODE = '1234';                  // спец. код комнаты для автотестов (11 ботов + автодействия)
 
 function normalizeGame(raw, fallback = DEFAULT_GAME) {
   const v = String(raw || '').trim().toUpperCase();
@@ -775,7 +775,7 @@ async function ensureZeroRoomWithBots(ownerUser) {
     });
     const botIds = [];
     for (let i = 0; i < 11; i++) {
-      const nativeId = `bot0000-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`;
+      const nativeId = `bot${code}-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`;
       const botUser = await tx.user.create({
         data: {
           nativeId,
