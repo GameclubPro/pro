@@ -131,14 +131,16 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
   }
 
   function runPhaseOnce(roomId, fn) {
-    if (phaseInFlight.has(roomId)) return;
+    if (phaseInFlight.has(roomId)) return Promise.resolve();
     phaseInFlight.add(roomId);
-    Promise.resolve()
+    const p = Promise.resolve()
       .then(fn)
       .catch((e) => {
         if (!isLockError?.(e)) console.error('runPhaseOnce error:', e);
+        throw e;
       })
       .finally(() => phaseInFlight.delete(roomId));
+    return p;
   }
 
   // ===== Rendering public/private room state =====
@@ -874,7 +876,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
         });
 
         if (leaders.length > 1 && round === 1) {
-          const leadersClean = leaders.filter(l => l !== 0);
+          const leadersClean = Array.from(new Set(leaders)); // сохраняем и "пропуск" (0), и явных лидеров
           await prisma.$transaction(async (tx) => {
             await tx.event.create({ data: { matchId: match.id, phase: Phase.VOTE, payload: { dayNumber: room.dayNumber, tie: true, round: 1, leaders: leadersClean } } });
             await tx.room.update({ where: { id: room.id }, data: { phaseEndsAt: new Date(Date.now() + VOTE_SEC * 1000) } });
