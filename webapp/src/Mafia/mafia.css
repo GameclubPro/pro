@@ -399,6 +399,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   position:relative;
   padding:14px 16px 16px;
   border-radius:18px;
+  margin-top:8px;
   border:1px solid color-mix(in lab, var(--mf-fg) 8%, transparent);
   background:
     linear-gradient(180deg, rgba(22,24,28,.78), rgba(12,14,18,.62)) padding-box,
@@ -468,9 +469,9 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 
 .mf-gs-bottom{
   display:grid;
-  grid-template-columns: minmax(0, 2fr) minmax(120px, .9fr);
+  grid-template-columns: minmax(0, 1.8fr) minmax(120px, .8fr);
   gap:12px;
-  align-items:stretch;
+  align-items:center;
 }
 .mf-gs-timer-card,
 .mf-gs-daycard{
