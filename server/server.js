@@ -87,6 +87,11 @@ const USE_REDIS = !!REDIS_URL;
 const INITDATA_MAX_AGE = Math.max(60, parseInt(INITDATA_MAX_AGE_SEC, 10) || 86400);
 const DEFAULT_GAME = RoomGame.MAFIA;
 
+// Anti-spam / UX tunables
+const NIGHT_ACTION_MIN_MS = 400;           // анти-спам на night:act
+const VOTE_CAST_MIN_MS = 300;              // анти-спам на vote:cast
+const MAFIA_RETARGET_COOLDOWN_MS = 2000;   // минимум между сменами целей мафии (дон/мафия)
+
 function normalizeGame(raw, fallback = DEFAULT_GAME) {
   const v = String(raw || '').trim().toUpperCase();
   if (v === 'AUCTION') return RoomGame.AUCTION;
@@ -987,6 +992,23 @@ function emitAuctionRoomState(room, players) {
   }
 }
 
+function activeRolesSummary(room) {
+  const alive = (room.players || []).filter((p) => p.alive);
+  const hasRole = (role) => alive.some((p) => p.role === role);
+  const hasMafia = alive.some((p) => mafia.MAFIA_ROLES.has(p.role));
+  return {
+    mafiaAlive: hasMafia,
+    doctorAlive: hasRole(Role.DOCTOR),
+    sheriffAlive: hasRole(Role.SHERIFF),
+    bodyguardAlive: hasRole(Role.BODYGUARD),
+    prostituteAlive: hasRole(Role.PROSTITUTE),
+    journalistAlive: hasRole(Role.JOURNALIST),
+    sniperAlive: hasRole(Role.SNIPER),
+    civilAlive: alive.some((p) => p.role === Role.CIVIL),
+    totalAlive: alive.length,
+  };
+}
+
 async function emitAuctionRoomStateByCode(code) {
   try {
     const room = await readRoomWithPlayersByCode(code, { game: RoomGame.AUCTION });
@@ -1527,6 +1549,9 @@ io.on('connection', (socket) => {
   const user = socket.data.user;
   const userRooms = new Set();
   socket.data.playerIds = socket.data.playerIds || new Set();
+  const lastNightActionAt = new Map(); // roomId -> ts
+  const lastVoteCastAt = new Map();    // roomId -> ts
+  const lastMafiaRetargetAt = new Map(); // roomId -> ts (дон/мафия)
 
   // ⚠️ Больше НЕ выполняем авто-чистку комнат/игроков на коннекте — по требованиям продукта.
 
@@ -1624,6 +1649,7 @@ io.on('connection', (socket) => {
       }
 
       const state = await mafia.publicRoomState(code);
+      const activeRoles = activeRolesSummary(room);
 
       // Если клиент актуален — только обновим таймер и вернём дельту событий
       if (state?.etag && etag && state.etag === etag) {
@@ -1638,7 +1664,7 @@ io.on('connection', (socket) => {
             take: 50,
           });
         }
-        return ackOk(cb, { notModified: true, etag: state.etag, lastEventId: state.lastEventId, deltaEvents: jsonSafe(delta) });
+        return ackOk(cb, { notModified: true, etag: state.etag, lastEventId: state.lastEventId, deltaEvents: jsonSafe(delta), activeRoles });
       }
 
       // Иначе — полноценный ресинк (приватное состояние, паблик, таймеры и маф-сигналы)
@@ -1667,7 +1693,7 @@ io.on('connection', (socket) => {
           take: 50,
         });
       }
-      return ackOk(cb, { sentFull: true, etag: state?.etag || null, lastEventId: state?.lastEventId || null, deltaEvents: jsonSafe(delta) });
+      return ackOk(cb, { sentFull: true, etag: state?.etag || null, lastEventId: state?.lastEventId || null, deltaEvents: jsonSafe(delta), activeRoles });
     } catch (e) {
       console.error('room:resume error', e);
       return ackErr(cb, 'failed');
@@ -1708,6 +1734,13 @@ io.on('connection', (socket) => {
       const room = await readRoomWithPlayersByCode(code, { game: RoomGame.MAFIA });
       if (!room || room.game !== RoomGame.MAFIA) return ackErr(cb, 'wrong_game');
       if (room.status !== Phase.NIGHT) return ackErr(cb, 'Сейчас не ночь');
+
+      const now = Date.now();
+      const prevAct = lastNightActionAt.get(room.id) || 0;
+      if (now - prevAct < NIGHT_ACTION_MIN_MS) {
+        return ackErr(cb, 'too_fast');
+      }
+      lastNightActionAt.set(room.id, now);
 
       const alivePlayers = room.players.filter(p => p.alive);
       const me = alivePlayers.find(p => p.userId === user.id);
@@ -1751,6 +1784,12 @@ io.on('connection', (socket) => {
       });
       const allowRetarget = mafia.MAFIA_ROLES.has(role);
       if (existing && !allowRetarget) return ackErr(cb, 'Ход на эту ночь уже сделан');
+      if (existing && allowRetarget) {
+        const last = lastMafiaRetargetAt.get(room.id) || 0;
+        if (Date.now() - last < MAFIA_RETARGET_COOLDOWN_MS) {
+          return ackErr(cb, 'retarget_too_fast', { retryMs: MAFIA_RETARGET_COOLDOWN_MS - (Date.now() - last) });
+        }
+      }
 
       const validation = await mafia.validateNightTarget({ room, match, actor: me, role, target, nightNumber });
       if (!validation.ok) return ackErr(cb, validation.error || 'Цель невалидна');
@@ -1760,6 +1799,7 @@ io.on('connection', (socket) => {
           where: { id: existing.id },
           data: { targetPlayerId: target?.id || null, role },
         });
+        lastMafiaRetargetAt.set(room.id, Date.now());
       } else {
         await prisma.nightAction.create({
           data: { matchId: match.id, nightNumber, actorPlayerId: me.id, role, targetPlayerId: target?.id || null },
@@ -1785,6 +1825,13 @@ io.on('connection', (socket) => {
       const room = await readRoomWithPlayersByCode(code, { game: RoomGame.MAFIA });
       if (!room || room.game !== RoomGame.MAFIA) return ackErr(cb, 'wrong_game');
       if (room.status !== Phase.VOTE) return ackErr(cb, 'Сейчас не голосование');
+
+      const now = Date.now();
+      const prevVote = lastVoteCastAt.get(room.id) || 0;
+      if (now - prevVote < VOTE_CAST_MIN_MS) {
+        return ackErr(cb, 'too_fast');
+      }
+      lastVoteCastAt.set(room.id, now);
 
       const alivePlayers = room.players.filter(p => p.alive);
       const me = alivePlayers.find(p => p.userId === user.id);

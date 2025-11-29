@@ -108,6 +108,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
       phase: rt.phase,
       endsAt: rt.endsAt,
       round: rt.round || 1,
+      dayNumber: rt.dayNumber ?? null,
     };
   }
 
@@ -235,12 +236,13 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
         endsAt: null,
         serverTime: Date.now(),
         round: 1,
+        dayNumber: room.dayNumber,
         winner: room.matches?.[0]?.winner || null,
       };
     } else if (endsAt) {
       // если endsAt пришёл только из БД — всё равно отдадим serverTime,
       // чтобы фронт мог корректно синхронизировать локальный таймер
-      timerPayload = { phase: room.status, endsAt, serverTime: Date.now(), round };
+      timerPayload = { phase: room.status, endsAt, serverTime: Date.now(), round, dayNumber: room.dayNumber };
     }
 
     // Считаем ETag состояния (без персональных данных) — быстрый признак изменений
@@ -373,7 +375,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
           io.to(`player:${p.id}`).emit('private:self', self);
         }));
 
-        schedulePhase(updated.id, Phase.NIGHT, NIGHT_SEC, { round: 1 });
+        schedulePhase(updated.id, Phase.NIGHT, NIGHT_SEC, { round: 1, dayNumber: updated.dayNumber });
         emitRoomStateDebounced(updated.code);
 
         // После старта игра вышла из лобби — очищаем готовность, чтобы на «следующий круг» начинать с нуля
@@ -583,17 +585,21 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
     return null;
   }
 
-  function schedulePhase(roomId, phase, seconds, { round = 1 } = {}) {
+  function schedulePhase(roomId, phase, seconds, { round = 1, dayNumber = null } = {}) {
     cancelTimer(roomId);
     const endsAt = Date.now() + seconds * 1000;
+    const dayNum = dayNumber != null ? dayNumber : null;
     const timeout = setTimeout(() => onPhaseTimeout(roomId, phase, round), seconds * 1000);
     if (timeout?.unref) { try { timeout.unref(); } catch {} }
-    roomTimers.set(roomId, { timeout, endsAt, phase, round });
+    roomTimers.set(roomId, { timeout, endsAt, phase, round, dayNumber: dayNum });
     prisma.room.update({ where: { id: roomId }, data: { phaseEndsAt: new Date(endsAt) } }).catch(() => {});
     (async () => {
       try {
         const r = await prisma.room.findUnique({ where: { id: roomId } });
-        if (r) io.to(`room:${r.code}`).emit('timer:update', { phase, endsAt, serverTime: Date.now(), round });
+        if (r) {
+          const dn = dayNum != null ? dayNum : r.dayNumber;
+          io.to(`room:${r.code}`).emit('timer:update', { phase, endsAt, serverTime: Date.now(), round, dayNumber: dn });
+        }
       } catch {}
     })();
   }
@@ -647,6 +653,17 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
         if (prostitute) {
           const prAct = actions.find(a => a.actorPlayerId === prostitute.id && a.role === Role.PROSTITUTE);
           if (prAct?.targetPlayerId) blockedActors.add(prAct.targetPlayerId);
+        }
+
+        try {
+          const blockedMafia = room.players
+            .filter(p => blockedActors.has(p.id) && MAFIA_ROLES.has(p.role))
+            .map(p => p.id);
+          if (blockedMafia.length) {
+            io.to(`maf:${room.id}`).emit('mafia:blocked', { playerIds: blockedMafia, nightNumber });
+          }
+        } catch (e) {
+          console.warn('emit mafia:blocked failed:', e?.message || e);
         }
 
         // Инсайты Шерифа/Журналиста (если не заблокированы)
@@ -826,7 +843,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
           return;
         }
 
-        schedulePhase(room.id, Phase.DAY, DAY_SEC, { round: 1 });
+        schedulePhase(room.id, Phase.DAY, DAY_SEC, { round: 1, dayNumber: room.dayNumber + 1 });
         await emitMafiaTargets(room.id);
       })
     );
@@ -846,7 +863,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
 
         const code = (await prisma.room.findUnique({ where: { id: room.id } })).code;
 
-        schedulePhase(room.id, Phase.VOTE, VOTE_SEC, { round: 1 });
+        schedulePhase(room.id, Phase.VOTE, VOTE_SEC, { round: 1, dayNumber: room.dayNumber });
         emitRoomStateDebounced(code);
       })
     );
@@ -948,7 +965,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
           return;
         }
 
-        schedulePhase(room.id, Phase.NIGHT, NIGHT_SEC, { round: 1 });
+        schedulePhase(room.id, Phase.NIGHT, NIGHT_SEC, { round: 1, dayNumber: room.dayNumber });
         await emitMafiaTargets(room.id);
         await emitMafiaTeam(room.id);
       })
@@ -975,7 +992,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
           });
           round = lastVoteEvt?.payload?.round || 1;
         }
-        schedulePhase(r.id, r.status, Math.ceil(ms / 1000), { round });
+        schedulePhase(r.id, r.status, Math.ceil(ms / 1000), { round, dayNumber: r.dayNumber });
       }
 
       for (const r of rooms) {
