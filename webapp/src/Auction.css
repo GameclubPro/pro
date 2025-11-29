@@ -1366,7 +1366,64 @@ textarea {
   margin-top: 2px;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
+  gap: 10px;
+}
+
+.bid-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.text-input--with-action {
+  padding-right: 64px;
+}
+
+.bid-submit-inline {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  width: 46px;
+  height: 42px;
+  border-radius: 14px;
+  border: 1px solid rgba(56, 189, 248, 0.65);
+  background: linear-gradient(135deg, #38bdf8, #22d3ee);
+  color: #0b1120;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 28px rgba(34, 211, 238, 0.35);
+  cursor: pointer;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    filter var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.bid-submit-inline:hover:not(:disabled) {
+  transform: translateY(calc(-50% - 1px));
+  filter: brightness(1.05);
+  box-shadow: 0 16px 36px rgba(56, 189, 248, 0.35);
+}
+
+.bid-submit-inline:focus-visible {
+  outline: 2px solid rgba(56, 189, 248, 0.9);
+  outline-offset: 2px;
+}
+
+.bid-submit-inline:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: translateY(-50%);
+}
+
+.bid-submit-inline__icon {
+  width: 18px;
+  height: 18px;
+}
 }
 
 .quick-bids {
@@ -1425,6 +1482,7 @@ textarea {
 .bid-actions--secondary {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+  margin-top: 4px;
 }
 
 .bid-action {
