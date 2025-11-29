@@ -175,7 +175,7 @@ export const TimerHUD = memo(function TimerHUD({ timer }) {
       </span>
       <span className="mf-timer-text">{leftText}</span>
       <div className="mf-timer-bar" aria-hidden="true">
-        <i style={{ "--left-ms": `${initialLeft}ms` }} />
+        <i style={{ "--msLeft": `${initialLeft}ms` }} />
       </div>
     </div>
   );
@@ -183,6 +183,11 @@ export const TimerHUD = memo(function TimerHUD({ timer }) {
 
 export function GameStage({ phase, dayNumber, timer, animate = false }) {
   const ph = String(phase || "").toUpperCase();
+  const stage = [
+    { key: "NIGHT", label: "Ночь", icon: "🌘" },
+    { key: "DAY", label: "День", icon: "☀️" },
+    { key: "VOTE", label: "Голос", icon: "⚖️" },
+  ];
 
   return (
     <div
@@ -190,16 +195,44 @@ export function GameStage({ phase, dayNumber, timer, animate = false }) {
       role="group"
       aria-label="Этап игры"
     >
-      <div className="mf-gamestage-pill">
-        <Chip text={labelByKey(ph)} tone={ph === "NIGHT" ? "danger" : ph === "DAY" ? "ok" : ""} />
+      <div className="mf-gs-tiles">
+        {stage.map((s) => {
+          const active = ph === s.key;
+          return (
+            <div
+              key={s.key}
+              className={`mf-gs-pill ${active ? "active" : "idle"}`}
+              aria-current={active ? "true" : undefined}
+              aria-label={`${s.label}${active ? " (текущая фаза)" : ""}`}
+            >
+              <span className="ico" aria-hidden="true">
+                {s.icon}
+              </span>
+              <span className="txt">{s.label}</span>
+            </div>
+          );
+        })}
       </div>
-      <div className="mf-gamestage-main">
-        {ph !== "LOBBY" && (
-          <div className="mf-gamestage-day" aria-label="День">
-            День {dayNumber != null ? dayNumber : 1}
-          </div>
-        )}
-        {timer ? <TimerHUD timer={timer} /> : null}
+
+      <div className="mf-gs-bottom">
+        <div className="mf-gs-timer-card">
+          {timer ? (
+            <TimerHUD timer={timer} />
+          ) : (
+            <div className="mf-timer skeleton" aria-hidden="true">
+              <span className="mf-timer-icon">⏳</span>
+              <span className="mf-timer-text">—</span>
+              <div className="mf-timer-bar">
+                <i />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mf-gs-daycard" aria-label="День игры">
+          <div className="label">День</div>
+          <div className="val">{dayNumber != null ? dayNumber : 1}</div>
+        </div>
       </div>
     </div>
   );
