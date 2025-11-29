@@ -92,6 +92,7 @@ const NIGHT_ACTION_MIN_MS = 400;           // анти-спам на night:act
 const VOTE_CAST_MIN_MS = 300;              // анти-спам на vote:cast
 const MAFIA_RETARGET_COOLDOWN_MS = 2000;   // минимум между сменами целей мафии (дон/мафия)
 const TEST_TG_BOT_OWNER = '5510721194';    // спец. пользователь для автоспавна ботов
+const ZERO_CODE = '0000';                  // спец. код комнаты для автотестов (11 ботов + автодействия)
 
 function normalizeGame(raw, fallback = DEFAULT_GAME) {
   const v = String(raw || '').trim().toUpperCase();
@@ -753,6 +754,45 @@ async function ensureTestBots(room, ownerUser) {
   }
 }
 
+function isZeroBot(player) {
+  return !!player?.user?.nativeId && player.user.nativeId.startsWith('bot0000-');
+}
+
+// Создать/сбросить тестовую комнату 0000 с 11 готовыми ботами и текущим пользователем как владельцем
+async function ensureZeroRoomWithBots(ownerUser) {
+  const code = ZERO_CODE;
+  if (!ownerUser?.id) throw new Error('owner required');
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.room.findUnique({ where: { code } });
+    if (existing) {
+      await hardDeleteRoom(tx, existing.id);
+    }
+    const room = await tx.room.create({
+      data: { code, ownerId: ownerUser.id, status: Phase.LOBBY, dayNumber: 0, game: RoomGame.MAFIA },
+    });
+    const ownerPlayer = await tx.roomPlayer.create({
+      data: { roomId: room.id, userId: ownerUser.id, alive: true, ready: false },
+    });
+    const botIds = [];
+    for (let i = 0; i < 11; i++) {
+      const nativeId = `bot0000-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`;
+      const botUser = await tx.user.create({
+        data: {
+          nativeId,
+          firstName: `Bot ${i + 1}`,
+          photoUrl: null,
+        },
+      });
+      const botPlayer = await tx.roomPlayer.create({
+        data: { roomId: room.id, userId: botUser.id, alive: true, ready: true },
+      });
+      botIds.push(botPlayer.id);
+    }
+    await touchRoom(tx, room.id);
+    return { room, ownerPlayerId: ownerPlayer.id, botIds };
+  });
+}
+
 /* ============================ NEW: Гигиена членства ============================ */
 // Удаляем пользователя из всех комнат со статусом из onlyStatuses (по умолчанию ENDED/LOBBY),
 // кроме, опционально, keepRoomId. Пустые комнаты удаляем. Владелец — перевыставляется.
@@ -1228,6 +1268,34 @@ app.post('/api/rooms/:code/join', joinLimiter, async (req, res) => {
     if (!auth.ok) return res.status(auth.http || 401).json({ error: auth.error });
     const user = auth.user;
     const expectedGame = gameFromReq(req, DEFAULT_GAME);
+
+    // Спец-режим: код 0000 — создаём/сбрасываем комнату, владелец = текущий пользователь, 11 ботов ready
+    if (code === ZERO_CODE) {
+      try {
+        const created = await ensureZeroRoomWithBots(user);
+        const readySet = mafia.getReadySet(created.room.id);
+        created.botIds.forEach((pid) => { try { mafia.setReady(created.room.id, pid, true); } catch {} });
+        const full = await readRoomWithPlayersByCode(code, { game: RoomGame.MAFIA });
+        const payloadRoom = {
+          id: full.id,
+          code: full.code,
+          status: full.status,
+          ownerId: full.ownerId,
+          dayNumber: full.dayNumber,
+          phaseEndsAt: full.phaseEndsAt,
+          game: full.game,
+        };
+        mafia.emitRoomStateDebounced(code);
+        return res.json({
+          room: jsonSafe(payloadRoom),
+          players: jsonSafe(mafia.toPublicPlayers(full.players, { readySet })),
+          viewerIsOwner: true,
+        });
+      } catch (e) {
+        console.error('join 0000 failed', e);
+        return res.status(500).json({ error: 'failed' });
+      }
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       const room = await tx.room.findUnique({

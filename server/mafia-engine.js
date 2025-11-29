@@ -112,6 +112,135 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
     };
   }
 
+  function isBot(player) {
+    return !!player?.user?.nativeId && player.user.nativeId.startsWith('bot0000-');
+  }
+
+  async function randomTarget(room, excludeIds = []) {
+    const pool = room.players.filter(p => p.alive && !excludeIds.includes(p.id));
+    if (!pool.length) return null;
+    const rnd = Math.floor(Math.random() * pool.length);
+    return pool[rnd];
+  }
+
+  async function autoBotNightActions(room, match, nightNumber) {
+    try {
+      const existing = await prisma.nightAction.findMany({ where: { matchId: match.id, nightNumber } });
+      const hasAction = new Set(existing.map(a => a.actorPlayerId));
+
+      for (const p of room.players) {
+        if (!p.alive || !isBot(p)) continue;
+        if (hasAction.has(p.id) && !MAFIA_ROLES.has(p.role)) continue; // мафия может менять цель — позволим последнему действию
+
+        const actorId = p.id;
+        const role = p.role;
+        let targetId = null;
+
+        switch (role) {
+          case Role.MAFIA:
+          case Role.DON: {
+            const t = await randomTarget(room, [actorId]);
+            targetId = t?.id || null;
+            break;
+          }
+          case Role.DOCTOR: {
+            const t = await randomTarget(room, []); // может лечить себя
+            targetId = t?.id || null;
+            break;
+          }
+          case Role.SHERIFF:
+          case Role.JOURNALIST: {
+            const t = await randomTarget(room, [actorId]);
+            targetId = t?.id || null;
+            break;
+          }
+          case Role.BODYGUARD:
+          case Role.PROSTITUTE: {
+            const t = await randomTarget(room, [actorId]);
+            targetId = t?.id || null;
+            break;
+          }
+          case Role.SNIPER: {
+            // 50% шанс пропустить, иначе стреляем в другого
+            if (Math.random() < 0.5) targetId = null;
+            else {
+              const t = await randomTarget(room, [actorId]);
+              targetId = t?.id || null;
+            }
+            break;
+          }
+          default:
+            break;
+        }
+
+        if (targetId !== null || role === Role.SNIPER || role === Role.DOCTOR || role === Role.PROSTITUTE || role === Role.BODYGUARD || role === Role.SHERIFF || role === Role.JOURNALIST) {
+          try {
+            const existingAction = await prisma.nightAction.findUnique({
+              where: { matchId_nightNumber_actorPlayerId: { matchId: match.id, nightNumber, actorPlayerId: actorId } },
+            });
+            if (existingAction) {
+              await prisma.nightAction.update({
+                where: { id: existingAction.id },
+                data: { targetPlayerId: targetId, role },
+              });
+            } else {
+              await prisma.nightAction.create({
+                data: { matchId: match.id, nightNumber, actorPlayerId: actorId, role, targetPlayerId: targetId },
+              });
+            }
+          } catch (e) {
+            if (!isLockError?.(e)) console.warn('autoBotNightActions failed:', e?.message || e);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('autoBotNightActions outer failed:', e?.message || e);
+    }
+  }
+
+  async function autoBotVotes(room, round) {
+    try {
+      const dayNumber = room.dayNumber;
+      const leaders = round === 2 ? await leadersOfRound1(room.id, dayNumber) : [];
+      const allowed = round === 2 && leaders.length ? new Set(leaders) : null;
+      const existingVotes = await prisma.vote.findMany({
+        where: { roomId: room.id, type: VoteType.LYNCH, dayNumber, round },
+        select: { voterId: true },
+      });
+      const voted = new Set(existingVotes.map(v => v.voterId));
+      const alive = room.players.filter(p => p.alive);
+      const aliveIds = alive.map(p => p.userId);
+
+      for (const p of room.players) {
+        if (!p.alive || !isBot(p)) continue;
+        if (voted.has(p.userId)) continue;
+
+        let targetId = null;
+        const candidates = allowed
+          ? alive.filter(pl => allowed.has(pl.id))
+          : alive;
+        if (candidates.length) {
+          const rnd = Math.floor(Math.random() * candidates.length);
+          targetId = candidates[rnd].id;
+        } else {
+          targetId = null; // пропуск
+        }
+
+        try {
+          await prisma.vote.upsert({
+            where: { roomId_voterId_type_dayNumber_round: { roomId: room.id, voterId: p.userId, type: VoteType.LYNCH, dayNumber, round } },
+            update: { targetPlayerId: targetId },
+            create: { roomId: room.id, voterId: p.userId, type: VoteType.LYNCH, dayNumber, round, targetPlayerId: targetId },
+          });
+        } catch (e) {
+          if (!isLockError?.(e)) console.warn('autoBotVotes failed:', e?.message || e);
+        }
+      }
+    } catch (e) {
+      console.warn('autoBotVotes outer failed:', e?.message || e);
+    }
+  }
+
   async function emitRoomStateNow(code) {
     try {
       io.to(`room:${code}`).emit('room:state', await publicRoomState(code));
@@ -645,6 +774,9 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
         const match = room.matches[0];
         const nightNumber = room.dayNumber + 1;
 
+        // Авто-действия для ботов (если они есть и не сходили)
+        await autoBotNightActions(room, match, nightNumber);
+
         const actions = await prisma.nightAction.findMany({ where: { matchId: match.id, nightNumber } });
 
         // Простьютка блокирует
@@ -877,6 +1009,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
         const match = room.matches[0];
 
         const round = await currentVoteRound(room.id, room.dayNumber);
+        await autoBotVotes(room, round);
         const votes = await prisma.vote.findMany({ where: { roomId: room.id, type: VoteType.LYNCH, dayNumber: room.dayNumber, round } });
         const aliveIds = new Set(room.players.filter(p => p.alive).map(p => p.id));
 
