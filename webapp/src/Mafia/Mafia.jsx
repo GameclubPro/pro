@@ -311,7 +311,6 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
   // Private (self)
   const [me, setMe] = useState({ roomPlayerId: null, userId: null, role: null, alive: true });
   const meRef = useRef(me);
-  useEffect(() => { meRef.current = me; }, [me]);
 
   // === UI-штрих: пересчитываем isOwner при любых изменениях ownerId или me.userId ===
   useEffect(() => {
@@ -324,6 +323,19 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
   const [roleIntro, setRoleIntro] = useState({ show: false, role: null, myId: null });
   // Флажок «интро этой ночью уже показывали/пытались показать» — чтобы не зациклиться
   const roleIntroSeenRef = useRef(false);
+
+  // Латченный self: роль/roomPlayerId дополняем из roleIntro, чтобы не зависеть от гоночных обнулений
+  const latchedRole = me?.role || roleIntro.role || null;
+  const latchedPlayerId = me?.roomPlayerId || roleIntro.myId || null;
+  const meWithRole = useMemo(() => {
+    if (!latchedRole && !latchedPlayerId) return me;
+    return {
+      ...me,
+      ...(latchedRole ? { role: latchedRole } : {}),
+      ...(latchedPlayerId ? { roomPlayerId: latchedPlayerId } : {}),
+    };
+  }, [me, latchedRole, latchedPlayerId]);
+  useEffect(() => { meRef.current = meWithRole; }, [meWithRole]);
 
   // 🌑 Метки мафии: { myTargetId, byTarget: { [playerId]: number[]<actorIds> } }
   const [mafiaMarks, setMafiaMarks] = useState({ myTargetId: null, byTarget: {} });
@@ -1624,7 +1636,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
       return;
     }
     // --- FIX: защита от окна гонки — ждём выдачи роли ---
-    if (phase === "NIGHT" && !me?.role) {
+    if (phase === "NIGHT" && !meWithRole?.role) {
       toast("Ждём выдачу роли…", "info");
       haptic("light");
       return;
@@ -1632,7 +1644,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
 
     const acts = buildActions({
       phase,
-      me,
+      me: meWithRole,
       voteState,
       target: p,
       actNight,
@@ -1651,19 +1663,19 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
 
     haptic("light");
     setSheetTarget(p);
-  }, [phase, me, voteState, toast, haptic]);
+  }, [phase, meWithRole, voteState, toast, haptic]);
 
   const actionsForTarget = useMemo(() => {
     if (!sheetTarget) return [];
     return buildActions({
       phase,
-      me,
+      me: meWithRole,
       voteState,
       target: sheetTarget,
       actNight,
       castVote
     });
-  }, [sheetTarget, phase, me, voteState, actedThisNight]);
+  }, [sheetTarget, phase, meWithRole, voteState, actedThisNight]);
 
   useEffect(() => {
     if (!sheetTarget) return;
@@ -1722,7 +1734,8 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
   }, [phase]);
 
   // ============================== READY (клиент) ==============================
-  const myId = me.roomPlayerId;
+  const myId = meWithRole.roomPlayerId;
+  const myRole = meWithRole.role;
   const myPlayer = useMemo(() => roomPlayers.find(p => p.id === myId) || null, [roomPlayers, myId]);
   // владелец всегда считается «готов» (в UI и при canStart)
   const iAmReady = isOwner ? true : !!myPlayer?.ready;
@@ -1940,7 +1953,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
     players={roomPlayers}
     phase={phase}
     myId={myId}
-    myRole={me.role}
+    myRole={myRole}
     ownerId={ownerId}
     isOwner={isOwner}
     showReady={phase === "LOBBY"}
