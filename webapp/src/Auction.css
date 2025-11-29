@@ -1365,37 +1365,58 @@ textarea {
 .bid-input-row {
   margin-top: 2px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 0.78fr);
+  grid-template-areas:
+    "amount action"
+    "quick quick";
+  gap: 0;
   align-items: stretch;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: linear-gradient(120deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92));
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.36);
+  overflow: hidden;
+}
+
+.bid-input-row:focus-within {
+  border-color: rgba(56, 189, 248, 0.75);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.3),
+    0 0 0 14px rgba(56, 189, 248, 0.08);
 }
 
 .text-input--split {
+  grid-area: amount;
   min-height: 52px;
-  border-radius: var(--radius-md);
-  border-top-right-radius: var(--radius-sm);
-  border-bottom-right-radius: var(--radius-sm);
+  border: none;
+  border-right: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 0;
   padding: 12px 16px;
-  background: radial-gradient(
-      circle at 0% 0%,
-      rgba(148, 163, 184, 0.18),
-      transparent 50%
-    ),
-    rgba(15, 23, 42, 0.92);
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: none;
+}
+
+.text-input--split:focus {
+  box-shadow: none;
+  border-right-color: rgba(56, 189, 248, 0.6);
 }
 
 .bid-submit-split {
+  grid-area: action;
   position: relative;
   width: 100%;
   min-height: 52px;
-  border-radius: var(--radius-sm) var(--radius-md) var(--radius-md) var(--radius-sm);
-  border: 1px solid rgba(56, 189, 248, 0.65);
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(94, 234, 212, 0.12));
+  border-radius: 0;
+  border-left: 1px solid rgba(56, 189, 248, 0.35);
+  border-right: none;
+  border-top: none;
+  border-bottom: none;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(94, 234, 212, 0.14));
   color: #e0f2fe;
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  box-shadow: 0 12px 30px rgba(56, 189, 248, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   overflow: hidden;
   transition:
     transform var(--transition-fast),
@@ -1412,7 +1433,7 @@ textarea {
 
 .bid-submit-split__glow {
   position: absolute;
-  inset: -20% -10%;
+  inset: -30% -14%;
   background: radial-gradient(circle at 30% 50%, rgba(56, 189, 248, 0.3), transparent 55%),
     radial-gradient(circle at 80% 50%, rgba(94, 234, 212, 0.25), transparent 50%);
   filter: blur(4px);
@@ -1423,8 +1444,8 @@ textarea {
 .bid-submit-split:hover:not(:disabled) {
   transform: translateY(-1px);
   filter: brightness(1.04);
-  border-color: rgba(56, 189, 248, 0.85);
-  box-shadow: 0 16px 36px rgba(56, 189, 248, 0.24);
+  border-color: rgba(56, 189, 248, 0.65);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 14px 30px rgba(56, 189, 248, 0.22);
 }
 
 .bid-submit-split:focus-visible {
@@ -1440,10 +1461,13 @@ textarea {
 }
 
 .quick-bids {
-  grid-column: 1 / -1;
+  grid-area: quick;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 10px;
+  padding: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .quick-bid {
