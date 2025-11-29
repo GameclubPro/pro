@@ -766,7 +766,10 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
       withRoomLock(roomId, async () => {
         const room = await prisma.room.findUnique({
           where: { id: roomId },
-          include: { players: true, matches: { orderBy: { id: 'desc' }, take: 1 } }
+          include: {
+            players: { include: { user: true } },
+            matches: { orderBy: { id: 'desc' }, take: 1 },
+          }
         });
         if (!room) return;
         if (room.status !== Phase.NIGHT) return;
@@ -1004,7 +1007,13 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
   async function resolveVote(roomId) {
     return runPhaseOnce(roomId, () =>
       withRoomLock(roomId, async () => {
-        const room = await prisma.room.findUnique({ where: { id: roomId }, include: { players: true, matches: { orderBy: { id: 'desc' }, take: 1 } } });
+        const room = await prisma.room.findUnique({
+          where: { id: roomId },
+          include: {
+            players: { include: { user: true } },
+            matches: { orderBy: { id: 'desc' }, take: 1 },
+          }
+        });
         if (!room || room.status !== Phase.VOTE) return;
         const match = room.matches[0];
 
