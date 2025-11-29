@@ -113,7 +113,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
   }
 
   function isBot(player) {
-    return !!player?.user?.nativeId && player.user.nativeId.startsWith('bot0000-');
+    return !!player?.user?.nativeId && player.user.nativeId.startsWith('bot1234-');
   }
 
   async function randomTarget(room, excludeIds = []) {

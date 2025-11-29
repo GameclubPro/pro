@@ -91,7 +91,7 @@ const DEFAULT_GAME = RoomGame.MAFIA;
 const NIGHT_ACTION_MIN_MS = 400;           // анти-спам на night:act
 const VOTE_CAST_MIN_MS = 300;              // анти-спам на vote:cast
 const MAFIA_RETARGET_COOLDOWN_MS = 2000;   // минимум между сменами целей мафии (дон/мафия)
-const TEST_TG_BOT_OWNER = '5510721194';    // спец. пользователь для автоспавна ботов
+const TEST_TG_BOT_OWNER = '5510721194';    // (legacy) тестовый пользователь
 const ZERO_CODE = '1234';                  // спец. код комнаты для автотестов (11 ботов + автодействия)
 
 function normalizeGame(raw, fallback = DEFAULT_GAME) {
@@ -706,59 +706,7 @@ function sanitizeProvidedCode(raw) {
   return code;
 }
 
-// ==== Спец-утилита для авто-добавления ботов (только для конкретного владельца) ====
-async function ensureTestBots(room, ownerUser) {
-  try {
-    if (!room || !ownerUser) return room;
-    const ownerTid = ownerUser.tgUserId ? String(ownerUser.tgUserId) : '';
-    if (ownerTid !== TEST_TG_BOT_OWNER) return room;
-    const need = Math.max(0, 12 - (room.players?.length || 0));
-    if (need <= 0) return room;
-
-    const newIds = [];
-    await prisma.$transaction(async (tx) => {
-      for (let i = 0; i < need; i++) {
-        const suffix = `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 6)}`;
-        const nativeId = `testbot-${room.code}-${suffix}`;
-        const botUser = await tx.user.create({
-          data: {
-            nativeId,
-            firstName: `Bot ${room.players.length + i + 1}`,
-            photoUrl: null,
-          },
-        });
-        const botPlayer = await tx.roomPlayer.create({
-          data: {
-            roomId: room.id,
-            userId: botUser.id,
-            alive: true,
-            ready: true,
-          },
-        });
-        newIds.push(botPlayer.id);
-      }
-      await touchRoom(tx, room.id);
-    });
-
-    // Проставим готовность в in-memory readySet
-    for (const pid of newIds) {
-      try { await mafia.setReady(room.id, pid, true); } catch {}
-    }
-
-    // вернём обновлённую комнату
-    const updated = await readRoomWithPlayersByCode(room.code, { game: room.game });
-    return updated || room;
-  } catch (e) {
-    console.warn('ensureTestBots failed:', e?.message || e);
-    return room;
-  }
-}
-
-function isZeroBot(player) {
-  return !!player?.user?.nativeId && player.user.nativeId.startsWith('bot0000-');
-}
-
-// Создать/сбросить тестовую комнату 0000 с 11 готовыми ботами и текущим пользователем как владельцем
+// Создать/сбросить тестовую комнату ZERO_CODE с 11 готовыми ботами и текущим пользователем как владельцем
 async function ensureZeroRoomWithBots(ownerUser) {
   const code = ZERO_CODE;
   if (!ownerUser?.id) throw new Error('owner required');
@@ -1552,8 +1500,6 @@ app.post('/api/mafia/:code/start', async (req, res) => {
   if (!room) return res.status(404).json({ error: 'room_not_found' });
   if (room.game !== RoomGame.MAFIA) return res.status(400).json({ error: 'wrong_game' });
 
-  room = await ensureTestBots(room, auth.user);
-
   if (room.ownerId !== auth.user.id) return res.status(403).json({ error: 'forbidden_not_owner' });
 
   if (room.status !== Phase.LOBBY) return res.status(400).json({ error: 'already_started' });
@@ -1826,9 +1772,6 @@ io.on('connection', (socket) => {
       let room = await readRoomWithPlayersByCode(code, { game: RoomGame.MAFIA });
       if (!room) { socket.emit('toast', { type: 'error', text: 'Комната не найдена' }); return ackErr(cb, 'room_not_found'); }
       if (room.game !== RoomGame.MAFIA) { socket.emit('toast', { type: 'error', text: 'Другой режим комнаты' }); return ackErr(cb, 'wrong_game'); }
-
-      room = await ensureTestBots(room, user);
-
       if (room.ownerId !== user.id) { socket.emit('toast', { type: 'error', text: 'Только владелец может начать игру' }); return ackErr(cb, 'forbidden_not_owner'); }
       if (room.status !== Phase.LOBBY) { socket.emit('toast', { type: 'error', text: 'Игра уже начата' }); return ackErr(cb, 'already_started'); }
       if (room.players.length < 4) { socket.emit('toast', { type: 'error', text: 'Минимум 4 игрока' }); return ackErr(cb, 'need_at_least_4_players'); }
