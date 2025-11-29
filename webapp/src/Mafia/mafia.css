@@ -468,10 +468,9 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 }
 
 .mf-gs-bottom{
-  display:grid;
-  grid-template-columns: minmax(0, 1.8fr) minmax(120px, .8fr);
+  display:flex;
   gap:12px;
-  align-items:center;
+  align-items:stretch;
 }
 .mf-gs-timer-card,
 .mf-gs-daycard{
@@ -485,7 +484,10 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   box-shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 12px 28px rgba(0,0,0,.42);
   backdrop-filter: blur(8px);
 }
+.mf-gs-timer-card{ flex:1 1 0; display:flex; align-items:stretch; }
 .mf-gs-daycard{
+  flex:0 0 auto;
+  width: min(38%, 200px);
   display:grid;
   grid-template-columns:auto 1fr;
   align-items:center;
@@ -560,8 +562,8 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 
 @media (max-width: 720px){
   .mf-gs-tiles{ grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); }
-  .mf-gs-bottom{ grid-template-columns: 1fr; }
-  .mf-gs-daycard{ grid-template-columns: auto auto; }
+  .mf-gs-bottom{ flex-wrap:wrap; }
+  .mf-gs-daycard{ width:100%; grid-template-columns: auto auto; }
 }
 @media (max-width: 420px){
   .mf-gamestage{ padding:12px; gap:10px; }
