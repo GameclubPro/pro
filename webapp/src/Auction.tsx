@@ -1648,36 +1648,24 @@ export default function Auction({
               </p>
 
               <div className="bid-input-row">
-                <div className="bid-input">
-                  <input
-                    className="text-input text-input--with-action"
-                    inputMode="numeric"
-                    placeholder="Введите ставку"
-                    value={myBid}
-                    onChange={(e) =>
-                      setMyBid(e.target.value.replace(/[^\d]/g, ""))
-                    }
-                  />
-                  <button
-                    type="button"
-                    className="bid-submit-inline"
-                    onClick={() => sendBid()}
-                    disabled={busyBid || myBalance == null || isBiddingLocked}
-                    aria-label="Отправить ставку"
-                  >
-                    <svg
-                      aria-hidden="true"
-                      focusable="false"
-                      viewBox="0 0 24 24"
-                      className="bid-submit-inline__icon"
-                    >
-                      <path
-                        d="M3.5 12.75 20.5 4.5a.5.5 0 0 1 .7.5l-1.7 14.2a.5.5 0 0 1-.75.37l-5.1-3.3a.5.5 0 0 0-.56 0l-3.5 2.21a.5.5 0 0 1-.76-.42l.06-3.79a.5.5 0 0 1 .17-.36l8.2-6.93-10.3 6.6a.5.5 0 0 1-.74-.48Z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </button>
-                </div>
+                <input
+                  className="text-input text-input--split"
+                  inputMode="numeric"
+                  placeholder="Введите ставку"
+                  value={myBid}
+                  onChange={(e) => setMyBid(e.target.value.replace(/[^\d]/g, ""))}
+                />
+                <button
+                  type="button"
+                  className="btn bid-submit-split"
+                  onClick={() => sendBid()}
+                  disabled={busyBid || myBalance == null || isBiddingLocked}
+                >
+                  <span className="bid-submit-split__label">
+                    {busyBid ? "..." : "Ставка"}
+                  </span>
+                  <span className="bid-submit-split__glow" aria-hidden />
+                </button>
                 <div className="quick-bids" aria-label="Быстрые ставки">
                   {quickBidButtons.map((btn) => (
                     <button
@@ -1688,7 +1676,6 @@ export default function Auction({
                       disabled={btn.disabled}
                     >
                       <span className="quick-bid__label">{btn.label}</span>
-                      <span className="quick-bid__key">{btn.key}</span>
                     </button>
                   ))}
                 </div>
