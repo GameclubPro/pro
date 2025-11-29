@@ -1723,11 +1723,6 @@ button:active:not(:disabled) {
   .bid-stats {
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   }
-
-
-  .bid-actions {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 400px) {
