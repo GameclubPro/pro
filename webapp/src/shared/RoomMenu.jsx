@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const DEFAULT_CODE_ALPHABET_RE = /[^A-HJKMNPQRSTUVWXYZ23456789]/g;
+// Разрешаем 1 (для тестового кода 1234), но по-прежнему исключаем 0/O/I.
+const DEFAULT_CODE_ALPHABET_RE = /[^A-HJKMNPQRSTUVWXYZ123456789]/g;
 
 function sanitizeCode(value, alphabetRe, maxLen) {
   const re = alphabetRe || DEFAULT_CODE_ALPHABET_RE;
@@ -83,7 +84,7 @@ export function RoomMenu({
 
   const pattern =
     codePattern ||
-    `[A-HJKMNPQRSTUVWXYZ23456789]{${Math.max(1, minCodeLength)},${Math.max(
+    `[A-HJKMNPQRSTUVWXYZ123456789]{${Math.max(1, minCodeLength)},${Math.max(
       minCodeLength,
       maxCodeLength
     )}}`;
