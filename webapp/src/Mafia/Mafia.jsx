@@ -639,20 +639,23 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
             },
             (ack) => {
               try {
-                const items = Array.isArray(ack?.deltaEvents) ? ack.deltaEvents : [];
-                if (items.length) {
-                  setEvents((prev) => {
-                    if (!prev?.length) return items;
-                    const last = prev[prev.length - 1]?.id ?? 0;
-                    const add = items.filter((e) => (e?.id ?? 0) > last);
-                    return add.length ? [...prev, ...add] : prev;
-                  });
-                }
-                if (ack?.etag) stateEtagRef.current = String(ack.etag);
-                if (Number.isFinite(Number(ack?.lastEventId))) lastEventIdRef.current = Number(ack.lastEventId);
-              } catch {}
-            }
-          );
+          const items = Array.isArray(ack?.deltaEvents) ? ack.deltaEvents : [];
+          if (items.length) {
+            setEvents((prev) => {
+              if (!prev?.length) return items;
+              const last = prev[prev.length - 1]?.id ?? 0;
+              const add = items.filter((e) => (e?.id ?? 0) > last);
+              return add.length ? [...prev, ...add] : prev;
+            });
+          }
+          if (ack?.etag) stateEtagRef.current = String(ack.etag);
+          if (Number.isFinite(Number(ack?.lastEventId))) lastEventIdRef.current = Number(ack.lastEventId);
+          if (ack?.activeRoles && typeof ack.activeRoles === "object") {
+            setActiveRolesSummary(ack.activeRoles);
+          }
+        } catch {}
+      }
+    );
         } catch {}
         // Попробуем выгрузить отложенные офлайн-операции
         flushPendingOps();
@@ -942,6 +945,17 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
         if (playerId && (role === "MAFIA" || role === "DON")) map[playerId] = role;
       });
       setMafiaTeam(map);
+    });
+
+    // NEW: мафия видит, кого проституция заблокировала
+    sock.on("mafia:blocked", ({ playerIds } = {}) => {
+      const mine = meRef.current?.roomPlayerId;
+      const arr = Array.isArray(playerIds) ? playerIds : [];
+      if (arr.includes(mine)) {
+        enqueueNightNotice("🔒 Вы были заблокированы этой ночью — ваш голос мафии не учтётся", "warn");
+      } else if (arr.length) {
+        enqueueNightNotice("🔒 Кто-то из мафии был заблокирован — голос мафии мог не пройти", "warn");
+      }
     });
 
     socketRef.current = sock;
@@ -1476,7 +1490,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
         haptic("light");
         closeSheet(); // закрываем только при успехе
       } else if (ack?.error) {
-        toast(ack.error, "error");
+        toast(mapServerError(ack.error, ack?.retryMs), "error");
         haptic("light");
         // не закрываем — позволяем выбрать другую цель
       }
@@ -1505,7 +1519,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
 
     sock.emit("vote:cast", { code: roomCode, targetPlayerId, opId }, (ack) => {
       if (!ack?.ok && ack?.error) {
-        toast(ack.error, "error");
+        toast(mapServerError(ack.error, ack?.retryMs), "error");
       } else {
         // ✅ Локально запомним «за кого проголосовал», чтобы подсветка работала сразу
         setVoteState((prev) => {
@@ -2047,7 +2061,7 @@ function translatePhase(p) {
   }
 }
 
-function mapServerError(code) {
+function mapServerError(code, retryMs) {
   switch (String(code || "")) {
     case "initData_required": return "Нужны WebApp-данные. Открой игру из Telegram ещё раз.";
     case "bad_signature": return "Проверка подписи не прошла. Открой игру из Telegram ещё раз.";
@@ -2060,6 +2074,11 @@ function mapServerError(code) {
     case "forbidden_not_owner": return "Только владелец комнаты может начать игру.";
     case "game_in_progress": return "Игра уже идёт. Войти можно только тем, кто был в комнате раньше.";
     case "stale_init_data": return "Сессия Telegram устарела. Открой игру из Telegram ещё раз.";
+    case "too_fast": return "Слишком часто. Подожди секунду и попробуй снова.";
+    case "retarget_too_fast": {
+      const sec = retryMs ? Math.ceil(Number(retryMs) / 1000) : 2;
+      return `Смена цели заблокирована. Подожди ${sec} c.`;
+    }
     default: return typeof code === "string" && code ? code : "Произошла ошибка. Попробуй позже.";
   }
 }
