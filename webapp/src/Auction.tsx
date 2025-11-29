@@ -224,15 +224,28 @@ export default function Auction({
     return `База ${moneyFormatter.format(baseBid)}$`;
   }, [baseBid, leadingBid?.amount, leadingPlayerName, moneyFormatter]);
 
+  const formatPresetLabel = useCallback(
+    (value: number) => {
+      if (value >= 1_000_000 && value % 1_000_000 === 0) {
+        return `${value / 1_000_000}m`;
+      }
+      if (value >= 1_000 && value % 1_000 === 0) {
+        return `${value / 1_000}k`;
+      }
+      return moneyFormatter.format(value);
+    },
+    [moneyFormatter]
+  );
+
   const quickBidButtons = useMemo(
     () =>
       BID_PRESETS.map((step, idx) => ({
         key: `${idx + 1}`,
-        label: `+${moneyFormatter.format(step)}$`,
+        label: `+${formatPresetLabel(step)}$`,
         action: () => setBidRelative(step),
         disabled: isBiddingLocked || busyBid || myBalance == null || myBalance <= 0,
       })),
-    [busyBid, isBiddingLocked, moneyFormatter, myBalance, setBidRelative]
+    [busyBid, formatPresetLabel, isBiddingLocked, myBalance, setBidRelative]
   );
 
   const countdownStepMs = useMemo(() => {

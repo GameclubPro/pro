@@ -1463,9 +1463,9 @@ textarea {
 .quick-bids {
   grid-area: quick;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 10px;
-  padding: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px 12px 14px;
   border-top: 1px solid rgba(148, 163, 184, 0.3);
   background: rgba(255, 255, 255, 0.02);
 }
@@ -1475,7 +1475,7 @@ textarea {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 9px 10px;
+  padding: 10px 10px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-subtle);
   background: rgba(15, 23, 42, 0.9);
@@ -1511,8 +1511,9 @@ textarea {
 
 .bid-actions--secondary {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
   margin-top: 4px;
+  width: 100%;
 }
 
 .bid-action {
