@@ -1,5 +1,13 @@
 // MafiaUI.jsx — Horror-light UI (презентационные компоненты, без бизнес-логики)
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import RoomMenu from "../shared/RoomMenu.jsx";
 import { HUD, Chip, TimerHUD, GameStage, FinalBanner } from "../shared/RoomHud.jsx";
 
@@ -1426,6 +1434,7 @@ export function RoleCard({ role, myId, onClose }) {
     return () => {
       try {
         document.body.classList.remove("mf-animating");
+        document.body.classList.remove("mf-role-open");
         const modal = modalRef.current;
         if (modal) {
           modal.classList.remove("flying");
@@ -1442,6 +1451,20 @@ export function RoleCard({ role, myId, onClose }) {
       } catch {}
     };
   }, []);
+
+  // Прячем свой аватар, пока роль не прилетела в плитку
+  useLayoutEffect(() => {
+    if (!role) return;
+    document.body.classList.add("mf-role-open");
+    return () => {
+      document.body.classList.remove("mf-role-open");
+      try {
+        document
+          .querySelectorAll(".mf-player.me .mf-avatar-wrap")
+          .forEach((node) => node.classList.remove("mf-ava-hidden"));
+      } catch {}
+    };
+  }, [role]);
 
   // ⏱️ через секунду — flip с рубашки на лицо
   const [flipped, setFlipped] = useState(false);
@@ -1461,6 +1484,7 @@ export function RoleCard({ role, myId, onClose }) {
       const failSafeExit = () => {
         try {
           document.body.classList.remove("mf-animating");
+          document.body.classList.remove("mf-role-open");
         } catch {}
         try {
           if (modalRef.current) {
@@ -1560,15 +1584,18 @@ export function RoleCard({ role, myId, onClose }) {
         const dy = r2.top - r1.top;
         const sx = r2.width / r1.width || 1;
         const sy = r2.height / r1.height || 1;
-        const lift = Math.min(120, Math.max(40, Math.abs(dy) * 0.18));
-        const midX = dx * 0.15;
-        const midY = dy * 0.15 - lift;
+        const distance = Math.hypot(dx, dy);
+        const lift = Math.min(140, Math.max(52, distance * 0.18));
+        const arcX = dx * 0.32;
+        const arcY = dy * 0.32 - lift;
+        const tilt = Math.max(-10, Math.min(10, -dx * 0.04));
 
         const done = () => {
           try {
             targetWrap.classList.remove("mf-ava-hidden");
             flyer.remove();
             document.body.classList.remove("mf-animating");
+            document.body.classList.remove("mf-role-open");
           } finally {
             inFlightRef.current = false;
             onClose?.();
@@ -1599,20 +1626,26 @@ export function RoleCard({ role, myId, onClose }) {
             offset: 0,
           },
           {
-            transform: `translate(${midX}px, ${midY}px) scale(${
-              1 + (sx - 1) * 0.18
-            }, ${1 + (sy - 1) * 0.18}) rotate(-2deg)`,
-            offset: 0.55,
+            transform: `translate(${arcX}px, ${arcY}px) scale(${
+              1 + (sx - 1) * 0.22
+            }, ${1 + (sy - 1) * 0.22}) rotate(${tilt}deg)`,
+            offset: 0.42,
           },
           {
-            transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy}) rotate(0deg)`,
+            transform: `translate(${dx}px, ${dy}px) scale(${
+              sx * 1.02
+            }, ${sy * 1.02}) rotate(0deg)`,
+            offset: 0.85,
+          },
+          {
+            transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`,
             offset: 1,
           },
         ];
 
         const flight = flyer.animate(keyframes, {
-          duration: 560,
-          easing: "cubic-bezier(.2,.8,.2,1)",
+          duration: 640,
+          easing: "cubic-bezier(.22,.8,.24,1)",
           fill: "forwards",
         });
         const finished =
@@ -1632,14 +1665,18 @@ export function RoleCard({ role, myId, onClose }) {
                   },
                   {
                     transform: `translate(${dx}px, ${dy}px) scale(${
-                      sx * 0.975
-                    }, ${sy * 0.975})`,
+                      sx * 0.985
+                    }, ${sy * 0.985})`,
                   },
                   {
                     transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`,
                   },
                 ],
-                { duration: 160, easing: "ease-out", fill: "forwards" }
+                {
+                  duration: 220,
+                  easing: "cubic-bezier(.25,.7,.3,1)",
+                  fill: "forwards",
+                }
               )
               .finished
           )
@@ -1649,7 +1686,7 @@ export function RoleCard({ role, myId, onClose }) {
         // страховка от залипаний
         setTimeout(() => {
           if (inFlightRef.current) done();
-        }, 1200);
+        }, 1500);
       } catch (e) {
         console.error("RoleCard flight error:", e);
         failSafeExit();

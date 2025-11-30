@@ -1096,6 +1096,8 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 
 /* Во время полёта скрываем ВСЮ обёртку (сохраняя место) */
 .mf-ava-hidden{ visibility: hidden; }
+/* При открытой роли скрываем мой аватар, чтобы не подсвечивался раньше полёта */
+body.mf-role-open .mf-player.me .mf-avatar-wrap{ visibility: hidden; }
 
 /* Летун — БЕЗ paint-containment, иначе псевдоэлементы рамки обрезаются */
 .mf-role-fly{
