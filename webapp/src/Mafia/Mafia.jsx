@@ -1914,6 +1914,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
 
   // ============================== Render ==============================
   const phaseLabel = translatePhase(phase);
+  const showVoteBoard = phase === "VOTE" && Object.keys(voteState?.tally || {}).length > 0;
 
   return (
     <UIErrorBoundary>
@@ -1928,95 +1929,105 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
         )}
 
         {view === "room" && (
-     <RoomShell phase={phase} winner={finalWinner || timer?.winner}>
-  {/* HUD */}
-  <HUD
-    code={roomCode}
-    isOwner={isOwner}
-    phase={phase}
-    phaseLabel={phaseLabel}
-    dayNumber={dayNumber}
-    timer={timer}
-    onCopy={copyCode}
-    onShare={shareRoom}
-    onRefresh={refreshRoom}
-    onLeave={askLeave}
-    canStart={isOwner && phase === "LOBBY" && (roomPlayers?.length || 0) >= 4}
-    onStart={startMafia}
-    iAmReady={phase === "LOBBY" ? iAmReady : false}  
-    onToggleReady={!isOwner && phase === "LOBBY" ? toggleReady : undefined}
-    endedLabel={phase === "ENDED" ? (finalWinner || timer?.winner) : undefined}
-  />
+          <RoomShell phase={phase} winner={finalWinner || timer?.winner}>
+            {/* HUD */}
+            <HUD
+              code={roomCode}
+              isOwner={isOwner}
+              phase={phase}
+              phaseLabel={phaseLabel}
+              dayNumber={dayNumber}
+              timer={timer}
+              onCopy={copyCode}
+              onShare={shareRoom}
+              onRefresh={refreshRoom}
+              onLeave={askLeave}
+              canStart={
+                isOwner && phase === "LOBBY" && (roomPlayers?.length || 0) >= 4
+              }
+              onStart={startMafia}
+              iAmReady={phase === "LOBBY" ? iAmReady : false}
+              onToggleReady={!isOwner && phase === "LOBBY" ? toggleReady : undefined}
+              endedLabel={phase === "ENDED" ? finalWinner || timer?.winner : undefined}
+            />
 
-  {/* Player grid */}
-  <PlayerGrid
-    players={roomPlayers}
-    phase={phase}
-    myId={myId}
-    myRole={myRole}
-    ownerId={ownerId}
-    isOwner={isOwner}
-    showReady={phase === "LOBBY"}
-    iAmReady={iAmReady}
-    onToggleReady={!isOwner && phase === "LOBBY" ? toggleReady : undefined}
-    mafiaMarks={mafiaMarks}
-    revealedRoles={revealedRoles}
-    mafiaTeam={mafiaTeam}
-    onTapPlayer={openSheetFor}
-    onToggleEvents={toggleEvents}
-    eventsOpen={eventsOpen}
-    eventsCount={unreadCount}
-    eventItems={events}
-    canStart={isOwner && phase === "LOBBY" && (roomPlayers?.length || 0) >= 4}
-    onStart={startMafia}
-    voteState={voteState}
-    leaders={voteState?.leaders || []}
-    hasUnread={hasUnread}
-    avatarBase={API_BASE}
-  />
+            {/* Player grid */}
+            <div className="mf-stage">
+              {showVoteBoard && (
+                <div className="mf-vote-float">
+                  <VoteBoard players={roomPlayers} voteState={voteState} />
+                </div>
+              )}
 
-  {phase === "VOTE" && <VoteBoard players={roomPlayers} voteState={voteState} />}
+              <PlayerGrid
+                players={roomPlayers}
+                phase={phase}
+                myId={myId}
+                myRole={myRole}
+                ownerId={ownerId}
+                isOwner={isOwner}
+                showReady={phase === "LOBBY"}
+                iAmReady={iAmReady}
+                onToggleReady={!isOwner && phase === "LOBBY" ? toggleReady : undefined}
+                mafiaMarks={mafiaMarks}
+                revealedRoles={revealedRoles}
+                mafiaTeam={mafiaTeam}
+                onTapPlayer={openSheetFor}
+                onToggleEvents={toggleEvents}
+                eventsOpen={eventsOpen}
+                eventsCount={unreadCount}
+                eventItems={events}
+                canStart={
+                  isOwner && phase === "LOBBY" && (roomPlayers?.length || 0) >= 4
+                }
+                onStart={startMafia}
+                voteState={voteState}
+                leaders={voteState?.leaders || []}
+                hasUnread={hasUnread}
+                avatarBase={API_BASE}
+              />
+            </div>
 
-  {/* Action sheet (не открываем шторку, если нет доступных действий) */}
-  <ActionSheet
-    open={!!sheetTarget && actionsForTarget.length > 0}
-    player={sheetTarget}
-    phase={phase}
-    actions={actionsForTarget}
-    onClose={closeSheet}
-    avatarBase={API_BASE}
-  />
+            {/* Action sheet (не открываем шторку, если нет доступных действий) */}
+            <ActionSheet
+              open={!!sheetTarget && actionsForTarget.length > 0}
+              player={sheetTarget}
+              phase={phase}
+              actions={actionsForTarget}
+              onClose={closeSheet}
+              avatarBase={API_BASE}
+            />
 
-  {/* Карточка роли в Ночь */}
-  {roleIntro.show && (roleIntro.role || me.role) && (
-    <>
-      {/* Берём роль из roleIntro (latched), чтобы поздние null не сбивали карточку */}
-      <RoleCard
-        role={roleIntro.role ?? me.role}
-        myId={roleIntro.myId ?? me.roomPlayerId}
-        onClose={() => {
-          roleIntroSeenRef.current = true;
-          setRoleIntro({
-            show: false,
-            role: roleIntro.role ?? me.role,
-            myId: roleIntro.myId,
-          });
-        }}
-      />
-    </>
-  )}
+            {/* Карточка роли в Ночь */}
+            {roleIntro.show && (roleIntro.role || me.role) && (
+              <>
+                {/* Берём роль из roleIntro (latched), чтобы поздние null не сбивали карточку */}
+                <RoleCard
+                  role={roleIntro.role ?? me.role}
+                  myId={roleIntro.myId ?? me.roomPlayerId}
+                  onClose={() => {
+                    roleIntroSeenRef.current = true;
+                    setRoleIntro({
+                      show: false,
+                      role: roleIntro.role ?? me.role,
+                      myId: roleIntro.myId,
+                    });
+                  }}
+                />
+              </>
+            )}
 
-  {phase === "ENDED" && (
-    <>
-      {/* Нижняя плашка результатов (доступно всем) */}
-      <EndedBar
-        onReturn={returnToLobby}
-        onLeave={askLeave}
-        label={finalWinner || timer?.winner}
-      />
-    </>
-  )}
-</RoomShell>
+            {phase === "ENDED" && (
+              <>
+                {/* Нижняя плашка результатов (доступно всем) */}
+                <EndedBar
+                  onReturn={returnToLobby}
+                  onLeave={askLeave}
+                  label={finalWinner || timer?.winner}
+                />
+              </>
+            )}
+          </RoomShell>
         )}
 
         {/* Дневные уведомления за ночные события с кнопкой «ОК» (показываем только днём) */}

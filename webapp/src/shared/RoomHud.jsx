@@ -153,6 +153,8 @@ export const TimerHUD = memo(function TimerHUD({ timer, className = "" }) {
     const nowAligned = Date.now() - skewRef.current;
     return Math.max(0, endsAtMs - nowAligned);
   }, [animKey, endsAtMs]);
+  const barDuration = Math.max(0, initialLeft);
+  const barKey = `${animKey}-${barDuration}`;
 
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -179,7 +181,7 @@ export const TimerHUD = memo(function TimerHUD({ timer, className = "" }) {
       </span>
       <span className="mf-timer-text">{leftText}</span>
       <div className="mf-timer-bar" aria-hidden="true">
-        <i style={{ "--msLeft": `${initialLeft}ms` }} />
+        <i key={barKey} style={{ "--msLeft": `${barDuration}ms` }} />
       </div>
     </div>
   );
