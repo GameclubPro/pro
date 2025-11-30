@@ -1611,10 +1611,11 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
 
       if (phase === "VOTE" && me?.alive) {
         const allowedByRound = !round2 || leadersSet.has(target.id);
+        const skipAllowed = !round2 || leadersSet.has(0);
         if (!isMe && alive && allowedByRound) {
           actions.push(btn("vote", `Голосовать за ${nickOf(target)}`, "primary", () => castVote(target.id)));
         }
-        if (!round2) actions.push(btn("skipVote", "Пропустить голос", "ghost", () => castVote(null)));
+        if (skipAllowed) actions.push(btn("skipVote", "Пропустить голос", "ghost", () => castVote(null)));
       }
 
       return actions;

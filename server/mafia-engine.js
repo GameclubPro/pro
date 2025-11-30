@@ -135,29 +135,34 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
         const actorId = p.id;
         const role = p.role;
         let targetId = null;
+        let targetPlayer = null;
 
         switch (role) {
           case Role.MAFIA:
           case Role.DON: {
             const t = await randomTarget(room, [actorId]);
             targetId = t?.id || null;
+            targetPlayer = t || null;
             break;
           }
           case Role.DOCTOR: {
             const t = await randomTarget(room, []); // может лечить себя
             targetId = t?.id || null;
+            targetPlayer = t || null;
             break;
           }
           case Role.SHERIFF:
           case Role.JOURNALIST: {
             const t = await randomTarget(room, [actorId]);
             targetId = t?.id || null;
+            targetPlayer = t || null;
             break;
           }
           case Role.BODYGUARD:
           case Role.PROSTITUTE: {
             const t = await randomTarget(room, [actorId]);
             targetId = t?.id || null;
+            targetPlayer = t || null;
             break;
           }
           case Role.SNIPER: {
@@ -166,11 +171,37 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
             else {
               const t = await randomTarget(room, [actorId]);
               targetId = t?.id || null;
+              targetPlayer = t || null;
             }
             break;
           }
           default:
             break;
+        }
+
+        // Убедимся, что боты не нарушают ограничения validateNightTarget
+        if (role && (targetId !== null || role === Role.SNIPER || role === Role.DOCTOR || role === Role.PROSTITUTE || role === Role.BODYGUARD || role === Role.SHERIFF || role === Role.JOURNALIST)) {
+          try {
+            const validation = await validateNightTarget({
+              room,
+              match,
+              actor: p,
+              role,
+              target: targetPlayer,
+              nightNumber,
+            });
+            if (!validation.ok) {
+              // Для ролей, где пропуск допустим, fallback в пропуск; иначе просто не пишем действие
+              if (role === Role.DOCTOR || role === Role.SHERIFF || role === Role.BODYGUARD || role === Role.PROSTITUTE || role === Role.JOURNALIST || role === Role.SNIPER) {
+                targetId = null;
+                targetPlayer = null;
+              } else {
+                continue;
+              }
+            }
+          } catch (e) {
+            if (!isLockError?.(e)) console.warn('autoBotNightActions validate failed:', e?.message || e);
+          }
         }
 
         if (targetId !== null || role === Role.SNIPER || role === Role.DOCTOR || role === Role.PROSTITUTE || role === Role.BODYGUARD || role === Role.SHERIFF || role === Role.JOURNALIST) {
@@ -203,6 +234,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
       const dayNumber = room.dayNumber;
       const leaders = round === 2 ? await leadersOfRound1(room.id, dayNumber) : [];
       const allowed = round === 2 && leaders.length ? new Set(leaders) : null;
+      const allowSkip = allowed ? allowed.has(0) : false;
       const existingVotes = await prisma.vote.findMany({
         where: { roomId: room.id, type: VoteType.LYNCH, dayNumber, round },
         select: { voterId: true },
@@ -219,9 +251,12 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
         const candidates = allowed
           ? alive.filter(pl => allowed.has(pl.id))
           : alive;
-        if (candidates.length) {
-          const rnd = Math.floor(Math.random() * candidates.length);
-          targetId = candidates[rnd].id;
+        const options = [...candidates];
+        if (allowSkip) options.push(null);
+        if (options.length) {
+          const rnd = Math.floor(Math.random() * options.length);
+          const picked = options[rnd];
+          targetId = picked ? picked.id : null;
         } else {
           targetId = null; // пропуск
         }
