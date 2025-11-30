@@ -736,6 +736,12 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   gap: var(--mf-grid-gap);
   align-items:flex-start;
 }
+.mf-row.inline{
+  display:flex;
+  justify-content:center;
+  gap: var(--mf-grid-gap);
+  padding-inline: 12px;
+}
 .mf-row.center-only{
   grid-template-columns: 1fr;
   justify-items:center;
@@ -746,13 +752,12 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 .mf-slot.right{ justify-content:flex-end; padding-right: 10px; }
 .mf-slot.center{ justify-content:center; }
 .mf-slot.empty{ visibility:hidden; min-width: var(--mf-ava); }
+.mf-slot.inline-slot{ padding: 0; }
 .mf-center-cta{
   display:flex; flex-direction:column; gap:8px;
   width:100%; max-width: var(--mf-center-max); margin-inline:auto;
   align-items:center; justify-content:center;
 }
-.mf-center-inline{ display:flex; gap: var(--mf-grid-gap); align-items:center; justify-content:center; flex-wrap:nowrap; }
-.mf-center-inline .mf-player{ margin:0; }
 .mf-hint.center{ text-align:center; color: var(--mf-muted); font-size:12px; opacity:.95; }
 
 /* ============================== CTA (Events/Start) ============================== */
