@@ -1046,6 +1046,46 @@ function activeRolesSummary(room) {
   };
 }
 
+function sheriffSeesMafia(role, playerCount) {
+  if (!role) return false;
+  if (playerCount === 5) return role === Role.MAFIA;
+  return role === Role.MAFIA || role === Role.DON;
+}
+
+async function reemitSheriffResult({ socket, room, me }) {
+  if (!room || !me || room.game !== RoomGame.MAFIA) return;
+  if (me.role !== Role.SHERIFF) return;
+  if (!room.matches?.length) return;
+  const targetNight = room.status === Phase.NIGHT ? room.dayNumber + 1 : room.dayNumber;
+  if (!targetNight || targetNight < 1) return;
+
+  const nightEvent = await prisma.event.findFirst({
+    where: {
+      matchId: room.matches[0].id,
+      phase: Phase.NIGHT,
+      payload: { path: '$.nightNumber', equals: targetNight },
+    },
+    orderBy: { id: 'desc' },
+  });
+  if (!nightEvent?.payload) return;
+
+  const blockedSet = new Set(Array.isArray(nightEvent.payload.blockedActors) ? nightEvent.payload.blockedActors : []);
+  if (blockedSet.has(me.id)) {
+    try { socket.emit('you:blocked', { nightNumber: targetNight }); } catch {}
+    return;
+  }
+
+  const action = await prisma.nightAction.findFirst({
+    where: { matchId: room.matches[0].id, nightNumber: targetNight, actorPlayerId: me.id, role: Role.SHERIFF },
+    orderBy: { id: 'desc' },
+  });
+  if (!action?.targetPlayerId) return;
+
+  const target = (room.players || []).find((p) => p.id === action.targetPlayerId);
+  const isMafia = sheriffSeesMafia(target?.role, (room.players || []).length);
+  try { socket.emit('sheriff:result', { playerId: target?.id ?? null, isMafia }); } catch {}
+}
+
 async function emitAuctionRoomStateByCode(code) {
   try {
     const room = await readRoomWithPlayersByCode(code, { game: RoomGame.AUCTION });
@@ -1716,14 +1756,16 @@ io.on('connection', (socket) => {
       const state = await mafia.publicRoomState(code);
       const activeRoles = activeRolesSummary(room);
 
-      // Если клиент актуален — только обновим таймер, MAФ-сигналы и вернём дельту событий
+      // Если клиент актуален — только обновим таймер, приватное состояние, MAФ-сигналы и вернём дельту событий
       if (state?.etag && etag && state.etag === etag) {
         if (state?.timer) {
           socket.emit('timer:update', { ...state.timer, serverTime: Date.now() });
         }
+        try { socket.emit('private:self', await mafia.privateSelfState(me.id)); } catch {}
         if (room.game === RoomGame.MAFIA) {
           try { await mafia.emitMafiaTargets(room.id); } catch {}
           try { await mafia.emitMafiaTeam(room.id); } catch {}
+          try { await reemitSheriffResult({ socket, room, me }); } catch {}
         }
         let delta = [];
         if (room.matches?.[0] && Number.isFinite(Number(lastEventId))) {
@@ -1752,6 +1794,7 @@ io.on('connection', (socket) => {
         }
         await mafia.emitMafiaTargets(room.id);
         await mafia.emitMafiaTeam(room.id);
+        try { await reemitSheriffResult({ socket, room, me }); } catch {}
       }
 
       let delta = [];
