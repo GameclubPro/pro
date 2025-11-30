@@ -24,17 +24,18 @@ export function HUD({
 }) {
   const prevPhaseRef = useRef(phase);
   const [justStarted, setJustStarted] = useState(false);
+  const isLobby = String(phase || "").toUpperCase() === "LOBBY";
 
   useEffect(() => {
     const prev = prevPhaseRef.current;
-    if (prev === "LOBBY" && phase !== "LOBBY") {
+    if (prev === "LOBBY" && !isLobby) {
       setJustStarted(true);
       const t = setTimeout(() => setJustStarted(false), 1200);
       prevPhaseRef.current = phase;
       return () => clearTimeout(t);
     }
     prevPhaseRef.current = phase;
-  }, [phase]);
+  }, [phase, isLobby]);
 
   const showCopy = typeof onCopy === "function";
   const showShare = typeof onShare === "function";
@@ -43,72 +44,74 @@ export function HUD({
 
   return (
     <section
-      className={`mf-hud ${phase !== "LOBBY" ? "started" : "lobby"} ${
+      className={`mf-hud ${!isLobby ? "started" : "lobby"} ${
         justStarted ? "just-started" : ""
       }`}
       aria-label={`Состояние: ${phaseLabel || labelByKey(phase)}`}
     >
-      <div className="mf-hud-row">
-        <div className="mf-code" role="group" aria-label="Код комнаты">
-          <span className="mf-code-label">код</span>
-          <span className="mf-code-value" dir="ltr">
-            {code || "—"}
-          </span>
-          {showCopy && (
-            <button
-              className="mf-chip ghost"
-              onClick={onCopy}
-              aria-label="Скопировать код"
-              type="button"
-              title="Скопировать код"
-            >
-              📄
-            </button>
-          )}
-          {showShare && (
-            <button
-              className="mf-chip ghost"
-              onClick={onShare}
-              aria-label="Поделиться"
-              type="button"
-              title="Поделиться"
-            >
-              ✈️
-            </button>
-          )}
-        </div>
-
-        {(showRefresh || showLeave) && (
-          <div className="mf-hud-actions" role="group" aria-label="Действия">
-            {showRefresh && (
+      {isLobby && (
+        <div className="mf-hud-row">
+          <div className="mf-code" role="group" aria-label="Код комнаты">
+            <span className="mf-code-label">код</span>
+            <span className="mf-code-value" dir="ltr">
+              {code || "—"}
+            </span>
+            {showCopy && (
               <button
                 className="mf-chip ghost"
-                onClick={onRefresh}
-                aria-label="Обновить"
+                onClick={onCopy}
+                aria-label="Скопировать код"
                 type="button"
-                title="Обновить"
+                title="Скопировать код"
               >
-                ⟳
+                📄
               </button>
             )}
-            {showLeave && (
+            {showShare && (
               <button
-                className="mf-chip danger"
-                onClick={onLeave}
-                aria-label="Выйти"
+                className="mf-chip ghost"
+                onClick={onShare}
+                aria-label="Поделиться"
                 type="button"
-                title="Выйти"
+                title="Поделиться"
               >
-                ⏏
+                ✈️
               </button>
             )}
           </div>
-        )}
-      </div>
+
+          {(showRefresh || showLeave) && (
+            <div className="mf-hud-actions" role="group" aria-label="Действия">
+              {showRefresh && (
+                <button
+                  className="mf-chip ghost"
+                  onClick={onRefresh}
+                  aria-label="Обновить"
+                  type="button"
+                  title="Обновить"
+                >
+                  ⟳
+                </button>
+              )}
+              {showLeave && (
+                <button
+                  className="mf-chip danger"
+                  onClick={onLeave}
+                  aria-label="Выйти"
+                  type="button"
+                  title="Выйти"
+                >
+                  ⏏
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {children}
 
-      {phase !== "LOBBY" &&
+      {!isLobby &&
         (String(phase).toUpperCase() === "ENDED" ? (
           <FinalBanner label={endedLabel || timer?.winner || "Игра завершена"} />
         ) : (
@@ -120,7 +123,7 @@ export function HUD({
           />
         ))}
 
-      {phase !== "LOBBY" && (
+      {!isLobby && (
         <div className="mf-hud-hint" role="note">
           {phase === "NIGHT" && "Ночь: действуйте выборочно и по очереди"}
           {phase === "DAY" && "День: обсуждение и поиск мафии"}

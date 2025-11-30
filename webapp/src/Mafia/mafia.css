@@ -779,29 +779,42 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 }
 .mf-events-toggle.disabled, .mf-events-toggle[disabled]{ opacity:.6; pointer-events:none; }
 
-/* Липкий «Начать игру» */
-.mf-start-toggle{
+/* Липкий CTA (Начать / Готов) */
+.mf-events-toggle.mf-start-toggle,
+.mf-events-toggle.mf-ready-toggle{
   position: sticky;
   top: auto;
-  bottom: calc(8px + var(--mf-safe-bottom));
+  bottom: calc(12px + var(--mf-safe-bottom));
   width: auto;
   max-inline-size: min(100%, var(--mf-center-max));
   align-self: center;
-
-  --cta-bg: linear-gradient(180deg,#2f3843 0%, #1b2129 100%);
-  --cta-border: linear-gradient(120deg,#7a8795,#b3c0cc);
-
-  background: var(--cta-bg) padding-box, var(--cta-border) border-box;
-  border:1px solid transparent;
-  color:#eaf0f6;
-  text-shadow: 0 1px 0 rgba(0,0,0,.65);
-  font-weight:1000; letter-spacing:.03em;
+  z-index: 24;
   box-shadow:
     0 1px 0 rgba(255,255,255,.06) inset,
-    0 10px 24px rgba(0,0,0,.45);
+    0 12px 26px rgba(0,0,0,.48);
 }
-.mf-start-toggle:hover{ filter: saturate(1.02); }
-.mf-start-toggle:active{ transform: translateY(1px); }
+.mf-events-toggle.mf-start-toggle{
+  --cta-bg: linear-gradient(180deg,#252c36 0%, #0f1218 100%);
+  --cta-border: linear-gradient(120deg,#5d6876,#9aa8b8);
+  letter-spacing:.04em;
+}
+.mf-events-toggle.mf-ready-toggle{
+  --cta-bg: linear-gradient(180deg,#1d232c 0%, #0d1117 100%);
+  --cta-border: linear-gradient(120deg,#4c5663,#7a8898);
+  letter-spacing:.03em;
+}
+.mf-events-toggle.mf-ready-toggle.ok{
+  --cta-bg: linear-gradient(180deg,#1b2a1f 0%, #0b120d 100%);
+  --cta-border: linear-gradient(120deg,#4fa879,#6dd59f);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.08) inset,
+    0 12px 26px rgba(0,0,0,.42),
+    0 0 0 1px rgba(90,196,135,.25);
+}
+.mf-events-toggle.mf-start-toggle:hover,
+.mf-events-toggle.mf-ready-toggle:hover{ filter: saturate(1.03); }
+.mf-events-toggle.mf-start-toggle:active,
+.mf-events-toggle.mf-ready-toggle:active{ transform: translateY(1px); }
 
 /* Индикатор непрочитанного */
 .mf-events-toggle.has-unread::after{
@@ -1424,17 +1437,19 @@ body.mf-phase-lobby .mf-tex-grate{ opacity:0 !important; }
 /* Нижний CTA в лобби */
 .mf-center-cta.lobby-pinned{ position: static; margin-top: auto; padding-bottom: var(--mf-safe-bottom); z-index: 20; }
 
-/* Стартовая кнопка липнет к низу */
-.mf-events-toggle.mf-start-toggle{
+/* CTA липнет к низу (старт / готов) */
+.mf-events-toggle.mf-start-toggle,
+.mf-events-toggle.mf-ready-toggle{
   position: sticky;
   top: auto !important;
-  bottom: calc(8px + var(--mf-safe-bottom)) !important;
+  bottom: calc(10px + var(--mf-safe-bottom)) !important;
   width: auto;
   max-inline-size: min(100%, var(--mf-center-max));
   align-self: center;
 }
 @media (orientation: landscape){
-  .mf-events-toggle.mf-start-toggle{ bottom: 8px !important; }
+  .mf-events-toggle.mf-start-toggle,
+  .mf-events-toggle.mf-ready-toggle{ bottom: 8px !important; }
 }
 
 /* Бейдж роли у выбывших — показываем */

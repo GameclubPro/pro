@@ -368,6 +368,7 @@ export const PlayerGrid = memo(function PlayerGrid({
   myId,
   myRole,
   ownerId,
+  isOwner,
   phase,
   // readiness indicator (только для лобби)
   showReady = false,
@@ -403,7 +404,7 @@ export const PlayerGrid = memo(function PlayerGrid({
 
   const startReason = (() => {
     if (phase !== "LOBBY" || canStart) return "";
-    if ((players?.length || 0) < 4) return "min 4👥";
+    if ((players?.length || 0) < 4) return "Нужно минимум 4 игрока";
     return "Только владелец может начать";
   })();
 
@@ -463,9 +464,10 @@ export const PlayerGrid = memo(function PlayerGrid({
                 const me = players.find((x) => x.id === myId);
                 const myUserId = me?.user?.id ?? null;
                 const iAmOwner =
-                  ownerId != null &&
-                  myUserId != null &&
-                  String(ownerId) === String(myUserId);
+                  isOwner ||
+                  (ownerId != null &&
+                    myUserId != null &&
+                    String(ownerId) === String(myUserId));
                 if (iAmOwner) {
                   return (
                     <>
@@ -479,7 +481,7 @@ export const PlayerGrid = memo(function PlayerGrid({
                         aria-label="Начать игру"
                         title={startReason || undefined}
                       >
-                        🔫 Начать игру
+                        Начать игру
                       </button>
                       <div className="mf-hint center">min4</div>
                     </>
@@ -494,18 +496,18 @@ export const PlayerGrid = memo(function PlayerGrid({
                     onClick={onToggleReady}
                     type="button"
                     aria-pressed={!!iAmReady}
-                    aria-label={
-                      iAmReady
-                        ? "Отметиться «не готов»"
-                        : "Отметиться «готов»"
-                    }
+                      aria-label={
+                        iAmReady
+                          ? "Отметиться «не готов»"
+                          : "Отметиться «готов»"
+                      }
                     title={
                       iAmReady
                         ? "Вы отмечены как «готов»"
                         : "Нажмите, чтобы отметиться «готов»"
                     }
                   >
-                    {iAmReady ? "✅ Я готов" : "🟢 Готов"}
+                    {iAmReady ? "Я готов" : "Готов"}
                   </button>
                 );
               })()}
