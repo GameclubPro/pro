@@ -280,20 +280,11 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
   async function emitRoomStateNow(code) {
     try {
       io.to(`room:${code}`).emit('room:state', await publicRoomState(code));
-      // Доп. гарантии для маф-сигналов: дублируем после состояния, чтобы метки подтянулись сразу
-      try {
-        const roomRow = await prisma.room.findUnique({ where: { code }, select: { id: true, status: true } });
-        if (roomRow) {
-          await emitMafiaTargets(roomRow.id);
-          await emitMafiaTeam(roomRow.id);
-        }
-      } catch (e) {
-        if (!isLockError?.(e)) console.warn('emitRoomStateNow mafia emit failed:', e?.message || e);
-      }
     } catch (e) {
       console.error('emitRoomStateNow error:', e);
     }
   }
+
   function emitRoomStateDebounced(code, delay = 75) {
     try {
       if (roomStateDebounce.has(code)) clearTimeout(roomStateDebounce.get(code));
@@ -895,73 +886,6 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
         await autoBotNightActions(room, match, nightNumber);
 
         const actions = await prisma.nightAction.findMany({ where: { matchId: match.id, nightNumber } });
-
-        // DEMO (ZERO_CODE): для комнаты 1234 заполняем пропущенные ходы даже у «живых» людей, чтобы игра не зависала
-        if (room.code === '1234') {
-          const have = new Set(actions.map((a) => a.actorPlayerId));
-          for (const p of room.players) {
-            if (!p.alive) continue;
-            if (have.has(p.id)) continue;
-            let targetPlayer = null;
-            let targetId = null;
-            switch (p.role) {
-              case Role.MAFIA:
-              case Role.DON:
-                targetPlayer = await randomTarget(room, [p.id]);
-                targetId = targetPlayer?.id ?? null;
-                break;
-              case Role.DOCTOR:
-                targetPlayer = await randomTarget(room, []); // может лечить себя
-                targetId = targetPlayer?.id ?? null;
-                break;
-              case Role.SHERIFF:
-              case Role.JOURNALIST:
-                targetPlayer = await randomTarget(room, [p.id]);
-                targetId = targetPlayer?.id ?? null;
-                break;
-              case Role.BODYGUARD:
-              case Role.PROSTITUTE:
-                targetPlayer = await randomTarget(room, [p.id]);
-                targetId = targetPlayer?.id ?? null;
-                break;
-              case Role.SNIPER:
-                if (Math.random() < 0.5) {
-                  targetId = null;
-                  targetPlayer = null;
-                } else {
-                  targetPlayer = await randomTarget(room, [p.id]);
-                  targetId = targetPlayer?.id ?? null;
-                }
-                break;
-              default:
-                break;
-            }
-            // Валидация, чтобы не сохранить некорректный ход
-            const val = await validateNightTarget({
-              room,
-              match,
-              actor: p,
-              role: p.role,
-              target: targetPlayer,
-              nightNumber,
-            });
-            if (!val.ok) continue;
-            try {
-              const rec = await prisma.nightAction.create({
-                data: {
-                  matchId: match.id,
-                  nightNumber,
-                  actorPlayerId: p.id,
-                  role: p.role,
-                  targetPlayerId: targetId,
-                },
-              });
-              actions.push(rec);
-            } catch (e) {
-              if (!isLockError?.(e)) console.warn('fill demo night action failed:', e?.message || e);
-            }
-          }
-        }
 
         // Простьютка блокирует
         const prostitute = room.players.find(p => p.alive && p.role === Role.PROSTITUTE);
