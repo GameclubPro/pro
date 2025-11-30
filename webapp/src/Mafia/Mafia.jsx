@@ -342,6 +342,8 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
   const [mafiaMarks, setMafiaMarks] = useState({ myTargetId: null, byTarget: {} });
   // ✅ публичные раскрытия и приватная команда мафии
   const [revealedRoles, setRevealedRoles] = useState({});
+  const revealedRolesRef = useRef(revealedRoles);
+  useEffect(() => { revealedRolesRef.current = revealedRoles; }, [revealedRoles]);
   const [mafiaTeam, setMafiaTeam] = useState({});
 
   // ============================== Events feed (обновлено) ==============================
@@ -777,6 +779,29 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
         role:         self.role         ?? prev.role,
         alive: typeof self.alive === "boolean" ? self.alive : prev.alive,
       }));
+      try {
+        const map = {};
+        const team = self.mafiaTeam;
+        if (Array.isArray(team)) {
+          team.forEach((item) => {
+            if (item == null) return;
+            if (typeof item === "number") map[item] = "MAFIA";
+            else if (item.playerId && item.role) map[item.playerId] = item.role;
+          });
+        } else if (team && typeof team === "object") {
+          Object.entries(team).forEach(([pid, role]) => {
+            if (role) map[pid] = role;
+          });
+        }
+        const selfId = self.roomPlayerId;
+        const selfRole = self.role;
+        if (selfId && (selfRole === "MAFIA" || selfRole === "DON")) {
+          map[selfId] = selfRole;
+        }
+        if (Object.keys(map).length) {
+          setMafiaTeam((prev) => ({ ...prev, ...map }));
+        }
+      } catch {}
 
       // ✅ МГНОВЕННО определяем владельца, не дожидаясь следующего room:state.
       // Это устраняет кейс, когда кнопка "Начать" неактивна до перезагрузки.
@@ -944,10 +969,22 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
       setMafiaMarks({ myTargetId, byTarget });
 
       const ids = new Set((items || []).map(x => x.actorId).filter(Boolean));
-      if (ids.size) {
+      const selfRole = meRef.current?.role;
+      if (myId && (selfRole === "MAFIA" || selfRole === "DON")) ids.add(myId);
+      if (ids.size || (myId && (selfRole === "MAFIA" || selfRole === "DON"))) {
         setMafiaTeam((prev) => {
           const next = { ...prev };
-          ids.forEach(id => { if (!next[id]) next[id] = "MAFIA"; });
+          ids.forEach((id) => {
+            if (next[id]) return;
+            if (id === myId && (selfRole === "MAFIA" || selfRole === "DON")) {
+              next[id] = selfRole;
+            } else {
+              next[id] = "MAFIA";
+            }
+          });
+          if (myId && (selfRole === "MAFIA" || selfRole === "DON")) {
+            next[myId] = selfRole;
+          }
           return next;
         });
       }
@@ -960,6 +997,11 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
       items.forEach(({ playerId, role }) => {
         if (playerId && (role === "MAFIA" || role === "DON")) map[playerId] = role;
       });
+      const selfId = meRef.current?.roomPlayerId;
+      const selfRole = meRef.current?.role;
+      if (selfId && (selfRole === "MAFIA" || selfRole === "DON")) {
+        map[selfId] = selfRole;
+      }
       setMafiaTeam(map);
     });
 
@@ -1470,6 +1512,21 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
     const sock = ensureSocket();
     const opId = (globalThis?.crypto?.randomUUID && crypto.randomUUID())
       || `op-${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
+    const roleNow = meRef.current?.role;
+    if (isMafia(roleNow) && targetPlayerId != null) {
+      const target = (roomPlayersRef.current || []).find((p) => p.id === targetPlayerId);
+      const hint =
+        mafiaTeam?.[targetPlayerId] ||
+        revealedRolesRef.current?.[targetPlayerId] ||
+        target?.role ||
+        null;
+      if (["MAFIA", "DON"].includes(String(hint || "").toUpperCase())) {
+        toast("Союзников мафии бить нельзя", "warn");
+        haptic("light");
+        closeSheet();
+        return;
+      }
+    }
 
     if (!sock.connected) {
       // офлайн — кладём в очередь и закроем шторку
@@ -1487,20 +1544,20 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
 
     sock.emit("night:act", { code: roomCode, targetPlayerId, opId }, (ack) => {
       if (ack?.ok) {
-        const roleNow = meRef.current?.role;
+        const roleNowAck = meRef.current?.role;
         // ⛔️ Пропуск снайпера не должен блокировать его повторный ход
-        if (!isMafia(roleNow) && !(roleNow === "SNIPER" && (targetPlayerId == null))) {
+        if (!isMafia(roleNowAck) && !(roleNowAck === "SNIPER" && (targetPlayerId == null))) {
           setActedThisNight(true);
         }
-        if (isMafia(roleNow)) {
+        if (isMafia(roleNowAck)) {
           setMafiaMarks((m) => ({ ...m, myTargetId: targetPlayerId || null }));
         }
-        if (roleNow === "DOCTOR") {
+        if (roleNowAck === "DOCTOR") {
           const meId = meRef.current?.roomPlayerId;
           if (targetPlayerId === meId) roleLocksRef.current.doctorSelfUsed = 1;
           roleLocksRef.current.doctorLastTarget = targetPlayerId || null;
         }
-        if (roleNow === "SHERIFF") {
+        if (roleNowAck === "SHERIFF") {
           roleLocksRef.current.sheriffPrevTarget = targetPlayerId || null;
         }
         haptic("light");
@@ -1553,10 +1610,26 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
 
   const closeSheet = () => setSheetTarget(null);
 
-  function buildActions({ phase, me, voteState, target, actNight, castVote }) {
+  function buildActions({
+    phase,
+    me,
+    voteState,
+    target,
+    actNight,
+    castVote,
+    mafiaTeam,
+    revealedRoles,
+  }) {
     if (!target) return [];
     const isMe = me?.roomPlayerId === target.id;
     const alive = !!target?.alive;
+    const targetRoleHint =
+      mafiaTeam?.[target.id] ||
+      revealedRoles?.[target.id] ||
+      null;
+    const targetIsMafia = ["MAFIA", "DON"].includes(
+      String(targetRoleHint || "").toUpperCase()
+    );
     a:
     {
       const round2 = voteState?.round === 2;
@@ -1569,7 +1642,11 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
 
       if (phase === "NIGHT" && me?.alive) {
         if (isMafia(me.role) && alive && !isMe) {
-          actions.push(btn("kill", `Убить ${nickOf(target)}`, "danger", () => actNight(target.id)));
+          if (!targetIsMafia) {
+            actions.push(btn("kill", `Убить ${nickOf(target)}`, "danger", () => actNight(target.id)));
+          } else {
+            actions.push(btn("ally", "Союзник мафии", "ghost", () => {}, true));
+          }
         }
         if (me.role === "DOCTOR" && alive) {
           const locks = roleLocksRef.current;
@@ -1653,7 +1730,9 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
       voteState,
       target: p,
       actNight,
-      castVote
+      castVote,
+      mafiaTeam,
+      revealedRoles,
     });
 
     const hasActionable = acts.some(a => !a.disabled && a.tone !== "ghost");
@@ -1678,9 +1757,11 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
       voteState,
       target: sheetTarget,
       actNight,
-      castVote
+      castVote,
+      mafiaTeam,
+      revealedRoles,
     });
-  }, [sheetTarget, phase, meWithRole, voteState, actedThisNight]);
+  }, [sheetTarget, phase, meWithRole, voteState, actedThisNight, mafiaTeam, revealedRoles]);
 
   useEffect(() => {
     if (!sheetTarget) return;
