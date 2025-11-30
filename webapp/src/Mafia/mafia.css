@@ -746,6 +746,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 .mf-slot.left{ justify-content:flex-start; padding-left: 10px; }
 .mf-slot.right{ justify-content:flex-end; padding-right: 10px; }
 .mf-slot.center{ justify-content:center; }
+.mf-slot.center > *{ width:100%; }
 .mf-slot.empty{ visibility:hidden; min-width: var(--mf-ava); }
 .mf-center-cta{
   display:flex; flex-direction:column; gap:8px;
@@ -758,6 +759,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   align-items:flex-start;
   justify-content:space-between;
   width:100%;
+  padding-inline: var(--mf-grid-gap);
 }
 .mf-hint.center{ text-align:center; color: var(--mf-muted); font-size:12px; opacity:.95; }
 
