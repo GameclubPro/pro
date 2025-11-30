@@ -729,10 +729,11 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   contain: layout;
   overflow: visible;
   flex: 1 1 auto;
+  --mf-center-col: clamp(200px, 34vw, 320px);
 }
 .mf-row{
   display:grid;
-  grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
+  grid-template-columns: minmax(0,1fr) var(--mf-center-col) minmax(0,1fr);
   gap: var(--mf-grid-gap);
   align-items:flex-start;
 }
@@ -756,6 +757,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   gap: var(--mf-grid-gap);
   align-items:flex-start;
   justify-content:center;
+  width:100%;
 }
 .mf-hint.center{ text-align:center; color: var(--mf-muted); font-size:12px; opacity:.95; }
 
