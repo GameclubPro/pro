@@ -397,7 +397,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 /* ============================== GAME STAGE ============================== */
 .mf-gamestage{
   position:relative;
-  padding:14px 16px 16px;
+  padding:12px 14px 14px;
   border-radius:18px;
   margin-top:8px;
   border:1px solid color-mix(in lab, var(--mf-fg) 8%, transparent);
@@ -409,7 +409,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   isolation:isolate;
   display:flex;
   flex-direction:column;
-  gap:12px;
+  gap:10px;
 }
 .mf-gamestage.animate{
   box-shadow:
@@ -428,7 +428,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 .mf-gs-pill{
   position:relative;
   display:flex; align-items:center; gap:10px;
-  padding:10px 12px;
+  padding:8px 11px;
   border-radius:16px;
   background:
     linear-gradient(180deg, rgba(24,26,32,.55), rgba(18,20,26,.55)) padding-box,
@@ -452,7 +452,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   pointer-events:none;
 }
 .mf-gs-pill .ico{ font-size:22px; filter: drop-shadow(0 4px 8px rgba(0,0,0,.35)); }
-.mf-gs-pill .txt{ font-size:18px; white-space:nowrap; }
+.mf-gs-pill .txt{ font-size:18px; line-height:1.2; white-space:nowrap; }
 .mf-gs-pill.idle{ opacity:.78; }
 .mf-gs-pill.active{
   background:
@@ -479,7 +479,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 .mf-gs-timer-card,
 .mf-gs-daycard{
   position:relative;
-  padding:10px 12px;
+  padding:8px 11px;
   border-radius:16px;
   background:
     linear-gradient(180deg, rgba(22,24,28,.8), rgba(14,16,20,.7)) padding-box,
@@ -488,9 +488,9 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   box-shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 12px 28px rgba(0,0,0,.42);
   backdrop-filter: blur(8px);
 }
-.mf-gs-timer-card{ flex:1 1 auto; display:flex; align-items:center; min-width:0; }
+.mf-gs-timer-card{ flex:1.1 1 0; display:flex; align-items:center; min-width:0; }
 .mf-gs-daycard{
-  flex:0 0 clamp(130px, 32vw, 180px);
+  flex:0 0 clamp(120px, 26vw, 158px);
   margin-left:auto;
   display:grid;
   grid-template-columns:auto 1fr;
@@ -508,6 +508,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   font-weight:1000;
   font-size:28px;
   letter-spacing:.08em;
+  line-height:1.1;
   color:#f6f8fb;
   text-shadow: 0 1px 0 rgba(0,0,0,.35);
 }
@@ -516,13 +517,13 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   position:relative;
   display:flex;
   align-items:center;
-  gap:12px;
+  gap:10px;
   background:
     linear-gradient(180deg, rgba(20,22,28,.92), rgba(12,14,18,.82)) padding-box,
     radial-gradient(120% 160% at 0% 0%, rgba(255,255,255,.06), transparent 70%) border-box;
   border:1px solid color-mix(in lab, var(--mf-fg) 10%, transparent);
   border-radius:14px;
-  padding:10px 12px;
+  padding:9px 11px;
   width:100%;
   min-width:0;
   box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 10px 24px rgba(0,0,0,.42);
@@ -570,8 +571,8 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   .mf-gs-daycard{ grid-template-columns: auto auto; }
 }
 @media (max-width: 420px){
-  .mf-gamestage{ padding:12px; gap:10px; }
-  .mf-gs-pill{ padding:9px 10px; }
+  .mf-gamestage{ padding:10px 12px 12px; gap:10px; }
+  .mf-gs-pill{ padding:8px 9px; }
   .mf-gs-pill .txt{ font-size:16px; }
 }
 
