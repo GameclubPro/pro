@@ -1275,7 +1275,7 @@ export const VoteBoard = memo(function VoteBoard({ players, voteState }) {
   );
 });
 
-export function VotePopup({ open, onClose, players, voteState }) {
+export function VotePopup({ open, onClose, players, voteState, hasRows }) {
   if (!open || !voteState) return null;
   const stop = (e) => e.stopPropagation();
   return (
@@ -1287,15 +1287,24 @@ export function VotePopup({ open, onClose, players, voteState }) {
       onClick={onClose}
     >
       <div className="mf-vote-modal-card" onClick={stop}>
-        <button
-          className="mf-iconbtn mf-vote-close"
-          onClick={onClose}
-          aria-label="Закрыть доску голосования"
-          type="button"
-        >
-          ✕
-        </button>
-        <VoteBoard players={players} voteState={voteState} />
+        <div className="mf-vote-modal-head">
+          <div className="mf-vote-modal-title">Голоса</div>
+          <button
+            className="mf-iconbtn mf-vote-close"
+            onClick={onClose}
+            aria-label="Закрыть доску голосования"
+            type="button"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="mf-vote-modal-body">
+          {hasRows ? (
+            <VoteBoard players={players} voteState={voteState} />
+          ) : (
+            <div className="mf-vote mf-vote-empty">Пока нет голосов</div>
+          )}
+        </div>
       </div>
     </div>
   );

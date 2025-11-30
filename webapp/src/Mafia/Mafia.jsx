@@ -1919,18 +1919,19 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
 
   // ============================== Render ==============================
   const phaseLabel = translatePhase(phase);
+  const isVotePhase = phase === "VOTE";
   const voteRowsPresent = useMemo(
     () => Object.keys(voteState?.tally || {}).length > 0,
     [voteState?.tally]
   );
-  const showVoteBoard = phase === "VOTE" && voteRowsPresent;
+  const showVoteBoard = isVotePhase && voteRowsPresent;
   useEffect(() => {
-    if (!showVoteBoard) setVoteOpen(false);
-  }, [showVoteBoard, phase]);
+    if (!isVotePhase) setVoteOpen(false);
+  }, [isVotePhase, phase]);
   const toggleVotePopup = useCallback(() => {
-    if (!showVoteBoard) return;
+    if (!isVotePhase) return;
     setVoteOpen((v) => !v);
-  }, [showVoteBoard]);
+  }, [isVotePhase]);
 
   return (
     <UIErrorBoundary>
@@ -1990,16 +1991,16 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
               canStart={
                 isOwner && phase === "LOBBY" && (roomPlayers?.length || 0) >= 4
               }
-                onStart={startMafia}
-                voteState={voteState}
-                leaders={voteState?.leaders || []}
-                voteOpen={voteOpen}
-                onToggleVote={toggleVotePopup}
-                canShowVote={showVoteBoard}
-                hasUnread={hasUnread}
-                avatarBase={API_BASE}
-              />
-            </div>
+              onStart={startMafia}
+              voteState={voteState}
+              leaders={voteState?.leaders || []}
+              voteOpen={voteOpen}
+              onToggleVote={toggleVotePopup}
+              canShowVote={isVotePhase}
+              hasUnread={hasUnread}
+              avatarBase={API_BASE}
+            />
+          </div>
 
             {showVoteBoard && (
               <VotePopup
@@ -2007,6 +2008,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
                 onClose={toggleVotePopup}
                 players={roomPlayers}
                 voteState={voteState}
+                hasRows={voteRowsPresent}
               />
             )}
 
