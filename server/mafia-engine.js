@@ -1105,6 +1105,14 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
         const code = (await prisma.room.findUnique({ where: { id: room.id } })).code;
 
         schedulePhase(room.id, Phase.VOTE, VOTE_SEC, { round: 1, dayNumber: room.dayNumber });
+
+        // Боты голосуют сразу, чтобы было видно прогресс (но финальный подсчёт останется в resolveVote)
+        try {
+          await autoBotVotes(room, 1);
+          io.to(`room:${code}`).emit('vote:progress', await voteProgress(room.id, room.dayNumber, 1));
+        } catch (e) {
+          if (!isLockError?.(e)) console.warn('autoBotVotes round1 failed:', e?.message || e);
+        }
         emitRoomStateDebounced(code);
       })
     );
@@ -1149,6 +1157,13 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
           schedulePhase(room.id, Phase.VOTE, VOTE_SEC, { round: 2 });
           const code = room.code;
           io.to(`room:${code}`).emit('vote:runoff', { leaders: leadersClean, round: 2 });
+          // Боты сразу голосуют во втором раунде, чтобы пользователь видел процесс
+          try {
+            await autoBotVotes(room, 2);
+            io.to(`room:${code}`).emit('vote:progress', await voteProgress(room.id, room.dayNumber, 2));
+          } catch (e) {
+            if (!isLockError?.(e)) console.warn('autoBotVotes round2 failed:', e?.message || e);
+          }
           emitRoomStateDebounced(code);
           return;
         }
