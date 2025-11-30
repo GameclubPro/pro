@@ -756,7 +756,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   display:flex;
   gap: var(--mf-grid-gap);
   align-items:flex-start;
-  justify-content:center;
+  justify-content:space-between;
   width:100%;
 }
 .mf-hint.center{ text-align:center; color: var(--mf-muted); font-size:12px; opacity:.95; }
