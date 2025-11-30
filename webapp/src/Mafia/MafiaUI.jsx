@@ -398,9 +398,23 @@ export const PlayerGrid = memo(function PlayerGrid({
       </div>
     );
   }
-  const mid = Math.ceil(players.length / 2);
-  const left = players.slice(0, mid);
-  const right = players.slice(mid);
+  const left = [];
+  const right = [];
+  const centerTop = []; // позиции 11/12 — между 3 и 5
+  const centerBottom = []; // позиции 9/10 — между 7 и 8
+
+  players.forEach((p, idx) => {
+    const pos = idx + 1;
+    if (pos === 9 || pos === 10) {
+      centerBottom.push(p);
+    } else if (pos === 11 || pos === 12) {
+      centerTop.push(p);
+    } else if (pos % 2 === 1) {
+      left.push(p);
+    } else {
+      right.push(p);
+    }
+  });
 
   const startReason = (() => {
     if (phase !== "LOBBY" || canStart) return "";
@@ -434,32 +448,38 @@ export const PlayerGrid = memo(function PlayerGrid({
     [phase, revealedRoles, mafiaTeam, myId, myRole]
   );
 
+  const renderPlayer = (p) => (
+    <PlayerCard
+      key={p.id}
+      p={p}
+      myId={myId}
+      myRole={myRole}
+      ownerId={ownerId}
+      phase={phase}
+      voteState={voteState}
+      mafiaMark={mafiaMarksEnabled ? markFor(p.id) : null}
+      onTap={onTapPlayer}
+      avatarBase={avatarBase}
+      revealRole={revealFor(p)}
+      showReady={!!showReady}
+    />
+  );
+
   return (
     <>
       <section className="mf-grid" aria-label="Игроки">
-        <div className="mf-col left">
-          {left.map((p) => (
-            <PlayerCard
-              key={p.id}
-              p={p}
-              myId={myId}
-              myRole={myRole}
-              ownerId={ownerId}
-              phase={phase}
-              voteState={voteState}
-              mafiaMark={mafiaMarksEnabled ? markFor(p.id) : null}
-              onTap={onTapPlayer}
-              avatarBase={avatarBase}
-              revealRole={revealFor(p)}
-              showReady={!!showReady}
-            />
-          ))}
-        </div>
+        <div className="mf-col left">{left.map(renderPlayer)}</div>
 
         <div className="mf-col center">
-          {phase === "LOBBY" ? (
-            <div className="mf-center-cta lobby-pinned">
-              {(() => {
+          {centerTop.length > 0 && (
+            <div className="mf-center-stack top">
+              {centerTop.map(renderPlayer)}
+            </div>
+          )}
+
+          <div className={`mf-center-cta ${phase === "LOBBY" ? "lobby-pinned" : ""}`}>
+            {phase === "LOBBY" ? (
+              (() => {
                 // определяем: текущий зритель — владелец?
                 const me = players.find((x) => x.id === myId);
                 const myUserId = me?.user?.id ?? null;
@@ -496,11 +516,11 @@ export const PlayerGrid = memo(function PlayerGrid({
                     onClick={onToggleReady}
                     type="button"
                     aria-pressed={!!iAmReady}
-                      aria-label={
-                        iAmReady
-                          ? "Отметиться «не готов»"
-                          : "Отметиться «готов»"
-                      }
+                    aria-label={
+                      iAmReady
+                        ? "Отметиться «не готов»"
+                        : "Отметиться «готов»"
+                    }
                     title={
                       iAmReady
                         ? "Вы отмечены как «готов»"
@@ -510,10 +530,8 @@ export const PlayerGrid = memo(function PlayerGrid({
                     {iAmReady ? "Я готов" : "Готов"}
                   </button>
                 );
-              })()}
-            </div>
-          ) : (
-            <div className="mf-center-cta">
+              })()
+            ) : (
               <button
                 className={`mf-events-toggle mf-appear-after-start ${
                   eventsOpen ? "open" : ""
@@ -527,28 +545,17 @@ export const PlayerGrid = memo(function PlayerGrid({
               >
                 ✨ События {eventsCount ? `(${eventsCount})` : ""}
               </button>
+            )}
+          </div>
+
+          {centerBottom.length > 0 && (
+            <div className="mf-center-stack bottom">
+              {centerBottom.map(renderPlayer)}
             </div>
           )}
         </div>
 
-        <div className="mf-col right">
-          {right.map((p) => (
-            <PlayerCard
-              key={p.id}
-              p={p}
-              myId={myId}
-              myRole={myRole}
-              ownerId={ownerId}
-              phase={phase}
-              voteState={voteState}
-              mafiaMark={mafiaMarksEnabled ? markFor(p.id) : null}
-              onTap={onTapPlayer}
-              avatarBase={avatarBase}
-              revealRole={revealFor(p)}
-              showReady={!!showReady}
-            />
-          ))}
-        </div>
+        <div className="mf-col right">{right.map(renderPlayer)}</div>
       </section>
 
       {phase !== "LOBBY" && (
