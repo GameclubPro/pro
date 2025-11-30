@@ -313,17 +313,33 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
   async function privateSelfState(roomPlayerId) {
     const me = await prisma.roomPlayer.findUnique({
       where: { id: Number(roomPlayerId) },
-      include: { room: true },
+      include: { room: true, room: { include: { matches: { orderBy: { id: 'desc' }, take: 1 } } } },
     });
     if (!me) return null;
     const res = { roomPlayerId: me.id, userId: me.userId, role: me.role, alive: me.alive, roomCode: me.room.code };
     if (MAFIA_ROLES.has(me.role)) {
       try {
-        const room = await prisma.room.findUnique({ where: { id: me.roomId }, include: { players: true } });
+        const room = await prisma.room.findUnique({ where: { id: me.roomId }, include: { players: true, matches: { orderBy: { id: 'desc' }, take: 1 } } });
         if (room?.players?.length) {
           res.mafiaTeam = room.players
             .filter((p) => p.alive && MAFIA_ROLES.has(p.role))
             .map((p) => ({ playerId: p.id, role: p.role }));
+          // Добавим актуальные цели мафии текущей ночи, чтобы метки появлялись сразу даже без отдельного события
+          if (room.status === Phase.NIGHT && room.matches?.[0]) {
+            const nightNumber = room.dayNumber + 1;
+            const acts = await prisma.nightAction.findMany({
+              where: {
+                matchId: room.matches[0].id,
+                nightNumber,
+                role: { in: [Role.MAFIA, Role.DON] },
+                targetPlayerId: { not: null },
+              },
+            });
+            res.mafiaTargets = {
+              night: nightNumber,
+              items: acts.map((a) => ({ actorId: a.actorPlayerId, targetPlayerId: a.targetPlayerId })).filter((x) => x.targetPlayerId != null),
+            };
+          }
         }
       } catch (e) {
         console.warn('privateSelfState mafiaTeam fetch failed', e?.message || e);

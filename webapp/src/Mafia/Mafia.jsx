@@ -808,6 +808,19 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
         if (Object.keys(map).length) {
           setMafiaTeam((prev) => ({ ...prev, ...map }));
         }
+        // Если сервер дал последние цели мафии в приватном self — сразу отрисуем метки
+        if (self?.mafiaTargets && typeof self.mafiaTargets === "object") {
+          const items = Array.isArray(self.mafiaTargets.items) ? self.mafiaTargets.items : [];
+          const byTarget = {};
+          let myTargetId = null;
+          items.forEach(({ actorId, targetPlayerId }) => {
+            if (targetPlayerId == null) return;
+            byTarget[targetPlayerId] = byTarget[targetPlayerId] || [];
+            byTarget[targetPlayerId].push(actorId);
+            if (actorId === selfId) myTargetId = targetPlayerId;
+          });
+          setMafiaMarks({ myTargetId, byTarget });
+        }
       } catch {}
 
       // ✅ МГНОВЕННО определяем владельца, не дожидаясь следующего room:state.
