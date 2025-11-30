@@ -1040,38 +1040,27 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
   // добавлены зависимости: flushPendingOps, getLastEventId
   }, [API_BASE, toast, enqueueNightNotice, applyRoomStateFromServer, flushPendingOps, getLastEventId]);
 
-  // Подстраховка: если в начале ночи мафия не увидела союзников (например, пропущен стартовый бродкаст),
-  // форсим room:resume с полным слепком, чтобы подтянуть mafia:team/targets и попасть в maf-комнату.
-  const mafiaSyncAttemptedRef = useRef(false);
+  // Подстраховка: если в начале ночи у мафии нет меток целей (пустые mafia:targets),
+  // дергаем принудительный room:resume, чтобы сервер заново выслал mafia:targets (включая ботов).
+  const mafiaMarksSyncKeyRef = useRef(null);
   useEffect(() => {
-    if (phase !== "NIGHT") {
-      mafiaSyncAttemptedRef.current = false;
-      return;
-    }
     const role = meWithRole?.role;
     const myId = meWithRole?.roomPlayerId;
     const isMafiaRole = role === "MAFIA" || role === "DON";
-    if (!roomCode || !isMafiaRole) return;
-
-    const allies = Object.entries(mafiaTeam || {}).filter(
-      ([pid, r]) =>
-        pid != null &&
-        String(pid) !== String(myId) &&
-        (r === "MAFIA" || r === "DON")
-    );
-    if (allies.length) return; // уже видим союзников — всё ок
-    if (mafiaSyncAttemptedRef.current) return;
-    mafiaSyncAttemptedRef.current = true;
+    const emptyMarks = !mafiaMarks || !mafiaMarks.byTarget || Object.keys(mafiaMarks.byTarget).length === 0;
+    if (phase !== "NIGHT" || !roomCode || !isMafiaRole || !emptyMarks) {
+      mafiaMarksSyncKeyRef.current = null;
+      return;
+    }
+    const key = `${roomCode}:${phase}:${dayNumber || 0}:${myId || "x"}`;
+    if (mafiaMarksSyncKeyRef.current === key) return;
+    mafiaMarksSyncKeyRef.current = key;
 
     try {
       const sock = ensureSocket();
       sock.emit(
         "room:resume",
-        {
-          code: roomCode,
-          etag: null, // принудительно полный ресинк
-          lastEventId: getLastEventId() ?? lastEventIdRef.current ?? null,
-        },
+        { code: roomCode, etag: null, lastEventId: getLastEventId() ?? lastEventIdRef.current ?? null },
         (ack) => {
           try {
             if (ack?.etag) stateEtagRef.current = String(ack.etag);
@@ -1082,7 +1071,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
         }
       );
     } catch {}
-  }, [phase, roomCode, meWithRole?.role, meWithRole?.roomPlayerId, mafiaTeam, ensureSocket, getLastEventId]);
+  }, [phase, roomCode, mafiaMarks, meWithRole?.role, meWithRole?.roomPlayerId, dayNumber, ensureSocket, getLastEventId]);
 
   useEffect(() => {
     return () => {
