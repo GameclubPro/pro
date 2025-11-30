@@ -1716,10 +1716,14 @@ io.on('connection', (socket) => {
       const state = await mafia.publicRoomState(code);
       const activeRoles = activeRolesSummary(room);
 
-      // Если клиент актуален — только обновим таймер и вернём дельту событий
+      // Если клиент актуален — только обновим таймер, MAФ-сигналы и вернём дельту событий
       if (state?.etag && etag && state.etag === etag) {
         if (state?.timer) {
           socket.emit('timer:update', { ...state.timer, serverTime: Date.now() });
+        }
+        if (room.game === RoomGame.MAFIA) {
+          try { await mafia.emitMafiaTargets(room.id); } catch {}
+          try { await mafia.emitMafiaTeam(room.id); } catch {}
         }
         let delta = [];
         if (room.matches?.[0] && Number.isFinite(Number(lastEventId))) {
