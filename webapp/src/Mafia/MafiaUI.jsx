@@ -549,21 +549,7 @@ export const PlayerGrid = memo(function PlayerGrid({
               })()
             ) : (
               <div className="mf-cta-stack">
-                <button
-                  className={`mf-events-toggle mf-appear-after-start ${eventsOpen ? "open" : ""} ${
-                    hasUnread ? "has-unread" : ""
-                  }`}
-                  onClick={onToggleEvents}
-                  aria-expanded={!!eventsOpen}
-                  aria-haspopup="dialog"
-                  type="button"
-                  aria-label="Открыть события"
-                  title="Открыть события"
-                >
-                  ✨ События {eventsCount ? `(${eventsCount})` : ""}
-                </button>
-
-                {phase === "VOTE" && canShowVote && (
+                {phase === "VOTE" && canShowVote ? (
                   <button
                     className={`mf-vote-toggle ${voteOpen ? "open" : ""}`}
                     onClick={onToggleVote}
@@ -574,6 +560,20 @@ export const PlayerGrid = memo(function PlayerGrid({
                     title="Открыть доску голосов"
                   >
                     ⚖️ Голоса {votesLeft ? `(${votesLeft})` : ""}
+                  </button>
+                ) : (
+                  <button
+                    className={`mf-events-toggle mf-appear-after-start ${eventsOpen ? "open" : ""} ${
+                      hasUnread ? "has-unread" : ""
+                    }`}
+                    onClick={onToggleEvents}
+                    aria-expanded={!!eventsOpen}
+                    aria-haspopup="dialog"
+                    type="button"
+                    aria-label="Открыть события"
+                    title="Открыть события"
+                  >
+                    ✨ События {eventsCount ? `(${eventsCount})` : ""}
                   </button>
                 )}
               </div>
