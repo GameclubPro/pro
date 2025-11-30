@@ -352,6 +352,24 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
   const revealedRolesRef = useRef(revealedRoles);
   useEffect(() => { revealedRolesRef.current = revealedRoles; }, [revealedRoles]);
   const [mafiaTeam, setMafiaTeam] = useState({});
+  const [activeRolesSummary, setActiveRolesSummary] = useState(null);
+
+  // Всегда держим количество живых в актуальном виде (по публичным данным)
+  useEffect(() => {
+    const aliveCount = (roomPlayers || []).filter((p) => p.alive).length;
+    setActiveRolesSummary((prev) => {
+      if (prev && prev.totalAlive === aliveCount) return prev;
+      return prev ? { ...prev, totalAlive: aliveCount } : { totalAlive: aliveCount };
+    });
+  }, [roomPlayers]);
+  useEffect(() => {
+    const alive = activeRolesSummary?.totalAlive;
+    if (typeof alive !== "number") return;
+    setVoteState((prev) => {
+      if (!prev || prev.alive === alive) return prev;
+      return { ...prev, alive };
+    });
+  }, [activeRolesSummary?.totalAlive]);
 
   // ============================== Events feed (обновлено) ==============================
   const [events, setEvents] = useState([]);
@@ -674,6 +692,12 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
           if (Number.isFinite(Number(ack?.lastEventId))) lastEventIdRef.current = Number(ack.lastEventId);
           if (ack?.activeRoles && typeof ack.activeRoles === "object") {
             setActiveRolesSummary(ack.activeRoles);
+            if (typeof ack.activeRoles.totalAlive === "number") {
+              setVoteState((prev) => {
+                if (!prev || prev.alive === ack.activeRoles.totalAlive) return prev;
+                return { ...prev, alive: ack.activeRoles.totalAlive };
+              });
+            }
           }
         } catch {}
       }
@@ -1973,6 +1997,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
     setMafiaMarks({ myTargetId: null, byTarget: {} });
     setRevealedRoles({});
     setMafiaTeam({});
+    setActiveRolesSummary(null);
     setFinalWinner(null); // +++ сброс победителя при полном ресете
     // NEW: чистим ночной инбокс и дневные уведомления
     nightInboxRef.current = [];
