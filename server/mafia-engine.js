@@ -779,7 +779,10 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
       });
 
       // Если мафия-боты ещё не сделали выбор (например, из-за гоночных условий) — подстрахуем и повторим emit
-      if (!actions.length) {
+      const mafiaAlive = room.players.filter((p) => p.alive && MAFIA_ROLES.has(p.role));
+      const missingActors = new Set(mafiaAlive.map((p) => p.id));
+      actions.forEach((a) => missingActors.delete(a.actorPlayerId));
+      if (!actions.length || missingActors.size) {
         try {
           await autoBotNightActions(room, match, nightNumber, { onlyIfMissing: true });
           actions = await prisma.nightAction.findMany({
