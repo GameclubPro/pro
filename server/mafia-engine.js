@@ -723,13 +723,21 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
       .filter(p => p.alive && MAFIA_ROLES.has(p.role))
       .map(p => ({ playerId: p.id, role: p.role }));
     io.to(`maf:${room.id}`).emit('mafia:team', { items });
+    // Дублируем состав в личные комнаты мафии — на случай, если сокет ещё не в maf:<roomId>
+    for (const p of room.players) {
+      if (!p.alive || !MAFIA_ROLES.has(p.role)) continue;
+      try { io.to(`player:${p.id}`).emit('mafia:team', { items }); } catch {}
+    }
   }
 
   async function emitMafiaTargets(roomId) {
     try {
       const room = await prisma.room.findUnique({
         where: { id: roomId },
-        include: { matches: { orderBy: { id: 'desc' }, take: 1 } }
+        include: {
+          players: true,
+          matches: { orderBy: { id: 'desc' }, take: 1 },
+        }
       });
       if (!room) return;
 
@@ -750,6 +758,11 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
         .filter(x => x.targetPlayerId != null);
 
       io.to(`maf:${room.id}`).emit('mafia:targets', { night: nightNumber, items });
+      // Отправим дублирующие таргеты напрямую мафии — чтобы они появились даже без комнаты maf:<roomId>
+      for (const p of room.players) {
+        if (!p.alive || !MAFIA_ROLES.has(p.role)) continue;
+        try { io.to(`player:${p.id}`).emit('mafia:targets', { night: nightNumber, items }); } catch {}
+      }
     } catch (e) {
       console.error('emitMafiaTargets error:', e);
     }
