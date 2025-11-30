@@ -758,9 +758,21 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
       const match = room.matches[0];
       const nightNumber = room.dayNumber + 1;
 
-      const actions = await prisma.nightAction.findMany({
+      let actions = await prisma.nightAction.findMany({
         where: { matchId: match.id, nightNumber, role: { in: [Role.MAFIA, Role.DON] } }
       });
+
+      // Если мафия-боты ещё не сделали выбор (например, из-за гоночных условий) — подстрахуем и повторим emit
+      if (!actions.length) {
+        try {
+          await autoBotNightActions(room, match, nightNumber, { onlyIfMissing: true });
+          actions = await prisma.nightAction.findMany({
+            where: { matchId: match.id, nightNumber, role: { in: [Role.MAFIA, Role.DON] } }
+          });
+        } catch (e) {
+          if (!isLockError?.(e)) console.warn('emitMafiaTargets autobot fallback failed:', e?.message || e);
+        }
+      }
 
       const items = actions
         .map(a => ({ actorId: a.actorPlayerId, targetPlayerId: a.targetPlayerId }))
