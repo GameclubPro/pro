@@ -567,9 +567,7 @@ export const PlayerGrid = memo(function PlayerGrid({
 
         {renderRow(players[2], null, players[3], "row-2")}
 
-        {renderCenterRow([players[10], players[11]], "row-center-top")}
-
-        {renderRow(players[4], null, players[5], "row-3")}
+        {renderRow(players[4], renderInline([players[10], players[11]]), players[5], "row-3")}
 
         {renderRow(players[6], renderInline([players[8], players[9]]), players[7], "row-4")}
       </section>

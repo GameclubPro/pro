@@ -742,8 +742,8 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 }
 .mf-row + .mf-row{ margin-top:2px; }
 .mf-slot{ display:flex; justify-content:center; min-height: 0; }
-.mf-slot.left{ justify-content:flex-start; }
-.mf-slot.right{ justify-content:flex-end; }
+.mf-slot.left{ justify-content:flex-start; padding-left: 6px; }
+.mf-slot.right{ justify-content:flex-end; padding-right: 6px; }
 .mf-slot.center{ justify-content:center; }
 .mf-slot.empty{ visibility:hidden; min-width: var(--mf-ava); }
 .mf-center-cta{
