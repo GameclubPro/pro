@@ -480,23 +480,10 @@ export const PlayerGrid = memo(function PlayerGrid({
     );
   };
 
-  const renderInlineRow = (list, key) => {
-    if (!Array.isArray(list) || !list.length) return null;
-    return (
-      <div className="mf-row inline" key={key}>
-        {list.map((p, idx) => {
-          const content = renderPlayer(p);
-          return (
-            <div
-              className={`mf-slot inline-slot${content ? "" : " empty"}`}
-              key={p?.id ?? `${key}-${idx}`}
-            >
-              {content}
-            </div>
-          );
-        })}
-      </div>
-    );
+  const renderInline = (list) => {
+    const nodes = list.filter(Boolean);
+    if (!nodes.length) return null;
+    return <div className="mf-inline-pair">{nodes.map(renderPlayer)}</div>;
   };
 
   return (
@@ -570,14 +557,18 @@ export const PlayerGrid = memo(function PlayerGrid({
 
         {renderRow(players[2], null, players[3], "row-2")}
 
-        {renderInlineRow(
-          [players[4], players[10], players[11], players[5]],
-          "row-3-inline"
+        {renderRow(
+          players[4],
+          renderInline([players[10], players[11]]),
+          players[5],
+          "row-3"
         )}
 
-        {renderInlineRow(
-          [players[6], players[8], players[9], players[7]],
-          "row-4-inline"
+        {renderRow(
+          players[6],
+          renderInline([players[8], players[9]]),
+          players[7],
+          "row-4"
         )}
       </section>
 
