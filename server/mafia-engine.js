@@ -564,21 +564,21 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
           include: { players: true, matches: { orderBy: { id: 'desc' }, take: 1 } }
         });
 
-        await rebuildMafiaRoom(updated.id);
-
-        // приватные слепки ролей
-        await Promise.all(updated.players.map(async (p) => {
-          const self = await privateSelfState(p.id);
-          io.to(`player:${p.id}`).emit('private:self', self);
-        }));
-
-        // Боты сразу делают выбор, чтобы метки мафии были видны с начала ночи
+        // Боты сразу делают выбор до рассылки приватных self, чтобы метки мафии пришли в первом пакете
         try {
           const match = updated.matches?.[0];
           if (match) await autoBotNightActions(updated, match, updated.dayNumber + 1, { onlyIfMissing: true });
         } catch (e) {
           if (!isLockError?.(e)) console.warn('autoBotNightActions at start failed:', e?.message || e);
         }
+
+        await rebuildMafiaRoom(updated.id);
+
+        // приватные слепки ролей (уже включают mafiaTargets, если они есть)
+        await Promise.all(updated.players.map(async (p) => {
+          const self = await privateSelfState(p.id);
+          io.to(`player:${p.id}`).emit('private:self', self);
+        }));
 
         schedulePhase(updated.id, Phase.NIGHT, NIGHT_SEC, { round: 1, dayNumber: updated.dayNumber });
         emitRoomStateDebounced(updated.code);
