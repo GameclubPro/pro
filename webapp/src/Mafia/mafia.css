@@ -729,7 +729,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   contain: layout;
   overflow: visible;
   flex: 1 1 auto;
-  --mf-center-col: clamp(200px, 34vw, 320px);
+  --mf-center-col: clamp(170px, 34vw, 320px);
 }
 .mf-row{
   display:grid;
@@ -759,7 +759,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   align-items:flex-start;
   justify-content:space-between;
   width:100%;
-  padding-inline: var(--mf-grid-gap);
+  padding-inline: calc(var(--mf-grid-gap) * 0.75);
 }
 .mf-hint.center{ text-align:center; color: var(--mf-muted); font-size:12px; opacity:.95; }
 
@@ -1422,10 +1422,23 @@ button:focus-visible, .mf-chip:focus-visible, .mf-input:focus-visible, .mf-gs-ch
   .mf-menu-logo{ text-shadow: 0 0 4px rgba(0,0,0,.25); }
 }
 @media (max-width: 480px){
-  :root{ --mf-ava: 54px; --mf-grid-gap: 8px; }
+  :root{
+    --mf-ava: 54px;
+    --mf-grid-gap: 8px;
+    --mf-center-col: clamp(150px, 62vw, 220px);
+  }
+  .mf-slot.left{ padding-left: 8px; }
+  .mf-slot.right{ padding-right: 8px; }
 }
 @media (max-width: 390px){
-  :root{ --mf-center-min: 48px; --mf-edge-pad: 6px; --mf-ava: 50px; }
+  :root{
+    --mf-center-min: 48px;
+    --mf-edge-pad: 6px;
+    --mf-ava: 50px;
+    --mf-center-col: clamp(140px, 68vw, 200px);
+  }
+  .mf-slot.left{ padding-left: 6px; }
+  .mf-slot.right{ padding-right: 6px; }
   .mf-grid{ gap:6px; }
   .mf-chip.ghost{ min-height: 36px; }
 }
