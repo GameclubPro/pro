@@ -123,14 +123,14 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
     return pool[rnd];
   }
 
-  async function autoBotNightActions(room, match, nightNumber) {
+  async function autoBotNightActions(room, match, nightNumber, { onlyIfMissing = false } = {}) {
     try {
       const existing = await prisma.nightAction.findMany({ where: { matchId: match.id, nightNumber } });
       const hasAction = new Set(existing.map(a => a.actorPlayerId));
 
       for (const p of room.players) {
         if (!p.alive || !isBot(p)) continue;
-        if (hasAction.has(p.id) && !MAFIA_ROLES.has(p.role)) continue; // мафия может менять цель — позволим последнему действию
+        if (hasAction.has(p.id) && (!MAFIA_ROLES.has(p.role) || onlyIfMissing)) continue; // при onlyIfMissing не трогаем уже сходивших
 
         const actorId = p.id;
         const role = p.role;
@@ -210,6 +210,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
               where: { matchId_nightNumber_actorPlayerId: { matchId: match.id, nightNumber, actorPlayerId: actorId } },
             });
             if (existingAction) {
+              if (onlyIfMissing) continue;
               await prisma.nightAction.update({
                 where: { id: existingAction.id },
                 data: { targetPlayerId: targetId, role },
@@ -554,6 +555,14 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
           const self = await privateSelfState(p.id);
           io.to(`player:${p.id}`).emit('private:self', self);
         }));
+
+        // Боты сразу делают выбор, чтобы метки мафии были видны с начала ночи
+        try {
+          const match = updated.matches?.[0];
+          if (match) await autoBotNightActions(updated, match, updated.dayNumber + 1, { onlyIfMissing: true });
+        } catch (e) {
+          if (!isLockError?.(e)) console.warn('autoBotNightActions at start failed:', e?.message || e);
+        }
 
         schedulePhase(updated.id, Phase.NIGHT, NIGHT_SEC, { round: 1, dayNumber: updated.dayNumber });
         emitRoomStateDebounced(updated.code);
@@ -1173,6 +1182,14 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
           });
           cancelTimer(room.id);
           return;
+        }
+
+        // Боты сразу делают выбор на новую ночь, чтобы метки были видны
+        try {
+          const match = after.matches?.[0];
+          if (match) await autoBotNightActions(after, match, after.dayNumber + 1, { onlyIfMissing: true });
+        } catch (e) {
+          if (!isLockError?.(e)) console.warn('autoBotNightActions at night start failed:', e?.message || e);
         }
 
         schedulePhase(room.id, Phase.NIGHT, NIGHT_SEC, { round: 1, dayNumber: room.dayNumber });
