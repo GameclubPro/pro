@@ -310,9 +310,25 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
 
   // ===== Rendering public/private room state =====
   async function privateSelfState(roomPlayerId) {
-    const me = await prisma.roomPlayer.findUnique({ where: { id: Number(roomPlayerId) }, include: { room: true } });
+    const me = await prisma.roomPlayer.findUnique({
+      where: { id: Number(roomPlayerId) },
+      include: { room: true },
+    });
     if (!me) return null;
-    return { roomPlayerId: me.id, userId: me.userId, role: me.role, alive: me.alive, roomCode: me.room.code };
+    const res = { roomPlayerId: me.id, userId: me.userId, role: me.role, alive: me.alive, roomCode: me.room.code };
+    if (MAFIA_ROLES.has(me.role)) {
+      try {
+        const room = await prisma.room.findUnique({ where: { id: me.roomId }, include: { players: true } });
+        if (room?.players?.length) {
+          res.mafiaTeam = room.players
+            .filter((p) => p.alive && MAFIA_ROLES.has(p.role))
+            .map((p) => ({ playerId: p.id, role: p.role }));
+        }
+      } catch (e) {
+        console.warn('privateSelfState mafiaTeam fetch failed', e?.message || e);
+      }
+    }
+    return res;
   }
 
   async function currentVoteRound(roomId, dayNumber) {

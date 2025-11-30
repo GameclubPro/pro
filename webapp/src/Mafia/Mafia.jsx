@@ -871,9 +871,21 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
       const verdict = isMafia ? "МАФИЯ" : "мирный";
       const msg = `🔎 Проверка: ${nick} — ${вердикт}`;
       const tone = isMafia ? "danger" : "success";
-      // показываем сразу и сохраняем в дневной инбокс, чтобы не потерять
+      // показываем сразу и сохраняем в дневной/моментальный стек, чтобы не потерять
       toast(msg, tone);
       enqueueNightNotice(msg, tone);
+      setActionToasts((items) => {
+        const id = `sheriff-${Date.now()}-${Math.random()}`;
+        return [
+          ...items,
+          {
+            id,
+            text: msg,
+            tone,
+            onOk: () => setActionToasts((cur) => cur.filter((x) => x.id !== id)),
+          },
+        ];
+      });
     });
 
     // 📰 Результат журналиста (обновлено: danger|warn|success)
