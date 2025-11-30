@@ -429,50 +429,6 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
     if (phase !== "NIGHT") setMafiaMarks({ myTargetId: null, byTarget: {} });
   }, [phase]);
 
-  // Подстраховка: если в начале ночи мафия не увидела союзников (например, пропущен стартовый бродкаст),
-  // форсим room:resume с полным слепком, чтобы подтянуть mafia:team/targets и попасть в maf-комнату.
-  const mafiaSyncAttemptedRef = useRef(false);
-  useEffect(() => {
-    if (phase !== "NIGHT") {
-      mafiaSyncAttemptedRef.current = false;
-      return;
-    }
-    const role = meWithRole?.role;
-    const myId = meWithRole?.roomPlayerId;
-    const isMafiaRole = role === "MAFIA" || role === "DON";
-    if (!roomCode || !isMafiaRole) return;
-
-    const allies = Object.entries(mafiaTeam || {}).filter(
-      ([pid, r]) =>
-        pid != null &&
-        String(pid) !== String(myId) &&
-        (r === "MAFIA" || r === "DON")
-    );
-    if (allies.length) return; // уже видим союзников — всё ок
-    if (mafiaSyncAttemptedRef.current) return;
-    mafiaSyncAttemptedRef.current = true;
-
-    try {
-      const sock = ensureSocket();
-      sock.emit(
-        "room:resume",
-        {
-          code: roomCode,
-          etag: null, // принудительно полный ресинк
-          lastEventId: getLastEventId() ?? lastEventIdRef.current ?? null,
-        },
-        (ack) => {
-          try {
-            if (ack?.etag) stateEtagRef.current = String(ack.etag);
-            if (Number.isFinite(Number(ack?.lastEventId))) {
-              lastEventIdRef.current = Number(ack.lastEventId);
-            }
-          } catch {}
-        }
-      );
-    } catch {}
-  }, [phase, roomCode, meWithRole?.role, meWithRole?.roomPlayerId, mafiaTeam, ensureSocket, getLastEventId]);
-
   // =================== Делегируем BackButton в игру (FIX 6) ==============================
   useEffect(() => {
     if (!setBackHandler) return;
@@ -1083,6 +1039,50 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
     return sock;
   // добавлены зависимости: flushPendingOps, getLastEventId
   }, [API_BASE, toast, enqueueNightNotice, applyRoomStateFromServer, flushPendingOps, getLastEventId]);
+
+  // Подстраховка: если в начале ночи мафия не увидела союзников (например, пропущен стартовый бродкаст),
+  // форсим room:resume с полным слепком, чтобы подтянуть mafia:team/targets и попасть в maf-комнату.
+  const mafiaSyncAttemptedRef = useRef(false);
+  useEffect(() => {
+    if (phase !== "NIGHT") {
+      mafiaSyncAttemptedRef.current = false;
+      return;
+    }
+    const role = meWithRole?.role;
+    const myId = meWithRole?.roomPlayerId;
+    const isMafiaRole = role === "MAFIA" || role === "DON";
+    if (!roomCode || !isMafiaRole) return;
+
+    const allies = Object.entries(mafiaTeam || {}).filter(
+      ([pid, r]) =>
+        pid != null &&
+        String(pid) !== String(myId) &&
+        (r === "MAFIA" || r === "DON")
+    );
+    if (allies.length) return; // уже видим союзников — всё ок
+    if (mafiaSyncAttemptedRef.current) return;
+    mafiaSyncAttemptedRef.current = true;
+
+    try {
+      const sock = ensureSocket();
+      sock.emit(
+        "room:resume",
+        {
+          code: roomCode,
+          etag: null, // принудительно полный ресинк
+          lastEventId: getLastEventId() ?? lastEventIdRef.current ?? null,
+        },
+        (ack) => {
+          try {
+            if (ack?.etag) stateEtagRef.current = String(ack.etag);
+            if (Number.isFinite(Number(ack?.lastEventId))) {
+              lastEventIdRef.current = Number(ack.lastEventId);
+            }
+          } catch {}
+        }
+      );
+    } catch {}
+  }, [phase, roomCode, meWithRole?.role, meWithRole?.roomPlayerId, mafiaTeam, ensureSocket, getLastEventId]);
 
   useEffect(() => {
     return () => {
