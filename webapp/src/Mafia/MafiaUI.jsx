@@ -448,39 +448,62 @@ export const PlayerGrid = memo(function PlayerGrid({
     [phase, revealedRoles, mafiaTeam, myId, myRole]
   );
 
-  const renderPlayer = (p) => (
-    <PlayerCard
-      key={p.id}
-      p={p}
-      myId={myId}
-      myRole={myRole}
-      ownerId={ownerId}
-      phase={phase}
-      voteState={voteState}
-      mafiaMark={mafiaMarksEnabled ? markFor(p.id) : null}
-      onTap={onTapPlayer}
-      avatarBase={avatarBase}
-      revealRole={revealFor(p)}
-      showReady={!!showReady}
-    />
-  );
+  const renderPlayer = (p) =>
+    p ? (
+      <PlayerCard
+        key={p.id}
+        p={p}
+        myId={myId}
+        myRole={myRole}
+        ownerId={ownerId}
+        phase={phase}
+        voteState={voteState}
+        mafiaMark={mafiaMarksEnabled ? markFor(p.id) : null}
+        onTap={onTapPlayer}
+        avatarBase={avatarBase}
+        revealRole={revealFor(p)}
+        showReady={!!showReady}
+      />
+    ) : null;
+
+  const renderInline = (list) => {
+    const nodes = list.filter(Boolean);
+    if (!nodes.length) return null;
+    return <div className="mf-center-inline">{nodes.map(renderPlayer)}</div>;
+  };
+
+  const renderRow = (left, center, right, key) => {
+    if (!left && !right && !center) return null;
+    const leftNode = renderPlayer(left) || <div className="mf-slot empty" aria-hidden="true" />;
+    const rightNode = renderPlayer(right) || <div className="mf-slot empty" aria-hidden="true" />;
+    const centerNode = center || <div className="mf-slot empty" aria-hidden="true" />;
+    return (
+      <div className="mf-row" key={key}>
+        <div className="mf-slot">{leftNode}</div>
+        <div className="mf-slot center">{centerNode}</div>
+        <div className="mf-slot">{rightNode}</div>
+      </div>
+    );
+  };
+
+  const renderCenterRow = (list, key) => {
+    const c = renderInline(list);
+    if (!c) return null;
+    return (
+      <div className="mf-row center-only" key={key}>
+        {c}
+      </div>
+    );
+  };
 
   return (
     <>
       <section className="mf-grid" aria-label="Игроки">
-        <div className="mf-col left">{left.map(renderPlayer)}</div>
-
-        <div className="mf-col center">
-          {centerTop.length > 0 && (
-            <div className="mf-center-stack top">
-              {centerTop.map(renderPlayer)}
-            </div>
-          )}
-
+        {renderRow(
+          players[0],
           <div className={`mf-center-cta ${phase === "LOBBY" ? "lobby-pinned" : ""}`}>
             {phase === "LOBBY" ? (
               (() => {
-                // определяем: текущий зритель — владелец?
                 const me = players.find((x) => x.id === myId);
                 const myUserId = me?.user?.id ?? null;
                 const iAmOwner =
@@ -492,9 +515,7 @@ export const PlayerGrid = memo(function PlayerGrid({
                   return (
                     <>
                       <button
-                        className={`mf-events-toggle mf-start-toggle ${
-                          canStart ? "" : "disabled"
-                        }`}
+                        className={`mf-events-toggle mf-start-toggle ${canStart ? "" : "disabled"}`}
                         disabled={!canStart}
                         onClick={onStart}
                         type="button"
@@ -507,24 +528,17 @@ export const PlayerGrid = memo(function PlayerGrid({
                     </>
                   );
                 }
-                // игроки видят центральную кнопку «Готов/Не готов»
                 return (
                   <button
-                    className={`mf-events-toggle mf-ready-toggle ${
-                      iAmReady ? "ok" : ""
-                    }`}
+                    className={`mf-events-toggle mf-ready-toggle ${iAmReady ? "ok" : ""}`}
                     onClick={onToggleReady}
                     type="button"
                     aria-pressed={!!iAmReady}
                     aria-label={
-                      iAmReady
-                        ? "Отметиться «не готов»"
-                        : "Отметиться «готов»"
+                      iAmReady ? "Отметиться «не готов»" : "Отметиться «готов»"
                     }
                     title={
-                      iAmReady
-                        ? "Вы отмечены как «готов»"
-                        : "Нажмите, чтобы отметиться «готов»"
+                      iAmReady ? "Вы отмечены как «готов»" : "Нажмите, чтобы отметиться «готов»"
                     }
                   >
                     {iAmReady ? "Я готов" : "Готов"}
@@ -546,16 +560,18 @@ export const PlayerGrid = memo(function PlayerGrid({
                 ✨ События {eventsCount ? `(${eventsCount})` : ""}
               </button>
             )}
-          </div>
+          </div>,
+          players[1],
+          "row-top"
+        )}
 
-          {centerBottom.length > 0 && (
-            <div className="mf-center-stack bottom">
-              {centerBottom.map(renderPlayer)}
-            </div>
-          )}
-        </div>
+        {renderRow(players[2], null, players[3], "row-2")}
 
-        <div className="mf-col right">{right.map(renderPlayer)}</div>
+        {renderCenterRow([players[10], players[11]], "row-center-top")}
+
+        {renderRow(players[4], null, players[5], "row-3")}
+
+        {renderRow(players[6], renderInline([players[8], players[9]]), players[7], "row-4")}
       </section>
 
       {phase !== "LOBBY" && (
