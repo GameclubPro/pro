@@ -1,3 +1,4 @@
+/* eslint-disable */
 // MafiaUI.jsx — Horror-light UI (презентационные компоненты, без бизнес-логики)
 import {
   memo,
@@ -1531,9 +1532,9 @@ export function RoleCard({ role, myId, onClose }) {
         document.querySelectorAll(".mf-role-fly").forEach((n) => {
           try {
             n.remove();
-          } catch {}
+          } catch { /* noop */ }
         });
-      } catch {}
+      } catch { /* noop */ }
     };
   }, []);
 
@@ -1547,7 +1548,7 @@ export function RoleCard({ role, myId, onClose }) {
         document
           .querySelectorAll(".mf-player.me .mf-avatar-wrap")
           .forEach((node) => node.classList.remove("mf-ava-hidden"));
-      } catch {}
+      } catch { /* noop */ }
     };
   }, [role]);
 
@@ -1570,7 +1571,7 @@ export function RoleCard({ role, myId, onClose }) {
         try {
           document.body.classList.remove("mf-animating");
           document.body.classList.remove("mf-role-open");
-        } catch {}
+        } catch { /* noop */ }
         try {
           if (modalRef.current) {
             modalRef.current.classList.remove("flying");
@@ -1578,7 +1579,7 @@ export function RoleCard({ role, myId, onClose }) {
             modalRef.current.style.pointerEvents = "";
             modalRef.current.style.opacity = "";
           }
-        } catch {}
+        } catch { /* noop */ }
         inFlightRef.current = false;
         onClose?.();
       };

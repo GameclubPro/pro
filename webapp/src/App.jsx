@@ -1,3 +1,4 @@
+/* eslint-disable no-empty */
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Mafia from "./Mafia/Mafia";
 import "./App.css";
@@ -58,7 +59,7 @@ function readConsumedInvites() {
 function writeConsumedInvites(map) {
   try {
     localStorage.setItem(INVITE_STORAGE_KEY, JSON.stringify(map));
-  } catch {}
+  } catch { /* noop */ }
 }
 function stripInviteFromUrl() {
   try {
@@ -72,7 +73,7 @@ function stripInviteFromUrl() {
     hash.delete("tgWebAppStartParam");
     u.hash = hash.toString() ? `#${hash.toString()}` : "";
     history.replaceState(null, "", u.toString());
-  } catch {}
+  } catch { /* noop */ }
 }
 
 /* ВКЛЮЧЁН фолбэк автопоиска активной комнаты */

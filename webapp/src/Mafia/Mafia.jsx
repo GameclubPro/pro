@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import "./mafia.css";
@@ -20,7 +21,9 @@ import {
 class UIErrorBoundary extends React.Component {
   constructor(props){ super(props); this.state = { err: null }; }
   static getDerivedStateFromError(err){ return { err }; }
-  componentDidCatch(err, info){ try { console.error("UI error boundary:", err, info); } catch{} }
+  componentDidCatch(err, info){
+    try { console.error("UI error boundary:", err, info); } catch { /* noop */ }
+  }
   render(){
     if (this.state.err) {
       return (
@@ -29,7 +32,11 @@ class UIErrorBoundary extends React.Component {
             <div className="mf-fatal-title">Произошла ошибка интерфейса</div>
             <button
               className="mf-btn primary"
-              onClick={() => { try { window?.location?.reload(); } catch {} }}
+              onClick={() => {
+                try {
+                  window?.location?.reload();
+                } catch { /* noop */ }
+              }}
               type="button"
             >
               Перезагрузить

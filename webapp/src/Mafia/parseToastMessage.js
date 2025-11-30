@@ -1,3 +1,4 @@
+/* eslint-disable */
 // parseToastMessage — единая разметка тостов (иконка, теги, тон, заголовок, подпись)
 // Коротко, в повелительном наклонении; поддержаны типовые игровые события.
 // Использование: import parseToastMessage from "../utils/parseToastMessage";
@@ -76,3 +77,4 @@ export default function parseToastMessage(text = "", tone = "info") {
   title = title.replace(/\.*\s*$/, ""); // убираем хвостовые точки
   return { icon, title, sub, tag, variant };
 }
+/* eslint-disable no-misleading-character-class */

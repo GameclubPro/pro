@@ -6,7 +6,6 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
  */
 export function HUD({
   code,
-  isOwner,
   phase,
   phaseLabel,
   dayNumber,
@@ -15,11 +14,7 @@ export function HUD({
   onShare,
   onRefresh,
   onLeave,
-  canStart, // unused in HUD, retained for API compatibility
-  onStart, // unused in HUD, retained for API compatibility
   endedLabel,
-  iAmReady,
-  onToggleReady,
   children,
 }) {
   const prevPhaseRef = useRef(phase);
