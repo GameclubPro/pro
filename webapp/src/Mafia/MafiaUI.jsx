@@ -722,7 +722,7 @@ export const PlayerCard = memo(
     const dotClass =
       phase === "LOBBY" && showReady
         ? `mf-dot ok ${readyEffective ? "ready" : "not-ready"}`
-        : `mf-dot ${p.alive ? "ok" : "rip"}`;
+        : null;
 
     return (
       <button
@@ -803,7 +803,7 @@ export const PlayerCard = memo(
             </span>
           )}
 
-          <span className={dotClass} aria-hidden="true" />
+          {dotClass && <span className={dotClass} aria-hidden="true" />}
 
           {/* Бейдж роли: показываем всем в ENDED; в процессе — по старым правилам */}
           {(() => {
