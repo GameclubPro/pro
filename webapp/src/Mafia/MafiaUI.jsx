@@ -1196,10 +1196,7 @@ export const VoteBoard = memo(function VoteBoard({ players, voteState }) {
   })();
   const votedCount = rows.reduce((acc, r) => acc + r.count, 0);
   const leftCount = Math.max(0, total - votedCount);
-  const title =
-    voteState?.round === 2
-      ? "Голосование — Раунд 2: переголосование"
-      : "Голосование — Раунд 1";
+  const title = voteState?.round === 2 ? "Переголосование" : "Голосование";
 
   const threshold = Math.floor(total / 2) + 1;
 
@@ -1214,7 +1211,7 @@ export const VoteBoard = memo(function VoteBoard({ players, voteState }) {
     >
       <div className="mf-vote-title">
         {title}
-        <span className="mf-vote-left">Осталось голосов: {leftCount}</span>
+        <span className="mf-vote-left">Осталось: {leftCount}</span>
         <span className="sr-only">Порог: {threshold} голосов</span>
       </div>
       <div className="mf-vote-rows">

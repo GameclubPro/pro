@@ -843,8 +843,11 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
       const p = list.find((x) => x.id === playerId);
       const nick = p ? nickOf(p) : "Игрок";
       const verdict = isMafia ? "МАФИЯ" : "мирный";
-      // tone: danger для мафии, success для мирного — убрали неиспользуемый "ok"
-      toast(`🔎 Проверка: ${nick} — ${вердикт}`, isMafia ? "danger" : "success");
+      const msg = `🔎 Проверка: ${nick} — ${вердикт}`;
+      const tone = isMafia ? "danger" : "success";
+      // показываем сразу и сохраняем в дневной инбокс, чтобы не потерять
+      toast(msg, tone);
+      enqueueNightNotice(msg, tone);
     });
 
     // 📰 Результат журналиста (обновлено: danger|warn|success)
@@ -1914,7 +1917,8 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
 
   // ============================== Render ==============================
   const phaseLabel = translatePhase(phase);
-  const showVoteBoard = phase === "VOTE" && Object.keys(voteState?.tally || {}).length > 0;
+  const showVoteBoard =
+    phase === "VOTE" && Object.keys(voteState?.tally || {}).length > 0;
 
   return (
     <UIErrorBoundary>

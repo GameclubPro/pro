@@ -767,10 +767,10 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 }
 .mf-vote-float{
   position:absolute;
-  top: clamp(54px, 10vh, 82px);
+  top: clamp(46px, 9vh, 74px);
   left:50%;
   transform: translateX(-50%);
-  width: min(460px, calc(100% - 18px));
+  width: min(380px, 78vw);
   z-index:32;
   pointer-events:none;
 }
@@ -998,21 +998,21 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
     linear-gradient(135deg, rgba(255,255,255,.08), rgba(255,255,255,.02)) border-box;
   border:1px solid transparent;
   border-radius:16px;
-  padding:12px 14px;
-  display:flex; flex-direction:column; gap:10px;
+  padding:11px 12px;
+  display:flex; flex-direction:column; gap:8px;
   box-shadow: var(--elev-floating);
   backdrop-filter: blur(10px) saturate(120%);
 }
 .mf-vote-title{
-  font-weight:1000; font-size:15px; letter-spacing:.02em;
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  font-weight:1000; font-size:15px;
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
 }
 .mf-vote-left{
   color:#d0d3da; font-size:12px;
-  padding:6px 8px; border-radius:10px;
-  background: rgba(255,255,255,.06);
+  padding:5px 8px; border-radius:10px;
+  background: rgba(255,255,255,.05);
 }
-.mf-vote-rows{ display:flex; flex-direction:column; gap:8px; max-height: 240px; overflow:auto; padding-right:2px; }
+.mf-vote-rows{ display:flex; flex-direction:column; gap:8px; max-height: 220px; overflow:auto; padding-right:2px; }
 .mf-vote-row{
   display:grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto auto; gap:10px; align-items:center;
 }
@@ -1460,10 +1460,18 @@ button:focus-visible, .mf-chip:focus-visible, .mf-input:focus-visible, .mf-gs-ch
 }
 @media (max-width: 540px){
   .mf-vote-float{
-    top: clamp(46px, 12vh, 70px);
-    width: min(420px, 94vw);
+    top: clamp(38px, 11vh, 64px);
+    width: min(340px, 86vw);
   }
   .mf-vote-rows{ max-height: 200px; }
+}
+@media (max-width: 480px){
+  .mf-vote-float{
+    left: auto;
+    right: var(--mf-edge-pad, 8px);
+    transform: none;
+    width: min(300px, 88vw);
+  }
 }
 @media (max-width: 480px){
   :root{
