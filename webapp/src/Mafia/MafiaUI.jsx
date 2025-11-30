@@ -479,9 +479,9 @@ export const PlayerGrid = memo(function PlayerGrid({
     const centerNode = center || <div className="mf-slot empty" aria-hidden="true" />;
     return (
       <div className="mf-row" key={key}>
-        <div className="mf-slot">{leftNode}</div>
+        <div className="mf-slot left">{leftNode}</div>
         <div className="mf-slot center">{centerNode}</div>
-        <div className="mf-slot">{rightNode}</div>
+        <div className="mf-slot right">{rightNode}</div>
       </div>
     );
   };

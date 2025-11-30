@@ -734,14 +734,17 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   display:grid;
   grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
   gap: var(--mf-grid-gap);
-  align-items:center;
+  align-items:flex-start;
 }
 .mf-row.center-only{
   grid-template-columns: 1fr;
   justify-items:center;
 }
 .mf-row + .mf-row{ margin-top:2px; }
-.mf-slot{ display:flex; justify-content:center; min-height: calc(var(--mf-ava) + 28px); }
+.mf-slot{ display:flex; justify-content:center; min-height: 0; }
+.mf-slot.left{ justify-content:flex-start; }
+.mf-slot.right{ justify-content:flex-end; }
+.mf-slot.center{ justify-content:center; }
 .mf-slot.empty{ visibility:hidden; min-width: var(--mf-ava); }
 .mf-center-cta{
   display:flex; flex-direction:column; gap:8px;
