@@ -390,6 +390,9 @@ export const PlayerGrid = memo(function PlayerGrid({
   voteState,
   hasUnread,
   avatarBase,
+  voteOpen,
+  onToggleVote,
+  canShowVote,
 }) {
   if (!players?.length) {
     return (
@@ -420,6 +423,15 @@ export const PlayerGrid = memo(function PlayerGrid({
     if (phase !== "LOBBY" || canStart) return "";
     if ((players?.length || 0) < 4) return "Нужно минимум 4 игрока";
     return "Только владелец может начать";
+  })();
+
+  const votesLeft = (() => {
+    const total = voteState?.alive || 0;
+    const voted = Object.values(voteState?.tally || {}).reduce(
+      (acc, v) => acc + (Number(v) || 0),
+      0
+    );
+    return Math.max(0, total - voted);
   })();
 
   const mafiaMarksEnabled = shouldShowMafiaMarks(phase, myRole);
@@ -536,19 +548,35 @@ export const PlayerGrid = memo(function PlayerGrid({
                 );
               })()
             ) : (
-              <button
-                className={`mf-events-toggle mf-appear-after-start ${
-                  eventsOpen ? "open" : ""
-                } ${hasUnread ? "has-unread" : ""}`}
-                onClick={onToggleEvents}
-                aria-expanded={!!eventsOpen}
-                aria-haspopup="dialog"
-                type="button"
-                aria-label="Открыть события"
-                title="Открыть события"
-              >
-                ✨ События {eventsCount ? `(${eventsCount})` : ""}
-              </button>
+              <div className="mf-cta-stack">
+                <button
+                  className={`mf-events-toggle mf-appear-after-start ${eventsOpen ? "open" : ""} ${
+                    hasUnread ? "has-unread" : ""
+                  }`}
+                  onClick={onToggleEvents}
+                  aria-expanded={!!eventsOpen}
+                  aria-haspopup="dialog"
+                  type="button"
+                  aria-label="Открыть события"
+                  title="Открыть события"
+                >
+                  ✨ События {eventsCount ? `(${eventsCount})` : ""}
+                </button>
+
+                {phase === "VOTE" && canShowVote && (
+                  <button
+                    className={`mf-vote-toggle ${voteOpen ? "open" : ""}`}
+                    onClick={onToggleVote}
+                    aria-expanded={!!voteOpen}
+                    aria-haspopup="dialog"
+                    type="button"
+                    aria-label="Открыть доску голосов"
+                    title="Открыть доску голосов"
+                  >
+                    ⚖️ Голоса {votesLeft ? `(${votesLeft})` : ""}
+                  </button>
+                )}
+              </div>
             )}
           </div>,
           players[1],
@@ -1246,6 +1274,32 @@ export const VoteBoard = memo(function VoteBoard({ players, voteState }) {
     </section>
   );
 });
+
+export function VotePopup({ open, onClose, players, voteState }) {
+  if (!open || !voteState) return null;
+  const stop = (e) => e.stopPropagation();
+  return (
+    <div
+      className="mf-vote-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Доска голосования"
+      onClick={onClose}
+    >
+      <div className="mf-vote-modal-card" onClick={stop}>
+        <button
+          className="mf-iconbtn mf-vote-close"
+          onClick={onClose}
+          aria-label="Закрыть доску голосования"
+          type="button"
+        >
+          ✕
+        </button>
+        <VoteBoard players={players} voteState={voteState} />
+      </div>
+    </div>
+  );
+}
 
 /* =============================================================================
    === EVENTS ==================================================================

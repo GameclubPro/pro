@@ -7,7 +7,7 @@ import {
   HUD,
   PlayerGrid,
   ActionSheet,
-  VoteBoard,
+  VotePopup,
   RoleCard,
   ToastStack,
   ActionToastStack, // NEW
@@ -307,6 +307,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
 
   // Голосование
   const [voteState, setVoteState] = useState({ round: 1, tally: {}, alive: 0, leaders: [], myTargetId: null });
+  const [voteOpen, setVoteOpen] = useState(false);
 
   // Private (self)
   const [me, setMe] = useState({ roomPlayerId: null, userId: null, role: null, alive: true });
@@ -1917,8 +1918,18 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
 
   // ============================== Render ==============================
   const phaseLabel = translatePhase(phase);
-  const showVoteBoard =
-    phase === "VOTE" && Object.keys(voteState?.tally || {}).length > 0;
+  const voteRowsPresent = useMemo(
+    () => Object.keys(voteState?.tally || {}).length > 0,
+    [voteState?.tally]
+  );
+  const showVoteBoard = phase === "VOTE" && voteRowsPresent;
+  useEffect(() => {
+    if (!showVoteBoard) setVoteOpen(false);
+  }, [showVoteBoard, phase]);
+  const toggleVotePopup = useCallback(() => {
+    if (!showVoteBoard) return;
+    setVoteOpen((v) => !v);
+  }, [showVoteBoard]);
 
   return (
     <UIErrorBoundary>
@@ -1957,12 +1968,6 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
 
             {/* Player grid */}
             <div className="mf-stage">
-              {showVoteBoard && (
-                <div className="mf-vote-float">
-                  <VoteBoard players={roomPlayers} voteState={voteState} />
-                </div>
-              )}
-
               <PlayerGrid
                 players={roomPlayers}
                 phase={phase}
@@ -1976,21 +1981,33 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
                 mafiaMarks={mafiaMarks}
                 revealedRoles={revealedRoles}
                 mafiaTeam={mafiaTeam}
-                onTapPlayer={openSheetFor}
-                onToggleEvents={toggleEvents}
-                eventsOpen={eventsOpen}
-                eventsCount={unreadCount}
-                eventItems={events}
-                canStart={
-                  isOwner && phase === "LOBBY" && (roomPlayers?.length || 0) >= 4
-                }
+              onTapPlayer={openSheetFor}
+              onToggleEvents={toggleEvents}
+              eventsOpen={eventsOpen}
+              eventsCount={unreadCount}
+              eventItems={events}
+              canStart={
+                isOwner && phase === "LOBBY" && (roomPlayers?.length || 0) >= 4
+              }
                 onStart={startMafia}
                 voteState={voteState}
                 leaders={voteState?.leaders || []}
+                voteOpen={voteOpen}
+                onToggleVote={toggleVotePopup}
+                canShowVote={showVoteBoard}
                 hasUnread={hasUnread}
                 avatarBase={API_BASE}
               />
             </div>
+
+            {showVoteBoard && (
+              <VotePopup
+                open={voteOpen}
+                onClose={toggleVotePopup}
+                players={roomPlayers}
+                voteState={voteState}
+              />
+            )}
 
             {/* Action sheet (не открываем шторку, если нет доступных действий) */}
             <ActionSheet
