@@ -884,9 +884,13 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
           if (c > max) { max = c; leaders = [t]; }
           else if (c === max) { leaders.push(t); }
         }
-        if (leaders.length === 1) mafiaTargetId = leaders[0];
-        if (leaders.length > 1 && leaders.length > 0) {
-          mafiaTargetId = leaders[Math.floor(Math.random() * leaders.length)];
+        if (max >= 2) {
+          if (leaders.length === 1) mafiaTargetId = leaders[0];
+          if (leaders.length > 1 && leaders.length > 0) {
+            mafiaTargetId = leaders[Math.floor(Math.random() * leaders.length)];
+          }
+        } else {
+          mafiaTargetId = null; // все выбрали разные цели — выстрела нет
         }
 
         // Снайпер

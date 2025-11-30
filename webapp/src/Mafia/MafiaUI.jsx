@@ -67,12 +67,15 @@ function shouldShowMafiaMarks(phase, myRole) {
 
 // ✅ Централизованное вычисление рассчёта «метки мафии» для цели
 // Возвращает {count, mine} | null
-function calcMafiaMarkForTarget({ phase, myRole, mafiaMarks, targetId }) {
+function calcMafiaMarkForTarget({ phase, myRole, mafiaMarks, mafiaTeam, targetId }) {
   if (!shouldShowMafiaMarks(phase, myRole)) return null;
   const list = mafiaMarks?.byTarget?.[targetId] || [];
   const mine = mafiaMarks?.myTargetId === targetId;
-  if (list.length) return { count: list.length, mine: !!mine };
-  return mine ? { count: 1, mine: true } : null;
+  const roles = (list || []).map((id) => mafiaTeam?.[id] || "MAFIA");
+  const hasDon = roles.some((r) => String(r).toUpperCase() === "DON");
+  const count = list.length || (mine ? 1 : 0);
+  if (!count && !mine) return null;
+  return { count, mine: !!mine, hasDon };
 }
 
 // ✅ Централизованное вычисление «какую роль показывать на плитке игрока»
@@ -442,9 +445,10 @@ export const PlayerGrid = memo(function PlayerGrid({
         phase,
         myRole,
         mafiaMarks,
+        mafiaTeam,
         targetId: pId,
       }),
-    [phase, myRole, mafiaMarks]
+    [phase, myRole, mafiaMarks, mafiaTeam]
   );
 
   const revealFor = useCallback(
@@ -779,14 +783,12 @@ export const PlayerCard = memo(
           {/* 🎯 Метка мафии (видна только мафии и только ночью) — локальная защита */}
           {mafiaMarksEnabled && mafiaMark && p.alive && (
             <span
-              className={`mf-mafia-mark ${mafiaMark.mine ? "mine" : ""}`}
+              className={`mf-mafia-mark ${mafiaMark.mine ? "mine" : ""} ${mafiaMark.hasDon ? "don" : ""}`}
               aria-hidden="true"
-              title={mafiaMark.mine ? "Ваша цель" : "Цель мафии"}
+              title={mafiaMark.hasDon ? "Цель дона" : mafiaMark.mine ? "Ваша цель" : "Цель мафии"}
             >
-              {mafiaMark.mine ? "🎯" : "🔪"}
-              {mafiaMark.count > 1 && (
-                <b className="cnt">{mafiaMark.count}</b>
-              )}
+              {mafiaMark.hasDon ? "🎯" : "🔪"}
+              {mafiaMark.count > 1 && <b className="cnt">{mafiaMark.count}</b>}
             </span>
           )}
 

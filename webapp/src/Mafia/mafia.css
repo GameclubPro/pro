@@ -933,6 +933,10 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   /* «моя цель»: лёгкое свечение, чтобы отличать */
   filter: drop-shadow(0 0 8px rgba(255,255,255,.25)) drop-shadow(0 2px 6px rgba(0,0,0,.45));
 }
+.mf-mafia-mark.don{
+  color: var(--role-don);
+  text-shadow: 0 0 12px rgba(223,174,87,.28), 0 1px 0 rgba(0,0,0,.4);
+}
 
 /* ПИН: базовая точка + состояния (ready/ not-ready / rip) */
 .mf-dot{
