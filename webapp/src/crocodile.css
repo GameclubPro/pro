@@ -276,6 +276,10 @@
   box-shadow: var(--croco-card-shadow);
 }
 
+.hero-title {
+  margin: 6px 0 10px;
+}
+
 .hero-card-inner {
   background: radial-gradient(circle at 20% 20%, rgba(106, 90, 249, 0.16), transparent),
     linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
@@ -369,22 +373,9 @@
   font-size: 13px;
 }
 
-.rules-wide {
-  background: var(--croco-surface);
-  border: 1px solid var(--croco-border);
-  border-radius: 14px;
-  padding: 12px;
-  box-shadow: var(--croco-card-shadow);
-  display: grid;
-  gap: 6px;
-  cursor: pointer;
-}
-
-.rules-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 800;
+.rules-button-wide {
+  width: 100%;
+  justify-content: center;
 }
 
 .croco-setup {

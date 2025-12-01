@@ -465,24 +465,47 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
                 <div className="hero-card neon">
                   <div className="hero-content">
                     <p className="eyebrow">Никаких слов — только жесты</p>
-                    <h1>Покажи слово. Команда угадывает — получает очки.</h1>
-                    <p className="muted">Покажи слово жестами. Таймер и очки готовы.</p>
-                  <div className="hero-actions">
-                    <button className="croco-btn primary" onClick={() => startGame(true)}>
-                      <Sparkles size={18} /> Быстрый старт
-                    </button>
+                    <h2 className="hero-title">Выберите режим и жмите старт</h2>
+                    <div className="mode-grid">
+                      {[
+                        {
+                          key: "solo",
+                          title: "Каждый сам за себя",
+                          desc: "Каждый берёт слово по очереди",
+                          icon: "🏃‍♂️",
+                        },
+                        {
+                          key: "teams",
+                          title: "Командный режим",
+                          desc: "Бьёмся за очки вместе",
+                          icon: "🤝",
+                        },
+                      ].map((m) => (
+                        <button
+                          key={m.key}
+                          className={`mode-card ${settings.mode === m.key ? "active" : ""}`}
+                          onClick={() => setSettings((s) => ({ ...s, mode: m.key }))}
+                        >
+                          <div className="mode-icon">{m.icon}</div>
+                          <div className="mode-body">
+                            <div className="mode-title">{m.title}</div>
+                            <div className="mode-desc">{m.desc}</div>
+                          </div>
+                          {settings.mode === m.key && <span className="pill success">выбрано</span>}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="hero-actions">
+                      <button className="croco-btn primary" onClick={() => startGame(true)}>
+                        <Sparkles size={18} /> Быстрый старт
+                      </button>
+                    </div>
                   </div>
-                </div>
                 </div>
 
-                <div className="rules-wide" onClick={() => setRulesOpen(true)}>
-                  <div className="rules-title">
-                    <BookOpen size={16} /> Правила
-                  </div>
-                  <p className="muted">
-                    Только жесты, можно пропускать сложные слова. Играем до {settings.targetScore} очков.
-                  </p>
-                </div>
+                <button className="croco-btn ghost rules-button-wide" onClick={() => setRulesOpen(true)}>
+                  <BookOpen size={16} /> Правила
+                </button>
               </div>
             </motion.section>
           )}
