@@ -4,12 +4,16 @@ import Confetti from "react-canvas-confetti";
 import {
   Activity,
   ArrowLeft,
+  BookOpen,
   Check,
   Clock3,
   Flame,
   GaugeCircle,
   History as HistoryIcon,
+  Info,
+  LayoutGrid,
   Pause,
+  PartyPopper,
   Play,
   Plus,
   RefreshCw,
@@ -201,6 +205,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   const [winner, setWinner] = useState(null);
   const [toast, setToast] = useState("");
   const [tip, setTip] = useState(TIPS[0]);
+  const [rulesOpen, setRulesOpen] = useState(false);
   const confettiInstance = useRef(null);
   const progressGiven = useRef(false);
 
@@ -411,6 +416,14 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
     summary: "Результаты",
   }[stage];
 
+  const packLabel = {
+    easy: "Лайт",
+    medium: "Стандарт",
+    hard: "Хард",
+    mixed: "Микс",
+    custom: "Свои слова",
+  }[settings.difficulty];
+
   return (
     <div className="croco">
       <div className="croco-bg">
@@ -452,50 +465,72 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.35 }}
             >
-              <div className="hero-left">
-                <p className="eyebrow">Party-ready · offline</p>
-                <h1>
-                  Покажи слово <span className="accent">без слов</span>
-                </h1>
-                <p className="muted">
-                  Быстрые раунды, счёт для команд и индивидуальные игры. Большие кнопки,
-                  тёмный неон, конфетти и подсказки — всё на одном телефоне.
-                </p>
-                <div className="hero-actions">
-                  <button className="croco-btn primary" onClick={() => startGame(true)}>
-                    <Sparkles size={18} /> Быстрый старт
-                  </button>
-                  <button className="croco-btn ghost" onClick={() => setStage("setup")}>
-                    <Settings2 size={18} /> Настроить игру
-                  </button>
-                </div>
-                <div className="hero-stats">
-                  <div>
-                    <div className="stat-number">60–90 сек</div>
-                    <div className="muted">Длительность раунда</div>
+              <div className="hero-stack">
+                <div className="hero-card neon">
+                  <div className="hero-content">
+                    <p className="eyebrow">Никаких слов — только жесты</p>
+                    <h1>Покажи слово. Команда угадывает — получает очки.</h1>
+                    <p className="muted">Покажи слово жестами. Таймер и очки готовы.</p>
+                    <div className="hero-actions">
+                      <button className="croco-btn primary" onClick={() => startGame(true)}>
+                        <Sparkles size={18} /> Быстрый старт
+                      </button>
+                      <button className="croco-btn ghost" onClick={() => setStage("setup")}>
+                        <Settings2 size={18} /> Настроить игру
+                      </button>
+                    </div>
                   </div>
-                  <div>
-                    <div className="stat-number">4 пакета</div>
-                    <div className="muted">Сложности + свои слова</div>
-                  </div>
-                  <div>
-                    <div className="stat-number">История</div>
-                    <div className="muted">Угадано/пропущено</div>
+                  <div className="hero-ill">
+                    <HeroCroc />
                   </div>
                 </div>
-              </div>
-              <div className="hero-card">
-                <div className="hero-card-inner">
-                  <div className="meta">
-                    <span className="pill ghost">Раунд 1</span>
-                    <span className="pill ghost">Таймер 60с</span>
+
+                <div className="mode-panel">
+                  <div className="panel-head">
+                    <div>
+                      <div className="title">Выберите режим игры</div>
+                    </div>
+                    <span className="pill ghost">
+                      <LayoutGrid size={14} /> {settings.mode === "teams" ? "Команды" : "Solo"}
+                    </span>
                   </div>
-                  <div className="word-preview">невесомость</div>
-                  <div className="cta-row">
-                    <span className="pill success">Команда Лайм</span>
-                    <span className="pill ghost">★ 0</span>
+                  <div className="mode-grid">
+                    {[
+                      {
+                        key: "solo",
+                        title: "Каждый сам за себя",
+                        desc: "Каждый берёт слово по очереди",
+                        icon: "🏃‍♂️",
+                      },
+                      {
+                        key: "teams",
+                        title: "Командный режим",
+                        desc: "Бьёмся за очки вместе",
+                        icon: "🤝",
+                      },
+                    ].map((m) => (
+                      <button
+                        key={m.key}
+                        className={`mode-card ${settings.mode === m.key ? "active" : ""}`}
+                        onClick={() => setSettings((s) => ({ ...s, mode: m.key }))}
+                      >
+                        <div className="mode-icon">{m.icon}</div>
+                        <div className="mode-body">
+                          <div className="mode-title">{m.title}</div>
+                          <div className="mode-desc">{m.desc}</div>
+                        </div>
+                        {settings.mode === m.key && <span className="pill success">выбрано</span>}
+                      </button>
+                    ))}
                   </div>
-                  <div className="ghost-line">Все готово — жми «Быстрый старт»</div>
+                  <div className="panel-actions">
+                    <button className="croco-btn ghost" onClick={() => setRulesOpen(true)}>
+                      <BookOpen size={16} /> Правила
+                    </button>
+                    <button className="croco-btn primary" onClick={() => setStage("setup")}>
+                      Далее
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.section>
@@ -876,9 +911,11 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-            >
-              <div className="summary-card">
-                <div className="pill success">Матч завершён</div>
+          >
+            <div className="summary-card">
+                <div className="pill success">
+                  <PartyPopper size={16} /> Матч завершён
+                </div>
                 <h2>
                   Победил(а): {winner?.emoji} {winner?.name}
                 </h2>
@@ -918,6 +955,52 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
         {toast && <div className="toast">{toast}</div>}
       </div>
 
+      <AnimatePresence>
+        {rulesOpen && (
+          <motion.div
+            className="modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="modal-card"
+              initial={{ opacity: 0, y: 20, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+            >
+              <div className="modal-head">
+                <div className="title">
+                  <Info size={16} /> Правила
+                </div>
+                <button className="croco-icon ghost" onClick={() => setRulesOpen(false)}>
+                  ✕
+                </button>
+              </div>
+              <ul className="rules-list">
+                <li>Только жесты и мимика, без слов и звуков.</li>
+                <li>Сложно? Жми «Пропуск» и берите следующее слово.</li>
+                <li>За угадывание +1 очко. Играем до {settings.targetScore}.</li>
+              </ul>
+              <div className="actions-row">
+                <button className="croco-btn ghost" onClick={() => setRulesOpen(false)}>
+                  Понятно
+                </button>
+                <button
+                  className="croco-btn primary"
+                  onClick={() => {
+                    setRulesOpen(false);
+                    setStage("setup");
+                  }}
+                >
+                  Настроить
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Confetti
         refConfetti={(instance) => {
           confettiInstance.current = instance;
@@ -925,5 +1008,69 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
         style={{ position: "fixed", inset: 0, zIndex: 20, pointerEvents: "none" }}
       />
     </div>
+  );
+}
+
+function HeroCroc() {
+  return (
+    <svg
+      className="hero-croc"
+      viewBox="0 0 300 200"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M34 120c8-28 32-46 64-46h62c20 0 36-10 48-26 4-6 13-7 19-2 7 6 8 17 1 23l-6 5c11 0 20 9 20 20s-9 20-20 20h-6c0 22-18 40-40 40h-44l-6 15c-2 5-7 8-12 8-9 0-15-9-12-17l4-11h-10l-8 13c-3 5-8 8-14 8-10 0-17-10-13-19l6-12c-18-4-32-17-39-39Z"
+        stroke="#48ff9b"
+        strokeWidth="6"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        fill="rgba(72,255,155,0.08)"
+      />
+      <path
+        d="M176 78c4-2 9-6 13-12"
+        stroke="#48ff9b"
+        strokeWidth="6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M210 74c0-4 3-7 6-7s6 3 6 7-3 7-6 7-6-3-6-7Z"
+        fill="#48ff9b"
+      />
+      <path
+        d="M186 74c0-4 3-7 6-7s6 3 6 7-3 7-6 7-6-3-6-7Z"
+        fill="#48ff9b"
+      />
+      <path
+        d="M136 138h-20"
+        stroke="#48ff9b"
+        strokeWidth="6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M174 138h-18"
+        stroke="#48ff9b"
+        strokeWidth="6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M112 154s-12 10-24 0"
+        stroke="#48ff9b"
+        strokeWidth="6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M156 154s-12 10-24 0"
+        stroke="#48ff9b"
+        strokeWidth="6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M80 134c-8-4-14-11-18-20"
+        stroke="#48ff9b"
+        strokeWidth="6"
+        strokeLinecap="round"
+      />
+    </svg>
   );
 }

@@ -5,8 +5,8 @@
   --croco-glass: rgba(255, 255, 255, 0.04);
   --croco-border: rgba(255, 255, 255, 0.08);
   --croco-strong-border: rgba(255, 255, 255, 0.14);
-  --croco-primary: linear-gradient(135deg, #6a5af9, #16e2b2);
-  --croco-surface: rgba(13, 21, 33, 0.8);
+  --croco-primary: linear-gradient(135deg, #1fee9c, #2ed3ff);
+  --croco-surface: rgba(11, 18, 28, 0.86);
   --croco-green: #16e2b2;
   --croco-red: #ef4444;
   --croco-orange: #f59e0b;
@@ -146,24 +146,57 @@
 
 .croco-hero {
   margin-top: 18px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 18px;
-  align-items: center;
 }
 
-.hero-left h1 {
-  font-size: clamp(28px, 4.8vw, 44px);
-  margin: 6px 0 12px;
+.hero-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(120% 120% at 10% 10%, rgba(72, 255, 155, 0.12), transparent),
+    radial-gradient(140% 140% at 90% 10%, rgba(72, 255, 155, 0.08), transparent),
+    var(--croco-surface);
+  border: 1px solid var(--croco-border);
+  border-radius: 18px;
+  box-shadow: var(--croco-card-shadow);
+  min-height: 220px;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 10px;
+  padding: 16px;
+}
+
+.hero-card.neon {
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(72, 255, 155, 0.1);
+}
+
+.hero-content h1 {
+  font-size: clamp(24px, 4.5vw, 40px);
+  margin: 6px 0 10px;
   letter-spacing: 0.2px;
 }
 
-.hero-left .eyebrow {
+.eyebrow {
   text-transform: uppercase;
   color: var(--croco-muted);
   letter-spacing: 1px;
   font-size: 12px;
   margin: 0;
+}
+
+.hero-ill {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.hero-ill .hero-croc {
+  width: 100%;
+  max-width: 280px;
+  filter: drop-shadow(0 12px 30px rgba(72, 255, 155, 0.35));
 }
 
 .accent {
@@ -233,18 +266,6 @@
 .croco-btn.big {
   flex: 1 1 0;
   min-height: 54px;
-}
-
-.hero-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 10px;
-  padding: 10px 0;
-}
-
-.stat-number {
-  font-weight: 800;
-  font-size: 18px;
 }
 
 .hero-card {
