@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import Confetti from "react-canvas-confetti";
 import {
   Activity,
-  ArrowLeft,
   BookOpen,
   Check,
   Clock3,
@@ -409,13 +408,6 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
     [roster]
   );
 
-  const stageLabel = {
-    welcome: "Старт",
-    setup: "Настройки",
-    round: "Раунд",
-    summary: "Результаты",
-  }[stage];
-
   const packLabel = {
     easy: "Лайт",
     medium: "Стандарт",
@@ -433,13 +425,9 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
 
       <div className="croco-shell">
         <header className="croco-appbar">
-          <button className="croco-icon ghost" onClick={() => goBack?.()}>
-            <ArrowLeft size={18} />
-          </button>
           <div className="croco-appbar-title">
             <span className="dot" />
             Крокодил
-            <span className="tag">{stageLabel}</span>
           </div>
           <div className="croco-appbar-meta">
             <div className="pill">
@@ -471,18 +459,15 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
                     <p className="eyebrow">Никаких слов — только жесты</p>
                     <h1>Покажи слово. Команда угадывает — получает очки.</h1>
                     <p className="muted">Покажи слово жестами. Таймер и очки готовы.</p>
-                    <div className="hero-actions">
-                      <button className="croco-btn primary" onClick={() => startGame(true)}>
-                        <Sparkles size={18} /> Быстрый старт
-                      </button>
-                      <button className="croco-btn ghost" onClick={() => setStage("setup")}>
-                        <Settings2 size={18} /> Настроить игру
-                      </button>
-                    </div>
+                  <div className="hero-actions">
+                    <button className="croco-btn primary" onClick={() => startGame(true)}>
+                      <Sparkles size={18} /> Быстрый старт
+                    </button>
+                    <button className="croco-btn ghost" onClick={() => setStage("setup")}>
+                      <Settings2 size={18} /> Настроить игру
+                    </button>
                   </div>
-                  <div className="hero-ill">
-                    <HeroCroc />
-                  </div>
+                </div>
                 </div>
 
                 <div className="mode-panel">
@@ -1008,69 +993,5 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
         style={{ position: "fixed", inset: 0, zIndex: 20, pointerEvents: "none" }}
       />
     </div>
-  );
-}
-
-function HeroCroc() {
-  return (
-    <svg
-      className="hero-croc"
-      viewBox="0 0 300 200"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M34 120c8-28 32-46 64-46h62c20 0 36-10 48-26 4-6 13-7 19-2 7 6 8 17 1 23l-6 5c11 0 20 9 20 20s-9 20-20 20h-6c0 22-18 40-40 40h-44l-6 15c-2 5-7 8-12 8-9 0-15-9-12-17l4-11h-10l-8 13c-3 5-8 8-14 8-10 0-17-10-13-19l6-12c-18-4-32-17-39-39Z"
-        stroke="#48ff9b"
-        strokeWidth="6"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        fill="rgba(72,255,155,0.08)"
-      />
-      <path
-        d="M176 78c4-2 9-6 13-12"
-        stroke="#48ff9b"
-        strokeWidth="6"
-        strokeLinecap="round"
-      />
-      <path
-        d="M210 74c0-4 3-7 6-7s6 3 6 7-3 7-6 7-6-3-6-7Z"
-        fill="#48ff9b"
-      />
-      <path
-        d="M186 74c0-4 3-7 6-7s6 3 6 7-3 7-6 7-6-3-6-7Z"
-        fill="#48ff9b"
-      />
-      <path
-        d="M136 138h-20"
-        stroke="#48ff9b"
-        strokeWidth="6"
-        strokeLinecap="round"
-      />
-      <path
-        d="M174 138h-18"
-        stroke="#48ff9b"
-        strokeWidth="6"
-        strokeLinecap="round"
-      />
-      <path
-        d="M112 154s-12 10-24 0"
-        stroke="#48ff9b"
-        strokeWidth="6"
-        strokeLinecap="round"
-      />
-      <path
-        d="M156 154s-12 10-24 0"
-        stroke="#48ff9b"
-        strokeWidth="6"
-        strokeLinecap="round"
-      />
-      <path
-        d="M80 134c-8-4-14-11-18-20"
-        stroke="#48ff9b"
-        strokeWidth="6"
-        strokeLinecap="round"
-      />
-    </svg>
   );
 }
