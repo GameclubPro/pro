@@ -369,8 +369,22 @@
   font-size: 13px;
 }
 
-.rules-button {
-  width: fit-content;
+.rules-wide {
+  background: var(--croco-surface);
+  border: 1px solid var(--croco-border);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: var(--croco-card-shadow);
+  display: grid;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.rules-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
 }
 
 .croco-setup {
