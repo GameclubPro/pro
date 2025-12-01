@@ -471,9 +471,6 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
                     <button className="croco-btn primary" onClick={() => startGame(true)}>
                       <Sparkles size={18} /> Быстрый старт
                     </button>
-                    <button className="croco-btn ghost" onClick={() => setStage("setup")}>
-                      <Settings2 size={18} /> Настроить игру
-                    </button>
                   </div>
                 </div>
                 </div>
@@ -516,14 +513,9 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
                       </button>
                     ))}
                   </div>
-                  <div className="panel-actions">
-                    <button className="croco-btn ghost" onClick={() => setRulesOpen(true)}>
-                      <BookOpen size={16} /> Правила
-                    </button>
-                    <button className="croco-btn primary" onClick={() => setStage("setup")}>
-                      Далее
-                    </button>
-                  </div>
+                </div>
+                <div className="rules-inline" onClick={() => setRulesOpen(true)}>
+                  <BookOpen size={14} /> Правила: только жесты, можно пропускать, играем до {settings.targetScore}.
                 </div>
               </div>
             </motion.section>

@@ -308,6 +308,78 @@
   font-size: 14px;
 }
 
+.mode-panel {
+  background: var(--croco-surface);
+  border: 1px solid var(--croco-border);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: var(--croco-card-shadow);
+  display: grid;
+  gap: 10px;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.mode-card {
+  border-radius: 12px;
+  border: 1px solid var(--croco-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--croco-fg);
+  padding: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  text-align: left;
+}
+
+.mode-card.active {
+  border-color: #16e2b2;
+  box-shadow: 0 0 0 1px rgba(22, 226, 178, 0.35);
+}
+
+.mode-icon {
+  font-size: 20px;
+}
+
+.mode-body {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+
+.mode-title {
+  font-weight: 800;
+}
+
+.mode-desc {
+  color: var(--croco-muted);
+  font-size: 13px;
+}
+
+.rules-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--croco-muted);
+  font-size: 13px;
+  padding: 6px 2px;
+  cursor: pointer;
+  width: fit-content;
+}
+
 .croco-setup {
   margin-top: 20px;
 }
