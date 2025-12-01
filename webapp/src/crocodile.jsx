@@ -478,7 +478,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
                 <div className="mode-panel">
                   <div className="panel-head">
                     <div>
-                      <div className="title">Выберите режим игры</div>
+                      <div className="title">Никаких слов — только жесты</div>
                     </div>
                     <span className="pill ghost">
                       <LayoutGrid size={14} /> {settings.mode === "teams" ? "Команды" : "Solo"}
@@ -514,9 +514,9 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
                     ))}
                   </div>
                 </div>
-                <div className="rules-inline" onClick={() => setRulesOpen(true)}>
-                  <BookOpen size={14} /> Правила: только жесты, можно пропускать, играем до {settings.targetScore}.
-                </div>
+                <button className="croco-btn ghost rules-button" onClick={() => setRulesOpen(true)}>
+                  <BookOpen size={16} /> Правила
+                </button>
               </div>
             </motion.section>
           )}

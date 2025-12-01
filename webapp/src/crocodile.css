@@ -369,14 +369,7 @@
   font-size: 13px;
 }
 
-.rules-inline {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--croco-muted);
-  font-size: 13px;
-  padding: 6px 2px;
-  cursor: pointer;
+.rules-button {
   width: fit-content;
 }
 
