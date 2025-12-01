@@ -440,6 +440,14 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
             <div className="pill">
               <Target size={14} /> до {settings.targetScore}
             </div>
+            <button
+              className="croco-icon ghost"
+              aria-label="Настроить игру"
+              title="Настроить игру"
+              onClick={() => setStage("setup")}
+            >
+              <Settings2 size={18} />
+            </button>
           </div>
         </header>
 
