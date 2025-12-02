@@ -13,6 +13,9 @@ import {
   Zap,
   Eye,
   EyeOff,
+  Settings,
+  X,
+  Volume2,
 } from "lucide-react";
 import "./quiz.css";
 
@@ -587,8 +590,11 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
 
 function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
   const [localRoster, setLocalRoster] = useState(roster);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const modeIsTeams = settings.mode === "teams";
   const minPlayers = 2;
+  const timerPct = clamp(((settings.roundSeconds - 20) / (90 - 20)) * 100, 0, 100);
+  const questionsPct = clamp(((settings.targetScore - 5) / (30 - 5)) * 100, 0, 100);
 
   useEffect(() => {
     setLocalRoster(roster);
@@ -602,6 +608,7 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
   const changeName = (id, name) => {
     updateRoster(localRoster.map((r) => (r.id === id ? { ...r, name } : r)));
   };
+
   const shuffleColor = (id) => {
     updateRoster(
       localRoster.map((r) =>
@@ -640,12 +647,122 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
     updateRoster(initialRoster(mode));
   };
 
+  const adjustSetting = (key, delta, min, max) => {
+    onChangeSetting(key, clamp((settings?.[key] || 0) + delta, min, max));
+  };
+
   return (
     <div className="panel">
       <div className="panel-head">
         <div className="eyebrow">Блиц-викторина</div>
         <div className="panel-title">Собери состав и жми старт</div>
       </div>
+
+      <AnimatePresence>
+        {settingsOpen && (
+          <motion.div
+            className="settings-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            onClick={() => setSettingsOpen(false)}
+          >
+            <motion.div
+              className="settings-window"
+              initial={{ y: 28, opacity: 0, scale: 0.98 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 12, opacity: 0, scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 420, damping: 32 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="settings-head">
+                <div>
+                  <div className="eyebrow">Тонкие настройки</div>
+                  <div className="settings-title">Темп раундов</div>
+                  <p className="settings-sub">
+                    Настрой продолжительность раунда и длину матча. Изменения применяются сразу.
+                  </p>
+                </div>
+                <motion.button
+                  className="settings-close"
+                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ rotate: 4 }}
+                  onClick={() => setSettingsOpen(false)}
+                  aria-label="Закрыть настройки"
+                >
+                  <X size={16} />
+                </motion.button>
+              </div>
+
+              <div className="settings-grid">
+                <div className="setting-card accent">
+                  <div className="setting-card-top">
+                    <span className="pill">Таймер</span>
+                    <div className="setting-number">{settings.roundSeconds}s</div>
+                  </div>
+                  <p className="setting-copy">Выбери свой темп: короткие рывки или размеренный ход.</p>
+                  <div className="meter">
+                    <div className="meter-track">
+                      <div className="meter-fill" style={{ width: `${timerPct}%` }} />
+                      <span className="meter-thumb" style={{ left: `${timerPct}%` }} />
+                    </div>
+                    <div className="meter-scale">
+                      <span>20с</span>
+                      <span>90с</span>
+                    </div>
+                  </div>
+                  <div className="setting-actions">
+                    <button onClick={() => adjustSetting("roundSeconds", -5, 20, 90)}>−5с</button>
+                    <button onClick={() => adjustSetting("roundSeconds", 5, 20, 90)}>+5с</button>
+                  </div>
+                </div>
+
+                <div className="setting-card glass">
+                  <div className="setting-card-top">
+                    <span className="pill">Вопросы</span>
+                    <div className="setting-number">{settings.targetScore}</div>
+                  </div>
+                  <p className="setting-copy">Сколько вопросов нужно закрыть, чтобы закончить матч.</p>
+                  <div className="meter">
+                    <div className="meter-track alt">
+                      <div className="meter-fill alt" style={{ width: `${questionsPct}%` }} />
+                      <span className="meter-thumb" style={{ left: `${questionsPct}%` }} />
+                    </div>
+                    <div className="meter-scale">
+                      <span>5</span>
+                      <span>30</span>
+                    </div>
+                  </div>
+                  <div className="setting-actions">
+                    <button onClick={() => adjustSetting("targetScore", -1, 5, 30)}>−1</button>
+                    <button onClick={() => adjustSetting("targetScore", 1, 5, 30)}>+1</button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="settings-toggles">
+                <button
+                  className={`toggle-chip ${settings.autoDifficulty ? "on" : ""}`}
+                  onClick={() => onChangeSetting("autoDifficulty", !settings.autoDifficulty)}
+                >
+                  <Sparkles size={16} />
+                  Адаптивная сложность
+                  <span className="toggle-dot" />
+                </button>
+                <button
+                  className={`toggle-chip ${settings.sound ? "on" : ""}`}
+                  onClick={() => onChangeSetting("sound", !settings.sound)}
+                >
+                  <Volume2 size={16} />
+                  Звук и вибро
+                  <span className="toggle-dot" />
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="chips-row">
         <button
@@ -664,30 +781,29 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
         </button>
       </div>
 
-      <div className="row">
-        <div className="card mini">
-          <div className="label">Таймер</div>
-          <div className="value">
-            <button onClick={() => onChangeSetting("roundSeconds", clamp(settings.roundSeconds - 5, 20, 90))}>−</button>
-            <span>{settings.roundSeconds}s</span>
-            <button onClick={() => onChangeSetting("roundSeconds", clamp(settings.roundSeconds + 5, 20, 90))}>+</button>
-          </div>
-        </div>
-        <div className="card mini">
-          <div className="label">Вопросы</div>
-          <div className="value">
-            <button onClick={() => onChangeSetting("targetScore", clamp(settings.targetScore - 1, 5, 30))}>−</button>
-            <span>{settings.targetScore} вопр.</span>
-            <button onClick={() => onChangeSetting("targetScore", clamp(settings.targetScore + 1, 5, 30))}>+</button>
-          </div>
-        </div>
-      </div>
-
       <div className="section-header">
         <div>
           <div className="section-title">Состав</div>
-          <div className="section-hint">Жми на цвет, чтобы сменить; минимум 2</div>
+          <div className="section-hint">
+            Жми на цвет, чтобы сменить; минимум 2
+            <span className="settings-preview">
+              <span className="settings-pill">⏱ {settings.roundSeconds}s</span>
+              <span className="settings-pill">❓ {settings.targetScore}</span>
+            </span>
+          </div>
         </div>
+        <motion.button
+          className="settings-gear"
+          onClick={() => setSettingsOpen(true)}
+          whileTap={{ scale: 0.92 }}
+          whileHover={{ rotate: -4 }}
+          aria-label="Открыть настройки"
+        >
+          <span className="gear-inner">
+            <Settings size={18} />
+          </span>
+          <span className="gear-glow" />
+        </motion.button>
       </div>
       <div className="roster-list">
         {localRoster.map((item) => (
@@ -721,27 +837,6 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
           <Plus size={16} />
           Добавить {modeIsTeams ? "команду" : "игрока"}
         </button>
-      </div>
-
-      <div className="row switches">
-        <label className="switch">
-          <input
-            type="checkbox"
-            checked={settings.autoDifficulty}
-            onChange={(e) => onChangeSetting("autoDifficulty", e.target.checked)}
-          />
-          <span />
-          <b>Адаптивная сложность</b>
-        </label>
-        <label className="switch">
-          <input
-            type="checkbox"
-            checked={settings.sound}
-            onChange={(e) => onChangeSetting("sound", e.target.checked)}
-          />
-          <span />
-          <b>Звук</b>
-        </label>
       </div>
 
       <motion.button className="cta" whileTap={{ scale: 0.98 }} onClick={onStart}>
