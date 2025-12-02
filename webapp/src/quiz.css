@@ -83,13 +83,15 @@
   min-height: 100dvh;
   min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   display: grid;
-  place-items: center;
+  align-items: center;
+  justify-items: stretch;
   align-content: center;
   justify-content: center;
 }
 
 .switch-shell {
   width: 100%;
+  max-width: 760px;
   display: flex;
   justify-content: center;
 }
