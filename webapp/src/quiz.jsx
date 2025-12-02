@@ -137,6 +137,7 @@ const CATEGORIES = {
 };
 
 const MAX_ROUNDS = 20;
+const ADVANCE_DELAY_MS = 800;
 
 const initialRoster = (mode = "teams") => {
   const count = mode === "teams" ? 2 : 4;
@@ -410,6 +411,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
   const chime = useChime(state.settings.sound);
   const progressGiven = useRef(false);
   const questionsLimit = state.settings.targetScore;
+  const advanceTimeoutRef = useRef(null);
 
   const findNextActive = (perTeam, currentIdx) => {
     const len = state.roster.length || 1;
@@ -419,6 +421,14 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
     }
     return null;
   };
+  useEffect(() => {
+    return () => {
+      if (advanceTimeoutRef.current) {
+        clearTimeout(advanceTimeoutRef.current);
+        advanceTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Persist settings & roster
   useEffect(() => {
@@ -448,23 +458,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
   useEffect(() => {
     if (state.stage !== "round") return;
     if (state.timerMs <= 0) {
-      const nextQuestions = state.questionsPlayed + 1;
-      const nextPerTeam = state.perTeamQuestions.map((n, idx) =>
-        idx === state.activeIndex ? n + 1 : n
-      );
-      const allDone = nextPerTeam.every((n) => n >= questionsLimit);
-      if (allDone) {
-        const winner = evaluateWinner(state.roster);
-        dispatch({ type: "SUMMARY", winner, reason: "questions" });
-        return;
-      }
-      const nextIdx = findNextActive(nextPerTeam, state.activeIndex);
-      dispatch({
-        type: "NEXT_TURN",
-        questionsPlayed: nextQuestions,
-        nextPerTeam,
-        nextIndex: nextIdx ?? state.activeIndex,
-      });
+      processAnswer("skip");
     }
   }, [
     state.timerMs,
@@ -510,42 +504,63 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
     dispatch({ type: "BEGIN_ROUND" });
   };
 
+  const processAnswer = useCallback(
+    (kind) => {
+      if (state.stage !== "round") return;
+      if (advanceTimeoutRef.current) return;
+      const nextQuestionsPlayed = state.questionsPlayed + 1;
+      const nextRoster = state.roster.map((r, idx) =>
+        idx === state.activeIndex && kind === "correct" ? { ...r, score: r.score + 1 } : r
+      );
+      const nextPerTeam = state.perTeamQuestions.map((n, idx) =>
+        idx === state.activeIndex ? n + 1 : n
+      );
+      dispatch({
+        type: "ANSWER",
+        kind,
+        qid: state.question?.id,
+        nextRoster,
+        nextQuestions: nextQuestionsPlayed,
+        nextPerTeam,
+      });
+      dispatch({ type: "PAUSE" });
+      const allDone = nextPerTeam.every((n) => n >= questionsLimit);
+      const nextIdx = findNextActive(nextPerTeam, state.activeIndex);
+      advanceTimeoutRef.current = setTimeout(() => {
+        if (allDone) {
+          const winner = evaluateWinner(nextRoster);
+          dispatch({ type: "SUMMARY", winner, reason: "questions" });
+        } else {
+          dispatch({
+            type: "NEXT_TURN",
+            questionsPlayed: nextQuestionsPlayed,
+            nextPerTeam,
+            nextIndex: nextIdx ?? state.activeIndex,
+          });
+        }
+        advanceTimeoutRef.current = null;
+      }, ADVANCE_DELAY_MS);
+    },
+    [
+      state.stage,
+      state.questionsPlayed,
+      state.roster,
+      state.perTeamQuestions,
+      state.activeIndex,
+      state.question?.id,
+      questionsLimit,
+      findNextActive,
+    ]
+  );
+
   const mark = (kind) => {
-    if (state.stage !== "round") return;
     if (kind === "correct") {
       haptic("medium");
       chime();
     } else {
       haptic("light");
     }
-    const nextQuestionsPlayed = state.questionsPlayed + 1;
-    const nextRoster = state.roster.map((r, idx) =>
-      idx === state.activeIndex && kind === "correct" ? { ...r, score: r.score + 1 } : r
-    );
-    const nextPerTeam = state.perTeamQuestions.map((n, idx) =>
-      idx === state.activeIndex ? n + 1 : n
-    );
-    dispatch({
-      type: "ANSWER",
-      kind,
-      qid: state.question?.id,
-      nextRoster,
-      nextQuestions: nextQuestionsPlayed,
-      nextPerTeam,
-    });
-    const allDone = nextPerTeam.every((n) => n >= questionsLimit);
-    if (allDone) {
-      const winner = evaluateWinner(nextRoster);
-      dispatch({ type: "SUMMARY", winner, reason: "questions" });
-      return;
-    }
-    const nextIdx = findNextActive(nextPerTeam, state.activeIndex);
-    dispatch({
-      type: "NEXT_TURN",
-      questionsPlayed: nextQuestionsPlayed,
-      nextPerTeam,
-      nextIndex: nextIdx ?? state.activeIndex,
-    });
+    processAnswer(kind);
   };
 
   const restart = (keepRoster = true) => {
