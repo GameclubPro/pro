@@ -7,9 +7,11 @@ import {
   Clock3,
   Pause,
   Play,
+  Plus,
   RefreshCw,
   Sparkles,
   Trophy,
+  Trash2,
   Users,
   Zap,
   Eye,
@@ -608,6 +610,7 @@ function Header({ onBack, onPause, running, stage, mode, round, time, sound, onT
 function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
   const [localRoster, setLocalRoster] = useState(roster);
   const modeIsTeams = settings.mode === "teams";
+  const minPlayers = 2;
 
   useEffect(() => {
     setLocalRoster(roster);
@@ -616,31 +619,6 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
   const updateRoster = (next) => {
     setLocalRoster(next);
     onChangeRoster(next);
-  };
-
-  const adjustCount = (delta) => {
-    const min = modeIsTeams ? 2 : 2;
-    const max = modeIsTeams ? 4 : 6;
-    const nextCount = clamp(localRoster.length + delta, min, max);
-    if (nextCount === localRoster.length) return;
-    let next = localRoster;
-    if (nextCount > localRoster.length) {
-      const toAdd = nextCount - localRoster.length;
-      const extra = Array.from({ length: toAdd }).map((_, idx) => {
-        const i = localRoster.length + idx;
-        return {
-          id: `p-${i}-${Date.now()}`,
-          name: modeIsTeams ? `Команда ${i + 1}` : `Игрок ${i + 1}`,
-          emoji: EMOJIS[(i + 1) % EMOJIS.length],
-          color: PALETTE[(i + 1) % PALETTE.length],
-          score: 0,
-        };
-      });
-      next = [...localRoster, ...extra];
-    } else {
-      next = localRoster.slice(0, nextCount);
-    }
-    updateRoster(next);
   };
 
   const changeName = (id, name) => {
@@ -658,6 +636,25 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
           : r
       )
     );
+  };
+
+  const addMember = () => {
+    const idx = localRoster.length;
+    updateRoster([
+      ...localRoster,
+      {
+        id: `p-${idx}-${Date.now()}`,
+        name: modeIsTeams ? `Команда ${idx + 1}` : `Игрок ${idx + 1}`,
+        emoji: EMOJIS[idx % EMOJIS.length],
+        color: PALETTE[idx % PALETTE.length],
+        score: 0,
+      },
+    ]);
+  };
+
+  const removeMember = (id) => {
+    if (localRoster.length <= minPlayers) return;
+    updateRoster(localRoster.filter((r) => r.id !== id));
   };
 
   const switchMode = (mode) => {
@@ -706,20 +703,23 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
             <button onClick={() => onChangeSetting("targetScore", clamp(settings.targetScore + 1, 5, 25))}>+</button>
           </div>
         </div>
-        <div className="card mini">
-          <div className="label">Состав</div>
-          <div className="value">
-            <button onClick={() => adjustCount(-1)}>−</button>
-            <span>{localRoster.length}</span>
-            <button onClick={() => adjustCount(1)}>+</button>
-          </div>
-        </div>
       </div>
 
-      <div className="roster-grid">
+      <div className="section-header">
+        <div>
+          <div className="section-title">Состав</div>
+          <div className="section-hint">Жми на цвет, чтобы сменить; минимум 2</div>
+        </div>
+      </div>
+      <div className="roster-list">
         {localRoster.map((item) => (
-          <div className="roster-card" key={item.id} style={{ "--c": item.color }}>
-            <button className="emoji" onClick={() => shuffleColor(item.id)} aria-label="Сменить цвет">
+          <div className="roster-row" key={item.id}>
+            <button
+              className="avatar-btn"
+              style={{ background: item.color }}
+              onClick={() => shuffleColor(item.id)}
+              aria-label="Сменить цвет"
+            >
               {item.emoji}
             </button>
             <input
@@ -728,9 +728,21 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
               maxLength={18}
               aria-label="Имя"
             />
-            <span className="pill">Цвет</span>
+            <button
+              className="icon-btn"
+              onClick={() => removeMember(item.id)}
+              disabled={localRoster.length <= minPlayers}
+              aria-label="Удалить"
+              title="Удалить"
+            >
+              <Trash2 size={16} />
+            </button>
           </div>
         ))}
+        <button className="ghost-line" onClick={addMember}>
+          <Plus size={16} />
+          Добавить {modeIsTeams ? "команду" : "игрока"}
+        </button>
       </div>
 
       <div className="row switches">
