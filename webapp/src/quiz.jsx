@@ -994,6 +994,7 @@ function TimerFuse({ pct, seconds, running }) {
           animate={{ width }}
           transition={{ duration: 0.22, ease: "easeOut" }}
         >
+          <span className="fuse-embers" aria-hidden />
           <span className="fuse-spark" />
         </motion.div>
       </div>
