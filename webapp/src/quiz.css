@@ -76,7 +76,7 @@
   display: grid;
   gap: 14px;
   min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-  align-content: center;
+  align-content: start;
 }
 
 .quiz.is-switch .quiz-wrap {
