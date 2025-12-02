@@ -927,7 +927,7 @@ function Round({
         )}
       </div>
 
-      <TimerPacman pct={timePct} seconds={seconds} running={running} />
+      <TimerPacman pct={timePct} seconds={seconds} running={running} current={current} />
 
       <QuestionCard question={question} reveal={reveal} onReveal={onReveal} />
 
@@ -977,7 +977,7 @@ function Round({
   );
 }
 
-function TimerPacman({ pct, seconds, running }) {
+function TimerPacman({ pct, seconds, running, current }) {
   const safePct = clamp(pct ?? 0, 0, 1);
   const remainingPct = Math.round(safePct * 100);
   // 100% — старт справа, 0% — финиш слева
@@ -998,6 +998,16 @@ function TimerPacman({ pct, seconds, running }) {
         className={`pacman-track ${running ? "is-running" : "is-paused"}`}
         aria-hidden
       >
+        {current?.emoji && (
+          <div
+            className="pacman-team-icon"
+            style={{ background: current?.color || "#111826" }}
+            title={current?.name}
+          >
+            {current?.emoji}
+          </div>
+        )}
+
         {/* часть с пилюлями — оставшееся время */}
         <div
           className="pacman-remaining"
@@ -1013,8 +1023,6 @@ function TimerPacman({ pct, seconds, running }) {
         >
           <div className="pacman-trail" />
           <div className="pacman-body" />
-          <div className="pacman-mouth pacman-mouth-top" />
-          <div className="pacman-mouth pacman-mouth-bottom" />
           <div className="pacman-eye" />
         </motion.div>
       </div>
