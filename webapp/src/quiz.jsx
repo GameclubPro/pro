@@ -245,6 +245,7 @@ const reducer = (state, action) => {
         isPaused: false,
         lastResult: null,
         winner: null,
+        questionsPlayed: 0,
       };
     }
     case "SET_QUESTION": {
@@ -278,9 +279,11 @@ const reducer = (state, action) => {
     }
     case "ANSWER": {
       const isCorrect = action.kind === "correct";
-      const roster = state.roster.map((r, idx) =>
-        idx === state.activeIndex && isCorrect ? { ...r, score: r.score + 1 } : r
-      );
+      const roster =
+        action.nextRoster ||
+        state.roster.map((r, idx) =>
+          idx === state.activeIndex && isCorrect ? { ...r, score: r.score + 1 } : r
+        );
       const used = state.used.includes(action.qid) ? state.used : [...state.used, action.qid];
       const streak = isCorrect ? state.streak + 1 : 0;
       return {
@@ -289,6 +292,7 @@ const reducer = (state, action) => {
         used,
         streak,
         lastResult: isCorrect ? "correct" : "skip",
+        questionsPlayed: action.nextQuestions ?? state.questionsPlayed + 1,
       };
     }
     case "NEXT_TURN": {
@@ -305,6 +309,7 @@ const reducer = (state, action) => {
         question: null,
         lastResult: null,
         streak: 0,
+        questionsPlayed: action.questionsPlayed ?? state.questionsPlayed,
       };
     }
     case "SUMMARY": {
@@ -329,6 +334,7 @@ const reducer = (state, action) => {
         timerMs: state.settings.roundSeconds * 1000,
         lastResult: null,
         winner: null,
+        questionsPlayed: 0,
       };
     }
     default:
@@ -347,14 +353,10 @@ const pickQuestion = (used, streak, autoDifficulty) => {
   return candidates[Math.floor(Math.random() * candidates.length)];
 };
 
-const evaluateWinner = (roster, targetScore, round) => {
-  const capped = roster.filter((r) => r.score >= targetScore);
-  if (capped.length) return capped;
-  if (round > MAX_ROUNDS) {
-    const max = Math.max(...roster.map((r) => r.score));
-    return roster.filter((r) => r.score === max);
-  }
-  return null;
+const evaluateWinner = (roster) => {
+  if (!roster.length) return [];
+  const max = Math.max(...roster.map((r) => r.score));
+  return roster.filter((r) => r.score === max);
 };
 
 export default function Quiz({ goBack, onProgress, setBackHandler }) {
@@ -375,11 +377,13 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
     lastResult: null,
     winner: null,
     reveal: false,
+    questionsPlayed: 0,
   }));
 
   const haptic = useHaptics();
   const chime = useChime(state.settings.sound);
   const progressGiven = useRef(false);
+  const questionsLimit = state.settings.targetScore;
 
   // Persist settings & roster
   useEffect(() => {
@@ -409,14 +413,15 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
   useEffect(() => {
     if (state.stage !== "round") return;
     if (state.timerMs <= 0) {
-      const winner = evaluateWinner(state.roster, state.settings.targetScore, state.round);
-      if (winner) {
-        dispatch({ type: "SUMMARY", winner, reason: "score" });
+      const nextQuestions = state.questionsPlayed + 1;
+      const winner = nextQuestions >= questionsLimit ? evaluateWinner(state.roster) : null;
+      if (winner && nextQuestions >= questionsLimit) {
+        dispatch({ type: "SUMMARY", winner, reason: "questions" });
         return;
       }
-      dispatch({ type: "NEXT_TURN" });
+      dispatch({ type: "NEXT_TURN", questionsPlayed: nextQuestions });
     }
-  }, [state.timerMs, state.stage, state.roster, state.settings.targetScore, state.round]);
+  }, [state.timerMs, state.stage, state.questionsPlayed, questionsLimit, state.roster]);
 
   // Back handler
   useEffect(() => {
@@ -459,24 +464,31 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
     } else {
       haptic("light");
     }
-    dispatch({ type: "ANSWER", kind, qid: state.question?.id });
-    const winner = evaluateWinner(
-      state.roster.map((r, idx) =>
-        idx === state.activeIndex && kind === "correct" ? { ...r, score: r.score + 1 } : r
-      ),
-      state.settings.targetScore,
-      state.round
+    const nextRoster = state.roster.map((r, idx) =>
+      idx === state.activeIndex && kind === "correct" ? { ...r, score: r.score + 1 } : r
     );
-    if (winner) {
-      dispatch({ type: "SUMMARY", winner, reason: "score" });
+    const nextQuestionsPlayed = state.questionsPlayed + 1;
+    dispatch({ type: "ANSWER", kind, qid: state.question?.id, nextRoster, nextQuestions: nextQuestionsPlayed });
+    if (nextQuestionsPlayed >= questionsLimit) {
+      const winner = evaluateWinner(nextRoster);
+      dispatch({ type: "SUMMARY", winner, reason: "questions" });
       return;
     }
-    dispatch({ type: "SET_QUESTION", question: pickQuestion(state.used, kind === "correct" ? state.streak + 1 : 0, state.settings.autoDifficulty) });
+    dispatch({
+      type: "SET_QUESTION",
+      question: pickQuestion(state.used, kind === "correct" ? state.streak + 1 : 0, state.settings.autoDifficulty),
+    });
   };
 
   const endRoundEarly = () => {
     haptic("light");
-    dispatch({ type: "NEXT_TURN" });
+    const nextQuestionsPlayed = state.questionsPlayed + 1;
+    if (nextQuestionsPlayed >= questionsLimit) {
+      const winner = evaluateWinner(state.roster);
+      dispatch({ type: "SUMMARY", winner, reason: "questions" });
+      return;
+    }
+    dispatch({ type: "NEXT_TURN", questionsPlayed: nextQuestionsPlayed });
   };
 
   const restart = (keepRoster = true) => {
@@ -488,10 +500,6 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
     } else {
       dispatch({ type: "RESET_SCORES" });
     }
-  };
-
-  const toggleSound = () => {
-    dispatch({ type: "SET_SETTING", key: "sound", value: !state.settings.sound });
   };
 
   const safeRoundSeconds = clamp(state.settings.roundSeconds, 20, 90);
@@ -547,7 +555,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
           <Summary
             roster={state.roster}
             winners={state.winner || []}
-            target={state.settings.targetScore}
+            questions={state.settings.targetScore}
             onRematch={() => restart(true)}
             onReset={() => restart(false)}
             onMenu={goBack}
@@ -647,11 +655,11 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
           </div>
         </div>
         <div className="card mini">
-          <div className="label">Цель</div>
+          <div className="label">Вопросы</div>
           <div className="value">
-            <button onClick={() => onChangeSetting("targetScore", clamp(settings.targetScore - 1, 5, 25))}>−</button>
-            <span>{settings.targetScore} очк.</span>
-            <button onClick={() => onChangeSetting("targetScore", clamp(settings.targetScore + 1, 5, 25))}>+</button>
+            <button onClick={() => onChangeSetting("targetScore", clamp(settings.targetScore - 1, 5, 30))}>−</button>
+            <span>{settings.targetScore} вопр.</span>
+            <button onClick={() => onChangeSetting("targetScore", clamp(settings.targetScore + 1, 5, 30))}>+</button>
           </div>
         </div>
       </div>
@@ -857,7 +865,7 @@ function QuestionCard({ question, reveal, onReveal }) {
   );
 }
 
-function Summary({ roster, winners, target, onRematch, onReset, onMenu }) {
+function Summary({ roster, winners, questions, onRematch, onReset, onMenu }) {
   const topScore = Math.max(...roster.map((r) => r.score));
   return (
     <motion.div
@@ -868,7 +876,7 @@ function Summary({ roster, winners, target, onRematch, onReset, onMenu }) {
     >
       <div className="panel-head">
         <div className="eyebrow">Матч окончен</div>
-        <div className="panel-title">До цели {target} очков</div>
+        <div className="panel-title">Всего вопросов: {questions}</div>
       </div>
 
       <div className="winners">
