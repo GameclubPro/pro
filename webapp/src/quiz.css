@@ -53,7 +53,6 @@
   border-radius: 999px;
   filter: blur(120px);
   opacity: 0.45;
-  will-change: transform;
 }
 
 .quiz-bg .blob.one {
@@ -73,11 +72,7 @@
   z-index: 1;
   max-width: 760px;
   margin: 0 auto;
-  padding:
-    calc(14px + env(safe-area-inset-top))
-    calc(14px + env(safe-area-inset-left))
-    calc(32px + env(safe-area-inset-bottom))
-    calc(14px + env(safe-area-inset-right));
+  padding: calc(14px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-left)) calc(32px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-right));
   display: grid;
   gap: 14px;
 }
@@ -94,22 +89,6 @@
   color: var(--quiz-fg);
   cursor: pointer;
   min-height: 40px;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.12s ease,
-    box-shadow 0.18s ease;
-}
-
-.ghost-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.14);
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.5);
-}
-
-.ghost-btn:active {
-  transform: translateY(1px) scale(0.98);
-  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.6);
 }
 
 .panel {
@@ -161,20 +140,6 @@
   color: var(--quiz-fg);
   font-weight: 800;
   min-height: 46px;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.12s ease,
-    box-shadow 0.18s ease;
-}
-
-.seg:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.seg:active {
-  transform: translateY(1px) scale(0.98);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.6);
 }
 
 .seg-active {
@@ -196,8 +161,7 @@
   width: 46px;
   height: 46px;
   border-radius: 14px;
-  border: 1px solid
-    color-mix(in srgb, var(--quiz-border) 70%, rgba(34, 211, 238, 0.5));
+  border: 1px solid color-mix(in srgb, var(--quiz-border) 70%, rgba(34, 211, 238, 0.5));
   background:
     radial-gradient(120% 120% at 20% 20%, rgba(34, 211, 238, 0.18), transparent),
     radial-gradient(120% 120% at 80% 0%, rgba(139, 92, 246, 0.22), transparent),
@@ -207,16 +171,6 @@
   place-items: center;
   box-shadow: var(--quiz-shadow);
   overflow: hidden;
-  transition:
-    transform 0.16s ease,
-    box-shadow 0.2s ease,
-    border-color 0.16s ease;
-}
-
-.settings-gear:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 40px rgba(34, 211, 238, 0.42);
-  border-color: rgba(34, 211, 238, 0.8);
 }
 
 .gear-inner {
@@ -240,11 +194,7 @@
 .gear-glow {
   position: absolute;
   inset: -16px;
-  background: radial-gradient(
-    circle at 50% 50%,
-    rgba(34, 211, 238, 0.25),
-    transparent 55%
-  );
+  background: radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.25), transparent 55%);
   filter: blur(24px);
   opacity: 0.7;
   pointer-events: none;
@@ -296,21 +246,6 @@
   font-size: 20px;
   color: #041017;
   box-shadow: var(--quiz-shadow);
-  cursor: pointer;
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.18s ease,
-    filter 0.18s ease;
-}
-
-.avatar-btn:hover {
-  filter: brightness(1.06);
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.75);
-}
-
-.avatar-btn:active {
-  transform: translateY(1px) scale(0.97);
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.8);
 }
 
 .roster-row input {
@@ -325,10 +260,6 @@
   min-height: 44px;
 }
 
-.roster-row input::placeholder {
-  color: rgba(148, 163, 184, 0.7);
-}
-
 .icon-btn {
   width: 40px;
   height: 40px;
@@ -338,29 +269,11 @@
   color: var(--quiz-fg);
   display: grid;
   place-items: center;
-  cursor: pointer;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.12s ease,
-    box-shadow 0.18s ease,
-    opacity 0.18s ease;
-}
-
-.icon-btn:hover {
-  background: rgba(248, 113, 113, 0.16);
-  border-color: rgba(248, 113, 113, 0.6);
-  box-shadow: 0 10px 26px rgba(248, 113, 113, 0.4);
-}
-
-.icon-btn:active {
-  transform: translateY(1px) scale(0.97);
 }
 
 .icon-btn:disabled {
   opacity: 0.4;
   pointer-events: none;
-  box-shadow: none;
 }
 
 .settings-overlay {
@@ -374,11 +287,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding:
-    calc(10px + env(safe-area-inset-top))
-    calc(10px + env(safe-area-inset-left))
-    calc(10px + env(safe-area-inset-bottom))
-    calc(10px + env(safe-area-inset-right));
+  padding: calc(10px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-left)) calc(10px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-right));
   z-index: 1200;
   overflow: hidden;
 }
@@ -407,11 +316,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    120% 120% at 50% -10%,
-    rgba(255, 255, 255, 0.05),
-    transparent 50%
-  );
+  background: radial-gradient(120% 120% at 50% -10%, rgba(255, 255, 255, 0.05), transparent 50%);
   pointer-events: none;
 }
 
@@ -443,19 +348,6 @@
   display: grid;
   place-items: center;
   box-shadow: var(--quiz-shadow);
-  transition:
-    background 0.18s ease,
-    transform 0.12s ease,
-    box-shadow 0.18s ease;
-}
-
-.settings-close:hover {
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.6);
-}
-
-.settings-close:active {
-  transform: translateY(1px) scale(0.97);
 }
 
 .settings-grid {
@@ -481,22 +373,14 @@
   background:
     linear-gradient(135deg, rgba(34, 211, 238, 0.12), rgba(139, 92, 246, 0.12)),
     var(--quiz-surface-2);
-  border-color: color-mix(
-    in srgb,
-    var(--quiz-border) 60%,
-    rgba(34, 211, 238, 0.4)
-  );
+  border-color: color-mix(in srgb, var(--quiz-border) 60%, rgba(34, 211, 238, 0.4));
 }
 
 .setting-card.glass {
   background:
     linear-gradient(135deg, rgba(31, 238, 156, 0.1), rgba(46, 211, 255, 0.06)),
     rgba(17, 26, 38, 0.9);
-  border-color: color-mix(
-    in srgb,
-    var(--quiz-border) 60%,
-    rgba(31, 238, 156, 0.35)
-  );
+  border-color: color-mix(in srgb, var(--quiz-border) 60%, rgba(31, 238, 156, 0.35));
 }
 
 .setting-card-top {
@@ -576,19 +460,6 @@
   color: #fff;
   font-weight: 800;
   box-shadow: var(--quiz-shadow);
-  transition:
-    background 0.18s ease,
-    transform 0.12s ease,
-    box-shadow 0.18s ease;
-}
-
-.setting-actions button:hover {
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.6);
-}
-
-.setting-actions button:active {
-  transform: translateY(1px) scale(0.97);
 }
 
 .settings-toggles {
@@ -611,15 +482,6 @@
   font-weight: 800;
   color: var(--quiz-fg);
   box-shadow: var(--quiz-shadow);
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.12s ease;
-}
-
-.toggle-chip:hover {
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .toggle-chip.on {
@@ -627,10 +489,6 @@
   color: #041017;
   border: none;
   box-shadow: 0 14px 40px rgba(46, 211, 255, 0.35);
-}
-
-.toggle-chip:active {
-  transform: translateY(1px) scale(0.98);
 }
 
 .toggle-dot {
@@ -649,13 +507,8 @@
 
 @media (max-width: 768px) {
   .settings-overlay {
-    padding:
-      calc(8px + env(safe-area-inset-top))
-      calc(8px + env(safe-area-inset-left))
-      calc(8px + env(safe-area-inset-bottom))
-      calc(8px + env(safe-area-inset-right));
+    padding: calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-right));
   }
-
   .settings-window {
     width: calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 16px);
     max-width: none;
@@ -665,26 +518,21 @@
     padding: 14px 12px 16px;
     box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
   }
-
   .settings-head {
     flex-direction: column;
     align-items: flex-start;
   }
-
   .settings-close {
     position: absolute;
     top: 10px;
     right: 10px;
   }
-
   .settings-grid {
     grid-template-columns: 1fr;
   }
-
   .settings-toggles {
     grid-template-columns: 1fr;
   }
-
   .setting-card {
     padding: 12px;
   }
@@ -702,35 +550,13 @@
   background: rgba(255, 255, 255, 0.04);
   color: var(--quiz-fg);
   font-weight: 800;
-  cursor: pointer;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.12s ease,
-    box-shadow 0.18s ease;
 }
 
-.ghost-line:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(148, 163, 184, 0.6);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.6);
-}
-
-.ghost-line:active {
-  transform: translateY(1px) scale(0.98);
-}
-
-/* Roster card (если будешь использовать) */
 .roster-card {
   position: relative;
   padding: 12px;
   border-radius: 14px;
-  background:
-    radial-gradient(
-      120% 120% at 10% 10%,
-      color-mix(in srgb, var(--c) 22%, transparent),
-      transparent
-    ),
+  background: radial-gradient(120% 120% at 10% 10%, color-mix(in srgb, var(--c) 22%, transparent), transparent),
     var(--quiz-surface-2);
   border: 1px solid color-mix(in srgb, var(--c) 40%, var(--quiz-border));
   box-shadow: var(--quiz-shadow);
@@ -782,25 +608,6 @@
   background: var(--quiz-primary);
   box-shadow: 0 16px 40px rgba(34, 211, 238, 0.35);
   min-height: 50px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.2s ease,
-    filter 0.18s ease;
-}
-
-.cta:hover {
-  filter: brightness(1.05);
-  box-shadow: 0 20px 46px rgba(34, 211, 238, 0.45);
-}
-
-.cta:active {
-  transform: translateY(1px) scale(0.98);
-  box-shadow: 0 10px 26px rgba(34, 211, 238, 0.4);
 }
 
 .card.hero {
@@ -899,36 +706,21 @@
   gap: 6px;
   padding: 10px 12px;
   border-radius: 14px;
-  border: 1px solid
-    color-mix(in srgb, var(--quiz-border) 40%, rgba(239, 68, 68, 0.5));
+  border: 1px solid color-mix(in srgb, var(--quiz-border) 40%, rgba(239, 68, 68, 0.5));
   background:
     linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(251, 113, 133, 0.1)),
     rgba(255, 255, 255, 0.04);
   color: #ffe4e6;
   font-weight: 900;
   letter-spacing: 0.02em;
-  box-shadow:
-    0 12px 32px rgba(239, 68, 68, 0.28),
-    var(--quiz-shadow);
+  box-shadow: 0 12px 32px rgba(239, 68, 68, 0.28), var(--quiz-shadow);
   backdrop-filter: blur(8px);
-  cursor: pointer;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.2s ease,
-    transform 0.12s ease;
 }
 
 .round-exit:hover {
   border-color: rgba(239, 68, 68, 0.8);
   color: #fff;
-  box-shadow:
-    0 14px 38px rgba(239, 68, 68, 0.35),
-    0 0 0 1px rgba(255, 255, 255, 0.04);
-}
-
-.round-exit:active {
-  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 14px 38px rgba(239, 68, 68, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 .timer-num {
@@ -940,10 +732,6 @@
   color: var(--quiz-muted);
   font-size: 12px;
 }
-
-/* =========================
-   ФИТИЛЬ ТАЙМЕРА — УЛУЧШЕННАЯ АНИМАЦИЯ
-   ========================= */
 
 .fuse {
   display: grid;
@@ -975,115 +763,47 @@
   height: 10px;
   border-radius: 50%;
   background: radial-gradient(circle at 40% 40%, #fff, #f472b6 60%, transparent 70%);
-  box-shadow:
-    0 0 0 8px rgba(244, 114, 182, 0.1),
-    0 0 24px rgba(244, 114, 182, 0.75);
+  box-shadow: 0 0 0 8px rgba(244, 114, 182, 0.1), 0 0 28px rgba(244, 114, 182, 0.6);
   margin-left: auto;
 }
 
-/* Трек фитиля */
 .fuse-track {
   position: relative;
   height: 16px;
   border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    rgba(15, 23, 42, 0.95),
-    rgba(15, 23, 42, 0.9)
-  );
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
   border: 1px solid var(--quiz-border);
-  overflow: hidden;
+  overflow: visible;
   box-shadow: var(--quiz-shadow);
-  --fuse-color-start: #22d3ee;
-  --fuse-color-mid: #8b5cf6;
-  --fuse-color-end: #fb7185;
 }
 
-/* Лёгкий "шум" поверх трека — имитация дыма / мерцания, только opacity + transform */
-.fuse-track::before {
-  content: "";
-  position: absolute;
-  inset: -40%;
-  background-image: radial-gradient(
-      circle at 0 50%,
-      rgba(148, 163, 184, 0.2),
-      transparent 55%
-    ),
-    radial-gradient(circle at 100% 40%, rgba(15, 23, 42, 0.9), transparent 60%);
-  mix-blend-mode: screen;
-  opacity: 0.35;
-  transform: translateX(-30%);
-  animation: fuseNoise 3.2s linear infinite;
-  pointer-events: none;
-}
-
-/* Заполненная часть фитиля */
 .fuse-fill {
   position: absolute;
   inset: 0;
   left: 0;
   border-radius: 999px;
-  background-image: linear-gradient(
-    90deg,
-    var(--fuse-color-start),
-    var(--fuse-color-mid),
-    var(--fuse-color-end)
-  );
+  background: linear-gradient(90deg, #22d3ee, #8b5cf6, #fb7185);
   background-size: 220% 100%;
+  animation: fuseFlow 1.4s linear infinite;
+  box-shadow: 0 14px 36px rgba(139, 92, 246, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06);
   min-width: 6px;
-  will-change: transform, background-position;
-  animation: fuseFlow 1.5s linear infinite;
-  box-shadow:
-    0 0 0 1px rgba(148, 163, 184, 0.18),
-    0 12px 30px rgba(15, 23, 42, 0.8);
 }
 
-/* Внутренние "полоски" огня на фитиле */
-.fuse-fill::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.33) 0,
-    rgba(255, 255, 255, 0.0) 6px,
-    rgba(255, 255, 255, 0.0) 11px
-  );
-  mix-blend-mode: screen;
-  opacity: 0.45;
-  transform: translateX(0);
-  animation: fuseStripes 0.8s linear infinite;
-  pointer-events: none;
-}
-
-/* Искорка на конце фитиля */
 .fuse-spark {
   position: absolute;
   right: -10px;
   top: 50%;
-  transform: translateY(-50%) translateZ(0);
+  transform: translateY(-50%);
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: radial-gradient(circle at 40% 40%, #fff, #ffd166 55%, transparent 70%);
+  background: radial-gradient(circle at 40% 40%, #fff, #ffd166 50%, transparent 70%);
   box-shadow:
     0 0 0 6px rgba(255, 209, 102, 0.22),
-    0 0 26px rgba(255, 209, 102, 0.9),
-    0 0 44px rgba(139, 92, 246, 0.35);
+    0 0 28px rgba(255, 209, 102, 0.8),
+    0 0 48px rgba(139, 92, 246, 0.35);
   animation: sparkPulse 0.9s ease-in-out infinite;
-  will-change: transform, box-shadow, opacity;
 }
-
-/* Для финальных секунд можно навесить класс .fuse--danger из JS (если захочешь) */
-.fuse--danger .fuse-fill {
-  background-image: linear-gradient(90deg, #f97316, #ef4444, #991b1b);
-}
-
-.fuse--danger .fuse-spark {
-  animation-duration: 0.55s;
-}
-
-/* Анимации фитиля (GPU-friendly: только transform / opacity / background-position) */
 
 @keyframes fuseFlow {
   0% {
@@ -1094,58 +814,27 @@
   }
 }
 
-@keyframes fuseStripes {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-14px);
-  }
-}
-
-@keyframes fuseNoise {
-  0% {
-    transform: translateX(-30%);
-    opacity: 0.35;
-  }
-  50% {
-    transform: translateX(10%);
-    opacity: 0.5;
-  }
-  100% {
-    transform: translateX(40%);
-    opacity: 0.32;
-  }
-}
-
 @keyframes sparkPulse {
   0% {
     transform: translateY(-50%) scale(1);
     box-shadow:
       0 0 0 6px rgba(255, 209, 102, 0.22),
-      0 0 26px rgba(255, 209, 102, 0.9),
-      0 0 44px rgba(139, 92, 246, 0.35);
-    opacity: 1;
+      0 0 28px rgba(255, 209, 102, 0.8),
+      0 0 48px rgba(139, 92, 246, 0.35);
   }
-  45% {
-    transform: translateY(-50%) scale(1.12);
+  50% {
+    transform: translateY(-50%) scale(1.1);
     box-shadow:
-      0 0 0 8px rgba(255, 209, 102, 0.3),
-      0 0 34px rgba(255, 209, 102, 1),
-      0 0 60px rgba(139, 92, 246, 0.55);
-    opacity: 1;
-  }
-  70% {
-    transform: translateY(-50%) scale(0.97);
-    opacity: 0.92;
+      0 0 0 8px rgba(255, 209, 102, 0.26),
+      0 0 32px rgba(255, 209, 102, 0.9),
+      0 0 56px rgba(139, 92, 246, 0.45);
   }
   100% {
     transform: translateY(-50%) scale(1);
     box-shadow:
       0 0 0 6px rgba(255, 209, 102, 0.22),
-      0 0 26px rgba(255, 209, 102, 0.9),
-      0 0 44px rgba(139, 92, 246, 0.35);
-    opacity: 1;
+      0 0 28px rgba(255, 209, 102, 0.8),
+      0 0 48px rgba(139, 92, 246, 0.35);
   }
 }
 
@@ -1211,47 +900,18 @@
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
   display: grid;
   gap: 4px;
-  cursor: pointer;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.08s ease,
-    box-shadow 0.16s ease;
-}
-
-.option:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(148, 163, 184, 0.7);
-  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.75);
-}
-
-.option:active:not(:disabled) {
-  transform: translateY(1px) scale(0.98);
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.8);
 }
 
 .option.opt-correct {
   border-color: rgba(31, 238, 156, 0.7);
-  box-shadow:
-    0 16px 40px rgba(31, 238, 156, 0.35),
-    0 0 0 1px rgba(31, 238, 156, 0.5);
-  background: linear-gradient(
-    135deg,
-    rgba(31, 238, 156, 0.14),
-    rgba(46, 211, 255, 0.1)
-  );
+  box-shadow: 0 16px 40px rgba(31, 238, 156, 0.35), 0 0 0 1px rgba(31, 238, 156, 0.5);
+  background: linear-gradient(135deg, rgba(31, 238, 156, 0.14), rgba(46, 211, 255, 0.1));
 }
 
 .option.opt-wrong {
   border-color: rgba(239, 68, 68, 0.7);
-  box-shadow:
-    0 16px 40px rgba(239, 68, 68, 0.35),
-    0 0 0 1px rgba(239, 68, 68, 0.45);
-  background: linear-gradient(
-    135deg,
-    rgba(239, 68, 68, 0.12),
-    rgba(241, 182, 182, 0.06)
-  );
+  box-shadow: 0 16px 40px rgba(239, 68, 68, 0.35), 0 0 0 1px rgba(239, 68, 68, 0.45);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(241, 182, 182, 0.06));
 }
 
 .opt-text {
@@ -1273,15 +933,6 @@
   color: #fff;
   min-height: 48px;
   box-shadow: var(--quiz-shadow);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  transition:
-    background 0.18s ease,
-    transform 0.12s ease,
-    box-shadow 0.2s ease;
 }
 
 .btn.primary {
@@ -1292,14 +943,6 @@
 
 .btn.secondary {
   background: rgba(255, 255, 255, 0.06);
-}
-
-.btn:hover {
-  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.7);
-}
-
-.btn:active {
-  transform: translateY(1px) scale(0.98);
 }
 
 .btn.wide,
@@ -1315,10 +958,7 @@
   display: grid;
   place-items: center;
   z-index: 10;
-  padding:
-    calc(12px + env(safe-area-inset-top))
-    12px
-    calc(12px + env(safe-area-inset-bottom));
+  padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
 }
 
 .pause-card {
@@ -1386,21 +1026,17 @@
   .quiz-wrap {
     gap: 12px;
   }
-
   .quiz-top {
     gap: 6px;
     padding: 10px;
   }
-
   .chip,
   .ghost-btn {
     padding: 8px 10px;
   }
-
   .hero-main {
     grid-template-columns: 64px 1fr;
   }
-
   .roster-grid {
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   }
@@ -1408,33 +1044,25 @@
 
 @media (max-width: 360px) {
   .quiz-wrap {
-    padding-inline:
-      calc(10px + env(safe-area-inset-left))
-      calc(10px + env(safe-area-inset-right));
+    padding-inline: calc(10px + env(safe-area-inset-left)) calc(10px + env(safe-area-inset-right));
   }
-
   .chip,
   .ghost-btn {
     padding: 7px 9px;
   }
-
   .hero-main {
     grid-template-columns: 56px 1fr;
   }
-
   .roster-grid {
     grid-template-columns: 1fr;
   }
-
   .controls {
     grid-template-columns: 1fr;
   }
-
   .ring {
     width: 148px;
     height: 148px;
   }
-
   .ring-inner {
     width: 108px;
     height: 108px;
@@ -1446,7 +1074,6 @@
   .quiz::after {
     display: none;
   }
-
   .ring,
   .panel,
   .card.hero,
@@ -1454,12 +1081,5 @@
   .rail,
   .roster-card {
     box-shadow: none;
-  }
-
-  .fuse-track::before,
-  .fuse-fill,
-  .fuse-fill::before,
-  .fuse-spark {
-    animation: none !important;
   }
 }
