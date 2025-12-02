@@ -981,11 +981,11 @@ function TimerPacman({ pct, seconds, running, current }) {
   const safePct = clamp(pct ?? 0, 0, 1);
   const remainingPct = Math.round(safePct * 100);
   // 100% — старт справа, 0% — финиш слева
-  const trackInsetPct = 6;
+  const trackInsetPct = 4;
   const travelPct = 100 - trackInsetPct * 2;
   const pacLeftPct = trackInsetPct + (remainingPct * travelPct) / 100; // короче путь, не упирается в края
   const remainingWidthPct = Math.max(0, pacLeftPct - trackInsetPct);
-  const pacLeft = `calc(${pacLeftPct}% - 14px)`; // 14px ≈ половина ширины пакмана
+  const pacLeft = `${pacLeftPct}%`; // центр пакмана сидит на процентной шкале
 
   const label =
     remainingPct <= 0 ? "время вышло" : running ? "время идёт" : "пауза";
@@ -1004,7 +1004,10 @@ function TimerPacman({ pct, seconds, running, current }) {
         {current?.emoji && (
           <div
             className="pacman-team-icon"
-            style={{ background: current?.color || "#111826" }}
+            style={{
+              background: current?.color || "#111826",
+              left: `calc(${trackInsetPct}% - 14px)`,
+            }}
             title={current?.name}
           >
             {current?.emoji}
