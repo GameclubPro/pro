@@ -8,6 +8,7 @@
   min-height: 100dvh;
   color: #f8fbff;
   overflow: hidden;
+  overscroll-behavior-y: contain;
   background: radial-gradient(120% 100% at 20% 10%, rgba(124, 58, 237, 0.25), transparent),
     radial-gradient(80% 80% at 90% 0%, rgba(14, 165, 233, 0.25), transparent),
     radial-gradient(100% 100% at 50% 120%, rgba(236, 72, 153, 0.25), transparent),
@@ -35,7 +36,7 @@
 
 .quiz-wrap {
   position: relative;
-  padding: 12px 12px calc(28px + env(safe-area-inset-bottom));
+  padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-left)) calc(28px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-right));
   display: grid;
   gap: 12px;
   isolation: isolate;
@@ -68,6 +69,7 @@
   color: #f8fbff;
   font-weight: 700;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 36px;
 }
 
 .chip.strong {
@@ -86,6 +88,7 @@
   background: rgba(255, 255, 255, 0.05);
   color: #f8fbff;
   cursor: pointer;
+  min-height: 40px;
 }
 
 .panel {
@@ -133,6 +136,7 @@
   background: rgba(255, 255, 255, 0.04);
   color: #f8fbff;
   font-weight: 800;
+  min-height: 46px;
 }
 
 .seg-active {
@@ -177,6 +181,7 @@
   border-radius: 10px;
   color: #fff;
   height: 36px;
+  min-width: 36px;
 }
 
 .roster-grid {
@@ -213,8 +218,9 @@
   border-radius: 10px;
   color: #fff;
   font-weight: 700;
-  padding: 10px;
-  font-size: 14px;
+  padding: 12px;
+  font-size: 16px;
+  min-height: 44px;
 }
 
 .pill {
@@ -278,6 +284,7 @@
   color: #0b1020;
   background: linear-gradient(135deg, #8b5cf6, #22d3ee);
   box-shadow: 0 16px 40px rgba(99, 102, 241, 0.35);
+  min-height: 50px;
 }
 
 .card.hero {
@@ -379,6 +386,7 @@
   place-items: center;
   position: relative;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  margin: 0 auto;
 }
 
 .ring-inner {
@@ -409,6 +417,9 @@
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 16px 50px rgba(0, 0, 0, 0.25);
+  max-height: 38vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .question-top {
@@ -432,6 +443,7 @@
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.12);
   font-weight: 700;
+  line-height: 1.2;
 }
 
 .controls {
@@ -446,6 +458,7 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   font-weight: 900;
   color: #fff;
+  min-height: 48px;
 }
 
 .btn.primary {
@@ -469,7 +482,7 @@
   display: grid;
   place-items: center;
   z-index: 10;
-  padding: 12px;
+  padding: calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));
 }
 
 .pause-card {
@@ -539,6 +552,9 @@
   gap: 10px;
   overflow-x: auto;
   padding: 6px 4px max(4px, env(safe-area-inset-bottom));
+  margin-top: 4px;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.28), transparent);
+  border-radius: 14px;
 }
 
 .rail::-webkit-scrollbar {
@@ -610,6 +626,12 @@
   .ghost-btn {
     padding: 8px 10px;
   }
+  .ring {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+  }
+  .question {
+    max-height: 42vh;
+  }
 }
 
 @media (max-width: 360px) {
@@ -622,5 +644,36 @@
   }
   .hero-main {
     grid-template-columns: 56px 1fr;
+  }
+  .roster-grid {
+    grid-template-columns: 1fr;
+  }
+  .controls {
+    grid-template-columns: 1fr;
+  }
+  .ring {
+    width: 140px;
+    height: 140px;
+  }
+  .ring-inner {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quiz-bg {
+    display: none;
+  }
+  .quiz::after {
+    opacity: 0.1;
+  }
+  .ring,
+  .panel,
+  .card.hero,
+  .question,
+  .rail,
+  .roster-card {
+    box-shadow: none;
   }
 }
