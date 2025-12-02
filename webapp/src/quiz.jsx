@@ -784,13 +784,6 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
       <div className="section-header">
         <div>
           <div className="section-title">Состав</div>
-          <div className="section-hint">
-            Жми на цвет, чтобы сменить; минимум 2
-            <span className="settings-preview">
-              <span className="settings-pill">⏱ {settings.roundSeconds}s</span>
-              <span className="settings-pill">❓ {settings.targetScore}</span>
-            </span>
-          </div>
         </div>
         <motion.button
           className="settings-gear"

@@ -99,12 +99,14 @@
   border: 1px solid var(--quiz-border);
   box-shadow: var(--quiz-shadow);
   backdrop-filter: blur(16px);
+  display: grid;
+  gap: 12px;
 }
 
 .panel-head {
   display: grid;
   gap: 6px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .eyebrow {
@@ -152,26 +154,6 @@
   grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
   gap: 10px;
   align-items: stretch;
-}
-
-.settings-preview {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: 10px;
-  flex-wrap: wrap;
-}
-
-.settings-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 9px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--quiz-border);
-  font-size: 12px;
-  line-height: 1;
 }
 
 .settings-gear {
@@ -235,11 +217,6 @@
 .section-title {
   font-size: 16px;
   font-weight: 800;
-}
-
-.section-hint {
-  font-size: 12px;
-  color: var(--quiz-muted);
 }
 
 .roster-list {
@@ -532,6 +509,38 @@
 .toggle-chip.on .toggle-dot {
   background: rgba(0, 0, 0, 0.65);
   opacity: 1;
+}
+
+@media (max-width: 540px) {
+  .settings-overlay {
+    align-items: flex-end;
+    padding: 10px;
+  }
+  .settings-window {
+    width: 100%;
+    max-height: 86vh;
+    border-radius: 18px 18px 12px 12px;
+    padding: 16px 14px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
+  }
+  .settings-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .settings-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+  .settings-toggles {
+    grid-template-columns: 1fr;
+  }
+  .setting-card {
+    padding: 12px;
+  }
 }
 
 .ghost-line {
