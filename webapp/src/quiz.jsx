@@ -571,6 +571,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
             running={state.running}
             isPaused={state.isPaused}
             onResume={() => dispatch({ type: "RESUME" })}
+            onExit={goBack}
           />
         )}
 
@@ -885,6 +886,7 @@ function Round({
   running,
   isPaused,
   onResume,
+  onExit,
 }) {
   const [selected, setSelected] = useState(null); // value
   useEffect(() => {
@@ -912,9 +914,20 @@ function Round({
         <div className="round-name">{current?.name}</div>
         <span className="dot" />
         <div className="round-mode">{mode === "teams" ? "Команды" : "Соло"}</div>
+        {onExit && (
+          <motion.button
+            className="round-exit"
+            whileTap={{ scale: 0.97 }}
+            whileHover={{ translateY: -1 }}
+            onClick={onExit}
+          >
+            <X size={14} />
+            Выйти
+          </motion.button>
+        )}
       </div>
 
-      <TimerCircle pct={timePct} seconds={seconds} />
+      <TimerFuse pct={timePct} seconds={seconds} running={running} />
 
       <QuestionCard question={question} reveal={reveal} onReveal={onReveal} />
 
@@ -964,20 +977,25 @@ function Round({
   );
 }
 
-function TimerCircle({ pct, seconds }) {
-  const deg = Math.round(pct * 360);
+function TimerFuse({ pct, seconds, running }) {
+  const pctClamped = clamp(pct, 0, 1);
+  const width = `${Math.round(pctClamped * 100)}%`;
   return (
-    <div className="timer">
-      <div
-        className="ring"
-        style={{
-          background: `conic-gradient(var(--accent) ${deg}deg, rgba(255,255,255,.12) 0deg)`,
-        }}
-      >
-        <div className="ring-inner">
-          <div className="timer-num">{seconds}s</div>
-          <div className="timer-sub">время</div>
-        </div>
+    <div className="fuse">
+      <div className="fuse-head">
+        <div className="timer-num">{seconds}s</div>
+        <div className="timer-sub">{running ? "время идёт" : "пауза"}</div>
+        <span className="fuse-dot" />
+      </div>
+      <div className="fuse-track">
+        <motion.div
+          className="fuse-fill"
+          style={{ width }}
+          animate={{ width }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
+        >
+          <span className="fuse-spark" />
+        </motion.div>
       </div>
     </div>
   );

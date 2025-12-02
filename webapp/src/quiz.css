@@ -673,7 +673,8 @@
 }
 
 .round-meta {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   font-weight: 800;
@@ -698,33 +699,28 @@
   background: rgba(255, 255, 255, 0.6);
 }
 
-.timer {
-  display: grid;
-  place-items: center;
+.round-exit {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--quiz-border) 40%, rgba(239, 68, 68, 0.5));
+  background:
+    linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(251, 113, 133, 0.1)),
+    rgba(255, 255, 255, 0.04);
+  color: #ffe4e6;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  box-shadow: 0 12px 32px rgba(239, 68, 68, 0.28), var(--quiz-shadow);
+  backdrop-filter: blur(8px);
 }
 
-.ring {
-  --accent: color-mix(in srgb, var(--quiz-green) 70%, #8b5cf6 30%);
-  width: clamp(160px, 52vw, 210px);
-  height: clamp(160px, 52vw, 210px);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  position: relative;
-  box-shadow: var(--quiz-shadow);
-  margin: 0 auto;
-}
-
-.ring-inner {
-  width: clamp(120px, 38vw, 160px);
-  height: clamp(120px, 38vw, 160px);
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.55);
-  border: 1px solid var(--quiz-border);
-  display: grid;
-  place-items: center;
-  text-align: center;
-  gap: 4px;
+.round-exit:hover {
+  border-color: rgba(239, 68, 68, 0.8);
+  color: #fff;
+  box-shadow: 0 14px 38px rgba(239, 68, 68, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 .timer-num {
@@ -735,6 +731,111 @@
 .timer-sub {
   color: var(--quiz-muted);
   font-size: 12px;
+}
+
+.fuse {
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 6px;
+}
+
+.fuse-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--quiz-muted);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.fuse .timer-num {
+  font-size: 20px;
+  color: var(--quiz-fg);
+}
+
+.fuse .timer-sub {
+  font-size: 12px;
+}
+
+.fuse-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #fff, #f472b6 60%, transparent 70%);
+  box-shadow: 0 0 0 8px rgba(244, 114, 182, 0.1), 0 0 28px rgba(244, 114, 182, 0.6);
+  margin-left: auto;
+}
+
+.fuse-track {
+  position: relative;
+  height: 16px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--quiz-border);
+  overflow: visible;
+  box-shadow: var(--quiz-shadow);
+}
+
+.fuse-fill {
+  position: absolute;
+  inset: 0;
+  left: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22d3ee, #8b5cf6, #fb7185);
+  background-size: 220% 100%;
+  animation: fuseFlow 1.4s linear infinite;
+  box-shadow: 0 14px 36px rgba(139, 92, 246, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  min-width: 6px;
+}
+
+.fuse-spark {
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #fff, #ffd166 50%, transparent 70%);
+  box-shadow:
+    0 0 0 6px rgba(255, 209, 102, 0.22),
+    0 0 28px rgba(255, 209, 102, 0.8),
+    0 0 48px rgba(139, 92, 246, 0.35);
+  animation: sparkPulse 0.9s ease-in-out infinite;
+}
+
+@keyframes fuseFlow {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: -220% 0;
+  }
+}
+
+@keyframes sparkPulse {
+  0% {
+    transform: translateY(-50%) scale(1);
+    box-shadow:
+      0 0 0 6px rgba(255, 209, 102, 0.22),
+      0 0 28px rgba(255, 209, 102, 0.8),
+      0 0 48px rgba(139, 92, 246, 0.35);
+  }
+  50% {
+    transform: translateY(-50%) scale(1.1);
+    box-shadow:
+      0 0 0 8px rgba(255, 209, 102, 0.26),
+      0 0 32px rgba(255, 209, 102, 0.9),
+      0 0 56px rgba(139, 92, 246, 0.45);
+  }
+  100% {
+    transform: translateY(-50%) scale(1);
+    box-shadow:
+      0 0 0 6px rgba(255, 209, 102, 0.22),
+      0 0 28px rgba(255, 209, 102, 0.8),
+      0 0 48px rgba(139, 92, 246, 0.35);
+  }
 }
 
 .question {
