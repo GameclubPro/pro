@@ -414,8 +414,8 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
     if (state.stage !== "round") return;
     if (state.timerMs <= 0) {
       const nextQuestions = state.questionsPlayed + 1;
-      const winner = nextQuestions >= questionsLimit ? evaluateWinner(state.roster) : null;
-      if (winner && nextQuestions >= questionsLimit) {
+      if (nextQuestions >= questionsLimit) {
+        const winner = evaluateWinner(state.roster);
         dispatch({ type: "SUMMARY", winner, reason: "questions" });
         return;
       }
@@ -464,20 +464,17 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
     } else {
       haptic("light");
     }
+    const nextQuestionsPlayed = state.questionsPlayed + 1;
     const nextRoster = state.roster.map((r, idx) =>
       idx === state.activeIndex && kind === "correct" ? { ...r, score: r.score + 1 } : r
     );
-    const nextQuestionsPlayed = state.questionsPlayed + 1;
     dispatch({ type: "ANSWER", kind, qid: state.question?.id, nextRoster, nextQuestions: nextQuestionsPlayed });
     if (nextQuestionsPlayed >= questionsLimit) {
       const winner = evaluateWinner(nextRoster);
       dispatch({ type: "SUMMARY", winner, reason: "questions" });
       return;
     }
-    dispatch({
-      type: "SET_QUESTION",
-      question: pickQuestion(state.used, kind === "correct" ? state.streak + 1 : 0, state.settings.autoDifficulty),
-    });
+    dispatch({ type: "NEXT_TURN", questionsPlayed: nextQuestionsPlayed });
   };
 
   const endRoundEarly = () => {
