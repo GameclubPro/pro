@@ -771,16 +771,8 @@
   position: relative;
   height: 16px;
   border-radius: 999px;
-  background:
-    repeating-linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.08) 0,
-      rgba(255, 255, 255, 0.08) 8px,
-      rgba(12, 19, 28, 0.6) 8px,
-      rgba(12, 19, 28, 0.6) 16px
-    ),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
-  border: 1px solid color-mix(in srgb, var(--quiz-border) 80%, rgba(255, 255, 255, 0.08));
+  background: linear-gradient(135deg, rgba(48, 33, 23, 0.92), rgba(31, 22, 16, 0.95));
+  border: 1px solid color-mix(in srgb, var(--quiz-border) 80%, rgba(245, 158, 11, 0.16));
   overflow: visible;
   box-shadow: var(--quiz-shadow);
 }
@@ -790,10 +782,9 @@
   position: absolute;
   inset: 1px;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.25), transparent 40%, rgba(255, 255, 255, 0.08) 80%);
-  mix-blend-mode: screen;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.06), transparent 55%, rgba(0, 0, 0, 0.25) 100%);
   pointer-events: none;
-  opacity: 0.85;
+  opacity: 0.7;
 }
 
 .fuse-track::after {
@@ -801,8 +792,15 @@
   position: absolute;
   inset: 0;
   border-radius: 999px;
-  background: radial-gradient(circle at 8% 50%, rgba(0, 0, 0, 0.45), transparent 35%);
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 0,
+    rgba(255, 255, 255, 0.05) 12px,
+    rgba(0, 0, 0, 0.08) 12px,
+    rgba(0, 0, 0, 0.08) 24px
+  );
   pointer-events: none;
+  opacity: 0.5;
 }
 
 .fuse-fill {
@@ -810,10 +808,11 @@
   inset: 0;
   left: 0;
   border-radius: 999px;
-  background: linear-gradient(90deg, #22d3ee, #8b5cf6, #fb7185);
-  background-size: 220% 100%;
-  animation: fuseFlow 1.4s linear infinite, fuseFlicker 1.1s ease-in-out infinite;
-  box-shadow: 0 14px 36px rgba(139, 92, 246, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  background: linear-gradient(90deg, #f97316, #ef4444, #fbbf24);
+  background-size: 140% 100%;
+  animation: fuseFlow 2.1s linear infinite;
+  box-shadow: 0 10px 28px rgba(249, 115, 22, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  filter: drop-shadow(0 0 12px rgba(249, 115, 22, 0.35));
   min-width: 6px;
   overflow: visible;
 }
@@ -823,9 +822,9 @@
   position: absolute;
   inset: -3px -6px;
   border-radius: 999px;
-  background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.18), rgba(251, 113, 133, 0.06), transparent 60%);
+  background: radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.14), rgba(249, 115, 22, 0.08), transparent 60%);
   filter: blur(8px);
-  opacity: 0.85;
+  opacity: 0.8;
   pointer-events: none;
   animation: fuseGlow 1.2s ease-in-out infinite;
 }
@@ -887,18 +886,6 @@
   }
   100% {
     background-position: -220% 0;
-  }
-}
-
-@keyframes fuseFlicker {
-  0% {
-    filter: drop-shadow(0 0 14px rgba(139, 92, 246, 0.45));
-  }
-  50% {
-    filter: drop-shadow(0 0 20px rgba(34, 211, 238, 0.6));
-  }
-  100% {
-    filter: drop-shadow(0 0 12px rgba(251, 113, 133, 0.45));
   }
 }
 
