@@ -1,9 +1,969 @@
-import React from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Activity,
+  ArrowLeft,
+  Award,
+  Clock3,
+  Pause,
+  Play,
+  RefreshCw,
+  Sparkles,
+  Trophy,
+  Users,
+  Zap,
+  Eye,
+  EyeOff,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
+import "./quiz.css";
 
-export default function Quiz() {
+const STORAGE_KEYS = {
+  settings: "pt_quiz_settings_v1",
+  roster: "pt_quiz_roster_v1",
+};
+
+const PALETTE = [
+  "#8b5cf6",
+  "#22d3ee",
+  "#fb7185",
+  "#10b981",
+  "#f59e0b",
+  "#6366f1",
+  "#ec4899",
+  "#06b6d4",
+];
+
+const EMOJIS = ["⚡️", "🔥", "🌊", "🍀", "🌟", "🛰️", "🎯", "🧠", "🚀", "💎"];
+
+const DEFAULT_SETTINGS = {
+  mode: "teams", // teams | solo
+  roundSeconds: 45,
+  targetScore: 12,
+  autoDifficulty: true,
+  sound: true,
+};
+
+const QUESTION_PACK = [
+  { id: "g-ottawa", text: "Столица Канады", answer: "Оттава", cat: "general", diff: 1 },
+  { id: "g-asia", text: "Самый большой океан", answer: "Тихий", cat: "general", diff: 1 },
+  { id: "g-saturn", text: "Планета с кольцами", answer: "Сатурн", cat: "science", diff: 1 },
+  { id: "g-evr", text: "Самая высокая гора", answer: "Эверест", cat: "general", diff: 1 },
+  { id: "g-h2o", text: "Формула воды", answer: "H₂O", cat: "science", diff: 1 },
+  { id: "g-mona", text: "Автор «Моны Лизы»", answer: "Леонардо да Винчи", cat: "culture", diff: 1 },
+  { id: "g-paris", text: "Город любви", answer: "Париж", cat: "general", diff: 1 },
+  { id: "g-emoji", text: "Цвет флага Японии", answer: "Белый с красным кругом", cat: "culture", diff: 1 },
+  { id: "g-moon", text: "Первая страна на Луне", answer: "США", cat: "culture", diff: 1 },
+  { id: "g-bytes", text: "1024 мегабайта", answer: "1 гигабайт", cat: "tech", diff: 1 },
+  { id: "g-iron", text: "Химический символ Fe", answer: "Железо", cat: "science", diff: 1 },
+  { id: "g-speed", text: "Свет в вакууме км/с", answer: "≈300 000", cat: "numbers", diff: 2 },
+  { id: "g-pi", text: "Число π до двух знаков", answer: "3.14", cat: "numbers", diff: 1 },
+  { id: "g-fund", text: "Валюта Японии", answer: "Йена", cat: "general", diff: 1 },
+  { id: "g-nobel", text: "Страна Альфреда Нобеля", answer: "Швеция", cat: "culture", diff: 2 },
+  { id: "g-aurora", text: "Полярное сияние", answer: "Аврора", cat: "science", diff: 2 },
+  { id: "g-tesla", text: "Единица магнитного поля", answer: "Тесла", cat: "science", diff: 3 },
+  { id: "g-5g", text: "Пятое поколение связи", answer: "5G", cat: "tech", diff: 1 },
+  { id: "g-ram", text: "ОЗУ по-английски", answer: "RAM", cat: "tech", diff: 1 },
+  { id: "g-gpu", text: "Чип для графики", answer: "GPU / видеокарта", cat: "tech", diff: 1 },
+  { id: "g-ml", text: "Расшифруй ML", answer: "Machine Learning", cat: "tech", diff: 2 },
+  { id: "g-airdrop", text: "Беспроводная передача Apple", answer: "AirDrop", cat: "tech", diff: 1 },
+  { id: "g-oscar", text: "Главная кинонаграда", answer: "Оскар", cat: "culture", diff: 1 },
+  { id: "g-grammy", text: "Премия в музыке", answer: "Грэмми", cat: "culture", diff: 1 },
+  { id: "g-met", text: "Музей в Нью-Йорке «The ___»", answer: "Met / Метрополитен", cat: "culture", diff: 2 },
+  { id: "g-f1", text: "Главная серия гонок", answer: "Формула‑1", cat: "sport", diff: 1 },
+  { id: "g-messi", text: "Лионель — фамилия?", answer: "Месси", cat: "sport", diff: 1 },
+  { id: "g-olymp", text: "Город Олимпиады 2014", answer: "Сочи", cat: "sport", diff: 1 },
+  { id: "g-psg", text: "Футбольный клуб Парижа", answer: "ПСЖ", cat: "sport", diff: 2 },
+  { id: "g-jupiter", text: "Самая большая планета", answer: "Юпитер", cat: "science", diff: 1 },
+  { id: "g-quant", text: "Самый маленький пакет энергии", answer: "Квант", cat: "science", diff: 3 },
+  { id: "g-dna", text: "Носитель наследственности", answer: "ДНК", cat: "science", diff: 1 },
+  { id: "g-aurora2", text: "Сияние на юге", answer: "Аврора Австралис", cat: "science", diff: 3 },
+  { id: "g-mars", text: "Красная планета", answer: "Марс", cat: "science", diff: 1 },
+  { id: "g-neuron", text: "Клетка мозга", answer: "Нейрон", cat: "science", diff: 1 },
+  { id: "g-silicon", text: "Долина стартапов", answer: "Силиконовая долина", cat: "tech", diff: 1 },
+  { id: "g-netflix", text: "Слоган «Skip Intro» у...", answer: "Netflix", cat: "culture", diff: 1 },
+  { id: "g-imax", text: "Формат огромных экранов", answer: "IMAX", cat: "culture", diff: 2 },
+  { id: "g-supercell", text: "Clash of Clans — студия?", answer: "Supercell", cat: "culture", diff: 2 },
+  { id: "g-spotify", text: "Зелёный сервис музыки", answer: "Spotify", cat: "culture", diff: 1 },
+  { id: "g-apple", text: "Слоган «Think Different»", answer: "Apple", cat: "tech", diff: 1 },
+  { id: "g-android", text: "Маскот робота — ОС?", answer: "Android", cat: "tech", diff: 1 },
+  { id: "g-kwh", text: "Единица счётчика энергии", answer: "кВт⋅ч", cat: "numbers", diff: 2 },
+  { id: "g-42", text: "Ответ на главный вопрос", answer: "42", cat: "culture", diff: 2 },
+  { id: "g-uefa", text: "Кубок чемпионов Европы", answer: "Лига чемпионов УЕФА", cat: "sport", diff: 2 },
+  { id: "g-nike", text: "Богиня победы — бренд", answer: "Nike", cat: "culture", diff: 1 },
+  { id: "g-bpm", text: "Удары в минуту — аббрев.", answer: "BPM", cat: "numbers", diff: 2 },
+  { id: "g-cloud", text: "AWS, GCP, Azure — это...", answer: "Облачные платформы", cat: "tech", diff: 2 },
+  { id: "g-ai", text: "ИИ на русском", answer: "Искусственный интеллект", cat: "tech", diff: 1 },
+  { id: "g-lidar", text: "Сканер глубины в телефоне", answer: "LiDAR", cat: "tech", diff: 2 },
+  { id: "g-ssd", text: "Хранилище без движущихся частей", answer: "SSD", cat: "tech", diff: 1 },
+  { id: "g-graphql", text: "Альтернатива REST от Facebook", answer: "GraphQL", cat: "tech", diff: 3 },
+  { id: "g-ux", text: "Расшифруй UX", answer: "User Experience", cat: "tech", diff: 1 },
+  { id: "g-aurora3", text: "Зелёное свечение атмосферы", answer: "Кислород при столкновении частиц", cat: "science", diff: 3 },
+  { id: "g-ramen", text: "Японский суп с лапшой", answer: "Рамен", cat: "culture", diff: 1 },
+  { id: "g-espresso", text: "30 мл кофе под давлением", answer: "Эспрессо", cat: "culture", diff: 1 },
+  { id: "g-sakura", text: "Цветущая вишня по-японски", answer: "Сакура", cat: "culture", diff: 1 },
+  { id: "g-hygge", text: "Датский уют", answer: "Хюгге", cat: "culture", diff: 2 },
+  { id: "g-kpop", text: "Музыка из Сеула жанр", answer: "K-pop", cat: "culture", diff: 1 },
+  { id: "g-valorant", text: "Тактический шутер Riot", answer: "Valorant", cat: "culture", diff: 2 },
+  { id: "g-pixel", text: "Флагман Google", answer: "Pixel", cat: "tech", diff: 1 },
+  { id: "g-celsius", text: "0° — замерзание воды по...", answer: "Цельсию", cat: "numbers", diff: 1 },
+  { id: "g-tokyo", text: "Самый населённый мегаполис", answer: "Токио", cat: "general", diff: 2 },
+  { id: "g-venice", text: "Город на воде в Италии", answer: "Венеция", cat: "general", diff: 1 },
+  { id: "g-baikal", text: "Самое глубокое озеро", answer: "Байкал", cat: "science", diff: 1 },
+  { id: "g-aurorafrq", text: "Северное сияние появляется из-за...", answer: "Взаимодействия солнечного ветра с магнитным полем", cat: "science", diff: 3 },
+  { id: "g-erg", text: "Какая единица измеряет работу в СИ?", answer: "Джоуль", cat: "science", diff: 2 },
+  { id: "g-mol", text: "Число Авогадро относится к...", answer: "Молю", cat: "science", diff: 3 },
+  { id: "g-gdp", text: "Аббревиатура ВВП по-английски", answer: "GDP", cat: "numbers", diff: 2 },
+  { id: "g-qr", text: "Квадратный код со ссылкой", answer: "QR", cat: "tech", diff: 1 },
+  { id: "g-led", text: "Светодиод по-английски", answer: "LED", cat: "tech", diff: 1 },
+  { id: "g-mimo", text: "Технология многоканального Wi‑Fi", answer: "MIMO", cat: "tech", diff: 3 },
+  { id: "g-solar", text: "Энергия от солнца", answer: "Солнечная", cat: "science", diff: 1 },
+  { id: "g-co2", text: "Газ парникового эффекта", answer: "CO₂", cat: "science", diff: 1 },
+  { id: "g-bitcoin", text: "Первая криптовалюта", answer: "Биткоин", cat: "tech", diff: 1 },
+  { id: "g-ether", text: "Валюта сети Ethereum", answer: "Ether / ETH", cat: "tech", diff: 2 },
+  { id: "g-louvre", text: "Главный музей Парижа", answer: "Лувр", cat: "culture", diff: 1 },
+  { id: "g-impression", text: "Стиль Моне", answer: "Импрессионизм", cat: "culture", diff: 2 },
+  { id: "g-ballet", text: "Труппа Большого театра танцует", answer: "Балет", cat: "culture", diff: 1 },
+  { id: "g-taylor", text: "Автор альбома «1989»", answer: "Тейлор Свифт", cat: "culture", diff: 2 },
+  { id: "g-bey", text: "Queen B", answer: "Бейонсе", cat: "culture", diff: 1 },
+  { id: "g-elon", text: "CEO SpaceX", answer: "Илон Маск", cat: "tech", diff: 1 },
+];
+
+const CATEGORIES = {
+  general: { label: "Общее", icon: "✨" },
+  culture: { label: "Культура", icon: "🎬" },
+  science: { label: "Наука", icon: "🔬" },
+  tech: { label: "Технологии", icon: "💻" },
+  numbers: { label: "Цифры", icon: "🔢" },
+  sport: { label: "Спорт", icon: "🏅" },
+};
+
+const MAX_ROUNDS = 20;
+
+const initialRoster = (mode = "teams") => {
+  const count = mode === "teams" ? 2 : 4;
+  return Array.from({ length: count }).map((_, idx) => ({
+    id: `p-${idx}`,
+    name: mode === "teams" ? `Команда ${idx + 1}` : `Игрок ${idx + 1}`,
+    emoji: EMOJIS[idx % EMOJIS.length],
+    color: PALETTE[idx % PALETTE.length],
+    score: 0,
+  }));
+};
+
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+const useHaptics = () => {
+  const fire = useCallback((style = "light") => {
+    const tg = window?.Telegram?.WebApp;
+    try {
+      tg?.HapticFeedback?.impactOccurred?.(style);
+    } catch {
+      /* noop */
+    }
+  }, []);
+  return fire;
+};
+
+const useChime = (enabled) => {
+  const audioRef = useRef(null);
+  useEffect(() => {
+    if (!enabled) return;
+    const src =
+      "data:audio/wav;base64,UklGRoQAAABXQVZFZm10IBAAAAABAAEAgD4AAAB9AAACABAAZGF0YVgAAAAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA";
+    audioRef.current = new Audio(src);
+    audioRef.current.volume = 0.25;
+  }, [enabled]);
+  const play = useCallback(() => {
+    if (!enabled) return;
+    const a = audioRef.current;
+    if (a) {
+      a.currentTime = 0;
+      a.play().catch(() => {});
+    }
+  }, [enabled]);
+  return play;
+};
+
+const persist = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* ignore */
+  }
+};
+
+const readPersisted = (key, fallback) => {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return parsed || fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "SET_SETTING": {
+      const settings = { ...state.settings, [action.key]: action.value };
+      return { ...state, settings, timerMs: settings.roundSeconds * 1000 };
+    }
+    case "SET_MODE": {
+      const settings = { ...state.settings, mode: action.mode };
+      const roster =
+        state.roster.length && state.roster[0]?.mode === action.mode
+          ? state.roster
+          : initialRoster(action.mode);
+      return {
+        ...state,
+        settings,
+        roster,
+        timerMs: settings.roundSeconds * 1000,
+        stage: "setup",
+      };
+    }
+    case "SET_ROSTER": {
+      return { ...state, roster: action.roster };
+    }
+    case "RESET_SCORES": {
+      const roster = state.roster.map((r) => ({ ...r, score: 0 }));
+      return { ...state, roster, round: 1, used: [], streak: 0 };
+    }
+    case "START_MATCH": {
+      const roster = state.roster.map((r) => ({ ...r, score: 0 }));
+      return {
+        ...state,
+        roster,
+        stage: "switch",
+        activeIndex: 0,
+        round: 1,
+        used: [],
+        streak: 0,
+        question: null,
+        timerMs: state.settings.roundSeconds * 1000,
+        running: false,
+        isPaused: false,
+        lastResult: null,
+        winner: null,
+      };
+    }
+    case "SET_QUESTION": {
+      return { ...state, question: action.question, reveal: false };
+    }
+    case "BEGIN_ROUND": {
+      return {
+        ...state,
+        stage: "round",
+        running: true,
+        isPaused: false,
+        timerMs: state.settings.roundSeconds * 1000,
+        lastResult: null,
+      };
+    }
+    case "TICK": {
+      if (state.stage !== "round" || !state.running) return state;
+      const next = Math.max(0, state.timerMs - action.delta);
+      return { ...state, timerMs: next };
+    }
+    case "PAUSE": {
+      if (state.stage !== "round") return state;
+      return { ...state, running: false, isPaused: true };
+    }
+    case "RESUME": {
+      if (state.stage !== "round") return state;
+      return { ...state, running: true, isPaused: false };
+    }
+    case "REVEAL": {
+      return { ...state, reveal: !state.reveal };
+    }
+    case "ANSWER": {
+      const isCorrect = action.kind === "correct";
+      const roster = state.roster.map((r, idx) =>
+        idx === state.activeIndex && isCorrect ? { ...r, score: r.score + 1 } : r
+      );
+      const used = state.used.includes(action.qid) ? state.used : [...state.used, action.qid];
+      const streak = isCorrect ? state.streak + 1 : 0;
+      return {
+        ...state,
+        roster,
+        used,
+        streak,
+        lastResult: isCorrect ? "correct" : "skip",
+      };
+    }
+    case "NEXT_TURN": {
+      const nextIndex = (state.activeIndex + 1) % state.roster.length;
+      const nextRound = state.round + 1;
+      return {
+        ...state,
+        stage: "switch",
+        activeIndex: nextIndex,
+        round: nextRound,
+        timerMs: state.settings.roundSeconds * 1000,
+        running: false,
+        isPaused: false,
+        question: null,
+        lastResult: null,
+        streak: 0,
+      };
+    }
+    case "SUMMARY": {
+      return {
+        ...state,
+        stage: "summary",
+        running: false,
+        winner: action.winner,
+        reason: action.reason,
+      };
+    }
+    case "RESTART": {
+      return {
+        ...state,
+        stage: "setup",
+        running: false,
+        isPaused: false,
+        question: null,
+        used: [],
+        streak: 0,
+        round: 1,
+        timerMs: state.settings.roundSeconds * 1000,
+        lastResult: null,
+        winner: null,
+      };
+    }
+    default:
+      return state;
+  }
+};
+
+const pickQuestion = (used, streak, autoDifficulty) => {
+  const usedSet = new Set(used);
+  const target = autoDifficulty ? clamp(1 + Math.floor(streak / 3), 1, 3) : 2;
+  const unused = QUESTION_PACK.filter((q) => !usedSet.has(q.id));
+  const pool = unused.length ? unused : QUESTION_PACK;
+  const scored = pool.map((q) => ({ q, score: Math.abs(q.diff - target) }));
+  const best = Math.min(...scored.map((s) => s.score));
+  const candidates = scored.filter((s) => s.score === best).map((s) => s.q);
+  return candidates[Math.floor(Math.random() * candidates.length)];
+};
+
+const evaluateWinner = (roster, targetScore, round) => {
+  const capped = roster.filter((r) => r.score >= targetScore);
+  if (capped.length) return capped;
+  if (round > MAX_ROUNDS) {
+    const max = Math.max(...roster.map((r) => r.score));
+    return roster.filter((r) => r.score === max);
+  }
+  return null;
+};
+
+export default function Quiz({ goBack, onProgress, setBackHandler }) {
+  const savedSettings = useMemo(() => readPersisted(STORAGE_KEYS.settings, DEFAULT_SETTINGS), []);
+  const savedRoster = useMemo(() => readPersisted(STORAGE_KEYS.roster, null), []);
+  const [state, dispatch] = useReducer(reducer, null, () => ({
+    settings: { ...DEFAULT_SETTINGS, ...savedSettings },
+    roster: Array.isArray(savedRoster) && savedRoster.length ? savedRoster : initialRoster(savedSettings?.mode || "teams"),
+    stage: "setup",
+    activeIndex: 0,
+    timerMs: (savedSettings?.roundSeconds || DEFAULT_SETTINGS.roundSeconds) * 1000,
+    running: false,
+    isPaused: false,
+    round: 1,
+    question: null,
+    used: [],
+    streak: 0,
+    lastResult: null,
+    winner: null,
+    reveal: false,
+  }));
+
+  const haptic = useHaptics();
+  const chime = useChime(state.settings.sound);
+  const progressGiven = useRef(false);
+
+  // Persist settings & roster
+  useEffect(() => {
+    persist(STORAGE_KEYS.settings, state.settings);
+  }, [state.settings]);
+  useEffect(() => {
+    persist(STORAGE_KEYS.roster, state.roster);
+  }, [state.roster]);
+
+  // Timer loop
+  useEffect(() => {
+    if (state.stage !== "round" || !state.running) return undefined;
+    let raf;
+    let prev = performance.now();
+    const tick = () => {
+      const now = performance.now();
+      const delta = now - prev;
+      prev = now;
+      dispatch({ type: "TICK", delta });
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [state.stage, state.running]);
+
+  // Time is over
+  useEffect(() => {
+    if (state.stage !== "round") return;
+    if (state.timerMs <= 0) {
+      const winner = evaluateWinner(state.roster, state.settings.targetScore, state.round);
+      if (winner) {
+        dispatch({ type: "SUMMARY", winner, reason: "score" });
+        return;
+      }
+      dispatch({ type: "NEXT_TURN" });
+    }
+  }, [state.timerMs, state.stage, state.roster, state.settings.targetScore, state.round]);
+
+  // Back handler
+  useEffect(() => {
+    if (!setBackHandler) return;
+    setBackHandler(() => {
+      if (state.stage === "round") {
+        dispatch({ type: state.running ? "PAUSE" : "RESUME" });
+        return;
+      }
+      goBack?.();
+    });
+  }, [setBackHandler, state.stage, state.running, goBack]);
+
+  // Progress ping
+  useEffect(() => {
+    if (state.stage === "summary" && !progressGiven.current) {
+      progressGiven.current = true;
+      onProgress?.();
+    }
+  }, [state.stage, onProgress]);
+
+  const current = state.roster[state.activeIndex] || state.roster[0];
+
+  const handleStart = () => {
+    haptic("medium");
+    dispatch({ type: "START_MATCH" });
+  };
+
+  const handleBeginRound = () => {
+    haptic("light");
+    dispatch({ type: "SET_QUESTION", question: pickQuestion(state.used, state.streak, state.settings.autoDifficulty) });
+    dispatch({ type: "BEGIN_ROUND" });
+  };
+
+  const mark = (kind) => {
+    if (state.stage !== "round") return;
+    if (kind === "correct") {
+      haptic("medium");
+      chime();
+    } else {
+      haptic("light");
+    }
+    dispatch({ type: "ANSWER", kind, qid: state.question?.id });
+    const winner = evaluateWinner(
+      state.roster.map((r, idx) =>
+        idx === state.activeIndex && kind === "correct" ? { ...r, score: r.score + 1 } : r
+      ),
+      state.settings.targetScore,
+      state.round
+    );
+    if (winner) {
+      dispatch({ type: "SUMMARY", winner, reason: "score" });
+      return;
+    }
+    dispatch({ type: "SET_QUESTION", question: pickQuestion(state.used, kind === "correct" ? state.streak + 1 : 0, state.settings.autoDifficulty) });
+  };
+
+  const endRoundEarly = () => {
+    haptic("light");
+    dispatch({ type: "NEXT_TURN" });
+  };
+
+  const restart = (keepRoster = true) => {
+    haptic("light");
+    progressGiven.current = false;
+    dispatch({ type: "RESTART" });
+    if (!keepRoster) {
+      dispatch({ type: "SET_ROSTER", roster: initialRoster(state.settings.mode) });
+    } else {
+      dispatch({ type: "RESET_SCORES" });
+    }
+  };
+
+  const toggleSound = () => {
+    dispatch({ type: "SET_SETTING", key: "sound", value: !state.settings.sound });
+  };
+
+  const safeRoundSeconds = clamp(state.settings.roundSeconds, 20, 90);
+  const timePct = clamp(state.timerMs / (safeRoundSeconds * 1000), 0, 1);
+
   return (
-    <div style={{ padding: 16, textAlign: "center" }}>
-      Игра «Викторина» временно недоступна.
+    <div className="quiz">
+      <div className="quiz-bg" aria-hidden />
+      <div className="quiz-wrap">
+        <Header
+          onBack={goBack}
+          onPause={state.stage === "round" ? () => dispatch({ type: state.running ? "PAUSE" : "RESUME" }) : null}
+          running={state.running}
+          stage={state.stage}
+          mode={state.settings.mode}
+          round={state.round}
+          time={Math.ceil(state.timerMs / 1000)}
+          sound={state.settings.sound}
+          onToggleSound={toggleSound}
+        />
+
+        {state.stage === "setup" && (
+          <Setup
+            settings={state.settings}
+            roster={state.roster}
+            onChangeSetting={(key, value) => dispatch({ type: "SET_SETTING", key, value })}
+            onChangeRoster={(next) => dispatch({ type: "SET_ROSTER", roster: next })}
+            onStart={handleStart}
+          />
+        )}
+
+        {state.stage === "switch" && (
+          <SwitchCard
+            key={current?.id}
+            current={current}
+            mode={state.settings.mode}
+            round={state.round}
+            onBegin={handleBeginRound}
+            remainingRounds={MAX_ROUNDS - state.round + 1}
+          />
+        )}
+
+        {state.stage === "round" && (
+          <Round
+            current={current}
+            mode={state.settings.mode}
+            question={state.question}
+            reveal={state.reveal}
+            onReveal={() => dispatch({ type: "REVEAL" })}
+            timePct={timePct}
+            seconds={Math.ceil(state.timerMs / 1000)}
+            onCorrect={() => mark("correct")}
+            onSkip={() => mark("skip")}
+            onTimeup={endRoundEarly}
+            running={state.running}
+            isPaused={state.isPaused}
+            onResume={() => dispatch({ type: "RESUME" })}
+          />
+        )}
+
+        {state.stage === "summary" && (
+          <Summary
+            roster={state.roster}
+            winners={state.winner || []}
+            target={state.settings.targetScore}
+            onRematch={() => restart(true)}
+            onReset={() => restart(false)}
+            onMenu={goBack}
+          />
+        )}
+
+        <ScoreRail roster={state.roster} activeId={current?.id} target={state.settings.targetScore} />
+      </div>
+    </div>
+  );
+}
+
+function Header({ onBack, onPause, running, stage, mode, round, time, sound, onToggleSound }) {
+  return (
+    <div className="quiz-top">
+      <button className="ghost-btn" onClick={onBack} aria-label="Назад">
+        <ArrowLeft size={18} />
+      </button>
+      <div className="chip strong">
+        <Users size={16} />
+        <span>{mode === "teams" ? "Команды" : "Соло"}</span>
+      </div>
+      <div className="chip">
+        <Clock3 size={14} />
+        <span>{time}s</span>
+      </div>
+      <div className="chip">
+        <Activity size={14} />
+        <span>Раунд {round}</span>
+      </div>
+      {stage === "round" && (
+        <button className="ghost-btn" onClick={onPause} aria-label="Пауза">
+          {running ? <Pause size={18} /> : <Play size={18} />}
+        </button>
+      )}
+      <button className="ghost-btn" onClick={onToggleSound} aria-label="Звук">
+        {sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
+      </button>
+    </div>
+  );
+}
+
+function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
+  const [localRoster, setLocalRoster] = useState(roster);
+  const modeIsTeams = settings.mode === "teams";
+
+  useEffect(() => {
+    setLocalRoster(roster);
+  }, [roster]);
+
+  const updateRoster = (next) => {
+    setLocalRoster(next);
+    onChangeRoster(next);
+  };
+
+  const adjustCount = (delta) => {
+    const min = modeIsTeams ? 2 : 2;
+    const max = modeIsTeams ? 4 : 6;
+    const nextCount = clamp(localRoster.length + delta, min, max);
+    if (nextCount === localRoster.length) return;
+    let next = localRoster;
+    if (nextCount > localRoster.length) {
+      const toAdd = nextCount - localRoster.length;
+      const extra = Array.from({ length: toAdd }).map((_, idx) => {
+        const i = localRoster.length + idx;
+        return {
+          id: `p-${i}-${Date.now()}`,
+          name: modeIsTeams ? `Команда ${i + 1}` : `Игрок ${i + 1}`,
+          emoji: EMOJIS[(i + 1) % EMOJIS.length],
+          color: PALETTE[(i + 1) % PALETTE.length],
+          score: 0,
+        };
+      });
+      next = [...localRoster, ...extra];
+    } else {
+      next = localRoster.slice(0, nextCount);
+    }
+    updateRoster(next);
+  };
+
+  const changeName = (id, name) => {
+    updateRoster(localRoster.map((r) => (r.id === id ? { ...r, name } : r)));
+  };
+  const shuffleColor = (id) => {
+    updateRoster(
+      localRoster.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+              emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
+            }
+          : r
+      )
+    );
+  };
+
+  const switchMode = (mode) => {
+    onChangeSetting("mode", mode);
+    updateRoster(initialRoster(mode));
+  };
+
+  return (
+    <div className="panel">
+      <div className="panel-head">
+        <div className="eyebrow">Блиц-викторина</div>
+        <div className="panel-title">Собери состав и жми старт</div>
+      </div>
+
+      <div className="chips-row">
+        <button
+          className={`seg ${modeIsTeams ? "seg-active" : ""}`}
+          onClick={() => switchMode("teams")}
+        >
+          <Users size={16} />
+          Команды
+        </button>
+        <button
+          className={`seg ${!modeIsTeams ? "seg-active" : ""}`}
+          onClick={() => switchMode("solo")}
+        >
+          <Zap size={16} />
+          Соло
+        </button>
+      </div>
+
+      <div className="row">
+        <div className="card mini">
+          <div className="label">Таймер</div>
+          <div className="value">
+            <button onClick={() => onChangeSetting("roundSeconds", clamp(settings.roundSeconds - 5, 20, 90))}>−</button>
+            <span>{settings.roundSeconds}s</span>
+            <button onClick={() => onChangeSetting("roundSeconds", clamp(settings.roundSeconds + 5, 20, 90))}>+</button>
+          </div>
+        </div>
+        <div className="card mini">
+          <div className="label">Цель</div>
+          <div className="value">
+            <button onClick={() => onChangeSetting("targetScore", clamp(settings.targetScore - 1, 5, 25))}>−</button>
+            <span>{settings.targetScore} очк.</span>
+            <button onClick={() => onChangeSetting("targetScore", clamp(settings.targetScore + 1, 5, 25))}>+</button>
+          </div>
+        </div>
+        <div className="card mini">
+          <div className="label">Состав</div>
+          <div className="value">
+            <button onClick={() => adjustCount(-1)}>−</button>
+            <span>{localRoster.length}</span>
+            <button onClick={() => adjustCount(1)}>+</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="roster-grid">
+        {localRoster.map((item) => (
+          <div className="roster-card" key={item.id} style={{ "--c": item.color }}>
+            <button className="emoji" onClick={() => shuffleColor(item.id)} aria-label="Сменить цвет">
+              {item.emoji}
+            </button>
+            <input
+              value={item.name}
+              onChange={(e) => changeName(item.id, e.target.value)}
+              maxLength={18}
+              aria-label="Имя"
+            />
+            <span className="pill">Цвет</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="row switches">
+        <label className="switch">
+          <input
+            type="checkbox"
+            checked={settings.autoDifficulty}
+            onChange={(e) => onChangeSetting("autoDifficulty", e.target.checked)}
+          />
+          <span />
+          <b>Адаптивная сложность</b>
+        </label>
+        <label className="switch">
+          <input
+            type="checkbox"
+            checked={settings.sound}
+            onChange={(e) => onChangeSetting("sound", e.target.checked)}
+          />
+          <span />
+          <b>Звук</b>
+        </label>
+      </div>
+
+      <motion.button className="cta" whileTap={{ scale: 0.98 }} onClick={onStart}>
+        <Sparkles size={18} />
+        Старт
+      </motion.button>
+    </div>
+  );
+}
+
+function SwitchCard({ current, mode, round, onBegin, remainingRounds }) {
+  return (
+    <AnimatePresence mode="popLayout">
+      <motion.div
+        key={current?.id}
+        className="card hero"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.2 }}
+      >
+        <div className="eyebrow">Раунд {round} • осталось {remainingRounds}</div>
+        <div className="hero-main">
+          <div className="bubble" style={{ background: current?.color }}>
+            {current?.emoji}
+          </div>
+          <div>
+            <div className="hero-label">Ход {mode === "teams" ? "команды" : "игрока"}</div>
+            <div className="hero-title">{current?.name}</div>
+          </div>
+        </div>
+        <div className="hero-sub">Жми, чтобы стартовать таймер и взять первый вопрос.</div>
+        <motion.button className="cta wide" whileTap={{ scale: 0.97 }} onClick={onBegin}>
+          <Play size={18} />
+          Погнали
+        </motion.button>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+function Round({
+  current,
+  mode,
+  question,
+  reveal,
+  onReveal,
+  timePct,
+  seconds,
+  onCorrect,
+  onSkip,
+  onTimeup,
+  running,
+  isPaused,
+  onResume,
+}) {
+  return (
+    <div className="round">
+      <div className="round-meta">
+        <div className="bubble small" style={{ background: current?.color }}>
+          {current?.emoji}
+        </div>
+        <div className="round-name">{current?.name}</div>
+        <span className="dot" />
+        <div className="round-mode">{mode === "teams" ? "Команды" : "Соло"}</div>
+      </div>
+
+      <TimerCircle pct={timePct} seconds={seconds} />
+
+      <QuestionCard question={question} reveal={reveal} onReveal={onReveal} />
+
+      <div className="controls">
+        <motion.button className="btn secondary" whileTap={{ scale: 0.97 }} onClick={onSkip}>
+          Пропуск
+        </motion.button>
+        <motion.button className="btn primary" whileTap={{ scale: 0.97 }} onClick={onCorrect}>
+          Верно
+        </motion.button>
+      </div>
+
+      <button className="ghost-btn wide" onClick={onTimeup}>
+        Завершить ход
+      </button>
+
+      {isPaused && (
+        <div className="pause">
+          <div className="pause-card">
+            <Pause size={20} />
+            <div>Пауза</div>
+            <motion.button className="cta wide" whileTap={{ scale: 0.97 }} onClick={onResume}>
+              Продолжить
+            </motion.button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TimerCircle({ pct, seconds }) {
+  const deg = Math.round(pct * 360);
+  return (
+    <div className="timer">
+      <div
+        className="ring"
+        style={{
+          background: `conic-gradient(var(--accent) ${deg}deg, rgba(255,255,255,.12) 0deg)`,
+        }}
+      >
+        <div className="ring-inner">
+          <div className="timer-num">{seconds}s</div>
+          <div className="timer-sub">время</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuestionCard({ question, reveal, onReveal }) {
+  const cat = CATEGORIES[question?.cat] || CATEGORIES.general;
+  return (
+    <motion.div
+      className="question"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      layout
+    >
+      <div className="question-top">
+        <span className="pill">
+          {cat.icon} {cat.label}
+        </span>
+        <button className="ghost-btn" onClick={onReveal} aria-label="Показать ответ">
+          {reveal ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+      </div>
+      <div className="question-text">{question?.text || "Готовимся..."}</div>
+      {reveal && <div className="answer">Ответ: {question?.answer}</div>}
+    </motion.div>
+  );
+}
+
+function Summary({ roster, winners, target, onRematch, onReset, onMenu }) {
+  const topScore = Math.max(...roster.map((r) => r.score));
+  return (
+    <motion.div
+      className="panel"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      <div className="panel-head">
+        <div className="eyebrow">Матч окончен</div>
+        <div className="panel-title">До цели {target} очков</div>
+      </div>
+
+      <div className="winners">
+        <Trophy size={20} />
+        <div>
+          Победили: {winners.map((w) => w.name).join(", ")}
+        </div>
+      </div>
+
+      <div className="score-table">
+        {roster
+          .slice()
+          .sort((a, b) => b.score - a.score)
+          .map((r) => (
+            <div className="score-row" key={r.id}>
+              <div className="bubble small" style={{ background: r.color }}>
+                {r.emoji}
+              </div>
+              <div className="score-name">{r.name}</div>
+              <div className={`score-value ${r.score === topScore ? "lead" : ""}`}>{r.score}</div>
+            </div>
+          ))}
+      </div>
+
+      <div className="row summary-actions">
+        <motion.button className="btn secondary wide" whileTap={{ scale: 0.97 }} onClick={onRematch}>
+          <RefreshCw size={16} />
+          Реванш
+        </motion.button>
+        <motion.button className="btn primary wide" whileTap={{ scale: 0.97 }} onClick={onReset}>
+          <Award size={16} />
+          Новый состав
+        </motion.button>
+      </div>
+      <button className="ghost-btn wide" onClick={onMenu}>
+        В меню
+      </button>
+    </motion.div>
+  );
+}
+
+function ScoreRail({ roster, activeId, target }) {
+  return (
+    <div className="rail" role="list">
+      {roster.map((r) => (
+        <div
+          className={`rail-item ${r.id === activeId ? "rail-active" : ""}`}
+          key={r.id}
+          role="listitem"
+          style={{ "--c": r.color }}
+        >
+          <div className="rail-top">
+            <span className="emoji">{r.emoji}</span>
+            <span className="score">{r.score}</span>
+          </div>
+          <div className="rail-name">{r.name}</div>
+          <div className="rail-progress">
+            <span style={{ width: `${Math.min(100, (r.score / target) * 100)}%` }} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
