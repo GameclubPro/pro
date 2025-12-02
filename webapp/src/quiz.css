@@ -289,7 +289,7 @@
   justify-content: center;
   padding: 18px;
   z-index: 30;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .settings-window {
@@ -304,8 +304,8 @@
   border: 1px solid var(--quiz-border);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
   overflow: hidden;
-  overflow-y: auto;
-  max-height: 94vh;
+  height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 12px);
+  max-height: none;
   will-change: transform, opacity;
   transform: translateZ(0);
   margin-bottom: env(safe-area-inset-bottom);
@@ -512,7 +512,8 @@
   .settings-window {
     width: calc(100vw - 16px);
     max-width: 760px;
-    max-height: 94vh;
+    height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 10px);
+    max-height: none;
     border-radius: 18px;
     padding: 14px 12px 16px;
     box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
