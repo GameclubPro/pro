@@ -777,7 +777,7 @@
   top: 50%;
   width: var(--pac-size);
   height: var(--pac-size);
-  transform: translate(-50%, -50%) scaleX(-1);
+  transform: translate(-50%, -50%);
   filter: drop-shadow(0 10px 20px rgba(250, 204, 21, 0.4));
 }
 
@@ -797,31 +797,29 @@
 }
 
 .pacman-body {
+  --mouth-angle: 68deg;
   position: absolute;
   inset: 0;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 32%, #fff5c7 0, #facc15 55%, #e3b90d 100%);
+  -webkit-mask: conic-gradient(
+    from calc(270deg - (var(--mouth-angle) / 2)),
+    transparent 0deg var(--mouth-angle),
+    #000 var(--mouth-angle) 360deg
+  );
+  mask: conic-gradient(
+    from calc(270deg - (var(--mouth-angle) / 2)),
+    transparent 0deg var(--mouth-angle),
+    #000 var(--mouth-angle) 360deg
+  );
   box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.14), 0 8px 16px rgba(250, 204, 21, 0.35);
-}
-
-.pacman-mouth {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(7, 12, 18, 0.92), rgba(17, 26, 38, 0.9));
-  transform-origin: 48% 50%;
-  clip-path: polygon(50% 50%, 6% 18%, 6% 50%);
-  animation: pacMouthTop 0.32s ease-in-out infinite;
-}
-
-.pacman-mouth-bottom {
-  clip-path: polygon(50% 50%, 6% 50%, 6% 82%);
-  animation: pacMouthBottom 0.32s ease-in-out infinite;
+  animation: pacChomp 0.32s ease-in-out infinite;
 }
 
 .pacman-eye {
   position: absolute;
   top: 30%;
-  left: 34%;
+  left: 60%;
   width: 5px;
   height: 5px;
   border-radius: 999px;
@@ -829,28 +827,27 @@
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
 }
 
-.pacman-track.is-paused .pacman-mouth,
-.pacman-track.is-paused .pacman {
+.pacman-mouth {
+  display: none;
+}
+
+.pacman-track.is-paused .pacman-body {
   animation-play-state: paused;
 }
 
-@keyframes pacMouthTop {
-  0%,
-  100% {
-    transform: rotate(-36deg);
-  }
-  50% {
-    transform: rotate(-8deg);
-  }
+@property --mouth-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 68deg;
 }
 
-@keyframes pacMouthBottom {
+@keyframes pacChomp {
   0%,
   100% {
-    transform: rotate(36deg);
+    --mouth-angle: 72deg;
   }
   50% {
-    transform: rotate(8deg);
+    --mouth-angle: 14deg;
   }
 }
 
