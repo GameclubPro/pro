@@ -567,19 +567,21 @@
   text-align: left;
   font-weight: 800;
   min-height: 56px;
-  box-shadow: var(--quiz-shadow);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
   display: grid;
   gap: 4px;
 }
 
 .option.opt-correct {
-  border-color: rgba(31, 238, 156, 0.5);
-  box-shadow: 0 12px 30px rgba(31, 238, 156, 0.25);
+  border-color: rgba(31, 238, 156, 0.7);
+  box-shadow: 0 16px 40px rgba(31, 238, 156, 0.35), 0 0 0 1px rgba(31, 238, 156, 0.5);
+  background: linear-gradient(135deg, rgba(31, 238, 156, 0.14), rgba(46, 211, 255, 0.1));
 }
 
 .option.opt-wrong {
-  border-color: rgba(239, 68, 68, 0.5);
-  box-shadow: 0 12px 30px rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.7);
+  box-shadow: 0 16px 40px rgba(239, 68, 68, 0.35), 0 0 0 1px rgba(239, 68, 68, 0.45);
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(241, 182, 182, 0.06));
 }
 
 .opt-text {

@@ -137,7 +137,7 @@ const CATEGORIES = {
 };
 
 const MAX_ROUNDS = 20;
-const ADVANCE_DELAY_MS = 800;
+const ADVANCE_DELAY_MS = 1600;
 
 const initialRoster = (mode = "teams") => {
   const count = mode === "teams" ? 2 : 4;
