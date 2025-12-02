@@ -927,7 +927,7 @@ function Round({
         )}
       </div>
 
-      <TimerFuse pct={timePct} seconds={seconds} running={running} />
+      <TimerPacman pct={timePct} seconds={seconds} running={running} />
 
       <QuestionCard question={question} reveal={reveal} onReveal={onReveal} />
 
@@ -977,26 +977,27 @@ function Round({
   );
 }
 
-function TimerFuse({ pct, seconds, running }) {
-  const pctClamped = clamp(pct, 0, 1);
-  const width = `${Math.round(pctClamped * 100)}%`;
+function TimerPacman({ pct, seconds, running }) {
+  const remaining = clamp(pct, 0, 1);
+  const remainingPct = Math.round(remaining * 100);
+  const eatenPct = 100 - remainingPct;
+  const pacLeftPct = Math.min(100, Math.max(0, eatenPct));
+  const pacLeft = `calc(${pacLeftPct}% - 12px)`;
   return (
-    <div className="fuse">
-      <div className="fuse-head">
+    <div className="pacman-timer">
+      <div className="pacman-meta">
         <div className="timer-num">{seconds}s</div>
         <div className="timer-sub">{running ? "время идёт" : "пауза"}</div>
-        <span className="fuse-dot" />
       </div>
-      <div className="fuse-track">
+      <div className="pacman-track" aria-hidden>
+        <div className="pacman-remaining" style={{ left: `${eatenPct}%`, width: `${remainingPct}%` }} />
+        <div className="pacman-dotline" />
         <motion.div
-          className="fuse-fill"
-          style={{ width }}
-          animate={{ width }}
-          transition={{ duration: 0.22, ease: "easeOut" }}
-        >
-          <span className="fuse-embers" aria-hidden />
-          <span className="fuse-spark" />
-        </motion.div>
+          className="pacman"
+          style={{ left: pacLeft }}
+          animate={{ left: pacLeft }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+        />
       </div>
     </div>
   );
