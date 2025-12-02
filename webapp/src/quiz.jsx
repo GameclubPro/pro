@@ -670,10 +670,10 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
           >
             <motion.div
               className="settings-window"
-              initial={{ y: 28, opacity: 0, scale: 0.98 }}
+              initial={{ y: 30, opacity: 0, scale: 0.98 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 12, opacity: 0, scale: 0.98 }}
-              transition={{ type: "spring", stiffness: 420, damping: 32 }}
+              exit={{ y: 14, opacity: 0, scale: 0.98 }}
+              transition={{ type: "tween", ease: "easeOut", duration: 0.22 }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="settings-head">
