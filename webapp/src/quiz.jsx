@@ -502,7 +502,10 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
 
   return (
     <div className="quiz">
-      <div className="quiz-bg" aria-hidden />
+      <div className="quiz-bg" aria-hidden>
+        <span className="blob one" />
+        <span className="blob two" />
+      </div>
       <div className="quiz-wrap">
         <Header
           onBack={goBack}
