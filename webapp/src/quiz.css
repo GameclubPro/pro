@@ -72,9 +72,11 @@
   z-index: 1;
   max-width: 760px;
   margin: 0 auto;
-  padding: calc(14px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-left)) calc(32px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-right));
+  padding: calc(24px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-left)) calc(32px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-right));
   display: grid;
   gap: 14px;
+  min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  align-content: center;
 }
 
 .ghost-btn {
