@@ -848,7 +848,7 @@ function SwitchCard({ current, mode, round, onBegin, remainingRounds }) {
     <AnimatePresence mode="popLayout">
       <motion.div
         key={current?.id}
-        className="card hero"
+        className="card hero switch-card"
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
@@ -865,10 +865,19 @@ function SwitchCard({ current, mode, round, onBegin, remainingRounds }) {
           </div>
         </div>
         <div className="hero-sub">Жми, чтобы стартовать таймер и взять первый вопрос.</div>
-        <motion.button className="cta wide" whileTap={{ scale: 0.97 }} onClick={onBegin}>
-          <Play size={18} />
-          Погнали
-        </motion.button>
+        <div className="hero-cta">
+          <motion.button
+            className="play-circle"
+            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03 }}
+            onClick={onBegin}
+            aria-label="Погнали"
+            title="Погнали"
+          >
+            <Play size={28} />
+          </motion.button>
+          <div className="hero-cta-caption">Погнали</div>
+        </div>
       </motion.div>
     </AnimatePresence>
   );
