@@ -63,6 +63,14 @@ const QUESTION_PACK = [
   { id: "q-louvre", text: "Главный музей Парижа", answer: "Лувр", options: ["Лувр", "Метрополитен", "Тейт", "Уффици"], cat: "culture", diff: 1 },
   { id: "q-coffee", text: "30 мл кофе под давлением", answer: "Эспрессо", options: ["Эспрессо", "Американо", "Латте", "Флэт уайт"], cat: "culture", diff: 1 },
   { id: "q-valorant", text: "Тактический шутер от Riot", answer: "Valorant", options: ["Valorant", "CS2", "Apex", "Overwatch"], cat: "culture", diff: 2 },
+  { id: "q-http429", text: "HTTP код «Too Many Requests»", answer: "429", options: ["429", "408", "503", "302"], cat: "tech", diff: 3 },
+  { id: "q-osmium", text: "Самый плотный химический элемент", answer: "Осмий", options: ["Осмий", "Платина", "Иридий", "Уран"], cat: "science", diff: 4 },
+  { id: "q-venus-day", text: "Планета с самыми длинными сутками", answer: "Венера", options: ["Венера", "Марс", "Юпитер", "Меркурий"], cat: "science", diff: 3 },
+  { id: "q-kilimanjaro", text: "Самая высокая вершина Африки", answer: "Килиманджаро", options: ["Килиманджаро", "Эльбрус", "Джомолунгма", "Монблан"], cat: "general", diff: 3 },
+  { id: "q-chess", text: "Количество клеток на шахматной доске", answer: "64", options: ["64", "81", "72", "100"], cat: "numbers", diff: 2 },
+  { id: "q-ramanujan", text: "Число, известное как «такси-каб» Харди — Рамануджана", answer: "1729", options: ["1729", "108", "1337", "4096"], cat: "numbers", diff: 4 },
+  { id: "q-docker", text: "Инструмент для контейнеризации приложений", answer: "Docker", options: ["Docker", "Ansible", "Kubernetes", "Terraform"], cat: "tech", diff: 2 },
+  { id: "q-orwell", text: "Автор романа «1984»", answer: "Джордж Оруэлл", options: ["Джордж Оруэлл", "Олдос Хаксли", "Рэй Брэдбери", "Артур Кларк"], cat: "culture", diff: 2 },
 ];
 
 const CATEGORIES = {
@@ -297,7 +305,7 @@ const reducer = (state, action) => {
 
 const pickQuestion = (used, streak, autoDifficulty) => {
   const usedSet = new Set(used);
-  const target = autoDifficulty ? clamp(1 + Math.floor(streak / 3), 1, 3) : 2;
+  const target = autoDifficulty ? clamp(1 + Math.floor(streak / 3), 1, 4) : 2;
   const unused = QUESTION_PACK.filter((q) => !usedSet.has(q.id));
   const pool = unused.length ? unused : QUESTION_PACK;
   const scored = pool.map((q) => ({ q, score: Math.abs(q.diff - target) }));
@@ -382,20 +390,17 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
     persist(STORAGE_KEYS.roster, state.roster);
   }, [state.roster]);
 
-  // Timer loop
+  // Timer loop — использует реальное время, чтобы не зависеть от фоновой вкладки
   useEffect(() => {
     if (state.stage !== "round" || !state.running) return undefined;
-    let raf;
     let prev = performance.now();
-    const tick = () => {
+    const id = setInterval(() => {
       const now = performance.now();
       const delta = now - prev;
       prev = now;
       dispatch({ type: "TICK", delta });
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    }, 150);
+    return () => clearInterval(id);
   }, [state.stage, state.running]);
 
   // Time is over

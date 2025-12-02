@@ -22,9 +22,20 @@ import Auction from "./Auction.tsx"; // 💰 «Аукцион»
  *  - mafia | auction | crocodile | associations | quiz | questions | truthordare | compatibility | choice | sketch
  */
 
-const API_BASE = "https://api.play-team.ru";
+const DEFAULT_API_BASE = "https://api.play-team.ru";
+const API_BASE = (() => {
+  if (typeof window !== "undefined" && window.__APP_API_BASE__) return String(window.__APP_API_BASE__);
+  if (typeof import.meta !== "undefined" && import.meta?.env?.VITE_API_BASE) return String(import.meta.env.VITE_API_BASE);
+  if (typeof process !== "undefined" && process?.env?.VITE_API_BASE) return String(process.env.VITE_API_BASE);
+  return DEFAULT_API_BASE;
+})();
 // ⚠️ Укажи юзернейм своего бота БЕЗ @ (например, PlayTeamBot)
-const BOT_USERNAME = "PlayTeamBot";
+const BOT_USERNAME = (() => {
+  if (typeof window !== "undefined" && window.__BOT_USERNAME__) return String(window.__BOT_USERNAME__);
+  if (typeof import.meta !== "undefined" && import.meta?.env?.VITE_BOT_USERNAME) return String(import.meta.env.VITE_BOT_USERNAME);
+  if (typeof process !== "undefined" && process?.env?.BOT_USERNAME) return String(process.env.BOT_USERNAME);
+  return "PlayTeamBot";
+})();
 // Сделаем юзернейм бота доступным из Mafia.jsx:
 if (typeof window !== "undefined") {
   window.__BOT_USERNAME__ = BOT_USERNAME;

@@ -20,6 +20,7 @@ const { verifyInitData, parseUser, parseInitData } = require('./verifyInitData')
 const { Readable } = require('stream');
 const { randomInt, randomUUID } = require('crypto');
 const jwt = require('jsonwebtoken');
+const { z } = require('zod');
 
 const prisma = new PrismaClient();
 const { createMafiaEngine } = require('./mafia-engine');
@@ -50,7 +51,8 @@ const {
   REDIS_URL = '',
   REDIS_PREFIX = 'mafia',
 
-  INITDATA_MAX_AGE_SEC = '86400',
+  INITDATA_MAX_AGE_SEC = '900',
+  INITDATA_STALE_GRACE_SEC = '300',
   // Грейс для авто-кика по разрыву сокета — 5 минут по умолчанию
   AUTO_LEAVE_GRACE_MS  = '300000',
   // NEW: порог авто-удаления комнат, если нет ни одного активного сокета (минуты)
@@ -84,7 +86,8 @@ const DAY_SEC   = Math.max(20, parseInt(MAFIA_DAY_SEC, 10) || 60);
 const VOTE_SEC  = Math.max(20, parseInt(MAFIA_VOTE_SEC, 10) || 60);
 const ALLOW_HTTP = CORS_ALLOW_HTTP === '1';
 const USE_REDIS = !!REDIS_URL;
-const INITDATA_MAX_AGE = Math.max(86400, parseInt(INITDATA_MAX_AGE_SEC, 10) || 86400); // минимум 24ч
+const INITDATA_MAX_AGE = Math.max(300, parseInt(INITDATA_MAX_AGE_SEC, 10) || 900); // минимум 5 минут
+const INITDATA_STALE_GRACE = Math.max(0, parseInt(INITDATA_STALE_GRACE_SEC, 10) || 300);
 const DEFAULT_GAME = RoomGame.MAFIA;
 
 // Anti-spam / UX tunables
@@ -174,7 +177,8 @@ async function authEither(req, { allowStale = false } = {}) {
   const initData = getInitData(req);
   if (!initData) return { ok: false, http: 400, error: 'initData_required' };
   if (!verifyInitData(initData, BOT_TOKEN)) return { ok: false, http: 401, error: 'bad_signature' };
-  if (!allowStale && !isInitDataFresh(initData)) return { ok: false, http: 401, error: 'stale_init_data' };
+  const maxAge = INITDATA_MAX_AGE + (allowStale ? INITDATA_STALE_GRACE : 0);
+  if (!isInitDataFresh(initData, maxAge)) return { ok: false, http: 401, error: 'stale_init_data' };
 
   const tg = parseUser(initData);
   if (!tg?.id) return { ok: false, http: 400, error: 'bad_user' };
@@ -475,13 +479,14 @@ function getInitData(req) {
   const fromBody = req.body?.initData;
   return String(fromHeader || fromBody || '');
 }
-function isInitDataFresh(initData) {
+function isInitDataFresh(initData, maxAgeSec = INITDATA_MAX_AGE) {
   try {
     const parsed = parseInitData(initData);
     const authDate = Number(parsed?.auth_date || 0);
     if (!Number.isFinite(authDate) || authDate <= 0) return false;
     const ageSec = Math.floor(Date.now() / 1000) - authDate;
-    return ageSec >= 0 && ageSec <= INITDATA_MAX_AGE;
+    const limit = Math.max(60, Number(maxAgeSec) || INITDATA_MAX_AGE);
+    return ageSec >= 0 && ageSec <= limit;
   } catch {
     return false;
   }
@@ -706,6 +711,17 @@ function sanitizeProvidedCode(raw) {
   return code;
 }
 
+// Input validation schemas
+const readySchema = z.object({ ready: z.boolean().optional() }).passthrough();
+const authNativeGuestSchema = z.object({
+  deviceId: z.string().trim().min(4).max(128),
+  name: z.string().trim().max(64).optional().nullable(),
+  photoUrl: z.string().trim().url().max(500).optional().nullable(),
+}).passthrough();
+const createRoomSchema = z.object({
+  code: z.string().trim().toUpperCase().min(4).max(8).regex(/^[A-Z0-9]+$/).optional().nullable(),
+}).passthrough();
+
 // Создать/сбросить тестовую комнату ZERO_CODE с 11 готовыми ботами и текущим пользователем как владельцем
 async function ensureZeroRoomWithBots(ownerUser) {
   const code = ZERO_CODE;
@@ -818,10 +834,11 @@ app.post('/auth/verify', async (req, res) => {
 // Нативный "гость" для RN-клиента — возвращает {ok, user, token}
 app.post('/auth/native/guest', async (req, res) => {
   try {
-    const { deviceId, name, photoUrl } = req.body || {};
-    if (!deviceId || typeof deviceId !== 'string') {
-      return res.status(400).json({ ok: false, error: 'deviceId_required' });
+    const parsed = authNativeGuestSchema.safeParse(req.body || {});
+    if (!parsed.success) {
+      return res.status(400).json({ ok: false, error: 'bad_request' });
     }
+    const { deviceId, name, photoUrl } = parsed.data;
     const user = await prisma.user.upsert({
       where: { nativeId: deviceId },
       update: { firstName: name ?? null, photoUrl: photoUrl ?? null },
@@ -1102,8 +1119,12 @@ app.post('/api/rooms', createLimiter, async (req, res) => {
     if (!auth.ok) return res.status(auth.http || 401).json({ error: auth.error });
     const owner = auth.user;
 
+    const parsedBody = createRoomSchema.safeParse(req.body || {});
+    if (!parsedBody.success) return res.status(400).json({ error: 'bad_code_format' });
+
     const game = gameFromReq(req, DEFAULT_GAME);
-    let code = sanitizeProvidedCode(req.body?.code);
+    let code = parsedBody.data.code ? sanitizeProvidedCode(parsedBody.data.code) : null;
+    if (parsedBody.data.code && !code) return res.status(400).json({ error: 'bad_code_format' });
     const tryCreate = async (codeForTry) =>
       prisma.$transaction(async (tx) => {
         const room = await tx.room.create({
@@ -1575,7 +1596,9 @@ app.post('/api/rooms/:code/ready', async (req, res) => {
     const auth = await authEither(req, { allowStale: true });
     if (!auth.ok) return res.status(auth.http || 401).json({ ok: false, error: auth.error });
     const { code } = req.params;
-    const { ready } = req.body || {};
+    const parsedReady = readySchema.safeParse(req.body || {});
+    if (!parsedReady.success) return res.status(400).json({ ok: false, error: 'bad_request' });
+    const ready = !!parsedReady.data.ready;
 
     const expectedGame = gameFromReq(req, DEFAULT_GAME);
     const room = await readRoomWithPlayersByCode(code, { game: expectedGame || undefined });
@@ -1596,17 +1619,17 @@ app.post('/api/rooms/:code/ready', async (req, res) => {
     }
 
     // Сохраняем флаг готовности и в БД, и в in-memory readySet
-    await prisma.roomPlayer.update({ where: { id: me.id }, data: { ready: !!ready } });
-    await mafia.setReady(room.id, me.id, !!ready);
+    await prisma.roomPlayer.update({ where: { id: me.id }, data: { ready } });
+    await mafia.setReady(room.id, me.id, ready);
     if (room.game === RoomGame.AUCTION) {
       const players = (room.players || []).map((p) =>
-        p.id === me.id ? { ...p, ready: !!ready } : p
+        p.id === me.id ? { ...p, ready } : p
       );
       emitAuctionRoomState(room, players);
     } else {
       mafia.emitRoomStateDebounced(code);
     }
-    return res.json({ ok: true, ready: !!ready });
+    return res.json({ ok: true, ready });
   } catch (e) {
     console.error('POST /api/rooms/:code/ready', e);
     return res.status(500).json({ ok: false, error: 'failed' });
