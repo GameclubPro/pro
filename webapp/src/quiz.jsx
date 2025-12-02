@@ -978,26 +978,45 @@ function Round({
 }
 
 function TimerPacman({ pct, seconds, running }) {
-  const remaining = clamp(pct, 0, 1);
-  const remainingPct = Math.round(remaining * 100);
-  const eatenPct = 100 - remainingPct;
-  const pacLeftPct = Math.min(100, Math.max(0, eatenPct));
-  const pacLeft = `calc(${pacLeftPct}% - 12px)`;
+  const safePct = clamp(pct ?? 0, 0, 1);
+  const remainingPct = Math.round(safePct * 100);
+  // 0% — пакман слева в начале, 100% — справа в конце
+  const pacLeftPct = 100 - remainingPct;
+  const pacLeft = `calc(${pacLeftPct}% - 14px)`; // 14px ≈ половина ширины пакмана
+
+  const label =
+    remainingPct <= 0 ? "время вышло" : running ? "время идёт" : "пауза";
+
   return (
     <div className="pacman-timer">
       <div className="pacman-meta">
         <div className="timer-num">{seconds}s</div>
-        <div className="timer-sub">{running ? "время идёт" : "пауза"}</div>
+        <div className="timer-sub">{label}</div>
       </div>
-      <div className="pacman-track" aria-hidden>
-        <div className="pacman-remaining" style={{ left: `${eatenPct}%`, width: `${remainingPct}%` }} />
-        <div className="pacman-dotline" />
+
+      <div
+        className={`pacman-track ${running ? "is-running" : "is-paused"}`}
+        aria-hidden
+      >
+        {/* часть с пилюлями — оставшееся время */}
+        <div
+          className="pacman-remaining"
+          style={{ width: `${remainingPct}%` }}
+        />
+
+        {/* сам пакман */}
         <motion.div
-          className="pacman"
+          className={`pacman ${running ? "is-running" : "is-paused"}`}
           style={{ left: pacLeft }}
           animate={{ left: pacLeft }}
-          transition={{ duration: 0.18, ease: "easeOut" }}
-        />
+          transition={{ duration: 0.2, ease: "easeOut" }}
+        >
+          <div className="pacman-trail" />
+          <div className="pacman-body" />
+          <div className="pacman-mouth pacman-mouth-top" />
+          <div className="pacman-mouth pacman-mouth-bottom" />
+          <div className="pacman-eye" />
+        </motion.div>
       </div>
     </div>
   );
