@@ -981,7 +981,7 @@ function TimerPacman({ pct, seconds, running, current }) {
   const safePct = clamp(pct ?? 0, 0, 1);
   const remainingPct = Math.round(safePct * 100);
   // 100% — старт справа, 0% — финиш слева
-  const pacLeftPct = remainingPct;
+  const pacLeftPct = 8 + remainingPct * 0.84; // короче путь, не упирается в края
   const pacLeft = `calc(${pacLeftPct}% - 14px)`; // 14px ≈ половина ширины пакмана
 
   const label =
