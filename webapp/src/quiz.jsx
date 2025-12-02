@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Activity,
-  ArrowLeft,
   Award,
-  Clock3,
   Pause,
   Play,
   Plus,
@@ -16,8 +13,6 @@ import {
   Zap,
   Eye,
   EyeOff,
-  Volume2,
-  VolumeX,
 } from "lucide-react";
 import "./quiz.css";
 
@@ -509,18 +504,6 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
         <span className="blob two" />
       </div>
       <div className="quiz-wrap">
-        <Header
-          onBack={goBack}
-          onPause={state.stage === "round" ? () => dispatch({ type: state.running ? "PAUSE" : "RESUME" }) : null}
-          running={state.running}
-          stage={state.stage}
-          mode={state.settings.mode}
-          round={state.round}
-          time={Math.ceil(state.timerMs / 1000)}
-          sound={state.settings.sound}
-          onToggleSound={toggleSound}
-        />
-
         {state.stage === "setup" && (
           <Setup
             settings={state.settings}
@@ -570,39 +553,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
             onMenu={goBack}
           />
         )}
-
-        <ScoreRail roster={state.roster} activeId={current?.id} target={state.settings.targetScore} />
       </div>
-    </div>
-  );
-}
-
-function Header({ onBack, onPause, running, stage, mode, round, time, sound, onToggleSound }) {
-  return (
-    <div className="quiz-top">
-      <button className="ghost-btn" onClick={onBack} aria-label="Назад">
-        <ArrowLeft size={18} />
-      </button>
-      <div className="chip strong">
-        <Users size={16} />
-        <span>{mode === "teams" ? "Команды" : "Соло"}</span>
-      </div>
-      <div className="chip">
-        <Clock3 size={14} />
-        <span>{time}s</span>
-      </div>
-      <div className="chip">
-        <Activity size={14} />
-        <span>Раунд {round}</span>
-      </div>
-      {stage === "round" && (
-        <button className="ghost-btn" onClick={onPause} aria-label="Пауза">
-          {running ? <Pause size={18} /> : <Play size={18} />}
-        </button>
-      )}
-      <button className="ghost-btn" onClick={onToggleSound} aria-label="Звук">
-        {sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
-      </button>
     </div>
   );
 }
@@ -956,29 +907,5 @@ function Summary({ roster, winners, target, onRematch, onReset, onMenu }) {
         В меню
       </button>
     </motion.div>
-  );
-}
-
-function ScoreRail({ roster, activeId, target }) {
-  return (
-    <div className="rail" role="list">
-      {roster.map((r) => (
-        <div
-          className={`rail-item ${r.id === activeId ? "rail-active" : ""}`}
-          key={r.id}
-          role="listitem"
-          style={{ "--c": r.color }}
-        >
-          <div className="rail-top">
-            <span className="emoji">{r.emoji}</span>
-            <span className="score">{r.score}</span>
-          </div>
-          <div className="rail-name">{r.name}</div>
-          <div className="rail-progress">
-            <span style={{ width: `${Math.min(100, (r.score / target) * 100)}%` }} />
-          </div>
-        </div>
-      ))}
-    </div>
   );
 }

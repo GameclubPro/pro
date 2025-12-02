@@ -77,41 +77,6 @@
   gap: 14px;
 }
 
-.quiz-top {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border-radius: 16px;
-  background: var(--quiz-surface);
-  border: 1px solid var(--quiz-border);
-  box-shadow: var(--quiz-shadow);
-  position: sticky;
-  top: calc(env(safe-area-inset-top) + 8px);
-  z-index: 20;
-  backdrop-filter: blur(14px);
-}
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--quiz-fg);
-  font-weight: 700;
-  border: 1px solid var(--quiz-border);
-  min-height: 36px;
-}
-
-.chip.strong {
-  background: var(--quiz-primary-2);
-  color: #041017;
-  border-color: transparent;
-}
-
 .ghost-btn {
   display: inline-flex;
   align-items: center;
@@ -682,75 +647,6 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-}
-
-.rail {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(130px, 1fr);
-  gap: 10px;
-  overflow-x: auto;
-  padding: 8px 6px max(6px, env(safe-area-inset-bottom));
-  background: linear-gradient(0deg, rgba(7, 12, 18, 0.7), transparent);
-  border-radius: 16px;
-  border: 1px solid var(--quiz-border);
-  box-shadow: var(--quiz-shadow);
-}
-
-.rail::-webkit-scrollbar {
-  display: none;
-}
-
-.rail-item {
-  background: var(--quiz-surface-2);
-  border: 1px solid var(--quiz-border);
-  border-radius: 14px;
-  padding: 10px;
-  position: relative;
-  overflow: hidden;
-}
-
-.rail-item::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--c) 20%, transparent), transparent);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.rail-active::after {
-  opacity: 1;
-}
-
-.rail-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-weight: 900;
-}
-
-.rail-name {
-  margin-top: 6px;
-  font-weight: 800;
-  font-size: 14px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.rail-progress {
-  margin-top: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-}
-
-.rail-progress span {
-  display: block;
-  height: 100%;
-  background: var(--quiz-primary);
 }
 
 @media (max-width: 420px) {
