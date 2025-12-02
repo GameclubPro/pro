@@ -642,7 +642,8 @@
 
 .card.hero.switch-card {
   min-height: 420px;
-  width: min(680px, 100%);
+  width: 100%;
+  max-width: 760px;
   margin: auto;
   align-self: center;
   justify-self: center;
