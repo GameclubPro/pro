@@ -349,6 +349,9 @@ const reducer = (state, action) => {
         perTeamQuestions: state.roster.map(() => 0),
       };
     }
+    case "STOP_TIMER": {
+      return { ...state, running: false, isPaused: false };
+    }
     default:
       return state;
   }
@@ -508,6 +511,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
     (kind) => {
       if (state.stage !== "round") return;
       if (advanceTimeoutRef.current) return;
+      dispatch({ type: "STOP_TIMER" });
       const nextQuestionsPlayed = state.questionsPlayed + 1;
       const nextRoster = state.roster.map((r, idx) =>
         idx === state.activeIndex && kind === "correct" ? { ...r, score: r.score + 1 } : r
@@ -523,7 +527,6 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
         nextQuestions: nextQuestionsPlayed,
         nextPerTeam,
       });
-      dispatch({ type: "PAUSE" });
       const allDone = nextPerTeam.every((n) => n >= questionsLimit);
       const nextIdx = findNextActive(nextPerTeam, state.activeIndex);
       advanceTimeoutRef.current = setTimeout(() => {
@@ -862,6 +865,7 @@ function Round({
   const options = Array.isArray(question?.options) && question.options.length
     ? question.options
     : [question?.answer].filter(Boolean);
+  const hasChoice = selected != null;
 
   return (
     <div className="round">
@@ -882,19 +886,27 @@ function Round({
         {options.map((opt) => {
           const isSelected = selected === opt;
           const isCorrect = opt === question?.answer;
-          const stateClass = isSelected ? (isCorrect ? "opt-correct" : "opt-wrong") : "";
+          const stateClass = hasChoice
+            ? isCorrect
+              ? "opt-correct"
+              : isSelected
+              ? "opt-wrong"
+              : ""
+            : "";
           return (
             <motion.button
               key={opt}
               className={`option ${stateClass}`}
               whileTap={{ scale: 0.98 }}
               onClick={() => handleOption(opt)}
-              disabled={!!selected}
+              disabled={hasChoice}
               role="listitem"
             >
               <span className="opt-text">{opt}</span>
-              {selected && isSelected && (
-                <span className="opt-status">{isCorrect ? "Верно" : "Неверно"}</span>
+              {hasChoice && (
+                <span className="opt-status">
+                  {isCorrect ? "Правильный ответ" : isSelected ? "Неверно" : ""}
+                </span>
               )}
             </motion.button>
           );
