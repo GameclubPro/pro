@@ -864,7 +864,6 @@ function SwitchCard({ current, mode, round, onBegin, remainingRounds }) {
             <div className="hero-title">{current?.name}</div>
           </div>
         </div>
-        <div className="hero-sub">Жми, чтобы стартовать таймер и взять первый вопрос.</div>
         <div className="hero-cta">
           <motion.button
             className="play-circle"
@@ -874,7 +873,7 @@ function SwitchCard({ current, mode, round, onBegin, remainingRounds }) {
             aria-label="Погнали"
             title="Погнали"
           >
-            <Play size={28} />
+            <Play size={32} />
           </motion.button>
           <div className="hero-cta-caption">Погнали</div>
         </div>
