@@ -529,9 +529,10 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
 
   const safeRoundSeconds = clamp(state.settings.roundSeconds, 20, 90);
   const timePct = clamp(state.timerMs / (safeRoundSeconds * 1000), 0, 1);
+  const quizClass = `quiz ${state.stage === "switch" ? "is-switch" : ""}`;
 
   return (
-    <div className="quiz">
+    <div className={quizClass}>
       <div className="quiz-bg" aria-hidden>
         <span className="blob one" />
         <span className="blob two" />
@@ -548,14 +549,16 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
         )}
 
         {state.stage === "switch" && (
-          <SwitchCard
-            key={current?.id}
-            current={current}
-            mode={state.settings.mode}
-            round={state.round}
-            onBegin={handleBeginRound}
-            remainingRounds={MAX_ROUNDS - state.round + 1}
-          />
+          <div className="switch-shell">
+            <SwitchCard
+              key={current?.id}
+              current={current}
+              mode={state.settings.mode}
+              round={state.round}
+              onBegin={handleBeginRound}
+              remainingRounds={MAX_ROUNDS - state.round + 1}
+            />
+          </div>
         )}
 
         {state.stage === "round" && (
