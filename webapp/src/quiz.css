@@ -288,7 +288,7 @@
   align-items: flex-start;
   justify-content: center;
   padding: calc(10px + env(safe-area-inset-top)) calc(10px + env(safe-area-inset-left)) calc(10px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-right));
-  z-index: 30;
+  z-index: 1200;
   overflow: hidden;
 }
 

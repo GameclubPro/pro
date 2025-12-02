@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Award,
@@ -595,6 +596,7 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
   const minPlayers = 2;
   const timerPct = clamp(((settings.roundSeconds - 20) / (90 - 20)) * 100, 0, 100);
   const questionsPct = clamp(((settings.targetScore - 5) / (30 - 5)) * 100, 0, 100);
+  const portalTarget = typeof document !== "undefined" ? document.body : null;
 
   useEffect(() => {
     setLocalRoster(roster);
@@ -651,186 +653,192 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
     onChangeSetting(key, clamp((settings?.[key] || 0) + delta, min, max));
   };
 
-  return (
-    <div className="panel">
-      <div className="panel-head">
-        <div className="eyebrow">Блиц-викторина</div>
-        <div className="panel-title">Собери состав и жми старт</div>
-      </div>
-
-      <AnimatePresence>
-        {settingsOpen && (
+  const settingsModal = (
+    <AnimatePresence>
+      {settingsOpen && (
+        <motion.div
+          className="settings-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          onClick={() => setSettingsOpen(false)}
+        >
           <motion.div
-            className="settings-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            onClick={() => setSettingsOpen(false)}
+            className="settings-window"
+            initial={{ y: 30, opacity: 0, scale: 0.98 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 14, opacity: 0, scale: 0.98 }}
+            transition={{ type: "tween", ease: "easeOut", duration: 0.22 }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <motion.div
-              className="settings-window"
-              initial={{ y: 30, opacity: 0, scale: 0.98 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 14, opacity: 0, scale: 0.98 }}
-              transition={{ type: "tween", ease: "easeOut", duration: 0.22 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="settings-head">
-                <div>
-                  <div className="settings-title">Настройки матча</div>
-                </div>
-                <motion.button
-                  className="settings-close"
-                  whileTap={{ scale: 0.95 }}
-                  whileHover={{ rotate: 4 }}
-                  onClick={() => setSettingsOpen(false)}
-                  aria-label="Закрыть настройки"
-                >
-                  <X size={16} />
-                </motion.button>
+            <div className="settings-head">
+              <div>
+                <div className="settings-title">Настройки матча</div>
               </div>
+              <motion.button
+                className="settings-close"
+                whileTap={{ scale: 0.95 }}
+                whileHover={{ rotate: 4 }}
+                onClick={() => setSettingsOpen(false)}
+                aria-label="Закрыть настройки"
+              >
+                <X size={16} />
+              </motion.button>
+            </div>
 
-              <div className="settings-grid">
-                <div className="setting-card accent">
-                  <div className="setting-card-top">
-                    <span className="pill">Таймер</span>
-                    <div className="setting-number">{settings.roundSeconds}s</div>
+            <div className="settings-grid">
+              <div className="setting-card accent">
+                <div className="setting-card-top">
+                  <span className="pill">Таймер</span>
+                  <div className="setting-number">{settings.roundSeconds}s</div>
+                </div>
+                <div className="meter">
+                  <div className="meter-track">
+                    <div className="meter-fill" style={{ width: `${timerPct}%` }} />
+                    <span className="meter-thumb" style={{ left: `${timerPct}%` }} />
                   </div>
-                  <div className="meter">
-                    <div className="meter-track">
-                      <div className="meter-fill" style={{ width: `${timerPct}%` }} />
-                      <span className="meter-thumb" style={{ left: `${timerPct}%` }} />
-                    </div>
-                    <div className="meter-scale">
-                      <span>20с</span>
-                      <span>90с</span>
-                    </div>
-                  </div>
-                  <div className="setting-actions">
-                    <button onClick={() => adjustSetting("roundSeconds", -5, 20, 90)}>−5с</button>
-                    <button onClick={() => adjustSetting("roundSeconds", 5, 20, 90)}>+5с</button>
+                  <div className="meter-scale">
+                    <span>20с</span>
+                    <span>90с</span>
                   </div>
                 </div>
-
-                <div className="setting-card glass">
-                  <div className="setting-card-top">
-                    <span className="pill">Вопросы</span>
-                    <div className="setting-number">{settings.targetScore}</div>
-                  </div>
-                  <div className="meter">
-                    <div className="meter-track alt">
-                      <div className="meter-fill alt" style={{ width: `${questionsPct}%` }} />
-                      <span className="meter-thumb" style={{ left: `${questionsPct}%` }} />
-                    </div>
-                    <div className="meter-scale">
-                      <span>5</span>
-                      <span>30</span>
-                    </div>
-                  </div>
-                  <div className="setting-actions">
-                    <button onClick={() => adjustSetting("targetScore", -1, 5, 30)}>−1</button>
-                    <button onClick={() => adjustSetting("targetScore", 1, 5, 30)}>+1</button>
-                  </div>
+                <div className="setting-actions">
+                  <button onClick={() => adjustSetting("roundSeconds", -5, 20, 90)}>−5с</button>
+                  <button onClick={() => adjustSetting("roundSeconds", 5, 20, 90)}>+5с</button>
                 </div>
               </div>
 
-              <div className="settings-toggles">
-                <button
-                  className={`toggle-chip ${settings.autoDifficulty ? "on" : ""}`}
-                  onClick={() => onChangeSetting("autoDifficulty", !settings.autoDifficulty)}
-                >
-                  <Sparkles size={16} />
-                  Адаптивная сложность
-                  <span className="toggle-dot" />
-                </button>
-                <button
-                  className={`toggle-chip ${settings.sound ? "on" : ""}`}
-                  onClick={() => onChangeSetting("sound", !settings.sound)}
-                >
-                  <Volume2 size={16} />
-                  Звук и вибро
-                  <span className="toggle-dot" />
-                </button>
+              <div className="setting-card glass">
+                <div className="setting-card-top">
+                  <span className="pill">Вопросы</span>
+                  <div className="setting-number">{settings.targetScore}</div>
+                </div>
+                <div className="meter">
+                  <div className="meter-track alt">
+                    <div className="meter-fill alt" style={{ width: `${questionsPct}%` }} />
+                    <span className="meter-thumb" style={{ left: `${questionsPct}%` }} />
+                  </div>
+                  <div className="meter-scale">
+                    <span>5</span>
+                    <span>30</span>
+                  </div>
+                </div>
+                <div className="setting-actions">
+                  <button onClick={() => adjustSetting("targetScore", -1, 5, 30)}>−1</button>
+                  <button onClick={() => adjustSetting("targetScore", 1, 5, 30)}>+1</button>
+                </div>
               </div>
-            </motion.div>
+            </div>
+
+            <div className="settings-toggles">
+              <button
+                className={`toggle-chip ${settings.autoDifficulty ? "on" : ""}`}
+                onClick={() => onChangeSetting("autoDifficulty", !settings.autoDifficulty)}
+              >
+                <Sparkles size={16} />
+                Адаптивная сложность
+                <span className="toggle-dot" />
+              </button>
+              <button
+                className={`toggle-chip ${settings.sound ? "on" : ""}`}
+                onClick={() => onChangeSetting("sound", !settings.sound)}
+              >
+                <Volume2 size={16} />
+                Звук и вибро
+                <span className="toggle-dot" />
+              </button>
+            </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 
-      <div className="chips-row">
-        <button
-          className={`seg ${modeIsTeams ? "seg-active" : ""}`}
-          onClick={() => switchMode("teams")}
-        >
-          <Users size={16} />
-          Команды
-        </button>
-        <button
-          className={`seg ${!modeIsTeams ? "seg-active" : ""}`}
-          onClick={() => switchMode("solo")}
-        >
-          <Zap size={16} />
-          Соло
-        </button>
-      </div>
+  return (
+    <>
+      {portalTarget ? createPortal(settingsModal, portalTarget) : settingsModal}
 
-      <div className="section-header">
-        <div>
-          <div className="section-title">Состав</div>
+      <div className="panel">
+        <div className="panel-head">
+          <div className="eyebrow">Блиц-викторина</div>
+          <div className="panel-title">Собери состав и жми старт</div>
         </div>
-        <motion.button
-          className="settings-gear"
-          onClick={() => setSettingsOpen(true)}
-          whileTap={{ scale: 0.92 }}
-          whileHover={{ rotate: -4 }}
-          aria-label="Открыть настройки"
-        >
-          <span className="gear-inner">
-            <Settings size={18} />
-          </span>
-          <span className="gear-glow" />
+
+        <div className="chips-row">
+          <button
+            className={`seg ${modeIsTeams ? "seg-active" : ""}`}
+            onClick={() => switchMode("teams")}
+          >
+            <Users size={16} />
+            Команды
+          </button>
+          <button
+            className={`seg ${!modeIsTeams ? "seg-active" : ""}`}
+            onClick={() => switchMode("solo")}
+          >
+            <Zap size={16} />
+            Соло
+          </button>
+        </div>
+
+        <div className="section-header">
+          <div>
+            <div className="section-title">Состав</div>
+          </div>
+          <motion.button
+            className="settings-gear"
+            onClick={() => setSettingsOpen(true)}
+            whileTap={{ scale: 0.92 }}
+            whileHover={{ rotate: -4 }}
+            aria-label="Открыть настройки"
+          >
+            <span className="gear-inner">
+              <Settings size={18} />
+            </span>
+            <span className="gear-glow" />
+          </motion.button>
+        </div>
+        <div className="roster-list">
+          {localRoster.map((item) => (
+            <div className="roster-row" key={item.id}>
+              <button
+                className="avatar-btn"
+                style={{ background: item.color }}
+                onClick={() => shuffleColor(item.id)}
+                aria-label="Сменить цвет"
+              >
+                {item.emoji}
+              </button>
+              <input
+                value={item.name}
+                onChange={(e) => changeName(item.id, e.target.value)}
+                maxLength={18}
+                aria-label="Имя"
+              />
+              <button
+                className="icon-btn"
+                onClick={() => removeMember(item.id)}
+                disabled={localRoster.length <= minPlayers}
+                aria-label="Удалить"
+                title="Удалить"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))}
+          <button className="ghost-line" onClick={addMember}>
+            <Plus size={16} />
+            Добавить {modeIsTeams ? "команду" : "игрока"}
+          </button>
+        </div>
+
+        <motion.button className="cta" whileTap={{ scale: 0.98 }} onClick={onStart}>
+          <Sparkles size={18} />
+          Старт
         </motion.button>
       </div>
-      <div className="roster-list">
-        {localRoster.map((item) => (
-          <div className="roster-row" key={item.id}>
-            <button
-              className="avatar-btn"
-              style={{ background: item.color }}
-              onClick={() => shuffleColor(item.id)}
-              aria-label="Сменить цвет"
-            >
-              {item.emoji}
-            </button>
-            <input
-              value={item.name}
-              onChange={(e) => changeName(item.id, e.target.value)}
-              maxLength={18}
-              aria-label="Имя"
-            />
-            <button
-              className="icon-btn"
-              onClick={() => removeMember(item.id)}
-              disabled={localRoster.length <= minPlayers}
-              aria-label="Удалить"
-              title="Удалить"
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-        ))}
-        <button className="ghost-line" onClick={addMember}>
-          <Plus size={16} />
-          Добавить {modeIsTeams ? "команду" : "игрока"}
-        </button>
-      </div>
-
-      <motion.button className="cta" whileTap={{ scale: 0.98 }} onClick={onStart}>
-        <Sparkles size={18} />
-        Старт
-      </motion.button>
-    </div>
+    </>
   );
 }
 
