@@ -678,11 +678,7 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
             >
               <div className="settings-head">
                 <div>
-                  <div className="eyebrow">Тонкие настройки</div>
-                  <div className="settings-title">Темп раундов</div>
-                  <p className="settings-sub">
-                    Настрой продолжительность раунда и длину матча. Изменения применяются сразу.
-                  </p>
+                  <div className="settings-title">Настройки матча</div>
                 </div>
                 <motion.button
                   className="settings-close"
@@ -701,7 +697,6 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
                     <span className="pill">Таймер</span>
                     <div className="setting-number">{settings.roundSeconds}s</div>
                   </div>
-                  <p className="setting-copy">Выбери свой темп: короткие рывки или размеренный ход.</p>
                   <div className="meter">
                     <div className="meter-track">
                       <div className="meter-fill" style={{ width: `${timerPct}%` }} />
@@ -723,7 +718,6 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
                     <span className="pill">Вопросы</span>
                     <div className="setting-number">{settings.targetScore}</div>
                   </div>
-                  <p className="setting-copy">Сколько вопросов нужно закрыть, чтобы закончить матч.</p>
                   <div className="meter">
                     <div className="meter-track alt">
                       <div className="meter-fill alt" style={{ width: `${questionsPct}%` }} />
