@@ -84,6 +84,8 @@
   min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   display: grid;
   place-items: center;
+  align-content: center;
+  justify-content: center;
 }
 
 .switch-shell {
