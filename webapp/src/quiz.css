@@ -552,6 +552,47 @@
   gap: 10px;
 }
 
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.option {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--quiz-border);
+  background: var(--quiz-surface-2);
+  color: var(--quiz-fg);
+  text-align: left;
+  font-weight: 800;
+  min-height: 56px;
+  box-shadow: var(--quiz-shadow);
+  display: grid;
+  gap: 4px;
+}
+
+.option.opt-correct {
+  border-color: rgba(31, 238, 156, 0.5);
+  box-shadow: 0 12px 30px rgba(31, 238, 156, 0.25);
+}
+
+.option.opt-wrong {
+  border-color: rgba(239, 68, 68, 0.5);
+  box-shadow: 0 12px 30px rgba(239, 68, 68, 0.25);
+}
+
+.opt-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.opt-status {
+  font-size: 12px;
+  color: var(--quiz-muted);
+}
+
 .btn {
   padding: 14px;
   border-radius: 14px;

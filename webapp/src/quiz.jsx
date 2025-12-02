@@ -218,12 +218,13 @@ const reducer = (state, action) => {
         ...state,
         settings,
         roster,
+        perTeamQuestions: roster.map(() => 0),
         timerMs: settings.roundSeconds * 1000,
         stage: "setup",
       };
     }
     case "SET_ROSTER": {
-      return { ...state, roster: action.roster };
+      return { ...state, roster: action.roster, perTeamQuestions: action.roster.map(() => 0) };
     }
     case "RESET_SCORES": {
       const roster = state.roster.map((r) => ({ ...r, score: 0 }));
@@ -360,7 +361,21 @@ const pickQuestion = (used, streak, autoDifficulty) => {
   const scored = pool.map((q) => ({ q, score: Math.abs(q.diff - target) }));
   const best = Math.min(...scored.map((s) => s.score));
   const candidates = scored.filter((s) => s.score === best).map((s) => s.q);
-  return candidates[Math.floor(Math.random() * candidates.length)];
+  const base = candidates[Math.floor(Math.random() * candidates.length)];
+  return base;
+};
+
+const shuffle = (arr) => arr
+  .map((v) => ({ v, r: Math.random() }))
+  .sort((a, b) => a.r - b.r)
+  .map((p) => p.v);
+
+const buildOptions = (question) => {
+  const answersPool = QUESTION_PACK.map((q) => q.answer).filter((a) => a && a !== question.answer);
+  const uniques = Array.from(new Set(answersPool));
+  const distractors = shuffle(uniques).slice(0, 3);
+  const all = shuffle([question.answer, ...distractors]);
+  return all;
 };
 
 const evaluateWinner = (roster) => {
@@ -490,7 +505,8 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
 
   const handleBeginRound = () => {
     haptic("light");
-    dispatch({ type: "SET_QUESTION", question: pickQuestion(state.used, state.streak, state.settings.autoDifficulty) });
+    const q = pickQuestion(state.used, state.streak, state.settings.autoDifficulty);
+    dispatch({ type: "SET_QUESTION", question: { ...q, options: buildOptions(q) } });
     dispatch({ type: "BEGIN_ROUND" });
   };
 
@@ -520,27 +536,6 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
     const allDone = nextPerTeam.every((n) => n >= questionsLimit);
     if (allDone) {
       const winner = evaluateWinner(nextRoster);
-      dispatch({ type: "SUMMARY", winner, reason: "questions" });
-      return;
-    }
-    const nextIdx = findNextActive(nextPerTeam, state.activeIndex);
-    dispatch({
-      type: "NEXT_TURN",
-      questionsPlayed: nextQuestionsPlayed,
-      nextPerTeam,
-      nextIndex: nextIdx ?? state.activeIndex,
-    });
-  };
-
-  const endRoundEarly = () => {
-    haptic("light");
-    const nextQuestionsPlayed = state.questionsPlayed + 1;
-    const nextPerTeam = state.perTeamQuestions.map((n, idx) =>
-      idx === state.activeIndex ? n + 1 : n
-    );
-    const allDone = nextPerTeam.every((n) => n >= questionsLimit);
-    if (allDone) {
-      const winner = evaluateWinner(state.roster);
       dispatch({ type: "SUMMARY", winner, reason: "questions" });
       return;
     }
@@ -604,9 +599,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
             onReveal={() => dispatch({ type: "REVEAL" })}
             timePct={timePct}
             seconds={Math.ceil(state.timerMs / 1000)}
-            onCorrect={() => mark("correct")}
-            onSkip={() => mark("skip")}
-            onTimeup={endRoundEarly}
+            onAnswer={(isCorrect) => mark(isCorrect ? "correct" : "skip")}
             running={state.running}
             isPaused={state.isPaused}
             onResume={() => dispatch({ type: "RESUME" })}
@@ -834,13 +827,27 @@ function Round({
   onReveal,
   timePct,
   seconds,
-  onCorrect,
-  onSkip,
-  onTimeup,
+  onAnswer,
   running,
   isPaused,
   onResume,
 }) {
+  const [selected, setSelected] = useState(null); // value
+  useEffect(() => {
+    setSelected(null);
+  }, [question?.id]);
+
+  const handleOption = (opt) => {
+    if (selected || !question) return;
+    const isCorrect = opt === question.answer;
+    setSelected(opt);
+    onAnswer?.(isCorrect);
+  };
+
+  const options = Array.isArray(question?.options) && question.options.length
+    ? question.options
+    : [question?.answer].filter(Boolean);
+
   return (
     <div className="round">
       <div className="round-meta">
@@ -856,18 +863,28 @@ function Round({
 
       <QuestionCard question={question} reveal={reveal} onReveal={onReveal} />
 
-      <div className="controls">
-        <motion.button className="btn secondary" whileTap={{ scale: 0.97 }} onClick={onSkip}>
-          Пропуск
-        </motion.button>
-        <motion.button className="btn primary" whileTap={{ scale: 0.97 }} onClick={onCorrect}>
-          Верно
-        </motion.button>
+      <div className="options" role="list">
+        {options.map((opt) => {
+          const isSelected = selected === opt;
+          const isCorrect = opt === question?.answer;
+          const stateClass = isSelected ? (isCorrect ? "opt-correct" : "opt-wrong") : "";
+          return (
+            <motion.button
+              key={opt}
+              className={`option ${stateClass}`}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => handleOption(opt)}
+              disabled={!!selected}
+              role="listitem"
+            >
+              <span className="opt-text">{opt}</span>
+              {selected && isSelected && (
+                <span className="opt-status">{isCorrect ? "Верно" : "Неверно"}</span>
+              )}
+            </motion.button>
+          );
+        })}
       </div>
-
-      <button className="ghost-btn wide" onClick={onTimeup}>
-        Завершить ход
-      </button>
 
       {isPaused && (
         <div className="pause">
