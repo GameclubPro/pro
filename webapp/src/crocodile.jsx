@@ -616,7 +616,11 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   const processAnswer = useCallback(
     (kind) => {
       if (state.stage !== "round") return;
-      if (advanceTimeoutRef.current) return;
+      if (advanceTimeoutRef.current) {
+        clearTimeout(advanceTimeoutRef.current);
+        advanceTimeoutRef.current = null;
+      }
+      setTimeoutPrompt(false);
       dispatch({ type: "STOP_TIMER" });
       const isCorrect = kind === "correct";
       const nextRoster = state.roster.map((r, idx) =>
@@ -661,7 +665,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
       dispatch({ type: "STOP_TIMER" });
       setTimeoutPrompt(true);
     }
-  }, [state.timerMs, state.stage, timeoutPrompt, processAnswer]);
+  }, [state.timerMs, state.stage, timeoutPrompt]);
 
   useEffect(() => {
     if (state.stage !== "round" || !state.running) {
