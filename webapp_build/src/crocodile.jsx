@@ -511,7 +511,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   const advanceTimeoutRef = useRef(null);
   const confettiRef = useRef(null);
   const [timeoutPrompt, setTimeoutPrompt] = useState(false);
-  const lowTimeBeeped = useRef(false);
+  const lastBeepSecondRef = useRef(null);
 
   const customWords = useMemo(() => parseWords(state.customText), [state.customText]);
   const wordPool = useMemo(() => buildWordPool(state.settings, customWords), [state.settings, customWords]);
@@ -539,7 +539,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   useEffect(() => {
     if (state.stage !== "round") {
       setTimeoutPrompt(false);
-      lowTimeBeeped.current = false;
+      lastBeepSecondRef.current = null;
     }
   }, [state.stage]);
 
@@ -658,14 +658,18 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   }, [state.timerMs, state.stage, timeoutPrompt, processAnswer]);
 
   useEffect(() => {
-    const threshold = 10000;
-    if (state.stage !== "round" || !state.running) return;
-    if (state.timerMs <= threshold && state.timerMs > 0 && !lowTimeBeeped.current) {
-      lowTimeBeeped.current = true;
-      beep();
+    if (state.stage !== "round" || !state.running) {
+      lastBeepSecondRef.current = null;
+      return;
     }
-    if (state.timerMs > threshold) {
-      lowTimeBeeped.current = false;
+    const secs = Math.ceil(state.timerMs / 1000);
+    if (secs <= 10 && secs > 0) {
+      if (lastBeepSecondRef.current !== secs) {
+        lastBeepSecondRef.current = secs;
+        beep();
+      }
+    } else if (secs > 10) {
+      lastBeepSecondRef.current = null;
     }
   }, [state.timerMs, state.stage, state.running, beep]);
 
