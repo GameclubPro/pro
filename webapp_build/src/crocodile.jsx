@@ -660,12 +660,12 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   );
 
   useEffect(() => {
-    if (state.stage !== "round") return;
+    if (state.stage !== "round" || !state.running) return;
     if (state.timerMs <= 0 && !timeoutPrompt) {
       dispatch({ type: "STOP_TIMER" });
       setTimeoutPrompt(true);
     }
-  }, [state.timerMs, state.stage, timeoutPrompt]);
+  }, [state.timerMs, state.stage, state.running, timeoutPrompt]);
 
   useEffect(() => {
     if (state.stage !== "round" || !state.running) {
