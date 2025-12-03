@@ -300,6 +300,32 @@ const useChime = (enabled) => {
   return play;
 };
 
+const useBeep = (enabled) => {
+  const ctxRef = useRef(null);
+  const play = useCallback(() => {
+    if (!enabled) return;
+    try {
+      if (!ctxRef.current) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        ctxRef.current = new Ctx();
+      }
+      const ctx = ctxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+    } catch {
+      /* ignore */
+    }
+  }, [enabled]);
+  return play;
+};
+
 const reducer = (state, action) => {
   switch (action.type) {
     case "SET_SETTING": {
@@ -480,10 +506,12 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
 
   const haptic = useHaptics();
   const chime = useChime(state.settings.sound);
+  const beep = useBeep(state.settings.sound);
   const progressGiven = useRef(false);
   const advanceTimeoutRef = useRef(null);
   const confettiRef = useRef(null);
   const [timeoutPrompt, setTimeoutPrompt] = useState(false);
+  const lowTimeBeeped = useRef(false);
 
   const customWords = useMemo(() => parseWords(state.customText), [state.customText]);
   const wordPool = useMemo(() => buildWordPool(state.settings, customWords), [state.settings, customWords]);
@@ -511,6 +539,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   useEffect(() => {
     if (state.stage !== "round") {
       setTimeoutPrompt(false);
+      lowTimeBeeped.current = false;
     }
   }, [state.stage]);
 
@@ -627,6 +656,18 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
       setTimeoutPrompt(true);
     }
   }, [state.timerMs, state.stage, timeoutPrompt, processAnswer]);
+
+  useEffect(() => {
+    const threshold = 10000;
+    if (state.stage !== "round" || !state.running) return;
+    if (state.timerMs <= threshold && state.timerMs > 0 && !lowTimeBeeped.current) {
+      lowTimeBeeped.current = true;
+      beep();
+    }
+    if (state.timerMs > threshold) {
+      lowTimeBeeped.current = false;
+    }
+  }, [state.timerMs, state.stage, state.running, beep]);
 
   const mark = (isCorrect) => {
     if (!state.word) return;
