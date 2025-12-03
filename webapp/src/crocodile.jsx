@@ -898,6 +898,44 @@ function Setup({
                 <span className="toggle-dot" />
               </button>
             </div>
+
+            <div className="settings-block">
+              <div className="section-header">
+                <div className="section-title">Колода слов</div>
+                <span className="pill">Всего: {wordPool.length}</span>
+              </div>
+              <div className="pack-grid">
+                {[
+                  { key: "easy", label: "Лайт", desc: "простые" },
+                  { key: "medium", label: "Стандарт", desc: "живые" },
+                  { key: "hard", label: "Хард", desc: "сложные" },
+                  { key: "mixed", label: "Микс", desc: "все" },
+                  { key: "custom", label: "Свои", desc: "только импорт" },
+                ].map((p) => (
+                  <button
+                    key={p.key}
+                    className={`pack-chip ${settings.difficulty === p.key ? "pack-active" : ""}`}
+                    onClick={() => onChangeSetting("difficulty", p.key)}
+                  >
+                    <div className="pack-top">
+                      <span>{p.label}</span>
+                      {settings.difficulty === p.key && <span className="pill">выбрано</span>}
+                    </div>
+                    <small>{p.desc}</small>
+                  </button>
+                ))}
+              </div>
+              <textarea
+                className="croco-textarea"
+                value={customText}
+                onChange={(e) => onChangeCustom(e.target.value)}
+                rows={5}
+                placeholder="Каждое слово — с новой строки"
+              />
+              <div className="small-meta">
+                {customWords.length} своих слов. Всего в колоде: {wordPool.length}.
+              </div>
+            </div>
           </motion.div>
         </motion.div>
       )}
@@ -910,7 +948,7 @@ function Setup({
 
       <div className="panel">
         <div className="panel-head">
-          <div className="eyebrow">Блиц-крокодил</div>
+          <div className="eyebrow">Крокодил</div>
           <div className="panel-title">Собери состав и жми старт</div>
         </div>
 
@@ -980,44 +1018,6 @@ function Setup({
             <Sparkles size={16} />
             Добавить {modeIsTeams ? "команду" : "игрока"}
           </button>
-        </div>
-
-        <div className="section-header">
-          <div className="section-title">Слова и подсказки</div>
-          <span className="pill">Всего в колоде: {wordPool.length}</span>
-        </div>
-
-        <div className="pack-grid">
-          {[
-            { key: "easy", label: "Лайт", desc: "простые" },
-            { key: "medium", label: "Стандарт", desc: "живые" },
-            { key: "hard", label: "Хард", desc: "сложные" },
-            { key: "mixed", label: "Микс", desc: "все" },
-            { key: "custom", label: "Свои", desc: "только импорт" },
-          ].map((p) => (
-            <button
-              key={p.key}
-              className={`pack-chip ${settings.difficulty === p.key ? "pack-active" : ""}`}
-              onClick={() => onChangeSetting("difficulty", p.key)}
-            >
-              <div className="pack-top">
-                <span>{p.label}</span>
-                {settings.difficulty === p.key && <span className="pill">выбрано</span>}
-              </div>
-              <small>{p.desc}</small>
-            </button>
-          ))}
-        </div>
-
-        <textarea
-          className="croco-textarea"
-          value={customText}
-          onChange={(e) => onChangeCustom(e.target.value)}
-          rows={5}
-          placeholder="Каждое слово — с новой строки"
-        />
-        <div className="small-meta">
-          {customWords.length} своих слов. Всего в колоде: {wordPool.length}.
         </div>
 
         <motion.button className="cta" whileTap={{ scale: 0.98 }} onClick={onStart} disabled={!canStart}>

@@ -589,6 +589,12 @@
   opacity: 1;
 }
 
+.settings-block {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
 @media (max-width: 768px) {
   .settings-overlay {
     padding: calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-right));
