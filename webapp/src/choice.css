@@ -129,6 +129,11 @@
   gap: 18px;
 }
 
+.landing-compact {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
 .landing-hero {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
@@ -150,6 +155,11 @@
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
 }
 
+.landing-card.hero {
+  display: grid;
+  gap: 10px;
+}
+
 .label {
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -168,6 +178,10 @@
   gap: 10px;
   align-items: center;
   margin: 10px 0;
+}
+
+.hero-actions.compact {
+  margin-top: 6px;
 }
 
 .hero-metrics {
@@ -201,6 +215,11 @@
   padding-left: 16px;
   margin: 6px 0 0;
   color: #d7e2ef;
+}
+
+.rules ul {
+  margin: 6px 0 0;
+  padding-left: 16px;
 }
 
 .eyebrow {
@@ -471,6 +490,15 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 8px;
+}
+
+.pack-meta {
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.pack-chips {
+  margin-top: 10px;
 }
 
 .chip {

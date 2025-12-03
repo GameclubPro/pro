@@ -412,7 +412,6 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
   const [result, setResult] = useState(null);
   const [reveal, setReveal] = useState(false);
   const [toast, setToast] = useState("");
-  const [deckTick, setDeckTick] = useState(0);
   const [form, setForm] = useState({ prompt: "", left: "", right: "" });
   const touchStartX = useRef(null);
   const autoNextRef = useRef(null);
@@ -493,7 +492,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
   useEffect(() => {
     if (stage !== "play") return;
     pickNext(true);
-  }, [stage, deckTick, pool, pickNext]);
+  }, [stage, pool, pickNext]);
 
   useEffect(() => {
     if (!setBackHandler) return undefined;
@@ -714,12 +713,10 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
 
         {stage === "intro" ? (
           <Landing
-            stats={stats}
-            missions={missions}
             onStart={startGame}
-            settings={settings}
-            setSettings={setSettings}
-            onShuffle={() => setDeckTick((t) => t + 1)}
+            themes={THEMES}
+            selectedThemes={settings.selectedThemes}
+            onToggleTheme={handleThemeToggle}
           />
         ) : (
           <div className="choice-layout">
@@ -955,102 +952,51 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
   );
 }
 
-function Landing({ stats, missions, onStart, settings, setSettings, onShuffle }) {
+function Landing({ onStart, themes, selectedThemes, onToggleTheme }) {
+  const selectedCount = selectedThemes?.length || 0;
+  const rules = [
+    "Выбери один из двух вариантов — свайпом или кнопкой",
+    "После ответа показываем проценты по сторонам",
+    "Редкий выбор увеличивает серию",
+    "Жми «Играть», чтобы начать раунд с выбранными патчами",
+  ];
   return (
-    <div className="landing">
-      <div className="landing-hero">
-        <div>
-          <p className="label">Выбор</p>
-          <h1>50/50 дилеммы с живыми процентами</h1>
-          <p className="muted">
-            Свайпай или нажимай сторону, смотри, кто как выбрал, держи серию редких ответов. Моды: классика, хард,
-            пати.
-          </p>
-          <div className="hero-actions">
-            <button className="primary large" onClick={onStart}>
-              <Zap size={18} />
-              Играть
-            </button>
-            <button className="ghost" onClick={onShuffle}>
-              <Shuffle size={16} />
-              Перемешать
-            </button>
-          </div>
-          <div className="hero-metrics">
-            <HeroPill title="Ответов" value={stats.answered || 0} />
-            <HeroPill title="Серия" value={stats.bestStreak || 0} />
-            <HeroPill
-              title="Редких"
-              value={stats.answered ? `${Math.round((stats.rare / stats.answered) * 100)}%` : "—"}
-            />
-          </div>
+    <div className="landing landing-compact">
+      <div className="landing-card hero">
+        <p className="label">Выбор</p>
+        <h1>Выбери патчи вопросов</h1>
+        <p className="muted">Отметь наборы, которые хотите видеть в игре. Потом жми «Играть».</p>
+        <div className="pack-meta muted">Выбрано: {selectedCount || "0"}</div>
+        <div className="chips pack-chips">
+          {Object.entries(themes).map(([key, value]) => {
+            const active = (selectedThemes || []).includes(key);
+            return (
+              <button
+                key={key}
+                className={`chip ${active ? "chip-active" : ""}`}
+                onClick={() => onToggleTheme?.(key)}
+              >
+                <span>{value.icon}</span>
+                {value.label}
+              </button>
+            );
+          })}
         </div>
-        <div className="landing-card">
-          <h3>Блиц-моды</h3>
-          <div className="mode-mini">
-            <span>Авто-next</span>
-            <button className="chip" onClick={() => setSettings((s) => ({ ...s, autoNext: !s.autoNext }))}>
-              {settings.autoNext ? "Вкл" : "Выкл"}
-            </button>
-          </div>
-          <div className="mode-mini">
-            <span>Звук</span>
-            <button className="chip" onClick={() => setSettings((s) => ({ ...s, sound: !s.sound }))}>
-              {settings.sound ? "Вкл" : "Выкл"}
-            </button>
-          </div>
-          <div className="mode-mini">
-            <span>Вибро</span>
-            <button className="chip" onClick={() => setSettings((s) => ({ ...s, haptics: !s.haptics }))}>
-              {settings.haptics ? "Вкл" : "Выкл"}
-            </button>
-          </div>
-          <div className="missions">
-            {missions.map((m) => (
-              <div key={m.id} className="mission">
-                <div className="mission-head">
-                  <span>{m.text}</span>
-                  <span className="muted">
-                    {m.value}/{m.target}
-                  </span>
-                </div>
-                <div className="mission-bar">
-                  <div
-                    className="mission-fill"
-                    style={{ width: `${clamp((m.value / m.target) * 100, 0, 100)}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="hero-actions compact">
+          <button className="primary large" onClick={onStart}>
+            <Zap size={18} />
+            Играть
+          </button>
         </div>
       </div>
 
-      <div className="landing-grid">
-        <div className="card-ghost">
-          <p className="eyebrow">Механики</p>
-          <ul>
-            <li>Свайп/тап, мгновенные проценты и цветные заливки</li>
-            <li>Серия редких ответов и бейджи по темам</li>
-            <li>Моды: Классика, Хард (мораль), Пати (фан), Лайфстайл</li>
-          </ul>
-        </div>
-        <div className="card-ghost">
-          <p className="eyebrow">Контент</p>
-          <ul>
-            <li>100+ вопросов: здоровье, деньги, отношения, техно, путешествия</li>
-            <li>Свои дилеммы — сразу в колоде (локально)</li>
-            <li>Теги и рейтинги без жёстких тем</li>
-          </ul>
-        </div>
-        <div className="card-ghost">
-          <p className="eyebrow">Пати-режим</p>
-          <ul>
-            <li>Показывай на ТВ/планшете — кнопки крупные</li>
-            <li>Шэринг результата или копия в буфер</li>
-            <li>Встроенный авто-next для темпа</li>
-          </ul>
-        </div>
+      <div className="card-ghost rules">
+        <p className="eyebrow">Правила</p>
+        <ul>
+          {rules.map((r) => (
+            <li key={r}>{r}</li>
+          ))}
+        </ul>
       </div>
     </div>
   );
@@ -1078,15 +1024,6 @@ function Badge({ icon, label, value }) {
         <div className="badge-label">{label}</div>
         <div className="badge-value">{value}</div>
       </div>
-    </div>
-  );
-}
-
-function HeroPill({ title, value }) {
-  return (
-    <div className="hero-pill">
-      <p className="muted">{title}</p>
-      <h4>{value}</h4>
     </div>
   );
 }
