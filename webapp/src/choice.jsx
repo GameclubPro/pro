@@ -2,17 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
-  Check,
-  Flame,
-  Heart,
-  Lightbulb,
-  Plus,
-  Share2,
-  Shuffle,
-  SlidersHorizontal,
   Sparkles,
-  Star,
-  Trophy,
   Volume2,
   VolumeX,
   Zap,
@@ -42,14 +32,6 @@ const THEMES = {
   life: { label: "Быт", icon: "🏠" },
   custom: { label: "Свои", icon: "✨" },
 };
-
-const MODE_OPTIONS = [
-  { id: "classic", title: "Классика", desc: "баланс фан + смысл", icon: Sparkles },
-  { id: "hard", title: "Хард", desc: "мораль и выбор боли", icon: Flame },
-  { id: "local", title: "Лайфстайл", desc: "про быт и отношения", icon: Heart },
-  { id: "party", title: "Пати", desc: "абсурд и мемы", icon: Zap },
-  { id: "calm", title: "Спокойно", desc: "без жёстких углов", icon: Lightbulb },
-];
 
 const RAW_PACKS = [
   {
@@ -381,17 +363,10 @@ const paletteFor = (theme, vibe) => {
   return PALETTES[theme] || ["#22d3ee", "#8b5cf6"];
 };
 
-const buildMissions = (daily) => [
-  { id: "m-answers", text: "Ответь на 12 дилемм", target: 12, value: daily.answered || 0 },
-  { id: "m-rare", text: "Сделай 3 редких выбора", target: 3, value: daily.rare || 0 },
-  { id: "m-hard", text: "Закрой 5 жёстких вопросов", target: 5, value: daily.hard || 0 },
-];
-
 export default function Choice({ goBack, onProgress, setBackHandler }) {
   const [settings, setSettings] = useState(() =>
     readPersisted(STORAGE_KEYS.settings, {
       mode: "classic",
-      autoNext: false,
       sound: true,
       haptics: true,
       selectedThemes: Object.keys(THEMES),
@@ -412,19 +387,12 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
   const [result, setResult] = useState(null);
   const [reveal, setReveal] = useState(false);
   const [toast, setToast] = useState("");
-  const [form, setForm] = useState({ prompt: "", left: "", right: "" });
-  const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
   const autoNextRef = useRef(null);
   const progressGiven = useRef(false);
 
   const haptic = useHaptics(settings.haptics);
   const clickSound = useClickSound(settings.sound);
-
-  const questionMap = useMemo(() => {
-    const map = new Map(BASE_MAP);
-    customList.forEach((c) => map.set(c.id, c));
-    return map;
-  }, [customList]);
 
   const pool = useMemo(() => {
     const customs = customList.map((c, idx) => ({
@@ -451,25 +419,6 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     });
     return filtered.length ? filtered : merged;
   }, [settings.selectedThemes, settings.mode, customList]);
-
-  const missions = useMemo(() => buildMissions(daily), [daily]);
-
-  const themeStats = useMemo(() => {
-    const res = {};
-    Object.entries(stats.perQuestion || {}).forEach(([id, counts]) => {
-      const q = questionMap.get(id);
-      if (!q) return;
-      res[q.theme] = (res[q.theme] || 0) + (counts?.a || 0) + (counts?.b || 0);
-    });
-    return res;
-  }, [stats.perQuestion, questionMap]);
-
-  const topThemes = useMemo(
-    () => Object.entries(themeStats).sort((a, b) => b[1] - a[1]).slice(0, 3),
-    [themeStats]
-  );
-
-  const rareRate = stats.answered ? Math.round((stats.rare / stats.answered) * 100) : 0;
 
   const pickNext = useCallback(
     (force = false) => {
@@ -591,37 +540,11 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
         };
       });
 
-      if (settings.autoNext) {
-        if (autoNextRef.current) clearTimeout(autoNextRef.current);
-        autoNextRef.current = setTimeout(() => pickNext(), 1200);
-      }
+      if (autoNextRef.current) clearTimeout(autoNextRef.current);
+      autoNextRef.current = setTimeout(() => pickNext(), 1000);
     },
-    [current, reveal, stats.perQuestion, settings.autoNext, pickNext, haptic, clickSound]
+    [current, reveal, stats.perQuestion, pickNext, haptic, clickSound]
   );
-
-  const handleShare = async () => {
-    if (!current || !result) return;
-    const leftPicked = result.side === 0;
-    const text = `Игра «Выбор»: ${current.prompt}\nЯ выбрал: ${leftPicked ? current.left : current.right} (${leftPicked ? result.pctA : result.pctB}% со мной)\nПопробуй тоже.`;
-    try {
-      if (navigator?.share) {
-        await navigator.share({ title: "Мой выбор", text });
-      } else if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-        setToast("Скопировано в буфер обмена");
-      } else {
-        setToast("Поделиться не вышло :(");
-      }
-    } catch {
-      setToast("Поделиться не вышло :(");
-    }
-  };
-
-  const handleSkip = () => {
-    haptic("soft");
-    clickSound();
-    pickNext();
-  };
 
   const handleThemeToggle = (key) => {
     setSettings((s) => {
@@ -635,40 +558,16 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     });
   };
 
-  const handleAddCustom = () => {
-    const prompt = form.prompt.trim();
-    const left = form.left.trim();
-    const right = form.right.trim();
-    if (!prompt || !left || !right) {
-      setToast("Нужны вопрос и оба варианта");
-      return;
-    }
-    const item = {
-      id: `custom-${Date.now().toString(36)}`,
-      prompt,
-      left,
-      right,
-      theme: "custom",
-      rating: "12+",
-      tone: "party",
-      vibe: "calm",
-      baseline: [50, 50],
-    };
-    setCustomList((list) => [item, ...list].slice(0, 50));
-    setForm({ prompt: "", left: "", right: "" });
-    setToast("Добавили в колоду");
-  };
-
   const handleTouchStart = (e) => {
-    touchStartX.current = e.touches?.[0]?.clientX || null;
+    touchStartY.current = e.touches?.[0]?.clientY || null;
   };
   const handleTouchEnd = (e) => {
-    if (touchStartX.current === null) return;
-    const delta = (e.changedTouches?.[0]?.clientX || 0) - touchStartX.current;
+    if (touchStartY.current === null) return;
+    const delta = (e.changedTouches?.[0]?.clientY || 0) - touchStartY.current;
     if (Math.abs(delta) > 45) {
-      handleAnswer(delta > 0 ? 1 : 0);
+      handleAnswer(delta > 0 ? 1 : 0); // вниз — нижний вариант
     }
-    touchStartX.current = null;
+    touchStartY.current = null;
   };
 
   const palette = paletteFor(current?.theme, current?.vibe);
@@ -683,33 +582,35 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
         <div className="grain" />
       </div>
       <div className="choice-shell">
-        <div className="choice-top">
-          <button className="ghost" onClick={() => (stage === "intro" ? goBack?.() : setStage("intro"))}>
-            <ArrowLeft size={18} />
-            <span>Назад</span>
-          </button>
-          <div className="top-metrics">
-            <span>Ответов: {stats.answered || 0}</span>
-            <span>Редких: {stats.rare || 0}</span>
-            <span>Стрик: {stats.streak || 0}</span>
-          </div>
-          <div className="top-actions">
-            <button
-              className="icon"
-              onClick={() => setSettings((s) => ({ ...s, sound: !s.sound }))}
-              aria-label="Звук"
-            >
-              {settings.sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
+        {stage === "intro" && (
+          <div className="choice-top">
+            <button className="ghost" onClick={() => goBack?.()}>
+              <ArrowLeft size={18} />
+              <span>Назад</span>
             </button>
-            <button
-              className="icon"
-              onClick={() => setSettings((s) => ({ ...s, haptics: !s.haptics }))}
-              aria-label="Вибро"
-            >
-              <Sparkles size={18} />
-            </button>
+            <div className="top-metrics">
+              <span>Ответов: {stats.answered || 0}</span>
+              <span>Редких: {stats.rare || 0}</span>
+              <span>Стрик: {stats.streak || 0}</span>
+            </div>
+            <div className="top-actions">
+              <button
+                className="icon"
+                onClick={() => setSettings((s) => ({ ...s, sound: !s.sound }))}
+                aria-label="Звук"
+              >
+                {settings.sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
+              </button>
+              <button
+                className="icon"
+                onClick={() => setSettings((s) => ({ ...s, haptics: !s.haptics }))}
+                aria-label="Вибро"
+              >
+                <Sparkles size={18} />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {stage === "intro" ? (
           <Landing
@@ -719,231 +620,43 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
             onToggleTheme={handleThemeToggle}
           />
         ) : (
-          <div className="choice-layout">
-            <div className="choice-main">
-              <div className="eyebrow-row">
-                <span className="eyebrow-chip">
-                  {THEMES[current?.theme]?.icon} {THEMES[current?.theme]?.label || "Тема"}
-                </span>
-                <span className="eyebrow-chip">{current?.rating || "12+"}</span>
-                <span className="eyebrow-chip">{settings.mode}</span>
-              </div>
-
-              <div className="question-card">
-                <div className="question-head">
-                  <div>
-                    <p className="label">Дилемма</p>
-                    <h2>{current?.prompt}</h2>
-                    {current?.note ? <p className="muted">{current.note}</p> : null}
-                  </div>
-                  <div className="streak-pill">
-                    <Star size={16} />
-                    <span>Серия {stats.streak || 0}</span>
-                  </div>
-                </div>
-
-                <div
-                  className={`split ${reveal ? "is-reveal" : ""}`}
-                  onTouchStart={handleTouchStart}
-                  onTouchEnd={handleTouchEnd}
-                >
-                  <AnimatePresence mode="wait">
-                    <motion.button
-                      key={`${current?.id}-left`}
-                      className={`side left ${result?.side === 0 ? "picked" : ""}`}
-                      style={{ background: leftBg }}
-                      onClick={() => handleAnswer(0)}
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: -10, opacity: 0 }}
-                    >
-                      <div className="side-label">{current?.left}</div>
-                      <div className="side-sub">свайп влево</div>
-                      {reveal ? (
-                        <motion.div
-                          className="pct"
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                        >
-                          {result?.pctA}%
-                        </motion.div>
-                      ) : null}
-                    </motion.button>
-                  </AnimatePresence>
-
-                  <AnimatePresence mode="wait">
-                    <motion.button
-                      key={`${current?.id}-right`}
-                      className={`side right ${result?.side === 1 ? "picked" : ""}`}
-                      style={{ background: rightBg }}
-                      onClick={() => handleAnswer(1)}
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      exit={{ y: -10, opacity: 0 }}
-                    >
-                      <div className="side-label">{current?.right}</div>
-                      <div className="side-sub">свайп вправо</div>
-                      {reveal ? (
-                        <motion.div
-                          className="pct"
-                          initial={{ scale: 0.8, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                        >
-                          {result?.pctB}%
-                        </motion.div>
-                      ) : null}
-                    </motion.button>
-                  </AnimatePresence>
-                </div>
-
-                {reveal ? (
-                  <div className="bars">
-                    <div className="bar">
-                      <div className="bar-fill" style={{ width: `${result?.pctA || 0}%` }} />
-                      <span>{current?.left}</span>
-                    </div>
-                    <div className="bar">
-                      <div className="bar-fill alt" style={{ width: `${result?.pctB || 0}%` }} />
-                      <span>{current?.right}</span>
-                    </div>
-                    {result?.rare ? <div className="rare">Редкий выбор! +1 к серии</div> : null}
-                  </div>
-                ) : (
-                  <p className="hint">Нажми или свайпай сторону. Потом увидишь проценты.</p>
-                )}
-
-                <div className="actions">
-                  <button className="ghost" onClick={handleSkip}>
-                    <Shuffle size={16} />
-                    Пропуск
-                  </button>
-                  <button className="ghost" onClick={() => setSettings((s) => ({ ...s, autoNext: !s.autoNext }))}>
-                    <SlidersHorizontal size={16} />
-                    Авто-next: {settings.autoNext ? "вкл" : "выкл"}
-                  </button>
-                  <button className="ghost" onClick={handleShare}>
-                    <Share2 size={16} />
-                    Поделиться
-                  </button>
-                  <button className="primary" onClick={() => pickNext(true)}>
-                    Дальше
-                  </button>
-                </div>
-              </div>
-
-              <div className="badge-row">
-                <Badge icon={<Trophy size={16} />} label="Лучшая серия" value={`${stats.bestStreak || 0}`} />
-                <Badge icon={<Sparkles size={16} />} label="Редких ответов" value={`${rareRate}%`} />
-                <Badge icon={<Heart size={16} />} label="День" value={`${daily.answered || 0}/12`} />
-              </div>
-
-              <History history={stats.history} questionMap={questionMap} />
+          <div className="play-vertical">
+            <div className="play-top">
+              <button className="ghost" onClick={() => setStage("intro")}>
+                <ArrowLeft size={16} />
+                Назад
+              </button>
+              <div className="prompt">{current?.prompt}</div>
             </div>
+            <div className="vertical-split" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+              <AnimatePresence mode="wait">
+                <motion.button
+                  key={`${current?.id}-top`}
+                  className={`option-block top ${result?.side === 0 ? "picked" : ""}`}
+                  style={{ background: leftBg }}
+                  onClick={() => handleAnswer(0)}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -10, opacity: 0 }}
+                >
+                  <div className="option-label">{current?.left}</div>
+                </motion.button>
+              </AnimatePresence>
 
-            <aside className="choice-side">
-              <Panel title="Режим" subtitle="под настроение">
-                <div className="mode-grid">
-                  {MODE_OPTIONS.map((m) => {
-                    const Icon = m.icon;
-                    const active = settings.mode === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        className={`mode ${active ? "active" : ""}`}
-                        onClick={() => setSettings((s) => ({ ...s, mode: m.id }))}
-                      >
-                        <Icon size={16} />
-                        <div>
-                          <div className="mode-title">{m.title}</div>
-                          <div className="mode-sub">{m.desc}</div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </Panel>
-
-              <Panel title="Темы" subtitle="микс по вкусу">
-                <div className="chips">
-                  {Object.entries(THEMES).map(([key, value]) => {
-                    const active = (settings.selectedThemes || []).includes(key);
-                    return (
-                      <button
-                        key={key}
-                        className={`chip ${active ? "chip-active" : ""}`}
-                        onClick={() => handleThemeToggle(key)}
-                      >
-                        <span>{value.icon}</span>
-                        {value.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </Panel>
-
-              <Panel title="Миссии дня" subtitle={daily.date}>
-                <div className="missions">
-                  {missions.map((m) => (
-                    <div key={m.id} className="mission">
-                      <div className="mission-head">
-                        <span>{m.text}</span>
-                        <span className="muted">
-                          {m.value}/{m.target}
-                        </span>
-                      </div>
-                      <div className="mission-bar">
-                        <div
-                          className="mission-fill"
-                          style={{ width: `${clamp((m.value / m.target) * 100, 0, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Panel>
-
-              <Panel title="Бейджи" subtitle="динамика">
-                <div className="badges">
-                  <Badge icon={<Flame size={14} />} label="Текущая серия" value={`${stats.streak || 0}`} />
-                  <Badge icon={<Star size={14} />} label="Лучший процент" value={`${rareRate}% редких`} />
-                  {topThemes.map(([theme, count]) => (
-                    <Badge
-                      key={theme}
-                      icon={<Check size={14} />}
-                      label={THEMES[theme]?.label || theme}
-                      value={`${count} ответов`}
-                    />
-                  ))}
-                </div>
-              </Panel>
-
-              <Panel title="Своя дилемма" subtitle="бережная модерация">
-                <div className="custom-form">
-                  <input
-                    type="text"
-                    placeholder="Вопрос"
-                    value={form.prompt}
-                    onChange={(e) => setForm((f) => ({ ...f, prompt: e.target.value }))}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Вариант A"
-                    value={form.left}
-                    onChange={(e) => setForm((f) => ({ ...f, left: e.target.value }))}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Вариант B"
-                    value={form.right}
-                    onChange={(e) => setForm((f) => ({ ...f, right: e.target.value }))}
-                  />
-                  <button className="primary" onClick={handleAddCustom}>
-                    <Plus size={16} />
-                    Добавить
-                  </button>
-                </div>
-              </Panel>
-            </aside>
+              <AnimatePresence mode="wait">
+                <motion.button
+                  key={`${current?.id}-bottom`}
+                  className={`option-block bottom ${result?.side === 1 ? "picked" : ""}`}
+                  style={{ background: rightBg }}
+                  onClick={() => handleAnswer(1)}
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: -10, opacity: 0 }}
+                >
+                  <div className="option-label">{current?.right}</div>
+                </motion.button>
+              </AnimatePresence>
+            </div>
           </div>
         )}
       </div>
@@ -997,57 +710,6 @@ function Landing({ onStart, themes, selectedThemes, onToggleTheme }) {
             <li key={r}>{r}</li>
           ))}
         </ul>
-      </div>
-    </div>
-  );
-}
-
-function Panel({ title, subtitle, children }) {
-  return (
-    <div className="panel">
-      <div className="panel-head">
-        <div>
-          <p className="eyebrow">{subtitle}</p>
-          <h3>{title}</h3>
-        </div>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function Badge({ icon, label, value }) {
-  return (
-    <div className="badge">
-      <div className="badge-icon">{icon}</div>
-      <div>
-        <div className="badge-label">{label}</div>
-        <div className="badge-value">{value}</div>
-      </div>
-    </div>
-  );
-}
-
-function History({ history }) {
-  if (!history?.length) return null;
-  return (
-    <div className="panel ghost">
-      <div className="panel-head">
-        <p className="eyebrow">Последние</p>
-        <h3>История ответов</h3>
-      </div>
-      <div className="history">
-        {history.map((item) => (
-          <div key={item.id + item.side + item.pctA} className="history-row">
-            <div className="history-title">{item.prompt}</div>
-            <div className="history-meta">
-              <span>{item.side === 0 ? "Лево" : "Право"}</span>
-              <span className="muted">
-                {item.pctA}% / {item.pctB}%
-              </span>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
