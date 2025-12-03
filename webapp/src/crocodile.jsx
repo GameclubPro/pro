@@ -789,10 +789,6 @@ function Setup({
     updateRoster(initialRoster(mode));
   };
 
-  const adjustSetting = (key, delta, min, max) => {
-    onChangeSetting(key, clamp((settings?.[key] || 0) + delta, min, max));
-  };
-
   const settingsModal = (
     <AnimatePresence>
       {settingsOpen && (
@@ -834,19 +830,21 @@ function Setup({
                   <span className="pill">Таймер</span>
                   <div className="setting-number">{settings.roundSeconds}s</div>
                 </div>
-                <div className="meter">
-                  <div className="meter-track">
-                    <div className="meter-fill" style={{ width: `${timerPct}%` }} />
-                    <span className="meter-thumb" style={{ left: `${timerPct}%` }} />
-                  </div>
+                <div className="settings-slider-row">
+                  <input
+                    type="range"
+                    min={20}
+                    max={120}
+                    step={5}
+                    value={settings.roundSeconds}
+                    onChange={(e) => onChangeSetting("roundSeconds", Number(e.target.value))}
+                    className="settings-slider"
+                    style={{ "--slider-progress": `${timerPct}%` }}
+                  />
                   <div className="meter-scale">
                     <span>20с</span>
                     <span>120с</span>
                   </div>
-                </div>
-                <div className="setting-actions">
-                  <button onClick={() => adjustSetting("roundSeconds", -5, 20, 120)}>−5с</button>
-                  <button onClick={() => adjustSetting("roundSeconds", 5, 20, 120)}>+5с</button>
                 </div>
               </div>
 
@@ -855,22 +853,24 @@ function Setup({
                   <span className="pill">Слова на команду</span>
                   <div className="setting-number">{settings.wordsPerTeam}</div>
                 </div>
-                <div className="meter">
-                  <div className="meter-track alt">
-                    <div className="meter-fill alt" style={{ width: `${wordsPct}%` }} />
-                    <span className="meter-thumb" style={{ left: `${wordsPct}%` }} />
-                  </div>
+                <div className="settings-slider-row">
+                  <input
+                    type="range"
+                    min={3}
+                    max={30}
+                    step={1}
+                    value={settings.wordsPerTeam}
+                    onChange={(e) => onChangeSetting("wordsPerTeam", Number(e.target.value))}
+                    className="settings-slider"
+                    style={{ "--slider-progress": `${wordsPct}%` }}
+                  />
                   <div className="meter-scale">
                     <span>3</span>
                     <span>30</span>
                   </div>
                 </div>
-              <div className="setting-actions">
-                <button onClick={() => adjustSetting("wordsPerTeam", -1, 3, 30)}>−1</button>
-                <button onClick={() => adjustSetting("wordsPerTeam", 1, 3, 30)}>+1</button>
               </div>
             </div>
-          </div>
 
           <div className="settings-block">
             <div className="section-header">
