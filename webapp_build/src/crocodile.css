@@ -691,9 +691,6 @@
 }
 
 @media (max-width: 768px) {
-  .pack-grid {
-    grid-template-columns: 1fr;
-  }
   .croco-settings-overlay {
     padding: calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-left)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-right));
   }
@@ -1297,9 +1294,6 @@
 
 @media (max-width: 640px) {
   .chips-row {
-    grid-template-columns: 1fr;
-  }
-  .pack-grid {
     grid-template-columns: 1fr;
   }
   .option-btn {
