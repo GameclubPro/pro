@@ -1013,6 +1013,29 @@
   filter: drop-shadow(0 10px 20px rgba(250, 204, 21, 0.4));
 }
 
+.pacman.is-dimmed {
+  filter: none;
+  opacity: 0.6;
+}
+
+.pacman.is-dimmed .pacman-body {
+  animation-play-state: paused;
+  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.16);
+  filter: saturate(0.5) brightness(0.9);
+}
+
+.pacman.is-dimmed .pacman-trail {
+  opacity: 0;
+}
+
+.pacman.is-dimmed .pacman-eye {
+  box-shadow: none;
+}
+
+.pacman-track.is-dimmed {
+  opacity: 0.85;
+}
+
 .pacman-trail {
   position: absolute;
   top: 50%;

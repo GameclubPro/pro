@@ -1226,7 +1226,13 @@ function Round({
         )}
       </div>
 
-      <TimerPacman pct={timePct} seconds={seconds} running={running} current={current} />
+      <TimerPacman
+        pct={timePct}
+        seconds={seconds}
+        running={running}
+        current={current}
+        dimmed={showTimeoutPrompt}
+      />
 
       <WordCard word={word} tip={tip} hints={hints} lastResult={lastResult} />
 
@@ -1309,7 +1315,7 @@ function Round({
   );
 }
 
-function TimerPacman({ pct, seconds, running, current }) {
+function TimerPacman({ pct, seconds, running, current, dimmed = false }) {
   const safePct = clamp(pct ?? 0, 0, 1);
   const remainingPct = Math.round(safePct * 100);
   const trackInsetPct = 4;
@@ -1321,6 +1327,9 @@ function TimerPacman({ pct, seconds, running, current }) {
   const label =
     remainingPct <= 0 ? "время вышло" : running ? "время идёт" : "пауза";
 
+  const pacmanClass = `pacman ${running ? "is-running" : "is-paused"} ${dimmed ? "is-dimmed" : ""}`;
+  const trackClass = `pacman-track ${running ? "is-running" : "is-paused"} ${dimmed ? "is-dimmed" : ""}`;
+
   return (
     <div className="pacman-timer">
       <div className="pacman-meta">
@@ -1328,10 +1337,7 @@ function TimerPacman({ pct, seconds, running, current }) {
         <div className="timer-sub">{label}</div>
       </div>
 
-      <div
-        className={`pacman-track ${running ? "is-running" : "is-paused"}`}
-        aria-hidden
-      >
+      <div className={trackClass} aria-hidden>
         {current?.emoji && (
           <div
             className="pacman-team-icon"
@@ -1351,7 +1357,7 @@ function TimerPacman({ pct, seconds, running, current }) {
         />
 
         <motion.div
-          className={`pacman ${running ? "is-running" : "is-paused"}`}
+          className={pacmanClass}
           style={{ left: pacLeft }}
           animate={{ left: pacLeft }}
           transition={{ duration: 0.2, ease: "easeOut" }}
