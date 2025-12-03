@@ -320,6 +320,16 @@
   box-shadow: 0 14px 40px rgba(31, 238, 156, 0.3), var(--croco-shadow);
 }
 
+.custom-block {
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px dashed var(--croco-border);
+  background: rgba(255, 255, 255, 0.04);
+  display: grid;
+  gap: 8px;
+}
+
 .croco-textarea {
   width: 100%;
   border-radius: 12px;

@@ -30,7 +30,7 @@ const DEFAULT_SETTINGS = {
   mode: "teams",
   roundSeconds: 60,
   wordsPerTeam: 10,
-  difficulty: "mixed", // easy | medium | hard | mixed | custom
+  difficulty: ["easy", "medium", "hard"], // выбранные паки: easy | medium | hard | custom
   autoDifficulty: true,
   hints: true,
   sound: true,
@@ -202,21 +202,27 @@ const initialRoster = (mode = "teams") => {
   }));
 };
 
+const normalizePacks = (value, hasCustom = false) => {
+  const base = ["easy", "medium", "hard"];
+  if (Array.isArray(value)) {
+    const uniq = Array.from(new Set(value.filter(Boolean)));
+    return uniq.length ? uniq : base;
+  }
+  const key = String(value || "").trim();
+  if (["easy", "medium", "hard", "custom"].includes(key)) return [key];
+  return hasCustom ? [...base, "custom"] : base;
+};
+
 const buildWordPool = (settings, customWords) => {
   const withLabel = (words, level) => words.map((w) => ({ id: `${level}-${w}`, word: w, level }));
   const pool = [];
-  if (settings.difficulty === "easy") pool.push(...withLabel(PACKS.easy, "easy"));
-  else if (settings.difficulty === "medium") pool.push(...withLabel(PACKS.medium, "medium"));
-  else if (settings.difficulty === "hard") pool.push(...withLabel(PACKS.hard, "hard"));
-  else if (settings.difficulty === "custom") pool.push(...withLabel(customWords, "custom"));
-  else {
-    pool.push(
-      ...withLabel(PACKS.easy, "easy"),
-      ...withLabel(PACKS.medium, "medium"),
-      ...withLabel(PACKS.hard, "hard")
-    );
-    if (customWords.length) pool.push(...withLabel(customWords, "custom"));
-  }
+  const selected = normalizePacks(settings.difficulty, customWords.length > 0);
+  selected.forEach((key) => {
+    if (key === "easy") pool.push(...withLabel(PACKS.easy, "easy"));
+    else if (key === "medium") pool.push(...withLabel(PACKS.medium, "medium"));
+    else if (key === "hard") pool.push(...withLabel(PACKS.hard, "hard"));
+    else if (key === "custom") pool.push(...withLabel(customWords, "custom"));
+  });
   return pool.length
     ? pool
     : [{ id: "fallback-лампа", word: "лампа", level: "easy" }];
@@ -732,6 +738,11 @@ function Setup({
 }) {
   const [localRoster, setLocalRoster] = useState(roster);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const selectedPacks = useMemo(
+    () => normalizePacks(settings.difficulty, customWords.length > 0),
+    [settings.difficulty, customWords.length]
+  );
+  const [customExpanded, setCustomExpanded] = useState(selectedPacks.includes("custom"));
   const modeIsTeams = settings.mode === "teams";
   const minPlayers = 2;
   const timerPct = clamp(((settings.roundSeconds - 20) / (120 - 20)) * 100, 0, 100);
@@ -741,6 +752,10 @@ function Setup({
   useEffect(() => {
     setLocalRoster(roster);
   }, [roster]);
+
+  useEffect(() => {
+    setCustomExpanded(selectedPacks.includes("custom"));
+  }, [selectedPacks]);
 
   const updateRoster = (next) => {
     setLocalRoster(next);
@@ -787,6 +802,16 @@ function Setup({
   const switchMode = (mode) => {
     onChangeSetting("mode", mode);
     updateRoster(initialRoster(mode));
+  };
+
+  const togglePack = (key) => {
+    const next = selectedPacks.includes(key)
+      ? selectedPacks.length > 1
+        ? selectedPacks.filter((p) => p !== key)
+        : selectedPacks
+      : [...selectedPacks, key];
+    onChangeSetting("difficulty", next);
+    if (key === "custom") setCustomExpanded(next.includes("custom"));
   };
 
   const settingsModal = (
@@ -882,32 +907,37 @@ function Setup({
                   { key: "easy", label: "Лайт", desc: "простые" },
                   { key: "medium", label: "Стандарт", desc: "живые" },
                   { key: "hard", label: "Хард", desc: "сложные" },
-                  { key: "mixed", label: "Микс", desc: "все" },
                   { key: "custom", label: "Свои", desc: "только импорт" },
                 ].map((p) => (
+                  // несколько паков можно выбрать одновременно
                   <button
                     key={p.key}
-                    className={`pack-chip ${settings.difficulty === p.key ? "pack-active" : ""}`}
-                    onClick={() => onChangeSetting("difficulty", p.key)}
+                    className={`pack-chip ${selectedPacks.includes(p.key) ? "pack-active" : ""}`}
+                    onClick={() => togglePack(p.key)}
+                    aria-pressed={selectedPacks.includes(p.key)}
                   >
                     <div className="pack-top">
                       <span>{p.label}</span>
-                      {settings.difficulty === p.key && <span className="pill">выбрано</span>}
+                      {selectedPacks.includes(p.key) && <span className="pill">выбрано</span>}
                     </div>
                     <small>{p.desc}</small>
                   </button>
                 ))}
               </div>
-              <textarea
-                className="croco-textarea"
-                value={customText}
-                onChange={(e) => onChangeCustom(e.target.value)}
-                rows={5}
-                placeholder="Каждое слово — с новой строки"
-              />
-              <div className="small-meta">
-                {customWords.length} своих слов. Всего в колоде: {wordPool.length}.
-              </div>
+              {customExpanded && (
+                <div className="custom-block">
+                  <textarea
+                    className="croco-textarea"
+                    value={customText}
+                    onChange={(e) => onChangeCustom(e.target.value)}
+                    rows={5}
+                    placeholder="Каждое слово — с новой строки"
+                  />
+                  <div className="small-meta">
+                    {customWords.length} своих слов. Всего в колоде: {wordPool.length}.
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="settings-toggles">
