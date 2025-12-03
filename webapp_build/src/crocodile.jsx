@@ -483,6 +483,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   const progressGiven = useRef(false);
   const advanceTimeoutRef = useRef(null);
   const confettiRef = useRef(null);
+  const [timeoutPrompt, setTimeoutPrompt] = useState(false);
 
   const customWords = useMemo(() => parseWords(state.customText), [state.customText]);
   const wordPool = useMemo(() => buildWordPool(state.settings, customWords), [state.settings, customWords]);
@@ -506,6 +507,12 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   useEffect(() => {
     persist(STORAGE_KEYS.custom, state.customText);
   }, [state.customText]);
+
+  useEffect(() => {
+    if (state.stage !== "round") {
+      setTimeoutPrompt(false);
+    }
+  }, [state.stage]);
 
   useEffect(() => {
     if (state.stage !== "round" || !state.running) return undefined;
@@ -615,10 +622,11 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
 
   useEffect(() => {
     if (state.stage !== "round") return;
-    if (state.timerMs <= 0) {
-      processAnswer("skip");
+    if (state.timerMs <= 0 && !timeoutPrompt) {
+      dispatch({ type: "STOP_TIMER" });
+      setTimeoutPrompt(true);
     }
-  }, [state.timerMs, state.stage, processAnswer]);
+  }, [state.timerMs, state.stage, timeoutPrompt, processAnswer]);
 
   const mark = (isCorrect) => {
     if (!state.word) return;
@@ -643,6 +651,11 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
 
   const canStart = state.roster.length >= 2 && wordPool.length > 0;
   const secondsLeft = Math.ceil(state.timerMs / 1000);
+
+  const handleTimeoutAnswer = (isCorrect) => {
+    setTimeoutPrompt(false);
+    mark(isCorrect);
+  };
 
   return (
     <div className={`croco ${state.stage === "switch" ? "is-switch" : ""}`}>
@@ -699,6 +712,8 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
             onAnswer={mark}
             onExit={goBack}
             lastResult={state.lastResult}
+            showTimeoutPrompt={timeoutPrompt}
+            onTimeoutAnswer={handleTimeoutAnswer}
           />
         )}
 
@@ -1122,6 +1137,8 @@ function Round({
   onAnswer,
   onExit,
   lastResult,
+  showTimeoutPrompt,
+  onTimeoutAnswer,
 }) {
   return (
     <div className="round">
@@ -1155,7 +1172,7 @@ function Round({
           className="option-btn"
           whileTap={{ scale: 0.98 }}
           onClick={() => onAnswer(true)}
-          disabled={!word}
+          disabled={!word || showTimeoutPrompt}
         >
           <Check size={18} />
           Угадали
@@ -1164,7 +1181,7 @@ function Round({
           className="option-btn secondary"
           whileTap={{ scale: 0.98 }}
           onClick={() => onAnswer(false)}
-          disabled={!word}
+          disabled={!word || showTimeoutPrompt}
         >
           <RefreshCw size={18} />
           Пропуск
@@ -1173,6 +1190,7 @@ function Round({
           className="option-btn ghost"
           whileTap={{ scale: 0.98 }}
           onClick={onPauseToggle}
+          disabled={showTimeoutPrompt}
         >
           {isPaused ? (
             <>
@@ -1194,6 +1212,33 @@ function Round({
             <motion.button className="cta wide" whileTap={{ scale: 0.97 }} onClick={onPauseToggle}>
               Продолжить
             </motion.button>
+          </div>
+        </div>
+      )}
+
+      {showTimeoutPrompt && (
+        <div className="timeout-overlay">
+          <div className="timeout-card">
+            <div className="timeout-title">Время вышло</div>
+            <div className="timeout-sub">Команда успела угадать?</div>
+            <div className="timeout-actions">
+              <motion.button
+                className="option-btn"
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onTimeoutAnswer(true)}
+              >
+                <Check size={18} />
+                Угадали
+              </motion.button>
+              <motion.button
+                className="option-btn secondary"
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onTimeoutAnswer(false)}
+              >
+                <RefreshCw size={18} />
+                Не угадали
+              </motion.button>
+            </div>
           </div>
         </div>
       )}

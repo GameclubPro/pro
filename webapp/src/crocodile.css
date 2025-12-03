@@ -1182,6 +1182,44 @@
   min-width: 240px;
 }
 
+.timeout-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: rgba(4, 7, 12, 0.78);
+  backdrop-filter: blur(6px);
+}
+
+.timeout-card {
+  background: var(--croco-surface);
+  border: 1px solid var(--croco-border);
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: var(--croco-shadow);
+  display: grid;
+  gap: 10px;
+  min-width: 260px;
+  text-align: center;
+}
+
+.timeout-title {
+  font-weight: 900;
+  font-size: 18px;
+}
+
+.timeout-sub {
+  color: var(--croco-muted);
+  font-size: 14px;
+}
+
+.timeout-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .pill {
   display: inline-flex;
   align-items: center;
