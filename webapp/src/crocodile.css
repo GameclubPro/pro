@@ -387,13 +387,14 @@
     rgba(9, 15, 24, 0.95);
   border: 1px solid var(--croco-border);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
-  overflow: hidden;
+  overflow: auto;
   height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px);
   max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px);
   will-change: transform, opacity;
   transform: translateZ(0);
   margin: 0 auto;
   flex-shrink: 0;
+  scrollbar-color: rgba(139, 92, 246, 0.5) rgba(255, 255, 255, 0.04);
 }
 
 .settings-window::before {
@@ -405,8 +406,24 @@
 }
 
 .settings-window::-webkit-scrollbar {
-  width: 0;
-  height: 0;
+  width: 10px;
+}
+
+.settings-window::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  border: 1px solid var(--croco-border);
+}
+
+.settings-window::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.85), rgba(139, 92, 246, 0.8));
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.settings-window::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.95), rgba(139, 92, 246, 0.9));
 }
 
 .settings-head {

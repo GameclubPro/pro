@@ -865,45 +865,18 @@ function Setup({
                     <span>30</span>
                   </div>
                 </div>
-                <div className="setting-actions">
-                  <button onClick={() => adjustSetting("wordsPerTeam", -1, 3, 30)}>−1</button>
-                  <button onClick={() => adjustSetting("wordsPerTeam", 1, 3, 30)}>+1</button>
-                </div>
+              <div className="setting-actions">
+                <button onClick={() => adjustSetting("wordsPerTeam", -1, 3, 30)}>−1</button>
+                <button onClick={() => adjustSetting("wordsPerTeam", 1, 3, 30)}>+1</button>
               </div>
             </div>
+          </div>
 
-            <div className="settings-toggles">
-              <button
-                className={`toggle-chip ${settings.hints ? "on" : ""}`}
-                onClick={() => onChangeSetting("hints", !settings.hints)}
-              >
-                <Sparkles size={16} />
-                Подсказки и табу
-                <span className="toggle-dot" />
-              </button>
-              <button
-                className={`toggle-chip ${settings.autoDifficulty ? "on" : ""}`}
-                onClick={() => onChangeSetting("autoDifficulty", !settings.autoDifficulty)}
-              >
-                <Activity size={16} />
-                Авто-сложность
-                <span className="toggle-dot" />
-              </button>
-              <button
-                className={`toggle-chip ${settings.sound ? "on" : ""}`}
-                onClick={() => onChangeSetting("sound", !settings.sound)}
-              >
-                <Volume2 size={16} />
-                Звук и вибро
-                <span className="toggle-dot" />
-              </button>
+          <div className="settings-block">
+            <div className="section-header">
+              <div className="section-title">Колода слов</div>
+              <span className="pill">Всего: {wordPool.length}</span>
             </div>
-
-            <div className="settings-block">
-              <div className="section-header">
-                <div className="section-title">Колода слов</div>
-                <span className="pill">Всего: {wordPool.length}</span>
-              </div>
               <div className="pack-grid">
                 {[
                   { key: "easy", label: "Лайт", desc: "простые" },
@@ -935,6 +908,33 @@ function Setup({
               <div className="small-meta">
                 {customWords.length} своих слов. Всего в колоде: {wordPool.length}.
               </div>
+            </div>
+
+            <div className="settings-toggles">
+              <button
+                className={`toggle-chip ${settings.hints ? "on" : ""}`}
+                onClick={() => onChangeSetting("hints", !settings.hints)}
+              >
+                <Sparkles size={16} />
+                Подсказки и табу
+                <span className="toggle-dot" />
+              </button>
+              <button
+                className={`toggle-chip ${settings.autoDifficulty ? "on" : ""}`}
+                onClick={() => onChangeSetting("autoDifficulty", !settings.autoDifficulty)}
+              >
+                <Activity size={16} />
+                Авто-сложность
+                <span className="toggle-dot" />
+              </button>
+              <button
+                className={`toggle-chip ${settings.sound ? "on" : ""}`}
+                onClick={() => onChangeSetting("sound", !settings.sound)}
+              >
+                <Volume2 size={16} />
+                Звук и вибро
+                <span className="toggle-dot" />
+              </button>
             </div>
           </motion.div>
         </motion.div>
