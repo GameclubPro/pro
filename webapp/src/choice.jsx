@@ -391,7 +391,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
   const [settings, setSettings] = useState(() =>
     readPersisted(STORAGE_KEYS.settings, {
       mode: "classic",
-      autoNext: true,
+      autoNext: false,
       sound: true,
       haptics: true,
       selectedThemes: Object.keys(THEMES),
@@ -477,27 +477,23 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
       if (!pool.length) return;
       setReveal(false);
       setResult(null);
-      const available = pool.filter((q) => !usedIds.includes(q.id));
-      const source = force || !available.length ? pool : available;
-      const next = randomItem(source);
-      setCurrent(next);
-      setUsedIds((prev) => {
-        const nextList = force || !available.length ? [next.id] : [...prev, next.id];
-        return nextList.slice(-pool.length);
+      setUsedIds((prevUsed) => {
+        const used = force ? [] : prevUsed;
+        const available = pool.filter((q) => !used.includes(q.id));
+        const source = !available.length ? pool : available;
+        const next = randomItem(source);
+        setCurrent(next);
+        const updated = force || !available.length ? [next.id] : [...used, next.id];
+        return updated.slice(-pool.length);
       });
     },
-    [pool, usedIds]
+    [pool]
   );
 
   useEffect(() => {
     if (stage !== "play") return;
     pickNext(true);
-  }, [stage, deckTick, pickNext]);
-
-  useEffect(() => {
-    if (stage !== "play") return;
-    pickNext(true);
-  }, [pool, stage, pickNext]);
+  }, [stage, deckTick, pool, pickNext]);
 
   useEffect(() => {
     if (!setBackHandler) return undefined;
