@@ -302,28 +302,34 @@ const useChime = (enabled) => {
 
 const useBeep = (enabled) => {
   const ctxRef = useRef(null);
-  const play = useCallback(() => {
-    if (!enabled) return;
-    try {
-      if (!ctxRef.current) {
-        const Ctx = window.AudioContext || window.webkitAudioContext;
-        ctxRef.current = new Ctx();
+  const play = useCallback(
+    (duration = 0.4, freq = 880) => {
+      if (!enabled) return;
+      try {
+        if (!ctxRef.current) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          ctxRef.current = new Ctx();
+        }
+        const ctx = ctxRef.current;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.18, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration * 0.9);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch {
+        /* ignore */
       }
-      const ctx = ctxRef.current;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = 880;
-      gain.gain.setValueAtTime(0.18, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.4);
-    } catch {
-      /* ignore */
-    }
-  }, [enabled]);
-  return play;
+    },
+    [enabled]
+  );
+  return {
+    short: () => play(0.4, 880),
+    long: () => play(1.1, 760),
+  };
 };
 
 const reducer = (state, action) => {
@@ -506,7 +512,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
 
   const haptic = useHaptics();
   const chime = useChime(state.settings.sound);
-  const beep = useBeep(state.settings.sound);
+  const { short: shortBeep, long: longBeep } = useBeep(state.settings.sound);
   const progressGiven = useRef(false);
   const advanceTimeoutRef = useRef(null);
   const confettiRef = useRef(null);
@@ -666,12 +672,13 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
     if (secs <= 10 && secs > 0) {
       if (lastBeepSecondRef.current !== secs) {
         lastBeepSecondRef.current = secs;
-        beep();
+        if (secs === 1) longBeep();
+        else shortBeep();
       }
     } else if (secs > 10) {
       lastBeepSecondRef.current = null;
     }
-  }, [state.timerMs, state.stage, state.running, beep]);
+  }, [state.timerMs, state.stage, state.running, shortBeep, longBeep]);
 
   const mark = (isCorrect) => {
     if (!state.word) return;
