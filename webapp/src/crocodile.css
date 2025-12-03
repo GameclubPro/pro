@@ -394,7 +394,12 @@
   transform: translateZ(0);
   margin: 0 auto;
   flex-shrink: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable both-edges;
   scrollbar-color: rgba(139, 92, 246, 0.5) rgba(255, 255, 255, 0.04);
+  padding-right: 18px;
 }
 
 .settings-window::before {
@@ -403,6 +408,17 @@
   inset: 0;
   background: radial-gradient(120% 120% at 50% -10%, rgba(255, 255, 255, 0.05), transparent 50%);
   pointer-events: none;
+}
+
+.settings-window::after {
+  content: "";
+  position: sticky;
+  bottom: -1px;
+  display: block;
+  height: 18px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(7, 12, 18, 0), rgba(7, 12, 18, 0.6));
+  margin-top: 8px;
 }
 
 .settings-window::-webkit-scrollbar {
@@ -622,8 +638,9 @@
     height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
     max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
     border-radius: 18px;
-    padding: 14px 12px 16px;
+    padding: 14px 10px 16px 12px;
     box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
+    padding-right: 16px;
   }
   .settings-head {
     flex-direction: column;
