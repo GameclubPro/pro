@@ -614,7 +614,8 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   };
 
   const processAnswer = useCallback(
-    (kind) => {
+    (kind, options = {}) => {
+      const immediate = options.immediate || timeoutPrompt;
       if (state.stage !== "round") return;
       if (advanceTimeoutRef.current) {
         clearTimeout(advanceTimeoutRef.current);
@@ -642,7 +643,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
       });
       const allDone = nextPerTeam.every((n) => n >= wordsLimit);
       const nextIdx = findNextActive(nextPerTeam, state.activeIndex, wordsLimit);
-      advanceTimeoutRef.current = setTimeout(() => {
+      const proceed = () => {
         if (allDone) {
           const winner = evaluateWinner(nextRoster);
           dispatch({ type: "SUMMARY", winner, reason: "words" });
@@ -654,9 +655,15 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
           });
         }
         advanceTimeoutRef.current = null;
-      }, ADVANCE_DELAY_MS);
+      };
+
+      if (immediate) {
+        proceed();
+      } else {
+        advanceTimeoutRef.current = setTimeout(proceed, ADVANCE_DELAY_MS);
+      }
     },
-    [state.stage, state.perTeam, state.activeIndex, state.roster, state.word, state.used, wordsLimit, fireConfetti]
+    [state.stage, state.perTeam, state.activeIndex, state.roster, state.word, state.used, wordsLimit, fireConfetti, timeoutPrompt]
   );
 
   useEffect(() => {
@@ -710,7 +717,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
 
   const handleTimeoutAnswer = (isCorrect) => {
     setTimeoutPrompt(false);
-    mark(isCorrect);
+    processAnswer(isCorrect ? "correct" : "skip", { immediate: true });
   };
 
   return (
