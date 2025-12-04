@@ -134,20 +134,21 @@
 
 .croco-hands {
   position: absolute;
-  left: 50%;
-  top: 48%;
-  transform: translate(-50%, -50%);
-  width: clamp(220px, 58vw, 360px);
-  max-width: 88vw;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: none;
   z-index: 2;
-  filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.35));
 }
 
 .croco-hands img {
   display: block;
-  width: 100%;
+  width: min(120%, 520px);
+  max-width: 92vw;
   height: auto;
+  transform: translateY(-6%);
+  filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.35));
 }
 
 .setup-panel {
