@@ -193,11 +193,11 @@
 }
 
 .setup-panel .croco-legs {
-  bottom: clamp(-360px, -38vw, -280px);
+  bottom: clamp(-370px, -39vw, -290px);
   left: 50%;
   transform: translateX(-50%);
-  width: min(72%, 560px);
-  max-width: 720px;
+  width: min(68%, 520px);
+  max-width: 680px;
 }
 
 .roster-shell {
@@ -220,9 +220,9 @@
     max-width: 720px;
   }
   .setup-panel .croco-legs {
-    bottom: clamp(-280px, -40vw, -190px);
-    width: min(84%, 540px);
-    max-width: 640px;
+    bottom: clamp(-290px, -41vw, -200px);
+    width: min(80%, 500px);
+    max-width: 600px;
   }
   .roster-shell {
     padding-top: clamp(100px, 20vw, 190px);
