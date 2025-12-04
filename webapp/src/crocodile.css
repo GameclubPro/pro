@@ -193,7 +193,7 @@
 }
 
 .setup-panel .croco-legs {
-  bottom: clamp(-340px, -36vw, -260px);
+  bottom: clamp(-360px, -38vw, -280px);
   left: 50%;
   transform: translateX(-50%);
   width: min(72%, 560px);
@@ -220,7 +220,7 @@
     max-width: 720px;
   }
   .setup-panel .croco-legs {
-    bottom: clamp(-260px, -38vw, -170px);
+    bottom: clamp(-280px, -40vw, -190px);
     width: min(84%, 540px);
     max-width: 640px;
   }
