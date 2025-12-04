@@ -18,6 +18,13 @@ import {
   X,
   Volume2,
 } from "lucide-react";
+import {
+  appendCustomWords,
+  buildWordPool,
+  normalizePacks,
+  parseWords,
+  removeCustomWordAt,
+} from "./crocodile-helpers";
 import "./crocodile.css";
 
 const STORAGE_KEYS = {
@@ -58,103 +65,11 @@ const TIPS = [
   "Двигайся крупно, силуэт читается лучше мелких деталей.",
 ];
 
-const PACKS = {
-  easy: [
-    "зебра",
-    "пицца",
-    "чемодан",
-    "лимон",
-    "пальто",
-    "робот",
-    "звезда",
-    "поезд",
-    "жук",
-    "торт",
-    "самокат",
-    "лампа",
-    "пират",
-    "гитара",
-    "динозавр",
-    "арбуз",
-    "компас",
-    "фея",
-    "сова",
-    "радуга",
-    "футбол",
-    "морковь",
-    "скейт",
-    "панда",
-    "комета",
-    "космонавт",
-    "салат",
-    "йога",
-    "жонглёр",
-    "плед",
-  ],
-  medium: [
-    "телескоп",
-    "камчатка",
-    "практикант",
-    "молния",
-    "вулкан",
-    "квиток",
-    "дирижёр",
-    "горнолыжник",
-    "интерфейс",
-    "коллекционер",
-    "балкон",
-    "экспонат",
-    "город-сад",
-    "звукозапись",
-    "архивариус",
-    "танкер",
-    "альбатрос",
-    "перископ",
-    "батут",
-    "органайзер",
-    "лаборатория",
-    "будильник",
-    "фехтовальщик",
-    "сковорода",
-    "океанариум",
-    "снегоход",
-    "калейдоскоп",
-    "инкогнито",
-    "фотокарточка",
-    "квест-комната",
-  ],
-  hard: [
-    "детокс",
-    "марципан",
-    "киберпанк",
-    "голограмма",
-    "капсула времени",
-    "нетворкинг",
-    "ретрит",
-    "экзоскелет",
-    "терминатор",
-    "неодимовый магнит",
-    "микродозинг",
-    "палеонтолог",
-    "суперпозиция",
-    "антигравитация",
-    "ретранслятор",
-    "навигация",
-    "гидропонка",
-    "песочные часы",
-    "синхрофазотрон",
-    "купол дрона",
-    "невесомость",
-    "логист",
-    "интроспекция",
-    "криптография",
-    "аэроэкспресс",
-    "эклектика",
-    "панорама",
-    "энергетик",
-    "гиперкроссфит",
-    "монолит",
-  ],
+const PACK_STICKERS = {
+  easy: "🌱",
+  medium: "⚡️",
+  hard: "🔥",
+  custom: "🎨",
 };
 
 const ADVANCE_DELAY_MS = 1500;
@@ -165,12 +80,6 @@ const randomId = () =>
     : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-
-const parseWords = (text) =>
-  (text || "")
-    .split(/\r?\n/)
-    .map((w) => w.trim())
-    .filter(Boolean);
 
 const persist = (key, value) => {
   try {
@@ -200,32 +109,6 @@ const initialRoster = (mode = "teams") => {
     color: PALETTE[idx % PALETTE.length],
     score: 0,
   }));
-};
-
-const normalizePacks = (value, hasCustom = false) => {
-  const base = ["easy", "medium", "hard"];
-  if (Array.isArray(value)) {
-    const uniq = Array.from(new Set(value.filter(Boolean)));
-    return uniq.length ? uniq : base;
-  }
-  const key = String(value || "").trim();
-  if (["easy", "medium", "hard", "custom"].includes(key)) return [key];
-  return hasCustom ? [...base, "custom"] : base;
-};
-
-const buildWordPool = (settings, customWords) => {
-  const withLabel = (words, level) => words.map((w) => ({ id: `${level}-${w}`, word: w, level }));
-  const pool = [];
-  const selected = normalizePacks(settings.difficulty, customWords.length > 0);
-  selected.forEach((key) => {
-    if (key === "easy") pool.push(...withLabel(PACKS.easy, "easy"));
-    else if (key === "medium") pool.push(...withLabel(PACKS.medium, "medium"));
-    else if (key === "hard") pool.push(...withLabel(PACKS.hard, "hard"));
-    else if (key === "custom") pool.push(...withLabel(customWords, "custom"));
-  });
-  return pool.length
-    ? pool
-    : [{ id: "fallback-лампа", word: "лампа", level: "easy" }];
 };
 
 const levelScore = (level) => {
@@ -821,6 +704,7 @@ function Setup({
     [settings.difficulty, customWords.length]
   );
   const [customExpanded, setCustomExpanded] = useState(selectedPacks.includes("custom"));
+  const [customInput, setCustomInput] = useState("");
   const modeIsTeams = settings.mode === "teams";
   const minPlayers = 2;
   const timerPct = clamp(((settings.roundSeconds - 20) / (120 - 20)) * 100, 0, 100);
@@ -890,6 +774,24 @@ function Setup({
       : [...selectedPacks, key];
     onChangeSetting("difficulty", next);
     if (key === "custom") setCustomExpanded(next.includes("custom"));
+  };
+
+  const handleAddCustom = () => {
+    const nextText = appendCustomWords(customText, customInput);
+    if (nextText === (customText || "")) {
+      setCustomInput("");
+      return;
+    }
+    onChangeCustom(nextText);
+    setCustomInput("");
+    setCustomExpanded(true);
+  };
+
+  const handleRemoveCustom = (index) => {
+    const nextText = removeCustomWordAt(customText, index);
+    if (nextText !== (customText || "")) {
+      onChangeCustom(nextText);
+    }
   };
 
   const settingsModal = (
@@ -976,43 +878,80 @@ function Setup({
             </div>
 
           <div className="settings-block">
-            <div className="section-header">
-              <div className="section-title">Колода слов</div>
-              <span className="pill">Всего: {wordPool.length}</span>
-            </div>
+              <div className="section-header">
+                <div className="section-title">Колода слов</div>
+                <span className="pill">Всего: {wordPool.length}</span>
+              </div>
               <div className="pack-grid">
                 {[
-                  { key: "easy", label: "Лайт", desc: "простые" },
-                  { key: "medium", label: "Стандарт", desc: "живые" },
-                  { key: "hard", label: "Хард", desc: "сложные" },
-                  { key: "custom", label: "Свои", desc: "только импорт" },
-                ].map((p) => (
-                  // несколько паков можно выбрать одновременно
-                  <button
-                    key={p.key}
-                    className={`pack-chip ${selectedPacks.includes(p.key) ? "pack-active" : ""}`}
-                    onClick={() => togglePack(p.key)}
-                    aria-pressed={selectedPacks.includes(p.key)}
-                  >
-                    <div className="pack-top">
-                      <span>{p.label}</span>
-                      {selectedPacks.includes(p.key) && <span className="pill">выбрано</span>}
-                    </div>
-                    <small>{p.desc}</small>
-                  </button>
-                ))}
+                  { key: "easy", label: "Лайт" },
+                  { key: "medium", label: "Стандарт" },
+                  { key: "hard", label: "Хард" },
+                  { key: "custom", label: "Свои" },
+                ].map((p) => {
+                  const active = selectedPacks.includes(p.key);
+                  return (
+                    // несколько паков можно выбрать одновременно
+                    <button
+                      key={p.key}
+                      className={`pack-chip ${active ? "pack-active" : ""}`}
+                      onClick={() => togglePack(p.key)}
+                      aria-pressed={active}
+                    >
+                      <div className="pack-top">
+                        <span className="pack-sticker" aria-hidden>{PACK_STICKERS[p.key]}</span>
+                        <span className="pack-label">{p.label}</span>
+                        {active && (
+                          <span className="pill check-pill" aria-label="Пак выбран">
+                            <Check size={14} />
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
               {customExpanded && (
                 <div className="custom-block">
-                  <textarea
-                    className="croco-textarea"
-                    value={customText}
-                    onChange={(e) => onChangeCustom(e.target.value)}
-                    rows={5}
-                    placeholder="Каждое слово — с новой строки"
-                  />
+                  <div className="custom-add-row">
+                    <input
+                      className="croco-textarea custom-input"
+                      value={customInput}
+                      onChange={(e) => setCustomInput(e.target.value)}
+                      placeholder="Новое слово"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddCustom();
+                        }
+                      }}
+                    />
+                    <motion.button
+                      className="add-chip"
+                      whileTap={{ scale: 0.96 }}
+                      onClick={handleAddCustom}
+                      aria-label="Добавить слово"
+                    >
+                      +
+                    </motion.button>
+                  </div>
+                  <div className="custom-chips">
+                    {customWords.map((word, idx) => (
+                      <span key={`${word}-${idx}`} className="custom-chip">
+                        <span className="chip-word">{word}</span>
+                        <button
+                          className="chip-remove"
+                          onClick={() => handleRemoveCustom(idx)}
+                          aria-label={`Удалить слово ${word}`}
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                    {!customWords.length && <div className="custom-empty">Добавь слова через +</div>}
+                  </div>
                   <div className="small-meta">
-                    {customWords.length} своих слов. Всего в колоде: {wordPool.length}.
+                    {customWords.length} своих слов. Всего в колоде: {wordPool.length}. Каждое слово добавляется отдельной кнопкой.
                   </div>
                 </div>
               )}

@@ -297,27 +297,52 @@
   border: 1px solid var(--croco-border);
   background: rgba(255, 255, 255, 0.04);
   color: var(--croco-fg);
-  padding: 12px;
-  display: grid;
-  gap: 4px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   text-align: left;
   box-shadow: var(--croco-shadow);
+  position: relative;
+  overflow: hidden;
 }
 
 .pack-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
+  gap: 10px;
+  flex: 1;
 }
 
-.pack-chip small {
-  color: var(--croco-muted);
+.pack-label {
+  font-weight: 900;
+  letter-spacing: 0.01em;
+}
+
+.pack-sticker {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--croco-border);
+  font-size: 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .pack-active {
   border-color: #1fee9c;
   box-shadow: 0 14px 40px rgba(31, 238, 156, 0.3), var(--croco-shadow);
+}
+
+.check-pill {
+  padding: 6px;
+  border-color: rgba(31, 238, 156, 0.6);
+  background: rgba(31, 238, 156, 0.15);
+  color: #c8f7dc;
 }
 
 .custom-block {
@@ -341,6 +366,68 @@
   font-size: 14px;
   min-height: 120px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.croco-textarea.custom-input {
+  min-height: 0;
+  height: 44px;
+}
+
+.custom-add-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.add-chip {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--croco-border);
+  background: linear-gradient(135deg, #1fee9c, #2ed3ff);
+  color: #041017;
+  font-weight: 900;
+  font-size: 18px;
+  box-shadow: 0 12px 28px rgba(31, 238, 156, 0.28);
+}
+
+.custom-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.custom-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--croco-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.chip-word {
+  font-weight: 700;
+}
+
+.chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 8px;
+  border: 1px solid var(--croco-border);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--croco-fg);
+}
+
+.custom-empty {
+  color: var(--croco-muted);
+  font-size: 13px;
+  padding: 8px 0;
 }
 
 .small-meta {
