@@ -176,7 +176,7 @@
 
 .roster-shell {
   position: relative;
-  padding-top: clamp(8px, 4vw, 16px);
+  padding-top: clamp(120px, 28vw, 170px);
 }
 
 .roster-shell .roster-list {
@@ -191,7 +191,7 @@
     max-width: 720px;
   }
   .roster-shell {
-    padding-top: clamp(10px, 8vw, 20px);
+    padding-top: clamp(130px, 34vw, 190px);
   }
 }
 
