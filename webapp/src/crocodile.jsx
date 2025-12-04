@@ -1042,12 +1042,11 @@ function Setup({
               </motion.button>
             </div>
 
+            <div className="croco-hands hold-panel" aria-hidden="true">
+              <img src={crocoHands} alt="" />
+            </div>
+
             <div className="roster-shell">
-              <div className="hands-bridge" aria-hidden="true">
-                <div className="croco-hands">
-                  <img src={crocoHands} alt="" />
-                </div>
-              </div>
               <div className="roster-list">
                 {localRoster.map((item) => (
                   <div className="roster-row" key={item.id}>

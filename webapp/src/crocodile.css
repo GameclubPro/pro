@@ -132,17 +132,8 @@
   height: auto;
 }
 
-.hands-bridge {
-  position: relative;
-  height: clamp(60px, 12vw, 86px);
-  margin: 6px 0 6px;
-  z-index: 0;
-  pointer-events: none;
-}
-
 .croco-hands {
   position: absolute;
-  inset: 0;
   display: flex;
   justify-content: center;
   pointer-events: none;
@@ -150,8 +141,8 @@
 
 .croco-hands img {
   display: block;
-  width: min(88%, 380px);
-  max-width: 92vw;
+  width: min(92%, 420px);
+  max-width: 96vw;
   height: auto;
   filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.26));
 }
@@ -169,6 +160,15 @@
   gap: 12px;
 }
 
+.setup-panel .croco-hands.hold-panel {
+  top: clamp(64px, 16vw, 96px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(94%, 440px);
+  max-width: 96vw;
+  z-index: 1;
+}
+
 .roster-shell {
   position: relative;
   padding-top: clamp(8px, 4vw, 16px);
@@ -180,16 +180,10 @@
 }
 
 @media (max-width: 768px) {
-  .croco-hands {
-    top: 0;
-  }
-  .hands-bridge {
-    height: clamp(68px, 20vw, 110px);
-    margin: 6px 0 8px;
-  }
-  .croco-hands img {
-    width: min(90%, 320px);
-    max-width: 96vw;
+  .setup-panel .croco-hands.hold-panel {
+    top: clamp(58px, 20vw, 104px);
+    width: min(96%, 380px);
+    max-width: 98vw;
   }
   .roster-shell {
     padding-top: clamp(10px, 8vw, 20px);
