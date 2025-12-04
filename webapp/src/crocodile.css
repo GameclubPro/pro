@@ -108,6 +108,35 @@
   gap: 12px;
 }
 
+.setup-shell {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  padding-top: clamp(110px, 24vw, 138px);
+}
+
+.croco-head {
+  position: absolute;
+  top: clamp(8px, 2vw, 14px);
+  left: 50%;
+  transform: translate(-50%, -12%);
+  width: clamp(150px, 40vw, 210px);
+  pointer-events: none;
+  filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.45));
+  z-index: 2;
+}
+
+.croco-head img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.setup-panel {
+  position: relative;
+  overflow: visible;
+}
+
 .panel-head {
   display: grid;
   gap: 6px;

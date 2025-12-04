@@ -25,6 +25,7 @@ import {
   parseWords,
   removeCustomWordAt,
 } from "./crocodile-helpers";
+import crocoHead from "../crocohead.png";
 import "./crocodile.css";
 
 const STORAGE_KEYS = {
@@ -993,89 +994,95 @@ function Setup({
     <>
       {portalTarget ? createPortal(settingsModal, portalTarget) : settingsModal}
 
-      <div className="panel">
-        <div className="panel-head">
-          <div className="eyebrow">Крокодил</div>
-          <div className="panel-title">Собери состав и жми старт</div>
+      <div className="setup-shell">
+        <div className="croco-head" aria-hidden="true">
+          <img src={crocoHead} alt="" />
         </div>
 
-        <div className="chips-row">
-          <button
-            className={`seg ${modeIsTeams ? "seg-active" : ""}`}
-            onClick={() => switchMode("teams")}
-          >
-            <Users size={16} />
-            Команды
-          </button>
-          <button
-            className={`seg ${!modeIsTeams ? "seg-active" : ""}`}
-            onClick={() => switchMode("solo")}
-          >
-            <Zap size={16} />
-            Соло
-          </button>
-        </div>
-
-        <div className="section-header">
-          <div>
-            <div className="section-title">Состав</div>
+        <div className="panel setup-panel">
+          <div className="panel-head">
+            <div className="eyebrow">Крокодил</div>
+            <div className="panel-title">Собери состав и жми старт</div>
           </div>
-          <motion.button
-            className="settings-gear"
-            onClick={() => setSettingsOpen(true)}
-            whileTap={{ scale: 0.92 }}
-            whileHover={{ rotate: -4 }}
-            aria-label="Открыть настройки"
-          >
-            <span className="gear-inner">
-              <Settings size={18} />
-            </span>
-            <span className="gear-glow" />
-          </motion.button>
-        </div>
-        <div className="roster-list">
-          {localRoster.map((item) => (
-            <div className="roster-row" key={item.id}>
-              <button
-                className="avatar-btn"
-                style={{ background: item.color }}
-                onClick={() => shuffleColor(item.id)}
-                aria-label="Сменить цвет"
-              >
-                {item.emoji}
-              </button>
-              <input
-                value={item.name}
-                onChange={(e) => changeName(item.id, e.target.value)}
-                maxLength={18}
-                aria-label="Имя"
-              />
-              <button
-                className="icon-btn"
-                onClick={() => removeMember(item.id)}
-                disabled={localRoster.length <= minPlayers}
-                aria-label="Удалить"
-                title="Удалить"
-              >
-                <Trash2 size={16} />
-              </button>
+
+          <div className="chips-row">
+            <button
+              className={`seg ${modeIsTeams ? "seg-active" : ""}`}
+              onClick={() => switchMode("teams")}
+            >
+              <Users size={16} />
+              Команды
+            </button>
+            <button
+              className={`seg ${!modeIsTeams ? "seg-active" : ""}`}
+              onClick={() => switchMode("solo")}
+            >
+              <Zap size={16} />
+              Соло
+            </button>
+          </div>
+
+          <div className="section-header">
+            <div>
+              <div className="section-title">Состав</div>
             </div>
-          ))}
-          <button className="ghost-line" onClick={addMember}>
-            <Sparkles size={16} />
-            Добавить {modeIsTeams ? "команду" : "игрока"}
-          </button>
-        </div>
-
-        <motion.button className="cta" whileTap={{ scale: 0.98 }} onClick={onStart} disabled={!canStart}>
-          <Sparkles size={18} />
-          Старт
-        </motion.button>
-        {!canStart && (
-          <div className="small-meta danger">
-            Нужно минимум 2 участника и хотя бы одно слово.
+            <motion.button
+              className="settings-gear"
+              onClick={() => setSettingsOpen(true)}
+              whileTap={{ scale: 0.92 }}
+              whileHover={{ rotate: -4 }}
+              aria-label="Открыть настройки"
+            >
+              <span className="gear-inner">
+                <Settings size={18} />
+              </span>
+              <span className="gear-glow" />
+            </motion.button>
           </div>
-        )}
+          <div className="roster-list">
+            {localRoster.map((item) => (
+              <div className="roster-row" key={item.id}>
+                <button
+                  className="avatar-btn"
+                  style={{ background: item.color }}
+                  onClick={() => shuffleColor(item.id)}
+                  aria-label="Сменить цвет"
+                >
+                  {item.emoji}
+                </button>
+                <input
+                  value={item.name}
+                  onChange={(e) => changeName(item.id, e.target.value)}
+                  maxLength={18}
+                  aria-label="Имя"
+                />
+                <button
+                  className="icon-btn"
+                  onClick={() => removeMember(item.id)}
+                  disabled={localRoster.length <= minPlayers}
+                  aria-label="Удалить"
+                  title="Удалить"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            ))}
+            <button className="ghost-line" onClick={addMember}>
+              <Sparkles size={16} />
+              Добавить {modeIsTeams ? "команду" : "игрока"}
+            </button>
+          </div>
+
+          <motion.button className="cta" whileTap={{ scale: 0.98 }} onClick={onStart} disabled={!canStart}>
+            <Sparkles size={18} />
+            Старт
+          </motion.button>
+          {!canStart && (
+            <div className="small-meta danger">
+              Нужно минимум 2 участника и хотя бы одно слово.
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
