@@ -1001,6 +1001,10 @@ function Setup({
         </div>
 
         <div className="panel setup-panel">
+          <div className="croco-hands hold-panel" aria-hidden="true">
+            <img src={crocoHands} alt="" />
+          </div>
+
           <div className="setup-content">
             <div className="panel-head">
               <div className="eyebrow">Крокодил</div>
@@ -1040,10 +1044,6 @@ function Setup({
                 </span>
                 <span className="gear-glow" />
               </motion.button>
-            </div>
-
-            <div className="croco-hands hold-panel" aria-hidden="true">
-              <img src={crocoHands} alt="" />
             </div>
 
             <div className="roster-shell">
