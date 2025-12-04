@@ -27,6 +27,7 @@ import {
 } from "./crocodile-helpers";
 import crocoHead from "../crocohead.png";
 import crocoHands from "../crocohands.png";
+import crocoLegs from "../crocolegs.png";
 import "./crocodile.css";
 
 const STORAGE_KEYS = {
@@ -1003,6 +1004,9 @@ function Setup({
         <div className="panel setup-panel">
           <div className="croco-hands hold-panel" aria-hidden="true">
             <img src={crocoHands} alt="" />
+          </div>
+          <div className="croco-legs" aria-hidden="true">
+            <img src={crocoLegs} alt="" />
           </div>
 
           <div className="setup-content">

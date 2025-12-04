@@ -148,6 +148,24 @@
   filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.26));
 }
 
+.croco-legs {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(-12px, -2vw, 12px);
+  transform: translateX(-50%);
+  width: min(68%, 520px);
+  max-width: 640px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.croco-legs img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.24));
+}
+
 .setup-panel {
   position: relative;
   z-index: 1;
