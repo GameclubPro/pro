@@ -1006,9 +1006,23 @@ function Setup({
           </div>
 
           <div className="setup-content">
-            <div className="panel-head">
-              <div className="eyebrow">Крокодил</div>
-              <div className="panel-title">Собери состав и жми старт</div>
+            <div className="panel-head with-gear">
+              <div>
+                <div className="eyebrow">Крокодил</div>
+                <div className="panel-title">Собери состав и жми старт</div>
+              </div>
+              <motion.button
+                className="settings-gear"
+                onClick={() => setSettingsOpen(true)}
+                whileTap={{ scale: 0.92 }}
+                whileHover={{ rotate: -4 }}
+                aria-label="Открыть настройки"
+              >
+                <span className="gear-inner">
+                  <Settings size={18} />
+                </span>
+                <span className="gear-glow" />
+              </motion.button>
             </div>
 
             <div className="chips-row">
@@ -1026,24 +1040,6 @@ function Setup({
                 <Zap size={16} />
                 Соло
               </button>
-            </div>
-
-            <div className="section-header">
-              <div>
-                <div className="section-title">Состав</div>
-              </div>
-              <motion.button
-                className="settings-gear"
-                onClick={() => setSettingsOpen(true)}
-                whileTap={{ scale: 0.92 }}
-                whileHover={{ rotate: -4 }}
-                aria-label="Открыть настройки"
-              >
-                <span className="gear-inner">
-                  <Settings size={18} />
-                </span>
-                <span className="gear-glow" />
-              </motion.button>
             </div>
 
             <div className="roster-shell">
