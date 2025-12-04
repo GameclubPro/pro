@@ -1001,10 +1001,6 @@ function Setup({
         </div>
 
         <div className="panel setup-panel">
-          <div className="croco-hands" aria-hidden="true">
-            <img src={crocoHands} alt="" />
-          </div>
-
           <div className="setup-content">
             <div className="panel-head">
               <div className="eyebrow">Крокодил</div>
@@ -1045,38 +1041,45 @@ function Setup({
                 <span className="gear-glow" />
               </motion.button>
             </div>
-            <div className="roster-list">
-              {localRoster.map((item) => (
-                <div className="roster-row" key={item.id}>
-                  <button
-                    className="avatar-btn"
-                    style={{ background: item.color }}
-                    onClick={() => shuffleColor(item.id)}
-                    aria-label="Сменить цвет"
-                  >
-                    {item.emoji}
-                  </button>
-                  <input
-                    value={item.name}
-                    onChange={(e) => changeName(item.id, e.target.value)}
-                    maxLength={18}
-                    aria-label="Имя"
-                  />
-                  <button
-                    className="icon-btn"
-                    onClick={() => removeMember(item.id)}
-                    disabled={localRoster.length <= minPlayers}
-                    aria-label="Удалить"
-                    title="Удалить"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
-              <button className="ghost-line" onClick={addMember}>
-                <Sparkles size={16} />
-                Добавить {modeIsTeams ? "команду" : "игрока"}
-              </button>
+
+            <div className="roster-shell">
+              <div className="croco-hands" aria-hidden="true">
+                <img src={crocoHands} alt="" />
+              </div>
+
+              <div className="roster-list">
+                {localRoster.map((item) => (
+                  <div className="roster-row" key={item.id}>
+                    <button
+                      className="avatar-btn"
+                      style={{ background: item.color }}
+                      onClick={() => shuffleColor(item.id)}
+                      aria-label="Сменить цвет"
+                    >
+                      {item.emoji}
+                    </button>
+                    <input
+                      value={item.name}
+                      onChange={(e) => changeName(item.id, e.target.value)}
+                      maxLength={18}
+                      aria-label="Имя"
+                    />
+                    <button
+                      className="icon-btn"
+                      onClick={() => removeMember(item.id)}
+                      disabled={localRoster.length <= minPlayers}
+                      aria-label="Удалить"
+                      title="Удалить"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+                <button className="ghost-line" onClick={addMember}>
+                  <Sparkles size={16} />
+                  Добавить {modeIsTeams ? "команду" : "игрока"}
+                </button>
+              </div>
             </div>
 
             <motion.button className="cta" whileTap={{ scale: 0.98 }} onClick={onStart} disabled={!canStart}>
