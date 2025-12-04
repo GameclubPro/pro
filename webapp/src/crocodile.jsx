@@ -26,6 +26,7 @@ import {
   removeCustomWordAt,
 } from "./crocodile-helpers";
 import crocoHead from "../crocohead.png";
+import crocoHands from "../crocohands.png";
 import "./crocodile.css";
 
 const STORAGE_KEYS = {
@@ -1000,6 +1001,10 @@ function Setup({
         </div>
 
         <div className="panel setup-panel">
+          <div className="croco-hands" aria-hidden="true">
+            <img src={crocoHands} alt="" />
+          </div>
+
           <div className="panel-head">
             <div className="eyebrow">Крокодил</div>
             <div className="panel-title">Собери состав и жми старт</div>
