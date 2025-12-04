@@ -134,11 +134,11 @@
 
 .croco-hands {
   position: absolute;
-  top: clamp(6px, 3vw, 18px);
+  top: clamp(18px, 7vw, 52px);
   left: 50%;
   transform: translate(-50%, 0);
-  width: min(90%, 420px);
-  max-width: 94vw;
+  width: min(105%, 820px);
+  max-width: 98vw;
   pointer-events: none;
   z-index: 1;
   display: flex;
@@ -160,14 +160,14 @@
 
 .setup-panel .setup-content {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: grid;
   gap: 12px;
 }
 
 .roster-shell {
   position: relative;
-  padding-top: clamp(120px, 22vw, 152px);
+  padding-top: clamp(48px, 12vw, 84px);
 }
 
 .roster-shell .roster-list {
@@ -177,13 +177,13 @@
 
 @media (max-width: 768px) {
   .croco-hands {
-    transform: translate(-50%, 2%);
-    top: clamp(6px, 8vw, 20px);
-    width: min(96%, 320px);
-    max-width: 96vw;
+    transform: translate(-50%, 0);
+    top: clamp(14px, 10vw, 32px);
+    width: min(118%, 560px);
+    max-width: 108vw;
   }
   .roster-shell {
-    padding-top: clamp(104px, 30vw, 138px);
+    padding-top: clamp(54px, 24vw, 92px);
   }
 }
 
