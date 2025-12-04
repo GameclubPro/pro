@@ -136,25 +136,44 @@
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   pointer-events: none;
-  z-index: 2;
+  z-index: 0;
+  padding-bottom: 10%;
 }
 
 .croco-hands img {
   display: block;
-  width: min(120%, 520px);
-  max-width: 92vw;
+  width: min(118%, 480px);
+  max-width: 88vw;
   height: auto;
-  transform: translateY(-6%);
-  filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.35));
+  transform: translateY(6%);
+  filter: drop-shadow(0 12px 30px rgba(0, 0, 0, 0.3));
 }
 
 .setup-panel {
   position: relative;
   z-index: 1;
   overflow: visible;
+}
+
+.setup-panel .setup-content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .croco-hands {
+    padding-bottom: 2%;
+  }
+  .croco-hands img {
+    width: min(125%, 400px);
+    max-width: 94vw;
+    transform: translateY(10%);
+  }
 }
 
 .panel-head {
