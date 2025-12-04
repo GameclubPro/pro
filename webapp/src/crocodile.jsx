@@ -1024,6 +1024,12 @@ function Setup({
               </button>
             </div>
 
+            <div className="hands-bridge">
+              <div className="croco-hands" aria-hidden="true">
+                <img src={crocoHands} alt="" />
+              </div>
+            </div>
+
             <div className="section-header">
               <div>
                 <div className="section-title">Состав</div>
@@ -1043,9 +1049,6 @@ function Setup({
             </div>
 
             <div className="roster-shell">
-              <div className="croco-hands" aria-hidden="true">
-                <img src={crocoHands} alt="" />
-              </div>
               <div className="roster-list">
                 {localRoster.map((item) => (
                   <div className="roster-row" key={item.id}>

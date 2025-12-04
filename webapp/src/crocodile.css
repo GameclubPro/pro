@@ -132,10 +132,16 @@
   height: auto;
 }
 
+.hands-bridge {
+  position: relative;
+  height: clamp(76px, 14vw, 110px);
+  margin: 2px 0 6px;
+  z-index: 1;
+}
+
 .croco-hands {
   position: absolute;
   inset: 0;
-  top: clamp(6px, 2vw, 18px);
   display: flex;
   justify-content: center;
   pointer-events: none;
@@ -144,8 +150,8 @@
 
 .croco-hands img {
   display: block;
-  width: min(104%, 560px);
-  max-width: 98vw;
+  width: min(92%, 430px);
+  max-width: 94vw;
   height: auto;
   filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.26));
 }
@@ -165,7 +171,7 @@
 
 .roster-shell {
   position: relative;
-  padding-top: clamp(70px, 16vw, 110px);
+  padding-top: clamp(14px, 5vw, 28px);
 }
 
 .roster-shell .roster-list {
@@ -175,14 +181,18 @@
 
 @media (max-width: 768px) {
   .croco-hands {
-    top: clamp(12px, 10vw, 28px);
+    top: 0;
+  }
+  .hands-bridge {
+    height: clamp(82px, 22vw, 128px);
+    margin: 4px 0 8px;
   }
   .croco-hands img {
-    width: min(120%, 520px);
-    max-width: 110vw;
+    width: min(96%, 360px);
+    max-width: 98vw;
   }
   .roster-shell {
-    padding-top: clamp(78px, 26vw, 118px);
+    padding-top: clamp(18px, 10vw, 34px);
   }
 }
 
