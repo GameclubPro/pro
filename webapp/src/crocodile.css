@@ -170,11 +170,28 @@
   z-index: 1;
   overflow: visible;
   padding-bottom: clamp(100px, 18vw, 150px);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  isolation: isolate;
+}
+
+.setup-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: var(--croco-surface);
+  border: 1px solid var(--croco-border);
+  box-shadow: var(--croco-shadow);
+  backdrop-filter: blur(16px);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .setup-panel .setup-content {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   display: grid;
   gap: 12px;
 }
@@ -185,7 +202,7 @@
   transform: translateX(-50%);
   width: calc(100% + 32px);
   max-width: 860px;
-  z-index: 0;
+  z-index: 2;
 }
 .setup-panel .croco-hands.hold-panel img {
   width: 100%;
@@ -198,6 +215,7 @@
   transform: translateX(-50%);
   width: min(68%, 520px);
   max-width: 680px;
+  z-index: 0;
 }
 
 .roster-shell {
