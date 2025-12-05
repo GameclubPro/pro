@@ -92,10 +92,18 @@
 }
 
 .switch-shell {
+  position: relative;
   width: 100%;
-  max-width: 760px;
+  min-width: 90vw;
+  aspect-ratio: 1 / 1;
   display: flex;
   justify-content: center;
+  align-items: center;
+  border-radius: 22px;
+  overflow: hidden;
+  background: url("./assets/quiz/quiz-switch-card.png") center/cover no-repeat;
+  background-color: #040a12;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .ghost-btn {
@@ -669,7 +677,7 @@
 .quiz .hero-main {
   display: grid;
   grid-template-columns: 72px 1fr;
-  gap: 12px;
+  gap: 6px;
   align-items: center;
   width: 100%;
   max-width: 540px;
@@ -786,11 +794,6 @@
   transform: translateX(1px);
   stroke-width: 3px;
   filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.55));
-}
-
-.hero-cta-caption {
-  font-weight: 900;
-  letter-spacing: 0.02em;
 }
 
 .round {

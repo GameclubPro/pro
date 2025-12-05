@@ -878,7 +878,6 @@ function SwitchCard({ current, mode, round, onBegin, remainingRounds }) {
           >
             <Play size={32} />
           </motion.button>
-          <div className="hero-cta-caption">Погнали</div>
         </div>
       </motion.div>
     </AnimatePresence>
