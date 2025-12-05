@@ -406,6 +406,7 @@
   transform: translateZ(0);
   margin: 0 auto;
   flex-shrink: 0;
+  overflow-y: auto;
 }
 
 .settings-window::before {
@@ -434,6 +435,16 @@
   font-weight: 900;
 }
 
+.settings-title.sm {
+  font-size: 16px;
+}
+
+.settings-sub {
+  color: var(--quiz-muted);
+  font-size: 13px;
+  margin-top: 2px;
+}
+
 .settings-close {
   width: 36px;
   height: 36px;
@@ -451,6 +462,20 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 12px;
+}
+
+.settings-block {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.settings-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .setting-card {

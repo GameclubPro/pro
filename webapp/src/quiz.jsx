@@ -912,6 +912,83 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
                 <span className="toggle-dot" />
               </button>
             </div>
+
+            <div className="settings-block">
+              <div className="settings-block-head">
+                <div>
+                  <div className="settings-title sm">Категории</div>
+                  <div className="settings-sub">Отметь темы, которые хотите видеть в раунде</div>
+                </div>
+                <button
+                  className="ghost-btn compact"
+                  onClick={selectAllCategories}
+                  disabled={isAllSelected}
+                >
+                  Все темы
+                </button>
+              </div>
+              <div className="category-grid">
+                {Object.entries(CATEGORIES).map(([key, meta]) => {
+                  const active = selectedCategories.includes(key);
+                  return (
+                    <motion.button
+                      key={key}
+                      className={`cat-card ${active ? "on" : ""}`}
+                      whileTap={{ scale: 0.98 }}
+                      whileHover={{ y: -1 }}
+                      onClick={() => toggleCategory(key)}
+                      style={{ "--cat-from": meta.from, "--cat-to": meta.to }}
+                      aria-pressed={active}
+                    >
+                      <span className="cat-icon">{meta.icon}</span>
+                      <div className="cat-text">
+                        <div className="cat-name">{meta.label}</div>
+                        <div className="cat-hint">{meta.hint}</div>
+                      </div>
+                      <span className={`cat-check ${active ? "on" : ""}`} aria-hidden>
+                        ✓
+                      </span>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="settings-block">
+              <div className="settings-block-head">
+                <div>
+                  <div className="settings-title sm">Сложность</div>
+                  <div className="settings-sub">Лёгкий, средний, сложный или адаптивный</div>
+                </div>
+              </div>
+              <div className="difficulty-grid">
+                {DIFFICULTY_PRESETS.map((item) => {
+                  const active = settings.difficulty === item.id;
+                  return (
+                    <motion.button
+                      key={item.id}
+                      className={`difficulty-card ${active ? "active" : ""}`}
+                      whileTap={{ scale: 0.98 }}
+                      whileHover={{ y: -1 }}
+                      onClick={() => setDifficulty(item.id)}
+                      style={{ "--diff-from": item.from, "--diff-to": item.to }}
+                      aria-pressed={active}
+                    >
+                      <div className="difficulty-head">
+                        <span className="difficulty-chip">{item.badge}</span>
+                        <div className="difficulty-labels">
+                          <div className="difficulty-label">{item.label}</div>
+                          <div className="difficulty-desc">{item.desc}</div>
+                        </div>
+                      </div>
+                      <span className={`difficulty-active ${active ? "on" : ""}`}>
+                        {active ? "Выбрано" : "Нажми, чтобы выбрать"}
+                      </span>
+                    </motion.button>
+                  );
+                })}
+              </div>
+            </div>
           </motion.div>
         </motion.div>
       )}
@@ -943,83 +1020,6 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
             <Zap size={16} />
             Соло
           </button>
-        </div>
-
-        <div className="section-header">
-          <div>
-            <div className="section-title">Категории</div>
-            <div className="section-sub">Отметь темы, которые хотите видеть</div>
-          </div>
-          <div className="section-actions">
-            <button
-              className="ghost-btn compact"
-              onClick={selectAllCategories}
-              disabled={isAllSelected}
-            >
-              Все темы
-            </button>
-          </div>
-        </div>
-
-        <div className="category-grid">
-          {Object.entries(CATEGORIES).map(([key, meta]) => {
-            const active = selectedCategories.includes(key);
-            return (
-              <motion.button
-                key={key}
-                className={`cat-card ${active ? "on" : ""}`}
-                whileTap={{ scale: 0.98 }}
-                whileHover={{ y: -1 }}
-                onClick={() => toggleCategory(key)}
-                style={{ "--cat-from": meta.from, "--cat-to": meta.to }}
-                aria-pressed={active}
-              >
-                <span className="cat-icon">{meta.icon}</span>
-                <div className="cat-text">
-                  <div className="cat-name">{meta.label}</div>
-                  <div className="cat-hint">{meta.hint}</div>
-                </div>
-                <span className={`cat-check ${active ? "on" : ""}`} aria-hidden>
-                  ✓
-                </span>
-              </motion.button>
-            );
-          })}
-        </div>
-
-        <div className="section-header">
-          <div>
-            <div className="section-title">Сложность</div>
-            <div className="section-sub">Лёгкий, средний, сложный или адаптивный</div>
-          </div>
-        </div>
-
-        <div className="difficulty-grid">
-          {DIFFICULTY_PRESETS.map((item) => {
-            const active = settings.difficulty === item.id;
-            return (
-              <motion.button
-                key={item.id}
-                className={`difficulty-card ${active ? "active" : ""}`}
-                whileTap={{ scale: 0.98 }}
-                whileHover={{ y: -1 }}
-                onClick={() => setDifficulty(item.id)}
-                style={{ "--diff-from": item.from, "--diff-to": item.to }}
-                aria-pressed={active}
-              >
-                <div className="difficulty-head">
-                  <span className="difficulty-chip">{item.badge}</span>
-                  <div className="difficulty-labels">
-                    <div className="difficulty-label">{item.label}</div>
-                    <div className="difficulty-desc">{item.desc}</div>
-                  </div>
-                </div>
-                <span className={`difficulty-active ${active ? "on" : ""}`}>
-                  {active ? "Выбрано" : "Нажми, чтобы выбрать"}
-                </span>
-              </motion.button>
-            );
-          })}
         </div>
 
         <div className="section-header">
