@@ -124,7 +124,7 @@
   width: 100%;
   border-radius: 18px;
   padding: 16px;
-  background: #0b121c;
+  background: var(--quiz-surface);
   border: 1px solid var(--quiz-border);
   box-shadow: var(--quiz-shadow);
   backdrop-filter: blur(16px);
@@ -662,7 +662,7 @@
   align-content: center;
   justify-items: center;
   text-align: center;
-  background: #070d16;
+  background: rgba(4, 10, 18, 0.56);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 18px;
   padding: 22px;
@@ -1170,8 +1170,10 @@
 .question {
   padding: 16px;
   border-radius: 16px;
-  background: #0d1523;
-  border: 1px solid color-mix(in srgb, var(--quiz-border) 70%, rgba(0, 0, 0, 0.4));
+  background:
+    radial-gradient(120% 120% at 10% 10%, rgba(34, 211, 238, 0.08), transparent),
+    var(--quiz-surface-2);
+  border: 1px solid var(--quiz-border);
   box-shadow: var(--quiz-shadow);
   max-height: 42vh;
   overflow-y: auto;
@@ -1218,8 +1220,8 @@
 .option {
   padding: 12px;
   border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--quiz-border) 70%, rgba(0, 0, 0, 0.45));
-  background: #0f1729;
+  border: 1px solid var(--quiz-border);
+  background: var(--quiz-surface-2);
   color: var(--quiz-fg);
   text-align: left;
   font-weight: 800;
