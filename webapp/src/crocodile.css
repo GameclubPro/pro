@@ -112,7 +112,7 @@
   position: relative;
   display: grid;
   justify-items: center;
-  padding-top: clamp(72px, 14vw, 130px);
+  padding-top: calc(env(safe-area-inset-top) + clamp(150px, 24vw, 200px));
   padding-bottom: clamp(180px, 28vw, 260px);
 }
 
@@ -256,6 +256,13 @@
   }
   .roster-shell {
     padding-top: clamp(24px, 14vw, 92px);
+  }
+}
+
+@media (max-width: 480px) {
+  .croco-head,
+  .setup-panel .croco-head {
+    width: clamp(160px, 46vw, 200px);
   }
 }
 
