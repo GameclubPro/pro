@@ -1233,10 +1233,10 @@
   position: relative;
   height: 28px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(20, 26, 33, 0.85), rgba(8, 12, 18, 0.9));
-  border: 1px solid color-mix(in srgb, var(--croco-border) 60%, rgba(255, 255, 255, 0.08));
+  background: linear-gradient(135deg, rgba(5, 11, 9, 0.92), rgba(9, 17, 12, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: visible;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), var(--croco-shadow);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
 .pacman-remaining {
@@ -1245,12 +1245,12 @@
   height: 100%;
   border-radius: inherit;
   background:
-    radial-gradient(circle, rgba(255, 255, 255, 0.9) 32%, transparent 38%) 8px 50% / 16px 12px repeat-x,
-    radial-gradient(circle, rgba(255, 255, 255, 0.14) 32%, transparent 38%) 0 50% / 16px 12px repeat-x,
-    linear-gradient(90deg, rgba(20, 184, 166, 0.2), rgba(59, 130, 246, 0.22));
-  border-right: 1px solid rgba(255, 255, 255, 0.12);
+    radial-gradient(circle, rgba(255, 255, 255, 0.8) 32%, transparent 38%) 8px 50% / 16px 12px repeat-x,
+    radial-gradient(circle, rgba(52, 211, 153, 0.32) 32%, transparent 38%) 0 50% / 16px 12px repeat-x,
+    linear-gradient(90deg, rgba(34, 197, 94, 0.32), rgba(20, 184, 166, 0.38));
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
   transition: width 0.2s ease;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(3px);
   filter: drop-shadow(0 1px 4px rgba(255, 255, 255, 0.08));
 }
 
@@ -1299,10 +1299,6 @@
 
 .pacman.is-dimmed .pacman-eye {
   box-shadow: none;
-}
-
-.pacman-track.is-dimmed {
-  opacity: 0.85;
 }
 
 .pacman-trail {
@@ -1371,6 +1367,91 @@
   }
   100% {
     --mouth-angle: 72deg;
+  }
+}
+
+.pacman-track.is-dimmed {
+  opacity: 0.9;
+}
+
+.croc-head {
+  position: absolute;
+  top: 50%;
+  width: 58px;
+  height: 58px;
+  transform: translate(-50%, -50%);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.4));
+  animation: croc-bob 1.8s ease-in-out infinite;
+  isolation: isolate;
+}
+
+.croc-head::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 60%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.croc-head .croc-mouth-mask {
+  position: absolute;
+  inset: 48% 18% 10% 18%;
+  background: rgba(5, 9, 7, 0.85);
+  border-radius: 18px;
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.35);
+  transform-origin: top center;
+  animation: croc-chomp 0.7s ease-in-out infinite;
+  mix-blend-mode: multiply;
+}
+
+.croc-head .croc-shadow {
+  position: absolute;
+  inset: 70% 15% 4% 15%;
+  background: radial-gradient(circle at 50% 30%, rgba(0, 0, 0, 0.28), transparent 70%);
+  filter: blur(4px);
+  opacity: 0.6;
+}
+
+.croc-head.is-paused .croc-mouth-mask,
+.croc-head.is-dimmed .croc-mouth-mask {
+  animation-play-state: paused;
+}
+
+.croc-head.is-paused {
+  animation-play-state: paused;
+}
+
+.croc-head.is-dimmed {
+  opacity: 0.7;
+  filter: saturate(0.8) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
+}
+
+.croc-head.is-running .croc-mouth-mask {
+  animation-play-state: running;
+}
+
+@keyframes croc-bob {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translateY(0);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(-2px);
+  }
+}
+
+@keyframes croc-chomp {
+  0%,
+  100% {
+    transform: scaleY(0.7);
+  }
+  50% {
+    transform: scaleY(1);
   }
 }
 

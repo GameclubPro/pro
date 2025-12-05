@@ -1282,8 +1282,8 @@ function TimerPacman({ pct, seconds, running, current, dimmed = false }) {
   const label =
     remainingPct <= 0 ? "время вышло" : running ? "время идёт" : "пауза";
 
-  const pacmanClass = `pacman ${running ? "is-running" : "is-paused"} ${dimmed ? "is-dimmed" : ""}`;
   const trackClass = `pacman-track ${running ? "is-running" : "is-paused"} ${dimmed ? "is-dimmed" : ""}`;
+  const crocClass = `croc-head ${running ? "is-running" : "is-paused"} ${dimmed ? "is-dimmed" : ""}`;
 
   return (
     <div className="pacman-timer">
@@ -1312,14 +1312,15 @@ function TimerPacman({ pct, seconds, running, current, dimmed = false }) {
         />
 
         <motion.div
-          className={pacmanClass}
-          style={{ left: pacLeft }}
+          className={crocClass}
+          data-head
+          data-name={current?.name || ""}
+          style={{ left: pacLeft, backgroundImage: `url(${crocoHead})` }}
           animate={{ left: pacLeft }}
           transition={{ duration: 0.2, ease: "easeOut" }}
         >
-          <div className="pacman-trail" />
-          <div className="pacman-body" />
-          <div className="pacman-eye" />
+          <span className="croc-mouth-mask" aria-hidden />
+          <span className="croc-shadow" aria-hidden />
         </motion.div>
       </div>
     </div>
