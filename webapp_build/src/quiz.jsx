@@ -715,7 +715,7 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
 
               <div className="setting-card glass">
                 <div className="setting-card-top">
-                  <span className="pill">Вопросы</span>
+                  <span className="pill">Раунды</span>
                   <div className="setting-number">{settings.targetScore}</div>
                 </div>
                 <div className="meter">
@@ -1082,7 +1082,7 @@ function Summary({ roster, winners, questions, onRematch, onReset, onMenu }) {
     >
       <div className="panel-head">
         <div className="eyebrow">Матч окончен</div>
-        <div className="panel-title">Всего вопросов: {questions}</div>
+        <div className="panel-title">Всего раундов: {questions}</div>
       </div>
 
       <div className="winners">

@@ -603,7 +603,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
               mode={state.settings.mode}
               round={state.round}
               onBegin={handleBeginRound}
-              remainingQuestions={Math.max(
+              remainingRounds={Math.max(
                 0,
                 state.settings.targetScore * state.roster.length - state.questionsPlayed
               )}
@@ -655,7 +655,7 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
   const modeIsTeams = settings.mode === "teams";
   const minPlayers = modeIsTeams ? 2 : 1;
   const timerPct = clamp(((settings.roundSeconds - 20) / (90 - 20)) * 100, 0, 100);
-  const questionsPct = clamp(((settings.targetScore - 5) / (30 - 5)) * 100, 0, 100);
+  const roundsPct = clamp(((settings.targetScore - 5) / (30 - 5)) * 100, 0, 100);
   const portalTarget = typeof document !== "undefined" ? document.body : null;
 
   useEffect(() => {
@@ -771,13 +771,13 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
 
               <div className="setting-card glass">
                 <div className="setting-card-top">
-                  <span className="pill">Вопросов на команду</span>
+                  <span className="pill">Раундов на команду</span>
                   <div className="setting-number">{settings.targetScore}</div>
                 </div>
                 <div className="meter">
                   <div className="meter-track alt">
-                    <div className="meter-fill alt" style={{ width: `${questionsPct}%` }} />
-                    <span className="meter-thumb" style={{ left: `${questionsPct}%` }} />
+                    <div className="meter-fill alt" style={{ width: `${roundsPct}%` }} />
+                    <span className="meter-thumb" style={{ left: `${roundsPct}%` }} />
                   </div>
                   <div className="meter-scale">
                     <span>5</span>
@@ -902,9 +902,9 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
   );
 }
 
-function SwitchCard({ current, mode, round, onBegin, remainingQuestions }) {
+function SwitchCard({ current, mode, round, onBegin, remainingRounds }) {
   const remainLabel =
-    remainingQuestions > 0 ? `Осталось вопросов: ${remainingQuestions}` : "Финальный вопрос";
+    remainingRounds > 0 ? `Осталось раундов: ${remainingRounds}` : "Финальный раунд";
   return (
     <AnimatePresence mode="popLayout">
       <motion.div
@@ -1015,13 +1015,13 @@ function Round({
         )}
       </div>
 
-      <div className="round-tags">
-        {typeof roundNumber === "number" && (
-          <span className="round-pill">Раунд {roundNumber}</span>
-        )}
-        <span className="round-pill subtle">Игра до {cap} очков</span>
-        <span className="round-pill subtle">Сыграно вопросов: {totalAsked}</span>
-      </div>
+        <div className="round-tags">
+          {typeof roundNumber === "number" && (
+            <span className="round-pill">Раунд {roundNumber}</span>
+          )}
+          <span className="round-pill subtle">Раундов на команду: {cap}</span>
+          <span className="round-pill subtle">Сыграно раундов: {totalAsked}</span>
+        </div>
 
       <TimerPacman pct={timePct} seconds={seconds} running={running} current={current} />
 
@@ -1040,7 +1040,7 @@ function Round({
                 <div className="score-chip-info">
                   <div className="score-chip-name">{item.name}</div>
                   <div className="score-chip-meta">
-                    {item.answered} / {cap} вопросов • {item.score} очков
+                    {item.answered} / {cap} раундов • {item.score} очков
                   </div>
                 </div>
                 <span className="score-chip-value">{item.score}</span>
@@ -1205,7 +1205,7 @@ function Summary({ roster, winners, questionsPlayed, perTeamLimit, onRematch, on
     >
       <div className="panel-head">
         <div className="eyebrow">Матч окончен</div>
-        <div className="panel-title">Сыграно вопросов: {questionsPlayed} / {questionsTotal}</div>
+        <div className="panel-title">Сыграно раундов: {questionsPlayed} / {questionsTotal}</div>
       </div>
 
       <div className="winners">
