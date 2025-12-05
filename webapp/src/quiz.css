@@ -652,17 +652,20 @@
   box-shadow: var(--quiz-shadow);
 }
 
-.quiz .card.hero.switch-card {
+.switch-card-panel {
   width: 100%;
+  max-width: 640px;
   margin: auto;
   align-self: center;
   justify-self: center;
   align-content: center;
   justify-items: center;
   text-align: center;
-  background: transparent;
-  border-color: transparent;
-  box-shadow: none;
+  background: rgba(4, 10, 18, 0.66);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .quiz .hero-main {
