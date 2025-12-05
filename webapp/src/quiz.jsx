@@ -42,7 +42,8 @@ const DEFAULT_SETTINGS = {
   mode: "teams", // teams | solo
   roundSeconds: 45,
   targetScore: 12,
-  autoDifficulty: true,
+  difficulty: "adaptive", // easy | medium | hard | adaptive
+  selectedCategories: ["general", "culture", "science", "tech", "numbers", "sport"],
   sound: true,
 };
 
@@ -78,13 +79,20 @@ const QUESTION_PACK = [
 ];
 
 const CATEGORIES = {
-  general: { label: "Общее", icon: "✨" },
-  culture: { label: "Культура", icon: "🎬" },
-  science: { label: "Наука", icon: "🔬" },
-  tech: { label: "Технологии", icon: "💻" },
-  numbers: { label: "Цифры", icon: "🔢" },
-  sport: { label: "Спорт", icon: "🏅" },
+  general: { label: "Общее", icon: "✨", hint: "Сюрпризы из разных областей", from: "#22d3ee", to: "#8b5cf6" },
+  culture: { label: "Культура", icon: "🎬", hint: "Кино, музыка и арт", from: "#f472b6", to: "#f97316" },
+  science: { label: "Наука", icon: "🔬", hint: "Физика, биология, космос", from: "#34d399", to: "#10b981" },
+  tech: { label: "Технологии", icon: "💻", hint: "IT, гаджеты и интернет", from: "#67e8f9", to: "#22d3ee" },
+  numbers: { label: "Цифры", icon: "🔢", hint: "Математика и логика", from: "#fcd34d", to: "#f59e0b" },
+  sport: { label: "Спорт", icon: "🏅", hint: "Команды, кубки и рекорды", from: "#facc15", to: "#fb7185" },
 };
+
+const DIFFICULTY_PRESETS = [
+  { id: "easy", label: "Лёгкий", desc: "Минимум коварных вопросов", from: "#4ade80", to: "#22d3ee", badge: "🙂" },
+  { id: "medium", label: "Средний", desc: "Сбалансированный темп", from: "#22d3ee", to: "#a855f7", badge: "⚡️" },
+  { id: "hard", label: "Сложный", desc: "Больше хитрых формулировок", from: "#fb7185", to: "#f59e0b", badge: "🔥" },
+  { id: "adaptive", label: "Адаптивный", desc: "Сложность растёт с серией", from: "#fbbf24", to: "#22d3ee", badge: "🧠" },
+];
 
 const ADVANCE_DELAY_MS = 1600;
 
@@ -103,11 +111,23 @@ const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
 const sanitizeSettings = (raw = {}) => {
   const base = { ...DEFAULT_SETTINGS, ...(raw || {}) };
+  const validCats = Object.keys(CATEGORIES);
+  const availableDifficulties = DIFFICULTY_PRESETS.map((d) => d.id);
+  const selectedCategories = Array.isArray(base.selectedCategories)
+    ? base.selectedCategories.filter((c) => validCats.includes(c))
+    : validCats;
+  const difficulty = availableDifficulties.includes(base.difficulty)
+    ? base.difficulty
+    : base.autoDifficulty === false
+    ? "medium"
+    : "adaptive";
+
   return {
     mode: base.mode === "solo" ? "solo" : "teams",
     roundSeconds: clamp(Number(base.roundSeconds) || DEFAULT_SETTINGS.roundSeconds, 20, 90),
     targetScore: clamp(Number(base.targetScore) || DEFAULT_SETTINGS.targetScore, 5, 30),
-    autoDifficulty: !!base.autoDifficulty,
+    difficulty,
+    selectedCategories: selectedCategories.length ? selectedCategories : validCats,
     sound: !!base.sound,
   };
 };
@@ -361,11 +381,25 @@ const reducer = (state, action) => {
   }
 };
 
-const pickQuestion = (used, streak, autoDifficulty) => {
+const pickQuestion = (used, streak, difficulty, selectedCategories) => {
   const usedSet = new Set(used);
-  const target = autoDifficulty ? clamp(1 + Math.floor(streak / 3), 1, 4) : 2;
-  const unused = QUESTION_PACK.filter((q) => !usedSet.has(q.id));
-  const pool = unused.length ? unused : QUESTION_PACK;
+  const allowedCats =
+    Array.isArray(selectedCategories) && selectedCategories.length
+      ? selectedCategories
+      : Object.keys(CATEGORIES);
+  const byCategory = QUESTION_PACK.filter((q) => allowedCats.includes(q.cat));
+  const basePool = byCategory.length ? byCategory : QUESTION_PACK;
+  const target =
+    difficulty === "easy"
+      ? 1
+      : difficulty === "medium"
+      ? 2
+      : difficulty === "hard"
+      ? 3.5
+      : clamp(1 + Math.floor(streak / 3), 1, 4);
+
+  const unused = basePool.filter((q) => !usedSet.has(q.id));
+  const pool = unused.length ? unused : basePool;
   const scored = pool.map((q) => ({ q, score: Math.abs(q.diff - target) }));
   const best = Math.min(...scored.map((s) => s.score));
   const candidates = scored.filter((s) => s.score === best).map((s) => s.q);
@@ -528,7 +562,12 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
   const handleBeginRound = () => {
     haptic("light");
     const activeStreak = state.streaks?.[state.activeIndex] || 0;
-    const q = pickQuestion(state.used, activeStreak, state.settings.autoDifficulty);
+    const q = pickQuestion(
+      state.used,
+      activeStreak,
+      state.settings.difficulty,
+      state.settings.selectedCategories
+    );
     dispatch({ type: "SET_QUESTION", question: { ...q, options: buildOptions(q) } });
     dispatch({ type: "BEGIN_ROUND" });
   };
@@ -704,6 +743,12 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const modeIsTeams = settings.mode === "teams";
   const minPlayers = modeIsTeams ? 2 : 1;
+  const allCategories = Object.keys(CATEGORIES);
+  const selectedCategories =
+    Array.isArray(settings.selectedCategories) && settings.selectedCategories.length
+      ? settings.selectedCategories
+      : allCategories;
+  const isAllSelected = selectedCategories.length === allCategories.length;
   const timerPct = clamp(((settings.roundSeconds - 20) / (90 - 20)) * 100, 0, 100);
   const roundsPct = clamp(((settings.targetScore - 5) / (30 - 5)) * 100, 0, 100);
   const portalTarget = typeof document !== "undefined" ? document.body : null;
@@ -761,6 +806,22 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
 
   const adjustSetting = (key, delta, min, max) => {
     onChangeSetting(key, clamp((settings?.[key] || 0) + delta, min, max));
+  };
+
+  const toggleCategory = (cat) => {
+    const has = selectedCategories.includes(cat);
+    const next = has
+      ? selectedCategories.filter((c) => c !== cat)
+      : [...selectedCategories, cat];
+    onChangeSetting("selectedCategories", next.length ? next : [cat]);
+  };
+
+  const selectAllCategories = () => {
+    onChangeSetting("selectedCategories", allCategories);
+  };
+
+  const setDifficulty = (value) => {
+    onChangeSetting("difficulty", value);
   };
 
   const settingsModal = (
@@ -843,14 +904,6 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
 
             <div className="settings-toggles">
               <button
-                className={`toggle-chip ${settings.autoDifficulty ? "on" : ""}`}
-                onClick={() => onChangeSetting("autoDifficulty", !settings.autoDifficulty)}
-              >
-                <Sparkles size={16} />
-                Адаптивная сложность
-                <span className="toggle-dot" />
-              </button>
-              <button
                 className={`toggle-chip ${settings.sound ? "on" : ""}`}
                 onClick={() => onChangeSetting("sound", !settings.sound)}
               >
@@ -890,6 +943,83 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
             <Zap size={16} />
             Соло
           </button>
+        </div>
+
+        <div className="section-header">
+          <div>
+            <div className="section-title">Категории</div>
+            <div className="section-sub">Отметь темы, которые хотите видеть</div>
+          </div>
+          <div className="section-actions">
+            <button
+              className="ghost-btn compact"
+              onClick={selectAllCategories}
+              disabled={isAllSelected}
+            >
+              Все темы
+            </button>
+          </div>
+        </div>
+
+        <div className="category-grid">
+          {Object.entries(CATEGORIES).map(([key, meta]) => {
+            const active = selectedCategories.includes(key);
+            return (
+              <motion.button
+                key={key}
+                className={`cat-card ${active ? "on" : ""}`}
+                whileTap={{ scale: 0.98 }}
+                whileHover={{ y: -1 }}
+                onClick={() => toggleCategory(key)}
+                style={{ "--cat-from": meta.from, "--cat-to": meta.to }}
+                aria-pressed={active}
+              >
+                <span className="cat-icon">{meta.icon}</span>
+                <div className="cat-text">
+                  <div className="cat-name">{meta.label}</div>
+                  <div className="cat-hint">{meta.hint}</div>
+                </div>
+                <span className={`cat-check ${active ? "on" : ""}`} aria-hidden>
+                  ✓
+                </span>
+              </motion.button>
+            );
+          })}
+        </div>
+
+        <div className="section-header">
+          <div>
+            <div className="section-title">Сложность</div>
+            <div className="section-sub">Лёгкий, средний, сложный или адаптивный</div>
+          </div>
+        </div>
+
+        <div className="difficulty-grid">
+          {DIFFICULTY_PRESETS.map((item) => {
+            const active = settings.difficulty === item.id;
+            return (
+              <motion.button
+                key={item.id}
+                className={`difficulty-card ${active ? "active" : ""}`}
+                whileTap={{ scale: 0.98 }}
+                whileHover={{ y: -1 }}
+                onClick={() => setDifficulty(item.id)}
+                style={{ "--diff-from": item.from, "--diff-to": item.to }}
+                aria-pressed={active}
+              >
+                <div className="difficulty-head">
+                  <span className="difficulty-chip">{item.badge}</span>
+                  <div className="difficulty-labels">
+                    <div className="difficulty-label">{item.label}</div>
+                    <div className="difficulty-desc">{item.desc}</div>
+                  </div>
+                </div>
+                <span className={`difficulty-active ${active ? "on" : ""}`}>
+                  {active ? "Выбрано" : "Нажми, чтобы выбрать"}
+                </span>
+              </motion.button>
+            );
+          })}
         </div>
 
         <div className="section-header">
