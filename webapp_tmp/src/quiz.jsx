@@ -715,7 +715,7 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
 
               <div className="setting-card glass">
                 <div className="setting-card-top">
-                  <span className="pill">Раунды</span>
+                  <span className="pill">Раунды до победы</span>
                   <div className="setting-number">{settings.targetScore}</div>
                 </div>
                 <div className="meter">

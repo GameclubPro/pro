@@ -771,7 +771,7 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
 
               <div className="setting-card glass">
                 <div className="setting-card-top">
-                  <span className="pill">Раундов на команду</span>
+                  <span className="pill">Раунды до победы</span>
                   <div className="setting-number">{settings.targetScore}</div>
                 </div>
                 <div className="meter">
@@ -1015,13 +1015,13 @@ function Round({
         )}
       </div>
 
-        <div className="round-tags">
-          {typeof roundNumber === "number" && (
-            <span className="round-pill">Раунд {roundNumber}</span>
-          )}
-          <span className="round-pill subtle">Раундов на команду: {cap}</span>
-          <span className="round-pill subtle">Сыграно раундов: {totalAsked}</span>
-        </div>
+      <div className="round-tags">
+        {typeof roundNumber === "number" && (
+          <span className="round-pill">Раунд {roundNumber}</span>
+        )}
+        <span className="round-pill subtle">Игра до {cap} раундов</span>
+        <span className="round-pill subtle">Сыграно раундов: {totalAsked}</span>
+      </div>
 
       <TimerPacman pct={timePct} seconds={seconds} running={running} current={current} />
 
@@ -1040,7 +1040,7 @@ function Round({
                 <div className="score-chip-info">
                   <div className="score-chip-name">{item.name}</div>
                   <div className="score-chip-meta">
-                    {item.answered} / {cap} раундов • {item.score} очков
+                    {item.answered} / {cap} раундов сыграно • {item.score} очков
                   </div>
                 </div>
                 <span className="score-chip-value">{item.score}</span>
