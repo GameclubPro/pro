@@ -1378,13 +1378,12 @@
   position: relative;
   padding: 16px;
   border-radius: 16px;
-  border: 1px solid var(--croco-border);
-  background:
-    radial-gradient(120% 120% at 20% 20%, rgba(52, 211, 153, 0.1), transparent),
-    linear-gradient(140deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(155deg, rgba(5, 11, 9, 0.94), rgba(8, 16, 12, 0.97));
   box-shadow: var(--croco-shadow);
   display: grid;
   gap: 10px;
+  backdrop-filter: blur(6px);
 }
 
 .word-top {
@@ -1409,9 +1408,9 @@
   gap: 8px;
   padding: 10px 12px;
   border-radius: 12px;
-  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   color: var(--croco-fg);
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(6, 10, 12, 0.72);
 }
 
 .actions-grid {
@@ -1518,15 +1517,15 @@
   gap: 4px;
   padding: 6px 10px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(6, 10, 12, 0.7);
   font-size: 12px;
-  border: 1px solid var(--croco-border);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .pill-success {
-  background: rgba(31, 238, 156, 0.15);
-  border-color: rgba(31, 238, 156, 0.5);
-  color: #c8f7dc;
+  background: rgba(34, 197, 94, 0.22);
+  border-color: rgba(34, 197, 94, 0.6);
+  color: #dbffe8;
 }
 
 .pill-warn {
