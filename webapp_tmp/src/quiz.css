@@ -101,10 +101,8 @@
   border-radius: 22px;
   overflow: hidden;
   background:
-    radial-gradient(140% 110% at 20% 10%, rgba(93, 63, 211, 0.26), transparent 65%),
-    radial-gradient(120% 90% at 80% 0%, rgba(16, 201, 255, 0.22), transparent 60%),
-    radial-gradient(160% 140% at 50% 120%, rgba(34, 211, 238, 0.18), transparent 70%),
-    linear-gradient(180deg, #050b16 0%, #02060f 100%);
+    linear-gradient(180deg, rgba(5, 11, 22, 0.72), rgba(3, 7, 17, 0.82)),
+    url("./assets/quiz/quiz-switch-card.png") center/cover no-repeat;
   box-shadow: 0 18px 46px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
