@@ -548,19 +548,6 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
           />
         )}
 
-        {state.stage === "switch" && (
-          <div className="switch-shell">
-            <SwitchCard
-              key={current?.id}
-              current={current}
-              mode={state.settings.mode}
-              round={state.round}
-              onBegin={handleBeginRound}
-              remainingRounds={MAX_ROUNDS - state.round + 1}
-            />
-          </div>
-        )}
-
         {state.stage === "round" && (
           <Round
             current={current}
@@ -589,6 +576,34 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
           />
         )}
       </div>
+      <AnimatePresence>
+        {state.stage === "switch" && (
+          <motion.div
+            className="switch-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+          >
+            <motion.div
+              className="switch-shell"
+              initial={{ scale: 0.94, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.97, opacity: 0, y: 8 }}
+              transition={{ type: "spring", stiffness: 260, damping: 22 }}
+            >
+              <SwitchCard
+                key={current?.id}
+                current={current}
+                mode={state.settings.mode}
+                round={state.round}
+                onBegin={handleBeginRound}
+                remainingRounds={MAX_ROUNDS - state.round + 1}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
