@@ -1202,10 +1202,27 @@
   .hero-main {
     grid-template-columns: 56px 1fr;
   }
+}
+
+@media (max-width: 320px) {
+  .chips-row {
+    grid-template-columns: 1fr;
+  }
+  .setting-actions {
+    grid-template-columns: 1fr;
+  }
+  .hero-main {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
   .roster-grid {
     grid-template-columns: 1fr;
   }
   .controls {
+    grid-template-columns: 1fr;
+  }
+  .options {
     grid-template-columns: 1fr;
   }
 }
