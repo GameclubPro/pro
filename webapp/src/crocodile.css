@@ -1280,7 +1280,7 @@
   top: 50%;
   width: 60px;
   height: 60px;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scaleX(-1);
   filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.4));
   animation: croc-bob 1.8s ease-in-out infinite;
   isolation: isolate;
@@ -1315,7 +1315,7 @@
 }
 
 .croc-head .croc-mouth {
-  transform-origin: 50% 15%;
+  transform-origin: 16% 58%;
   animation: croc-chomp 0.85s ease-in-out infinite;
 }
 
@@ -1368,10 +1368,10 @@
 @keyframes croc-chomp {
   0%,
   100% {
-    transform: scaleY(0.7);
+    transform: rotate(-8deg);
   }
   50% {
-    transform: scaleY(1);
+    transform: rotate(10deg);
   }
 }
 
