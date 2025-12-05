@@ -1319,6 +1319,8 @@ function TimerPacman({ pct, seconds, running, current, dimmed = false }) {
         >
           <div className="pacman-trail" />
           <div className="pacman-body" />
+          <div className="pacman-teeth" />
+          <div className="pacman-crest" />
           <div className="pacman-eye" />
         </motion.div>
       </div>
