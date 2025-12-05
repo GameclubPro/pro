@@ -1233,10 +1233,10 @@
   position: relative;
   height: 28px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(5, 11, 9, 0.92), rgba(9, 17, 12, 0.94));
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(20, 26, 33, 0.85), rgba(8, 12, 18, 0.9));
+  border: 1px solid color-mix(in srgb, var(--croco-border) 60%, rgba(255, 255, 255, 0.08));
   overflow: visible;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 30px rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), var(--croco-shadow);
 }
 
 .pacman-remaining {
@@ -1245,12 +1245,12 @@
   height: 100%;
   border-radius: inherit;
   background:
-    radial-gradient(circle, rgba(255, 255, 255, 0.8) 32%, transparent 38%) 8px 50% / 16px 12px repeat-x,
-    radial-gradient(circle, rgba(52, 211, 153, 0.32) 32%, transparent 38%) 0 50% / 16px 12px repeat-x,
-    linear-gradient(90deg, rgba(34, 197, 94, 0.32), rgba(20, 184, 166, 0.38));
-  border-right: 1px solid rgba(255, 255, 255, 0.14);
+    radial-gradient(circle, rgba(255, 255, 255, 0.9) 32%, transparent 38%) 8px 50% / 16px 12px repeat-x,
+    radial-gradient(circle, rgba(255, 255, 255, 0.14) 32%, transparent 38%) 0 50% / 16px 12px repeat-x,
+    linear-gradient(90deg, rgba(20, 184, 166, 0.2), rgba(59, 130, 246, 0.22));
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
   transition: width 0.2s ease;
-  backdrop-filter: blur(3px);
+  backdrop-filter: blur(2px);
   filter: drop-shadow(0 1px 4px rgba(255, 255, 255, 0.08));
 }
 
@@ -1276,14 +1276,14 @@
 }
 
 .pacman {
-  --pac-size: 30px;
-  --pac-color: #22c55e;
+  --pac-size: 28px;
+  --pac-color: #facc15;
   position: absolute;
   top: 50%;
   width: var(--pac-size);
   height: var(--pac-size);
   transform: translate(-50%, -50%);
-  filter: drop-shadow(0 10px 20px rgba(34, 197, 94, 0.35));
+  filter: drop-shadow(0 10px 20px rgba(250, 204, 21, 0.4));
 }
 
 .pacman.is-dimmed {
@@ -1313,8 +1313,8 @@
   height: 10px;
   transform: translateY(-50%);
   background:
-    radial-gradient(circle at 10% 50%, rgba(34, 197, 94, 0.38), transparent 55%),
-    radial-gradient(circle at 35% 50%, rgba(52, 211, 153, 0.24), transparent 60%);
+    radial-gradient(circle at 10% 50%, rgba(250, 204, 21, 0.38), transparent 55%),
+    radial-gradient(circle at 35% 50%, rgba(250, 204, 21, 0.24), transparent 60%);
   filter: blur(10px);
   opacity: 0.85;
   pointer-events: none;
@@ -1325,7 +1325,7 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 32%, #bbf7d0 0, #22c55e 55%, #15803d 100%);
+  background: radial-gradient(circle at 30% 32%, #fff5c7 0, #facc15 55%, #e3b90d 100%);
   -webkit-mask: conic-gradient(
     from calc(270deg - (var(--mouth-angle) / 2)),
     transparent 0deg var(--mouth-angle),
@@ -1336,7 +1336,7 @@
     transparent 0deg var(--mouth-angle),
     #000 var(--mouth-angle) 360deg
   );
-  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18), 0 8px 16px rgba(34, 197, 94, 0.35);
+  box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.14), 0 8px 16px rgba(250, 204, 21, 0.35);
   animation: pacChomp 0.32s ease-in-out infinite;
 }
 
@@ -1359,61 +1359,8 @@
   width: 2px;
   height: 2px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.8);
-}
-
-.pacman-teeth {
-  position: absolute;
-  top: 32%;
-  right: -2px;
-  width: 14px;
-  height: 42%;
-  background:
-    linear-gradient(180deg, #f8fafc 25%, transparent 25%),
-    linear-gradient(180deg, transparent 50%, #f8fafc 50%);
-  background-size: 100% 12px;
-  clip-path: polygon(55% 0%, 100% 50%, 55% 100%, 0% 82%, 0% 18%);
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
-}
-
-.pacman-crest {
-  position: absolute;
-  top: -6px;
-  left: 6px;
-  width: 38px;
-  height: 10px;
-  background: linear-gradient(135deg, #15803d, #22c55e);
-  clip-path: polygon(
-    0% 100%,
-    10% 0%,
-    20% 100%,
-    30% 0%,
-    40% 100%,
-    50% 0%,
-    60% 100%,
-    70% 0%,
-    80% 100%,
-    90% 0%,
-    100% 100%
-  );
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.22));
-}
-
-/* Ensure crocodile colors override quiz defaults */
-.croco .pacman {
-  --pac-color: #22c55e;
-  filter: drop-shadow(0 10px 20px rgba(34, 197, 94, 0.35));
-}
-
-.croco .pacman-body {
-  background: radial-gradient(circle at 30% 32%, #bbf7d0 0, #22c55e 55%, #15803d 100%);
-  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18), 0 8px 16px rgba(34, 197, 94, 0.35);
-}
-
-.croco .pacman-trail {
-  background:
-    radial-gradient(circle at 10% 50%, rgba(34, 197, 94, 0.38), transparent 55%),
-    radial-gradient(circle at 35% 50%, rgba(52, 211, 153, 0.24), transparent 60%);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
 }
 
 .pacman.is-paused .pacman-body {
