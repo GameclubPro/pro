@@ -625,6 +625,11 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
             isPaused={state.isPaused}
             onResume={() => dispatch({ type: "RESUME" })}
             onExit={goBack}
+            roster={state.roster}
+            targetScore={state.settings.targetScore}
+            perTeam={state.perTeamQuestions}
+            activeIndex={state.activeIndex}
+            roundNumber={state.round}
           />
         )}
 
@@ -951,6 +956,11 @@ function Round({
   isPaused,
   onResume,
   onExit,
+  roster,
+  targetScore,
+  perTeam,
+  activeIndex = 0,
+  roundNumber,
 }) {
   const [selected, setSelected] = useState(null); // value
   useEffect(() => {
@@ -968,6 +978,20 @@ function Round({
     ? question.options
     : [question?.answer].filter(Boolean);
   const hasChoice = selected != null;
+  const cap = Math.max(1, Number(targetScore) || 1);
+  const totalAsked = (perTeam || []).reduce((sum, n) => sum + (Number(n) || 0), 0);
+  const progressItems = (roster || []).map((item, idx) => {
+    const answered = perTeam?.[idx] ?? 0;
+    const correctPct = clamp(Math.min(item.score, cap) / cap, 0, 1) * 100;
+    const askedPct = clamp(Math.min(answered, cap) / cap, 0, 1) * 100;
+    return {
+      ...item,
+      answered,
+      correctPct,
+      askedPct,
+      isActive: idx === activeIndex,
+    };
+  });
 
   return (
     <div className="round">
@@ -991,12 +1015,49 @@ function Round({
         )}
       </div>
 
+      <div className="round-tags">
+        {typeof roundNumber === "number" && (
+          <span className="round-pill">Раунд {roundNumber}</span>
+        )}
+        <span className="round-pill subtle">Игра до {cap} очков</span>
+        <span className="round-pill subtle">Сыграно вопросов: {totalAsked}</span>
+      </div>
+
       <TimerPacman pct={timePct} seconds={seconds} running={running} current={current} />
+
+      {!!progressItems.length && (
+        <div className="score-rail" role="list">
+          {progressItems.map((item) => (
+            <div
+              className={`score-chip ${item.isActive ? "is-active" : ""}`}
+              key={item.id}
+              role="listitem"
+            >
+              <div className="score-chip-head">
+                <span className="score-chip-avatar" style={{ background: item.color }}>
+                  {item.emoji}
+                </span>
+                <div className="score-chip-info">
+                  <div className="score-chip-name">{item.name}</div>
+                  <div className="score-chip-meta">
+                    {item.answered} / {cap} вопросов • {item.score} очков
+                  </div>
+                </div>
+                <span className="score-chip-value">{item.score}</span>
+              </div>
+              <div className="score-chip-track" aria-label={`Прогресс ${item.name}`}>
+                <span className="score-chip-asked" style={{ width: `${item.askedPct}%` }} />
+                <span className="score-chip-fill" style={{ width: `${item.correctPct}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <QuestionCard question={question} reveal={reveal} onReveal={onReveal} />
 
       <div className="options" role="list">
-        {options.map((opt) => {
+        {options.map((opt, idx) => {
           const isSelected = selected === opt;
           const isCorrect = opt === question?.answer;
           const stateClass = hasChoice
@@ -1006,6 +1067,7 @@ function Round({
               ? "opt-wrong"
               : ""
             : "";
+          const label = String.fromCharCode(65 + idx);
           return (
             <motion.button
               key={opt}
@@ -1015,12 +1077,15 @@ function Round({
               disabled={hasChoice}
               role="listitem"
             >
-              <span className="opt-text">{opt}</span>
-              {hasChoice && (
-                <span className="opt-status">
-                  {isCorrect ? "Правильный ответ" : isSelected ? "Неверно" : ""}
-                </span>
-              )}
+              <span className="opt-label">{label}</span>
+              <span className="opt-body">
+                <span className="opt-text">{opt}</span>
+                {hasChoice && (
+                  <span className="opt-status">
+                    {isCorrect ? "Правильный ответ" : isSelected ? "Неверно" : ""}
+                  </span>
+                )}
+              </span>
             </motion.button>
           );
         })}
