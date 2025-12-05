@@ -1065,35 +1065,6 @@ function Round({
         playedLabel={`Вопросов: ${totalAsked}`}
       />
 
-      {!!progressItems.length && (
-        <div className="score-rail" role="list">
-          {progressItems.map((item) => (
-            <div
-              className={`score-chip ${item.isActive ? "is-active" : ""}`}
-              key={item.id}
-              role="listitem"
-            >
-              <div className="score-chip-head">
-                <span className="score-chip-avatar" style={{ background: item.color }}>
-                  {item.emoji}
-                </span>
-                <div className="score-chip-info">
-                  <div className="score-chip-name">{item.name}</div>
-                  <div className="score-chip-meta">
-                    {item.answered} / {cap} раундов сыграно • {item.score} очков
-                  </div>
-                </div>
-                <span className="score-chip-value">{item.score}</span>
-              </div>
-              <div className="score-chip-track" aria-label={`Прогресс ${item.name}`}>
-                <span className="score-chip-asked" style={{ width: `${item.askedPct}%` }} />
-                <span className="score-chip-fill" style={{ width: `${item.correctPct}%` }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
       <QuestionCard question={question} reveal={reveal} onReveal={onReveal} />
 
       <div className="options" role="list">
@@ -1131,6 +1102,32 @@ function Round({
         })}
       </div>
 
+      {!!progressItems.length && (
+        <div className="score-rail" role="list">
+          {progressItems.map((item) => (
+            <div
+              className={`score-chip ${item.isActive ? "is-active" : ""}`}
+              key={item.id}
+              role="listitem"
+            >
+              <div className="score-chip-head">
+                <span className="score-chip-avatar" style={{ background: item.color }}>
+                  {item.emoji}
+                </span>
+                <div className="score-chip-info">
+                  <div className="score-chip-name">{item.name}</div>
+                  <div className="score-chip-track" aria-label={`Прогресс ${item.name}`}>
+                    <span className="score-chip-asked" style={{ width: `${item.askedPct}%` }} />
+                    <span className="score-chip-fill" style={{ width: `${item.correctPct}%` }} />
+                  </div>
+                </div>
+                <span className="score-chip-value">{item.score}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {isPaused && (
         <div className="pause">
           <div className="pause-card">
@@ -1167,8 +1164,6 @@ function TimerPacman({ pct, seconds, running, current, roundNumber, totalLabel, 
         {typeof roundNumber === "number" && (
           <span className="round-pill dark">Раунд {roundNumber}</span>
         )}
-        {totalLabel && <span className="round-pill dark subtle">{totalLabel}</span>}
-        {playedLabel && <span className="round-pill dark subtle">{playedLabel}</span>}
       </div>
 
       <div

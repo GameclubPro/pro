@@ -1103,6 +1103,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 10px;
+  position: relative;
+  z-index: 2;
 }
 
 .score-chip {
@@ -1166,14 +1168,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.score-chip-meta {
-  color: var(--quiz-muted);
-  font-size: 12px;
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
 }
 
 .score-chip-value {
