@@ -677,7 +677,7 @@
 .quiz .hero-main {
   display: grid;
   grid-template-columns: 72px 1fr;
-  gap: 6px;
+  gap: 4px;
   align-items: center;
   width: 100%;
   max-width: 540px;
@@ -686,6 +686,7 @@
 .switch-card-panel {
   width: 100%;
   max-width: 640px;
+  height: 100%;
   margin: auto;
   align-self: center;
   justify-self: center;
@@ -695,7 +696,7 @@
   background: rgba(4, 10, 18, 0.66);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 18px;
-  padding: 18px;
+  padding: 22px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
