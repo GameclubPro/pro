@@ -1282,8 +1282,8 @@ function TimerPacman({ pct, seconds, running, current, dimmed = false }) {
   const label =
     remainingPct <= 0 ? "время вышло" : running ? "время идёт" : "пауза";
 
+  const pacmanClass = `pacman ${running ? "is-running" : "is-paused"} ${dimmed ? "is-dimmed" : ""}`;
   const trackClass = `pacman-track ${running ? "is-running" : "is-paused"} ${dimmed ? "is-dimmed" : ""}`;
-  const crocClass = `croc-head ${running ? "is-running" : "is-paused"} ${dimmed ? "is-dimmed" : ""}`;
 
   return (
     <div className="pacman-timer">
@@ -1312,47 +1312,14 @@ function TimerPacman({ pct, seconds, running, current, dimmed = false }) {
         />
 
         <motion.div
-          className={crocClass}
-          data-head
-          data-name={current?.name || ""}
+          className={pacmanClass}
           style={{ left: pacLeft }}
           animate={{ left: pacLeft }}
           transition={{ duration: 0.2, ease: "easeOut" }}
         >
-          <svg className="croc-head-svg" viewBox="0 0 120 110" aria-hidden="true" focusable="false">
-            <ellipse cx="60" cy="56" rx="50" ry="44" className="croc-face" />
-            <ellipse cx="60" cy="62" rx="44" ry="34" className="croc-face-shade" />
-            <ellipse cx="60" cy="62" rx="32" ry="20" className="croc-snout" />
-
-            <g className="croc-eye">
-              <ellipse cx="42" cy="42" rx="12" ry="14" className="croc-eye-white" />
-              <circle cx="42" cy="44" r="5" className="croc-pupil" />
-            </g>
-            <g className="croc-eye">
-              <ellipse cx="78" cy="42" rx="12" ry="14" className="croc-eye-white" />
-              <circle cx="78" cy="44" r="5" className="croc-pupil" />
-            </g>
-
-            <g className="croc-nostrils">
-              <circle cx="52" cy="62" r="3" className="croc-nostril" />
-              <circle cx="68" cy="62" r="3" className="croc-nostril" />
-            </g>
-
-            <g className="croc-mouth">
-              <path
-                className="croc-mouth-path"
-                d="M24 62 Q60 86 96 62 L96 76 Q60 94 24 76 Z"
-              />
-              <path
-                className="croc-teeth"
-                d="M32 62 L36 74 L40 62 Z M44 64 L48 74 L52 64 Z M56 66 L60 76 L64 66 Z M68 64 L72 74 L76 64 Z M80 62 L84 74 L88 62 Z"
-              />
-              <path
-                className="croc-tongue"
-                d="M54 70 Q60 86 66 70 Q60 78 54 70 Z"
-              />
-            </g>
-          </svg>
+          <div className="pacman-trail" />
+          <div className="pacman-body" />
+          <div className="pacman-eye" />
         </motion.div>
       </div>
     </div>
