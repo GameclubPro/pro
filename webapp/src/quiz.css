@@ -38,7 +38,16 @@
   background-size: 18px 18px;
   opacity: 0.15;
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
+}
+
+.quiz::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 8, 14, 0.6);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .quiz-bg {
@@ -71,7 +80,7 @@
 
 .quiz-wrap {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   max-width: 760px;
   margin: 0 auto;
   padding: calc(24px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-left)) calc(32px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-right));
