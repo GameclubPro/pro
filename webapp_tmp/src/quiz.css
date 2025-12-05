@@ -30,15 +30,6 @@
   font-family: "Space Grotesk", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
 }
 
-.quiz::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(7, 12, 18, 0.55), rgba(7, 12, 18, 0.75));
-  pointer-events: none;
-  z-index: 0;
-}
-
 .quiz::after {
   content: "";
   position: absolute;
