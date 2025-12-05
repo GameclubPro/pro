@@ -1271,105 +1271,6 @@
   pointer-events: none;
 }
 
-.pacman {
-  --pac-size: 28px;
-  --pac-color: #facc15;
-  position: absolute;
-  top: 50%;
-  width: var(--pac-size);
-  height: var(--pac-size);
-  transform: translate(-50%, -50%);
-  filter: drop-shadow(0 10px 20px rgba(250, 204, 21, 0.4));
-}
-
-.pacman.is-dimmed {
-  filter: none;
-  opacity: 0.6;
-}
-
-.pacman.is-dimmed .pacman-body {
-  animation-play-state: paused;
-  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.16);
-  filter: saturate(0.5) brightness(0.9);
-}
-
-.pacman.is-dimmed .pacman-trail {
-  opacity: 0;
-}
-
-.pacman.is-dimmed .pacman-eye {
-  box-shadow: none;
-}
-
-.pacman-trail {
-  position: absolute;
-  top: 50%;
-  left: 55%;
-  width: 80%;
-  height: 10px;
-  transform: translateY(-50%);
-  background:
-    radial-gradient(circle at 10% 50%, rgba(250, 204, 21, 0.38), transparent 55%),
-    radial-gradient(circle at 35% 50%, rgba(250, 204, 21, 0.24), transparent 60%);
-  filter: blur(10px);
-  opacity: 0.85;
-  pointer-events: none;
-}
-
-.pacman-body {
-  --mouth-angle: 68deg;
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 32%, #fff5c7 0, #facc15 55%, #e3b90d 100%);
-  -webkit-mask: conic-gradient(
-    from calc(270deg - (var(--mouth-angle) / 2)),
-    transparent 0deg var(--mouth-angle),
-    #000 var(--mouth-angle) 360deg
-  );
-  mask: conic-gradient(
-    from calc(270deg - (var(--mouth-angle) / 2)),
-    transparent 0deg var(--mouth-angle),
-    #000 var(--mouth-angle) 360deg
-  );
-  box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.14), 0 8px 16px rgba(250, 204, 21, 0.35);
-  animation: pacChomp 0.32s ease-in-out infinite;
-}
-
-.pacman-eye {
-  position: absolute;
-  top: 22%;
-  left: 58%;
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: #0f172a;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
-}
-
-.pacman-eye::after {
-  content: "";
-  position: absolute;
-  top: 18%;
-  left: 18%;
-  width: 2px;
-  height: 2px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.8);
-}
-
-@keyframes pacChomp {
-  0% {
-    --mouth-angle: 72deg;
-  }
-  50% {
-    --mouth-angle: 12deg;
-  }
-  100% {
-    --mouth-angle: 72deg;
-  }
-}
-
 .pacman-track.is-dimmed {
   opacity: 0.9;
 }
@@ -1377,15 +1278,18 @@
 .croc-head {
   position: absolute;
   top: 50%;
-  width: 58px;
-  height: 58px;
+  width: 60px;
+  height: 60px;
   transform: translate(-50%, -50%);
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
   filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.4));
   animation: croc-bob 1.8s ease-in-out infinite;
   isolation: isolate;
+}
+
+.croc-head-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .croc-head::before {
@@ -1398,41 +1302,57 @@
   pointer-events: none;
 }
 
-.croc-head .croc-mouth-mask {
-  position: absolute;
-  inset: 48% 18% 10% 18%;
-  background: rgba(5, 9, 7, 0.85);
-  border-radius: 18px;
-  box-shadow: 0 0 18px rgba(0, 0, 0, 0.35);
-  transform-origin: top center;
-  animation: croc-chomp 0.7s ease-in-out infinite;
-  mix-blend-mode: multiply;
+.croc-head .croc-face {
+  fill: #22c55e;
 }
 
-.croc-head .croc-shadow {
-  position: absolute;
-  inset: 70% 15% 4% 15%;
-  background: radial-gradient(circle at 50% 30%, rgba(0, 0, 0, 0.28), transparent 70%);
-  filter: blur(4px);
-  opacity: 0.6;
+.croc-head .croc-face-shade {
+  fill: #16a34a;
 }
 
-.croc-head.is-paused .croc-mouth-mask,
-.croc-head.is-dimmed .croc-mouth-mask {
-  animation-play-state: paused;
+.croc-head .croc-snout {
+  fill: #15803d;
 }
 
-.croc-head.is-paused {
+.croc-head .croc-mouth {
+  transform-origin: 50% 15%;
+  animation: croc-chomp 0.85s ease-in-out infinite;
+}
+
+.croc-head .croc-mouth-path {
+  fill: #0a130e;
+}
+
+.croc-head .croc-teeth {
+  fill: #f8fafc;
+}
+
+.croc-head .croc-tongue {
+  fill: #ef4444;
+}
+
+.croc-head .croc-eye-white {
+  fill: #fff;
+  stroke: #0f172a;
+  stroke-width: 2px;
+}
+
+.croc-head .croc-pupil {
+  fill: #0f172a;
+}
+
+.croc-head .croc-nostril {
+  fill: #0f172a;
+  opacity: 0.85;
+}
+
+.croc-head.is-paused .croc-mouth {
   animation-play-state: paused;
 }
 
 .croc-head.is-dimmed {
   opacity: 0.7;
   filter: saturate(0.8) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
-}
-
-.croc-head.is-running .croc-mouth-mask {
-  animation-play-state: running;
 }
 
 @keyframes croc-bob {
