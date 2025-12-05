@@ -92,10 +92,19 @@
 }
 
 .switch-shell {
+  position: relative;
   width: 100%;
-  max-width: 760px;
+  min-width: 90vw;
+  aspect-ratio: 1 / 1;
   display: flex;
   justify-content: center;
+  align-items: center;
+  border-radius: 22px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(4, 10, 18, 0.36), rgba(4, 10, 18, 0.58)),
+    url("./assets/quiz/quiz-switch-card.png") center/cover no-repeat;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .ghost-btn {
@@ -645,25 +654,16 @@
 }
 
 .quiz .card.hero.switch-card {
-  min-height: 50vh;
   width: 100%;
-  min-width: 90vw;
   margin: auto;
   align-self: center;
   justify-self: center;
   align-content: center;
   justify-items: center;
   text-align: center;
-  background:
-    linear-gradient(180deg, rgba(4, 10, 18, 0.42), rgba(4, 10, 18, 0.68)),
-    url("./assets/quiz/quiz-switch-card.png") center/cover no-repeat,
-    var(--quiz-surface);
-  border-color: color-mix(in srgb, var(--quiz-border) 40%, rgba(255, 255, 255, 0.25));
-  background-color: rgba(4, 10, 18, 0.9);
-  background-blend-mode: lighten, normal, normal;
-  background-size: auto, cover, auto;
-  background-repeat: no-repeat;
-  background-position: center;
+  background: rgba(6, 10, 16, 0.78);
+  border-color: color-mix(in srgb, var(--quiz-border) 50%, rgba(255, 255, 255, 0.18));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .quiz .hero-main {
@@ -722,19 +722,18 @@
 
 .quiz .play-circle {
   position: relative;
-  width: 94px;
-  height: 94px;
-  border-radius: 999px;
-  border: 2px dashed rgba(255, 255, 255, 0.6);
+  width: 160px;
+  height: 56px;
+  border-radius: 12px;
+  border: 2px dashed rgba(255, 255, 255, 0.8);
   background:
-    repeating-conic-gradient(from 15deg, rgba(255, 255, 255, 0.06) 0deg 20deg, transparent 20deg 40deg),
-    linear-gradient(155deg, rgba(255, 255, 255, 0.12), rgba(8, 18, 28, 0.65)),
-    rgba(12, 24, 36, 0.75);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(14, 35, 58, 0.8)),
+    rgba(8, 18, 30, 0.85);
   box-shadow:
-    0 0 0 6px rgba(4, 10, 18, 0.5),
-    0 18px 38px rgba(0, 0, 0, 0.35),
+    0 0 0 6px rgba(5, 12, 20, 0.5),
+    0 14px 30px rgba(0, 0, 0, 0.32),
     inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  color: #f7f8fb;
+  color: #fdfdfd;
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -745,47 +744,47 @@
 .quiz .play-circle::before {
   content: "";
   position: absolute;
-  inset: -6px;
+  inset: -5px;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(139, 92, 246, 0.14), rgba(34, 211, 238, 0.18));
-  opacity: 0.6;
-  filter: blur(12px);
+  border: 2px dashed rgba(255, 255, 255, 0.24);
+  opacity: 0.8;
+  filter: blur(6px);
   z-index: -1;
 }
 
 .quiz .play-circle::after {
-  content: "";
+  content: "PLAY";
   position: absolute;
-  inset: 14px;
-  border-radius: inherit;
-  border: 1px dashed rgba(255, 255, 255, 0.4);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #fefefe;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
 }
 
 .quiz .play-circle:hover {
   box-shadow:
-    0 0 0 6px rgba(4, 10, 18, 0.45),
-    0 22px 44px rgba(0, 0, 0, 0.32),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-  filter: brightness(1.06) drop-shadow(0 14px 24px rgba(0, 0, 0, 0.35));
+    0 0 0 6px rgba(5, 12, 20, 0.55),
+    0 18px 34px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  filter: brightness(1.05) drop-shadow(0 14px 24px rgba(0, 0, 0, 0.35));
   background:
-    repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.08) 0deg 18deg, transparent 18deg 36deg),
-    linear-gradient(155deg, rgba(255, 255, 255, 0.16), rgba(8, 18, 28, 0.6)),
-    rgba(18, 32, 46, 0.8);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(20, 48, 78, 0.85)),
+    rgba(10, 22, 35, 0.9);
 }
 
 .quiz .play-circle:active {
   transform: scale(0.97);
   box-shadow:
-    0 0 0 5px rgba(4, 10, 18, 0.55),
+    0 0 0 5px rgba(5, 12, 20, 0.6),
     0 12px 26px rgba(0, 0, 0, 0.3),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .quiz .play-circle svg {
-  transform: translateX(1px);
-  stroke-width: 3px;
-  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.55));
+  display: none;
 }
 
 .hero-cta-caption {
