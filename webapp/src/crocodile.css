@@ -8,8 +8,8 @@
   --croco-surface-2: rgba(17, 26, 38, 0.92);
   --croco-border: rgba(255, 255, 255, 0.08);
   --croco-border-strong: rgba(255, 255, 255, 0.14);
-  --croco-primary: linear-gradient(135deg, #22d3ee, #8b5cf6);
-  --croco-primary-2: linear-gradient(135deg, #1fee9c, #2ed3ff);
+  --croco-primary: linear-gradient(135deg, #34d399, #22c55e);
+  --croco-primary-2: linear-gradient(135deg, #22c55e, #16a34a);
   --croco-green: #1fee9c;
   --croco-red: #ef4444;
   --croco-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
@@ -22,11 +22,25 @@
   overflow: hidden;
   overscroll-behavior-y: contain;
   background:
-    radial-gradient(120% 120% at 18% 12%, rgba(34, 211, 238, 0.14), transparent 60%),
+    radial-gradient(120% 120% at 18% 12%, rgba(52, 211, 153, 0.16), transparent 60%),
     radial-gradient(110% 120% at 82% 0%, rgba(31, 238, 156, 0.18), transparent 55%),
     radial-gradient(120% 120% at 50% 120%, rgba(12, 96, 62, 0.32), transparent 62%),
     linear-gradient(160deg, #04110b, #0a1a12 38%, #031008 78%, #010b05);
   font-family: "Space Grotesk", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+.croco::before {
+  content: "";
+  position: absolute;
+  inset: -20px;
+  background:
+    radial-gradient(circle at 25% 30%, rgba(52, 211, 153, 0.16) 0, rgba(52, 211, 153, 0.16) 32%, transparent 36%),
+    radial-gradient(circle at 75% 70%, rgba(34, 197, 94, 0.14) 0, rgba(34, 197, 94, 0.14) 32%, transparent 36%);
+  background-size: 140px 120px;
+  background-position: 0 0, 70px 60px;
+  mix-blend-mode: overlay;
+  opacity: 0.28;
+  pointer-events: none;
 }
 
 .croco::after {
@@ -34,11 +48,11 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(closest-side at 25% 35%, rgba(255, 255, 255, 0.06) 0, transparent 58%),
-    radial-gradient(closest-side at 75% 35%, rgba(255, 255, 255, 0.06) 0, transparent 58%),
-    radial-gradient(closest-side at 50% 85%, rgba(255, 255, 255, 0.05) 0, transparent 58%);
-  background-size: 180px 140px;
-  background-position: 0 0, 90px 70px, 0 70px;
+    radial-gradient(closest-side at 25% 35%, rgba(255, 255, 255, 0.05) 0, transparent 60%),
+    radial-gradient(closest-side at 75% 35%, rgba(255, 255, 255, 0.05) 0, transparent 60%),
+    radial-gradient(closest-side at 50% 85%, rgba(255, 255, 255, 0.04) 0, transparent 60%);
+  background-size: 140px 120px;
+  background-position: 0 0, 70px 60px, 0 60px;
   mix-blend-mode: soft-light;
   opacity: 0.35;
   pointer-events: none;
@@ -319,7 +333,7 @@
 .seg-active {
   background: var(--croco-primary);
   border-color: transparent;
-  box-shadow: 0 12px 40px rgba(139, 92, 246, 0.28);
+  box-shadow: 0 12px 40px rgba(34, 197, 94, 0.32);
   color: #041017;
 }
 
@@ -345,10 +359,10 @@
   width: 46px;
   height: 46px;
   border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--croco-border) 70%, rgba(34, 211, 238, 0.5));
+  border: 1px solid color-mix(in srgb, var(--croco-border) 70%, rgba(34, 197, 94, 0.55));
   background:
-    radial-gradient(120% 120% at 20% 20%, rgba(34, 211, 238, 0.18), transparent),
-    radial-gradient(120% 120% at 80% 0%, rgba(139, 92, 246, 0.22), transparent),
+    radial-gradient(120% 120% at 20% 20%, rgba(34, 197, 94, 0.24), transparent),
+    radial-gradient(120% 120% at 80% 0%, rgba(52, 211, 153, 0.18), transparent),
     rgba(255, 255, 255, 0.05);
   color: #fff;
   display: grid;
@@ -378,7 +392,7 @@
 .gear-glow {
   position: absolute;
   inset: -16px;
-  background: radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.25), transparent 55%);
+  background: radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.24), transparent 55%);
   filter: blur(24px);
   opacity: 0.7;
   pointer-events: none;
@@ -617,7 +631,7 @@
   font-size: 16px;
   color: #041017;
   background: var(--croco-primary);
-  box-shadow: 0 16px 40px rgba(34, 211, 238, 0.35);
+  box-shadow: 0 16px 40px rgba(34, 197, 94, 0.35);
   min-height: 50px;
 }
 
@@ -630,8 +644,8 @@
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(120% 120% at 15% 10%, rgba(34, 211, 238, 0.12), transparent),
-    radial-gradient(120% 120% at 85% 20%, rgba(139, 92, 246, 0.16), transparent),
+    radial-gradient(120% 120% at 15% 10%, rgba(34, 197, 94, 0.12), transparent),
+    radial-gradient(120% 120% at 85% 20%, rgba(52, 211, 153, 0.14), transparent),
     rgba(4, 10, 16, 0.72);
   backdrop-filter: blur(6px);
   display: flex;
@@ -648,8 +662,8 @@
   border-radius: 18px;
   padding: 16px;
   background:
-    radial-gradient(140% 140% at 85% 0%, rgba(34, 211, 238, 0.18), transparent),
-    radial-gradient(140% 140% at 0% 20%, rgba(139, 92, 246, 0.16), transparent),
+    radial-gradient(140% 140% at 85% 0%, rgba(34, 197, 94, 0.18), transparent),
+    radial-gradient(140% 140% at 0% 20%, rgba(52, 211, 153, 0.16), transparent),
     rgba(9, 15, 24, 0.95);
   border: 1px solid var(--croco-border);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
@@ -668,7 +682,7 @@
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-gutter: stable both-edges;
-  scrollbar-color: rgba(139, 92, 246, 0.5) rgba(255, 255, 255, 0.04);
+  scrollbar-color: rgba(52, 211, 153, 0.5) rgba(255, 255, 255, 0.04);
   padding-right: 18px;
   display: flex;
   flex-direction: column;
@@ -704,14 +718,14 @@
 }
 
 .croco-settings-window::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(34, 211, 238, 0.85), rgba(139, 92, 246, 0.8));
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.9), rgba(34, 197, 94, 0.85));
   border-radius: 12px;
   border: 1px solid rgba(0, 0, 0, 0.35);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .croco-settings-window::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(34, 211, 238, 0.95), rgba(139, 92, 246, 0.9));
+  background: linear-gradient(180deg, rgba(52, 211, 153, 0.95), rgba(34, 197, 94, 0.9));
 }
 
 .croco-settings-window .settings-head {
@@ -760,9 +774,9 @@
 
 .croco-settings-window .setting-card.accent {
   background:
-    linear-gradient(135deg, rgba(34, 211, 238, 0.12), rgba(139, 92, 246, 0.12)),
+    linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(52, 211, 153, 0.12)),
     var(--croco-surface-2);
-  border-color: color-mix(in srgb, var(--croco-border) 60%, rgba(34, 211, 238, 0.4));
+  border-color: color-mix(in srgb, var(--croco-border) 60%, rgba(34, 197, 94, 0.45));
 }
 
 .croco-settings-window .setting-card.glass {
@@ -797,7 +811,7 @@
   width: 100%;
   height: 14px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #22d3ee 0%, #8b5cf6 var(--slider-progress), rgba(255, 255, 255, 0.1) var(--slider-progress));
+  background: linear-gradient(90deg, #34d399 0%, #22c55e var(--slider-progress), rgba(255, 255, 255, 0.08) var(--slider-progress));
   border: 1px solid var(--croco-border);
   outline: none;
   -webkit-appearance: none;
@@ -819,7 +833,7 @@
   border-radius: 50%;
   background: #fff;
   border: 2px solid #041017;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), 0 0 0 4px rgba(34, 211, 238, 0.2);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), 0 0 0 4px rgba(34, 197, 94, 0.22);
   margin-top: -6px;
 }
 
@@ -835,11 +849,11 @@
   border-radius: 50%;
   background: #fff;
   border: 2px solid #041017;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), 0 0 0 4px rgba(34, 211, 238, 0.2);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), 0 0 0 4px rgba(34, 197, 94, 0.22);
 }
 
 .croco-settings-window .settings-slider:focus-visible {
-  outline: 2px solid rgba(34, 211, 238, 0.6);
+  outline: 2px solid rgba(34, 197, 94, 0.6);
   outline-offset: 2px;
 }
 
@@ -864,11 +878,11 @@
 .croco-settings-window .meter-fill {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, #22d3ee, #8b5cf6);
+  background: linear-gradient(90deg, #34d399, #22c55e);
 }
 
 .croco-settings-window .meter-fill.alt {
-  background: linear-gradient(90deg, #1fee9c, #2ed3ff);
+  background: linear-gradient(90deg, #2dd4bf, #22c55e);
 }
 
 .croco-settings-window .meter-thumb {
@@ -998,8 +1012,8 @@
   display: grid;
   gap: 12px;
   background:
-    radial-gradient(120% 120% at 10% 10%, rgba(34, 211, 238, 0.12), transparent),
-    radial-gradient(120% 120% at 90% 10%, rgba(139, 92, 246, 0.1), transparent),
+    radial-gradient(120% 120% at 10% 10%, rgba(34, 197, 94, 0.12), transparent),
+    radial-gradient(120% 120% at 90% 10%, rgba(52, 211, 153, 0.12), transparent),
     var(--croco-surface);
   border: 1px solid var(--croco-border);
   box-shadow: var(--croco-shadow);
@@ -1085,7 +1099,7 @@
   box-shadow:
     inset 0 6px 12px rgba(255, 255, 255, 0.18),
     inset 0 -10px 20px rgba(4, 16, 23, 0.25),
-    0 22px 48px rgba(34, 211, 238, 0.32),
+    0 22px 48px rgba(34, 197, 94, 0.34),
     0 0 0 8px rgba(255, 255, 255, 0.06);
   color: #041017;
   display: grid;
@@ -1100,7 +1114,7 @@
   position: absolute;
   inset: -6px;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(139, 92, 246, 0.15), rgba(34, 211, 238, 0.22));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(52, 211, 153, 0.15), rgba(34, 197, 94, 0.22));
   opacity: 0.7;
   filter: blur(10px);
   z-index: -1;
@@ -1121,9 +1135,9 @@
   box-shadow:
     inset 0 6px 12px rgba(255, 255, 255, 0.2),
     inset 0 -10px 22px rgba(4, 16, 23, 0.28),
-    0 26px 56px rgba(34, 211, 238, 0.38),
+    0 26px 56px rgba(34, 197, 94, 0.4),
     0 0 0 10px rgba(255, 255, 255, 0.07);
-  filter: drop-shadow(0 12px 18px rgba(34, 211, 238, 0.25));
+  filter: drop-shadow(0 12px 18px rgba(34, 197, 94, 0.26));
 }
 
 .play-circle svg {
@@ -1367,7 +1381,7 @@
   border-radius: 16px;
   border: 1px solid var(--croco-border);
   background:
-    radial-gradient(120% 120% at 20% 20%, rgba(34, 211, 238, 0.08), transparent),
+    radial-gradient(120% 120% at 20% 20%, rgba(52, 211, 153, 0.1), transparent),
     linear-gradient(140deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
   box-shadow: var(--croco-shadow);
   display: grid;
@@ -1412,14 +1426,14 @@
   min-height: 52px;
   border-radius: 14px;
   border: none;
-  background: linear-gradient(135deg, #22d3ee, #8b5cf6);
+  background: var(--croco-primary);
   color: #041017;
   font-weight: 900;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 16px 40px rgba(34, 211, 238, 0.35);
+  box-shadow: 0 16px 40px rgba(34, 197, 94, 0.35);
 }
 
 .option-btn.secondary {
@@ -1587,7 +1601,7 @@
 
 .btn.primary {
   background: var(--croco-primary);
-  box-shadow: 0 16px 40px rgba(34, 211, 238, 0.35);
+  box-shadow: 0 16px 40px rgba(34, 197, 94, 0.35);
 }
 
 .btn.secondary {
