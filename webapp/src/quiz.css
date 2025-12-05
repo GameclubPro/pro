@@ -796,6 +796,11 @@
 .round {
   display: grid;
   gap: 12px;
+  background: rgba(4, 8, 14, 0.75);
+  border-radius: 16px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--quiz-border) 65%, rgba(0, 0, 0, 0.4));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), var(--quiz-shadow);
 }
 
 .round-meta {
@@ -804,6 +809,11 @@
   align-items: center;
   gap: 8px;
   font-weight: 800;
+  background: rgba(7, 12, 18, 0.7);
+  border: 1px solid color-mix(in srgb, var(--quiz-border) 60%, rgba(0, 0, 0, 0.4));
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .round-name {
@@ -825,29 +835,28 @@
   background: rgba(255, 255, 255, 0.6);
 }
 
-.round-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 2px 0 6px;
-}
-
 .round-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 10px;
-  border-radius: 12px;
+  padding: 7px 10px;
+  border-radius: 999px;
   border: 1px solid var(--quiz-border);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
   font-weight: 800;
   font-size: 12px;
   letter-spacing: 0.02em;
 }
 
 .round-pill.subtle {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--quiz-muted);
+}
+
+.round-pill.dark {
+  background: rgba(7, 12, 18, 0.7);
+  border-color: color-mix(in srgb, var(--quiz-border) 60%, rgba(0, 0, 0, 0.35));
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
 }
 
 .round-exit {
@@ -888,12 +897,18 @@
   display: grid;
   gap: 6px;
   margin: 4px 0 6px;
+  background: rgba(6, 10, 16, 0.75);
+  border: 1px solid color-mix(in srgb, var(--quiz-border) 70%, rgba(0, 0, 0, 0.4));
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .pacman-meta {
   display: flex;
   align-items: baseline;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .pacman-track {

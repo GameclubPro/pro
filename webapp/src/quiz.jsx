@@ -1015,15 +1015,15 @@ function Round({
         )}
       </div>
 
-      <div className="round-tags">
-        {typeof roundNumber === "number" && (
-          <span className="round-pill">Раунд {roundNumber}</span>
-        )}
-        <span className="round-pill subtle">Игра до {cap} раундов</span>
-        <span className="round-pill subtle">Сыграно раундов: {totalAsked}</span>
-      </div>
-
-      <TimerPacman pct={timePct} seconds={seconds} running={running} current={current} />
+      <TimerPacman
+        pct={timePct}
+        seconds={seconds}
+        running={running}
+        current={current}
+        roundNumber={roundNumber}
+        totalLabel={`Игра до ${cap} раундов`}
+        playedLabel={`Сыграно: ${totalAsked}`}
+      />
 
       {!!progressItems.length && (
         <div className="score-rail" role="list">
@@ -1106,7 +1106,7 @@ function Round({
   );
 }
 
-function TimerPacman({ pct, seconds, running, current }) {
+function TimerPacman({ pct, seconds, running, current, roundNumber, totalLabel, playedLabel }) {
   const safePct = clamp(pct ?? 0, 0, 1);
   const remainingPct = Math.round(safePct * 100);
   // 100% — старт справа, 0% — финиш слева
@@ -1124,6 +1124,11 @@ function TimerPacman({ pct, seconds, running, current }) {
       <div className="pacman-meta">
         <div className="timer-num">{seconds}s</div>
         <div className="timer-sub">{label}</div>
+        {typeof roundNumber === "number" && (
+          <span className="round-pill dark">Раунд {roundNumber}</span>
+        )}
+        {totalLabel && <span className="round-pill dark subtle">{totalLabel}</span>}
+        {playedLabel && <span className="round-pill dark subtle">{playedLabel}</span>}
       </div>
 
       <div
