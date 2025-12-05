@@ -1105,6 +1105,9 @@
   gap: 10px;
   position: relative;
   z-index: 2;
+  width: calc(100% + 28px + env(safe-area-inset-left) + env(safe-area-inset-right));
+  margin-left: calc(-14px - env(safe-area-inset-left));
+  margin-right: calc(-14px - env(safe-area-inset-right));
 }
 
 .score-chip {
