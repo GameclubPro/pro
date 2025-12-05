@@ -869,7 +869,6 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 
 /* ===== SHELL ONLY (всё, что ниже префиксировано .shell и не влияет на игры) ===== */
 .shell .backdrop { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
-.shell .backdrop::after { content: ""; position: absolute; inset: 0; background: rgba(4, 8, 14, 0.65); pointer-events: none; }
 .shell .bg-layer {
   position: absolute; inset: 0;
   background:
