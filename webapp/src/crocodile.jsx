@@ -395,6 +395,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
       reason: null,
     };
   });
+  const [lastStage, setLastStage] = useState("setup");
 
   const haptic = useHaptics();
   const chime = useChime(state.settings.sound);
@@ -427,6 +428,12 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   useEffect(() => {
     persist(STORAGE_KEYS.custom, state.customText);
   }, [state.customText]);
+
+  useEffect(() => {
+    if (state.stage !== "switch") {
+      setLastStage(state.stage);
+    }
+  }, [state.stage]);
 
   useEffect(() => {
     if (state.stage !== "round") {
@@ -605,15 +612,17 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
     setTimeoutPrompt(false);
     processAnswer(isCorrect ? "correct" : "skip", { immediate: true });
   };
+  const isSwitching = state.stage === "switch";
+  const visibleStage = isSwitching ? lastStage : state.stage;
 
   return (
-    <div className={`croco ${state.stage === "switch" ? "is-switch" : ""}`}>
+    <div className="croco">
       <div className="croco-bg" aria-hidden>
         <span className="blob one" />
         <span className="blob two" />
       </div>
       <div className="croco-wrap">
-        {state.stage === "setup" && (
+        {visibleStage === "setup" && (
           <Setup
             settings={state.settings}
             roster={state.roster}
@@ -628,21 +637,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
           />
         )}
 
-        {state.stage === "switch" && (
-          <div className="switch-shell">
-            <SwitchCard
-              key={current?.id}
-              current={current}
-              mode={state.settings.mode}
-              round={roundNumber}
-              totalRounds={wordsTotal}
-              wordsRemaining={wordsLeft}
-              onBegin={handleBeginRound}
-            />
-          </div>
-        )}
-
-        {state.stage === "round" && (
+        {visibleStage === "round" && (
           <Round
             current={current}
             mode={state.settings.mode}
@@ -666,7 +661,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
           />
         )}
 
-        {state.stage === "summary" && (
+        {visibleStage === "summary" && (
           <Summary
             roster={state.roster}
             winners={state.winner || []}
@@ -677,6 +672,36 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
           />
         )}
       </div>
+
+      <AnimatePresence>
+        {isSwitching && (
+          <motion.div
+            className="switch-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+          >
+            <motion.div
+              className="switch-shell"
+              initial={{ scale: 0.94, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.97, opacity: 0, y: 8 }}
+              transition={{ type: "spring", stiffness: 260, damping: 22 }}
+            >
+              <SwitchCard
+                key={current?.id}
+                current={current}
+                mode={state.settings.mode}
+                round={roundNumber}
+                totalRounds={wordsTotal}
+                wordsRemaining={wordsLeft}
+                onBegin={handleBeginRound}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Confetti
         refConfetti={(instance) => {

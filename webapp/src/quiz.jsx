@@ -401,6 +401,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
       questionsPlayed: 0,
     };
   });
+  const [lastStage, setLastStage] = useState("setup");
 
   const haptic = useHaptics();
   const chime = useChime(state.settings.sound);
@@ -432,6 +433,11 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
   useEffect(() => {
     persist(STORAGE_KEYS.roster, state.roster);
   }, [state.roster]);
+  useEffect(() => {
+    if (state.stage !== "switch") {
+      setLastStage(state.stage);
+    }
+  }, [state.stage]);
 
   // Timer loop — использует реальное время, чтобы не зависеть от фоновой вкладки
   useEffect(() => {
@@ -576,16 +582,17 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
 
   const safeRoundSeconds = clamp(state.settings.roundSeconds, 20, 90);
   const timePct = clamp(state.timerMs / (safeRoundSeconds * 1000), 0, 1);
-  const quizClass = `quiz ${state.stage === "switch" ? "is-switch" : ""}`;
+  const isSwitching = state.stage === "switch";
+  const visibleStage = isSwitching ? lastStage : state.stage;
 
   return (
-    <div className={quizClass}>
+    <div className="quiz">
       <div className="quiz-bg" aria-hidden>
         <span className="blob one" />
         <span className="blob two" />
       </div>
       <div className="quiz-wrap">
-        {state.stage === "setup" && (
+        {visibleStage === "setup" && (
           <Setup
             settings={state.settings}
             roster={state.roster}
@@ -595,7 +602,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
           />
         )}
 
-        {state.stage === "round" && (
+        {visibleStage === "round" && (
           <Round
             current={current}
             mode={state.settings.mode}
@@ -617,7 +624,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
           />
         )}
 
-        {state.stage === "summary" && (
+        {visibleStage === "summary" && (
           <Summary
             roster={state.roster}
             winners={state.winner || []}
@@ -630,7 +637,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
         )}
       </div>
       <AnimatePresence>
-        {state.stage === "switch" && (
+        {isSwitching && (
           <motion.div
             className="switch-overlay"
             initial={{ opacity: 0 }}
