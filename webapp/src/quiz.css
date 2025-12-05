@@ -91,10 +91,19 @@
     radial-gradient(120% 80% at 18% 15%, rgba(34, 211, 238, 0.18), transparent 55%),
     radial-gradient(120% 80% at 82% 10%, rgba(139, 92, 246, 0.16), transparent 55%),
     rgba(4, 8, 14, 0.55);
-  backdrop-filter: blur(10px) saturate(115%);
-  -webkit-backdrop-filter: blur(10px) saturate(115%);
+  backdrop-filter: blur(6px) saturate(115%);
+  -webkit-backdrop-filter: blur(6px) saturate(115%);
   overflow: hidden;
   will-change: opacity;
+  isolation: isolate;
+}
+
+.quiz .switch-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(145deg, rgba(7, 11, 18, 0.4), rgba(7, 12, 22, 0.5));
+  z-index: 0;
 }
 
 .quiz .switch-overlay::after {
