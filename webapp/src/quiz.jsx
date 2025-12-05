@@ -643,14 +643,14 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
+            transition={{ duration: 0.14, ease: "easeOut" }}
           >
             <motion.div
               className="switch-shell"
-              initial={{ scale: 0.94, opacity: 0, y: 10 }}
+              initial={{ scale: 0.97, opacity: 0, y: 8 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.97, opacity: 0, y: 8 }}
-              transition={{ type: "spring", stiffness: 260, damping: 22 }}
+              exit={{ scale: 0.98, opacity: 0, y: 6 }}
+              transition={{ type: "tween", ease: "easeOut", duration: 0.18 }}
             >
               <SwitchCard
                 key={current?.id}

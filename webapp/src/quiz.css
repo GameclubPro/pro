@@ -91,9 +91,10 @@
     radial-gradient(120% 80% at 18% 15%, rgba(34, 211, 238, 0.18), transparent 55%),
     radial-gradient(120% 80% at 82% 10%, rgba(139, 92, 246, 0.16), transparent 55%),
     rgba(4, 8, 14, 0.55);
-  backdrop-filter: blur(16px) saturate(115%);
-  -webkit-backdrop-filter: blur(16px) saturate(115%);
+  backdrop-filter: blur(10px) saturate(115%);
+  -webkit-backdrop-filter: blur(10px) saturate(115%);
   overflow: hidden;
+  will-change: opacity;
 }
 
 .quiz .switch-overlay::after {
@@ -125,6 +126,8 @@
     linear-gradient(182deg, rgba(5, 11, 22, 0.62), rgba(3, 7, 17, 0.82)),
     url("./assets/quiz/quiz-switch-card.png") center/cover no-repeat;
   box-shadow: 0 22px 52px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  will-change: transform, opacity;
+  transform: translateZ(0);
 }
 
 .quiz .switch-shell::before {
