@@ -661,9 +661,9 @@
   align-content: center;
   justify-items: center;
   text-align: center;
-  background: rgba(6, 10, 16, 0.78);
-  border-color: color-mix(in srgb, var(--quiz-border) 50%, rgba(255, 255, 255, 0.18));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .quiz .hero-main {
@@ -753,7 +753,7 @@
 }
 
 .quiz .play-circle::after {
-  content: "PLAY";
+  content: "ПОГНАЛИ";
   position: absolute;
   inset: 0;
   display: grid;
@@ -784,7 +784,15 @@
 }
 
 .quiz .play-circle svg {
-  display: none;
+  display: inline;
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
 }
 
 .hero-cta-caption {
