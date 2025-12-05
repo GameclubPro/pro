@@ -997,11 +997,10 @@ function Setup({
       {portalTarget ? createPortal(settingsModal, portalTarget) : settingsModal}
 
       <div className="setup-shell">
-        <div className="croco-head" aria-hidden="true">
-          <img src={crocoHead} alt="" />
-        </div>
-
         <div className="panel setup-panel">
+          <div className="croco-head" aria-hidden="true">
+            <img src={crocoHead} alt="" />
+          </div>
           <div className="croco-hands hold-panel" aria-hidden="true">
             <img src={crocoHands} alt="" />
           </div>
