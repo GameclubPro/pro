@@ -848,39 +848,30 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
 
 function SwitchCard({ current, mode, round, onBegin, remainingRounds }) {
   return (
-    <AnimatePresence mode="popLayout">
-      <motion.div
-        key={current?.id}
-        className="switch-card-panel"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.2 }}
-      >
-        <div className="eyebrow">Раунд {round} • осталось {remainingRounds}</div>
-        <div className="hero-main">
-          <div className="bubble" style={{ background: current?.color }}>
-            {current?.emoji}
-          </div>
-          <div>
-            <div className="hero-label">Ход {mode === "teams" ? "команды" : "игрока"}</div>
-            <div className="hero-title">{current?.name}</div>
-          </div>
+    <div className="switch-card-panel">
+      <div className="eyebrow">Раунд {round} • осталось {remainingRounds}</div>
+      <div className="hero-main">
+        <div className="bubble" style={{ background: current?.color }}>
+          {current?.emoji}
         </div>
-        <div className="hero-cta">
-          <motion.button
-            className="play-circle"
-            whileTap={{ scale: 0.95 }}
-            whileHover={{ scale: 1.03 }}
-            onClick={onBegin}
-            aria-label="Погнали"
-            title="Погнали"
-          >
-            <Play size={32} />
-          </motion.button>
+        <div>
+          <div className="hero-label">Ход {mode === "teams" ? "команды" : "игрока"}</div>
+          <div className="hero-title">{current?.name}</div>
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
+      <div className="hero-cta">
+        <motion.button
+          className="play-circle"
+          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.03 }}
+          onClick={onBegin}
+          aria-label="Погнали"
+          title="Погнали"
+        >
+          <Play size={32} />
+        </motion.button>
+      </div>
+    </div>
   );
 }
 
