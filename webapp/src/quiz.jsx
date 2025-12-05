@@ -112,6 +112,27 @@ const sanitizeSettings = (raw = {}) => {
   };
 };
 
+const deriveRoundInfo = (perTeamQuestions = [], targetScore = DEFAULT_SETTINGS.targetScore, rosterSize) => {
+  const cap = Math.max(1, Number(targetScore) || DEFAULT_SETTINGS.targetScore);
+  const teamsCount =
+    typeof rosterSize === "number" && rosterSize > 0
+      ? rosterSize
+      : Array.isArray(perTeamQuestions) && perTeamQuestions.length
+      ? perTeamQuestions.length
+      : 0;
+  const answeredByTeam =
+    teamsCount > 0
+      ? Array.from({ length: teamsCount }).map((_, idx) =>
+          clamp(Number(perTeamQuestions?.[idx]) || 0, 0, cap)
+        )
+      : [0];
+  const roundsCompleted = Math.min(...answeredByTeam);
+  const totalAsked = answeredByTeam.reduce((sum, n) => sum + n, 0);
+  const currentRound = Math.min(cap, roundsCompleted + 1);
+  const roundsRemaining = Math.max(0, cap - roundsCompleted);
+  return { currentRound, roundsCompleted, roundsRemaining, totalAsked };
+};
+
 const useHaptics = () => {
   const fire = useCallback((style = "light") => {
     const tg = window?.Telegram?.WebApp;
@@ -284,12 +305,17 @@ const reducer = (state, action) => {
         typeof action.nextIndex === "number"
           ? action.nextIndex
           : (state.activeIndex + 1) % state.roster.length;
-      const nextRound = state.round + 1;
+      const perTeamQuestions = action.nextPerTeam || state.perTeamQuestions;
+      const { currentRound } = deriveRoundInfo(
+        perTeamQuestions,
+        state.settings.targetScore,
+        state.roster.length
+      );
       return {
         ...state,
         stage: "switch",
         activeIndex: nextIndex,
-        round: nextRound,
+        round: currentRound,
         timerMs: state.settings.roundSeconds * 1000,
         running: false,
         isPaused: false,
@@ -297,7 +323,7 @@ const reducer = (state, action) => {
         lastResult: null,
         streak: state.streaks[nextIndex] || 0,
         questionsPlayed: action.questionsPlayed ?? state.questionsPlayed,
-        perTeamQuestions: action.nextPerTeam || state.perTeamQuestions,
+        perTeamQuestions,
       };
     }
     case "SUMMARY": {
@@ -408,6 +434,10 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
   const progressGiven = useRef(false);
   const questionsLimit = state.settings.targetScore;
   const advanceTimeoutRef = useRef(null);
+  const roundInfo = useMemo(
+    () => deriveRoundInfo(state.perTeamQuestions, state.settings.targetScore, state.roster.length),
+    [state.perTeamQuestions, state.settings.targetScore, state.roster.length]
+  );
 
   const findNextActive = (perTeam, currentIdx) => {
     const len = state.roster.length || 1;
@@ -620,7 +650,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
             targetScore={state.settings.targetScore}
             perTeam={state.perTeamQuestions}
             activeIndex={state.activeIndex}
-            roundNumber={state.round}
+            roundNumber={roundInfo.currentRound}
           />
         )}
 
@@ -628,8 +658,9 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
           <Summary
             roster={state.roster}
             winners={state.winner || []}
+            roundsPlayed={roundInfo.roundsCompleted}
+            roundsTotal={state.settings.targetScore}
             questionsPlayed={state.questionsPlayed}
-            perTeamLimit={state.settings.targetScore}
             onRematch={() => restart(true)}
             onReset={() => restart(false)}
             onMenu={goBack}
@@ -656,12 +687,9 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
                 key={current?.id}
                 current={current}
                 mode={state.settings.mode}
-                round={state.round}
+                round={roundInfo.currentRound}
                 onBegin={handleBeginRound}
-                remainingRounds={Math.max(
-                  0,
-                  state.settings.targetScore * state.roster.length - state.questionsPlayed
-                )}
+                remainingRounds={roundInfo.roundsRemaining}
               />
             </motion.div>
           </motion.div>
@@ -926,7 +954,7 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
 
 function SwitchCard({ current, mode, round, onBegin, remainingRounds }) {
   const remainLabel =
-    remainingRounds > 0 ? `Осталось раундов: ${remainingRounds}` : "Финальный раунд";
+    remainingRounds > 1 ? `Осталось раундов: ${remainingRounds}` : "Финальный раунд";
   return (
     <div className="switch-card-panel">
       <div className="eyebrow">Раунд {round} • {remainLabel}</div>
@@ -1034,7 +1062,7 @@ function Round({
         current={current}
         roundNumber={roundNumber}
         totalLabel={`Игра до ${cap} раундов`}
-        playedLabel={`Сыграно: ${totalAsked}`}
+        playedLabel={`Вопросов: ${totalAsked}`}
       />
 
       {!!progressItems.length && (
@@ -1206,10 +1234,21 @@ function QuestionCard({ question, reveal, onReveal }) {
   );
 }
 
-function Summary({ roster, winners, questionsPlayed, perTeamLimit, onRematch, onReset, onMenu }) {
+function Summary({
+  roster,
+  winners,
+  roundsPlayed,
+  roundsTotal,
+  questionsPlayed,
+  onRematch,
+  onReset,
+  onMenu,
+}) {
   const topScore = roster.length ? Math.max(...roster.map((r) => r.score)) : 0;
   const leaderScore = topScore > 0 ? topScore : null;
-  const questionsTotal = perTeamLimit * roster.length;
+  const safeRoundsTotal = Math.max(1, Number(roundsTotal) || 1);
+  const playedRounds = Math.min(Math.max(0, Number(roundsPlayed) || 0), safeRoundsTotal);
+  const askedQuestions = Math.max(0, Number(questionsPlayed) || 0);
   const winnerLine = winners.length
     ? `Победили: ${winners.map((w) => w.name).join(", ")}`
     : "Ничья: правильных ответов нет";
@@ -1222,7 +1261,9 @@ function Summary({ roster, winners, questionsPlayed, perTeamLimit, onRematch, on
     >
       <div className="panel-head">
         <div className="eyebrow">Матч окончен</div>
-        <div className="panel-title">Сыграно раундов: {questionsPlayed} / {questionsTotal}</div>
+        <div className="panel-title">
+          Сыграно раундов: {playedRounds} / {safeRoundsTotal} • Вопросов: {askedQuestions}
+        </div>
       </div>
 
       <div className="winners">
