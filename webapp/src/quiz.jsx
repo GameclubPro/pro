@@ -86,7 +86,6 @@ const CATEGORIES = {
   sport: { label: "Спорт", icon: "🏅" },
 };
 
-const MAX_ROUNDS = 20;
 const ADVANCE_DELAY_MS = 1600;
 
 const initialRoster = (mode = "teams") => {
@@ -101,6 +100,17 @@ const initialRoster = (mode = "teams") => {
 };
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+const sanitizeSettings = (raw = {}) => {
+  const base = { ...DEFAULT_SETTINGS, ...(raw || {}) };
+  return {
+    mode: base.mode === "solo" ? "solo" : "teams",
+    roundSeconds: clamp(Number(base.roundSeconds) || DEFAULT_SETTINGS.roundSeconds, 20, 90),
+    targetScore: clamp(Number(base.targetScore) || DEFAULT_SETTINGS.targetScore, 5, 30),
+    autoDifficulty: !!base.autoDifficulty,
+    sound: !!base.sound,
+  };
+};
 
 const useHaptics = () => {
   const fire = useCallback((style = "light") => {
@@ -156,31 +166,43 @@ const readPersisted = (key, fallback) => {
 const reducer = (state, action) => {
   switch (action.type) {
     case "SET_SETTING": {
-      const settings = { ...state.settings, [action.key]: action.value };
+      const settings = sanitizeSettings({ ...state.settings, [action.key]: action.value });
       return { ...state, settings, timerMs: settings.roundSeconds * 1000 };
     }
     case "SET_MODE": {
-      const settings = { ...state.settings, mode: action.mode };
-      const roster =
-        state.roster.length && state.roster[0]?.mode === action.mode
-          ? state.roster
-          : initialRoster(action.mode);
+      const settings = sanitizeSettings({ ...state.settings, mode: action.mode });
+      const roster = initialRoster(action.mode);
       return {
         ...state,
         settings,
         roster,
         perTeamQuestions: roster.map(() => 0),
+        streaks: roster.map(() => 0),
         timerMs: settings.roundSeconds * 1000,
         stage: "setup",
       };
     }
     case "SET_ROSTER": {
-      return { ...state, roster: action.roster, perTeamQuestions: action.roster.map(() => 0) };
+      return {
+        ...state,
+        roster: action.roster,
+        perTeamQuestions: action.roster.map(() => 0),
+        streaks: action.roster.map(() => 0),
+      };
     }
     case "RESET_SCORES": {
       const roster = state.roster.map((r) => ({ ...r, score: 0 }));
       const perTeamQuestions = roster.map(() => 0);
-      return { ...state, roster, round: 1, used: [], streak: 0, perTeamQuestions, questionsPlayed: 0 };
+      return {
+        ...state,
+        roster,
+        round: 1,
+        used: [],
+        streak: 0,
+        streaks: roster.map(() => 0),
+        perTeamQuestions,
+        questionsPlayed: 0,
+      };
     }
     case "START_MATCH": {
       const roster = state.roster.map((r) => ({ ...r, score: 0 }));
@@ -193,6 +215,7 @@ const reducer = (state, action) => {
         round: 1,
         used: [],
         streak: 0,
+        streaks: roster.map(() => 0),
         question: null,
         timerMs: state.settings.roundSeconds * 1000,
         running: false,
@@ -240,13 +263,17 @@ const reducer = (state, action) => {
           idx === state.activeIndex && isCorrect ? { ...r, score: r.score + 1 } : r
         );
       const used = state.used.includes(action.qid) ? state.used : [...state.used, action.qid];
-      const streak = isCorrect ? state.streak + 1 : 0;
       const perTeamQuestions = action.nextPerTeam || state.perTeamQuestions;
+      const nextStreaks =
+        action.nextStreaks ||
+        state.streaks.map((v, idx) => (idx === state.activeIndex ? (isCorrect ? v + 1 : 0) : v));
+      const streak = nextStreaks[state.activeIndex] || 0;
       return {
         ...state,
         roster,
         used,
         streak,
+        streaks: nextStreaks,
         lastResult: isCorrect ? "correct" : "skip",
         questionsPlayed: action.nextQuestions ?? state.questionsPlayed + 1,
         perTeamQuestions,
@@ -268,7 +295,7 @@ const reducer = (state, action) => {
         isPaused: false,
         question: null,
         lastResult: null,
-        streak: 0,
+        streak: state.streaks[nextIndex] || 0,
         questionsPlayed: action.questionsPlayed ?? state.questionsPlayed,
         perTeamQuestions: action.nextPerTeam || state.perTeamQuestions,
       };
@@ -291,6 +318,7 @@ const reducer = (state, action) => {
         question: null,
         used: [],
         streak: 0,
+        streaks: state.roster.map(() => 0),
         round: 1,
         timerMs: state.settings.roundSeconds * 1000,
         lastResult: null,
@@ -338,30 +366,41 @@ const buildOptions = (question) => {
 const evaluateWinner = (roster) => {
   if (!roster.length) return [];
   const max = Math.max(...roster.map((r) => r.score));
+  if (max <= 0) return [];
   return roster.filter((r) => r.score === max);
 };
 
 export default function Quiz({ goBack, onProgress, setBackHandler }) {
-  const savedSettings = useMemo(() => readPersisted(STORAGE_KEYS.settings, DEFAULT_SETTINGS), []);
+  const savedSettings = useMemo(
+    () => sanitizeSettings(readPersisted(STORAGE_KEYS.settings, DEFAULT_SETTINGS)),
+    []
+  );
   const savedRoster = useMemo(() => readPersisted(STORAGE_KEYS.roster, null), []);
-  const [state, dispatch] = useReducer(reducer, null, () => ({
-    settings: { ...DEFAULT_SETTINGS, ...savedSettings },
-    roster: Array.isArray(savedRoster) && savedRoster.length ? savedRoster : initialRoster(savedSettings?.mode || "teams"),
-    perTeamQuestions: (Array.isArray(savedRoster) && savedRoster.length ? savedRoster : initialRoster(savedSettings?.mode || "teams")).map(() => 0),
-    stage: "setup",
-    activeIndex: 0,
-    timerMs: (savedSettings?.roundSeconds || DEFAULT_SETTINGS.roundSeconds) * 1000,
-    running: false,
-    isPaused: false,
-    round: 1,
-    question: null,
-    used: [],
-    streak: 0,
-    lastResult: null,
-    winner: null,
-    reveal: false,
-    questionsPlayed: 0,
-  }));
+  const [state, dispatch] = useReducer(reducer, null, () => {
+    const baseRoster =
+      Array.isArray(savedRoster) && savedRoster.length
+        ? savedRoster
+        : initialRoster(savedSettings?.mode || "teams");
+    return {
+      settings: savedSettings,
+      roster: baseRoster,
+      perTeamQuestions: baseRoster.map(() => 0),
+      streaks: baseRoster.map(() => 0),
+      stage: "setup",
+      activeIndex: 0,
+      timerMs: (savedSettings?.roundSeconds || DEFAULT_SETTINGS.roundSeconds) * 1000,
+      running: false,
+      isPaused: false,
+      round: 1,
+      question: null,
+      used: [],
+      streak: 0,
+      lastResult: null,
+      winner: null,
+      reveal: false,
+      questionsPlayed: 0,
+    };
+  });
 
   const haptic = useHaptics();
   const chime = useChime(state.settings.sound);
@@ -452,7 +491,8 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
 
   const handleBeginRound = () => {
     haptic("light");
-    const q = pickQuestion(state.used, state.streak, state.settings.autoDifficulty);
+    const activeStreak = state.streaks?.[state.activeIndex] || 0;
+    const q = pickQuestion(state.used, activeStreak, state.settings.autoDifficulty);
     dispatch({ type: "SET_QUESTION", question: { ...q, options: buildOptions(q) } });
     dispatch({ type: "BEGIN_ROUND" });
   };
@@ -469,6 +509,9 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
       const nextPerTeam = state.perTeamQuestions.map((n, idx) =>
         idx === state.activeIndex ? n + 1 : n
       );
+      const nextStreaks = state.streaks.map((v, idx) =>
+        idx === state.activeIndex ? (kind === "correct" ? v + 1 : 0) : v
+      );
       dispatch({
         type: "ANSWER",
         kind,
@@ -476,19 +519,22 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
         nextRoster,
         nextQuestions: nextQuestionsPlayed,
         nextPerTeam,
+        nextStreaks,
       });
+      const topScore = Math.max(0, ...nextRoster.map((r) => r.score));
+      const hasScoreWinner = topScore >= 1 && topScore >= questionsLimit;
       const allDone = nextPerTeam.every((n) => n >= questionsLimit);
       const nextIdx = findNextActive(nextPerTeam, state.activeIndex);
       advanceTimeoutRef.current = setTimeout(() => {
-        if (allDone) {
+        if (hasScoreWinner || allDone) {
           const winner = evaluateWinner(nextRoster);
-          dispatch({ type: "SUMMARY", winner, reason: "questions" });
+          dispatch({ type: "SUMMARY", winner, reason: hasScoreWinner ? "score" : "questions" });
         } else {
           dispatch({
             type: "NEXT_TURN",
             questionsPlayed: nextQuestionsPlayed,
             nextPerTeam,
-            nextIndex: nextIdx ?? state.activeIndex,
+            nextIndex: typeof nextIdx === "number" ? nextIdx : state.activeIndex,
           });
         }
         advanceTimeoutRef.current = null;
@@ -499,6 +545,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
       state.questionsPlayed,
       state.roster,
       state.perTeamQuestions,
+      state.streaks,
       state.activeIndex,
       state.question?.id,
       questionsLimit,
@@ -556,7 +603,10 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
               mode={state.settings.mode}
               round={state.round}
               onBegin={handleBeginRound}
-              remainingRounds={MAX_ROUNDS - state.round + 1}
+              remainingQuestions={Math.max(
+                0,
+                state.settings.targetScore * state.roster.length - state.questionsPlayed
+              )}
             />
           </div>
         )}
@@ -582,7 +632,8 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
           <Summary
             roster={state.roster}
             winners={state.winner || []}
-            questions={state.settings.targetScore}
+            questionsPlayed={state.questionsPlayed}
+            perTeamLimit={state.settings.targetScore}
             onRematch={() => restart(true)}
             onReset={() => restart(false)}
             onMenu={goBack}
@@ -597,7 +648,7 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
   const [localRoster, setLocalRoster] = useState(roster);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const modeIsTeams = settings.mode === "teams";
-  const minPlayers = 2;
+  const minPlayers = modeIsTeams ? 2 : 1;
   const timerPct = clamp(((settings.roundSeconds - 20) / (90 - 20)) * 100, 0, 100);
   const questionsPct = clamp(((settings.targetScore - 5) / (30 - 5)) * 100, 0, 100);
   const portalTarget = typeof document !== "undefined" ? document.body : null;
@@ -715,7 +766,7 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
 
               <div className="setting-card glass">
                 <div className="setting-card-top">
-                  <span className="pill">Вопросы</span>
+                  <span className="pill">Вопросов на команду</span>
                   <div className="setting-number">{settings.targetScore}</div>
                 </div>
                 <div className="meter">
@@ -846,7 +897,9 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
   );
 }
 
-function SwitchCard({ current, mode, round, onBegin, remainingRounds }) {
+function SwitchCard({ current, mode, round, onBegin, remainingQuestions }) {
+  const remainLabel =
+    remainingQuestions > 0 ? `Осталось вопросов: ${remainingQuestions}` : "Финальный вопрос";
   return (
     <AnimatePresence mode="popLayout">
       <motion.div
@@ -857,7 +910,7 @@ function SwitchCard({ current, mode, round, onBegin, remainingRounds }) {
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.2 }}
       >
-        <div className="eyebrow">Раунд {round} • осталось {remainingRounds}</div>
+        <div className="eyebrow">Раунд {round} • {remainLabel}</div>
         <div className="hero-main">
           <div className="bubble" style={{ background: current?.color }}>
             {current?.emoji}
@@ -1071,8 +1124,13 @@ function QuestionCard({ question, reveal, onReveal }) {
   );
 }
 
-function Summary({ roster, winners, questions, onRematch, onReset, onMenu }) {
-  const topScore = Math.max(...roster.map((r) => r.score));
+function Summary({ roster, winners, questionsPlayed, perTeamLimit, onRematch, onReset, onMenu }) {
+  const topScore = roster.length ? Math.max(...roster.map((r) => r.score)) : 0;
+  const leaderScore = topScore > 0 ? topScore : null;
+  const questionsTotal = perTeamLimit * roster.length;
+  const winnerLine = winners.length
+    ? `Победили: ${winners.map((w) => w.name).join(", ")}`
+    : "Ничья: правильных ответов нет";
   return (
     <motion.div
       className="panel"
@@ -1082,14 +1140,12 @@ function Summary({ roster, winners, questions, onRematch, onReset, onMenu }) {
     >
       <div className="panel-head">
         <div className="eyebrow">Матч окончен</div>
-        <div className="panel-title">Всего вопросов: {questions}</div>
+        <div className="panel-title">Сыграно вопросов: {questionsPlayed} / {questionsTotal}</div>
       </div>
 
       <div className="winners">
         <Trophy size={20} />
-        <div>
-          Победили: {winners.map((w) => w.name).join(", ")}
-        </div>
+        <div>{winnerLine}</div>
       </div>
 
       <div className="score-table">
@@ -1102,7 +1158,9 @@ function Summary({ roster, winners, questions, onRematch, onReset, onMenu }) {
                 {r.emoji}
               </div>
               <div className="score-name">{r.name}</div>
-              <div className={`score-value ${r.score === topScore ? "lead" : ""}`}>{r.score}</div>
+              <div className={`score-value ${leaderScore !== null && r.score === leaderScore ? "lead" : ""}`}>
+                {r.score}
+              </div>
             </div>
           ))}
       </div>
