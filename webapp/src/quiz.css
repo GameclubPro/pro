@@ -22,13 +22,21 @@
   overflow: hidden;
   overscroll-behavior-y: contain;
   background:
-    linear-gradient(180deg, rgba(7, 12, 18, 0.78), rgba(7, 12, 18, 0.86)),
+    url("./assets/quiz/quiz-illustration-bg.png") center/cover no-repeat,
     radial-gradient(120% 120% at 18% 10%, rgba(34, 211, 238, 0.15), transparent 60%),
     radial-gradient(110% 120% at 90% 0%, rgba(139, 92, 246, 0.12), transparent 55%),
     radial-gradient(120% 120% at 50% 110%, rgba(31, 238, 156, 0.12), transparent 60%),
-    url("./assets/quiz/quiz-illustration-bg.png") center/cover no-repeat,
     var(--quiz-bg);
   font-family: "Space Grotesk", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+.quiz::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7, 12, 18, 0.55), rgba(7, 12, 18, 0.75));
+  pointer-events: none;
+  z-index: 0;
 }
 
 .quiz::after {
@@ -39,6 +47,7 @@
   background-size: 18px 18px;
   opacity: 0.15;
   pointer-events: none;
+  z-index: 0;
 }
 
 .quiz-bg {
