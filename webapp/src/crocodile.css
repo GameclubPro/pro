@@ -124,7 +124,7 @@
   width: clamp(180px, 46vw, 240px);
   pointer-events: none;
   filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.45));
-  z-index: 0;
+  z-index: 5;
 }
 
 .croco-head img {
@@ -203,7 +203,7 @@
   transform: translateX(-50%);
   width: calc(100% + 32px);
   max-width: 860px;
-  z-index: 2;
+  z-index: 5;
 }
 .setup-panel .croco-hands.hold-panel img {
   width: 100%;
@@ -211,17 +211,17 @@
 }
 
 .setup-panel .croco-legs {
-  bottom: clamp(-220px, -26vw, -140px);
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: min(70%, 520px);
-  max-width: 660px;
-  z-index: 0;
+  width: min(72%, 520px);
+  max-width: 650px;
+  z-index: 2;
 }
 
 .roster-shell {
   position: relative;
-  padding-top: clamp(100px, 20vw, 190px);
+  padding-top: clamp(28px, 12vw, 88px);
 }
 
 .roster-shell .roster-list {
@@ -239,12 +239,12 @@
     max-width: 720px;
   }
   .setup-panel .croco-legs {
-    bottom: clamp(-150px, -24vw, -100px);
-    width: min(78%, 480px);
+    bottom: 0;
+    width: min(84%, 480px);
     max-width: 560px;
   }
   .roster-shell {
-    padding-top: clamp(100px, 20vw, 190px);
+    padding-top: clamp(24px, 14vw, 92px);
   }
 }
 
