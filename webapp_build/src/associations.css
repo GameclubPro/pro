@@ -7,6 +7,26 @@
   gap: 14px;
 }
 
+.setup-panel {
+  position: relative;
+}
+
+.settings-fab {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--croco-border);
+  color: var(--croco-fg);
+  font-weight: 800;
+  box-shadow: var(--croco-shadow);
+}
+
 .cta-row {
   display: flex;
   flex-wrap: wrap;
@@ -473,6 +493,39 @@
 
 .toast.penalty {
   border-color: rgba(239, 68, 68, 0.45);
+}
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  z-index: 24;
+  padding: 16px;
+}
+
+.settings-sheet {
+  width: min(940px, 96vw);
+  max-height: 88vh;
+  overflow: hidden;
+  display: grid;
+  gap: 12px;
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sheet-body {
+  overflow: auto;
+  display: grid;
+  gap: 12px;
+  padding-right: 4px;
 }
 
 @media (max-width: 720px) {

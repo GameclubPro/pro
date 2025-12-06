@@ -236,6 +236,7 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
   const [lastAction, setLastAction] = useState(null);
   const [reason, setReason] = useState(null);
   const [tip, setTip] = useState(TIPS[0]);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const progressGiven = useRef(false);
   const roundEndedRef = useRef(false);
   const lastBeepSecondRef = useRef(null);
@@ -789,6 +790,10 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
   const renderSetup = () => (
     <div className="explain-grid">
       <div className="panel setup-panel">
+        <button className="settings-fab" onClick={() => setSettingsOpen(true)}>
+          <Settings size={16} />
+          Настройки
+        </button>
         <div className="setup-content">
           <p className="eyebrow">Объясни слово</p>
           <h1 className="panel-title">Уговори напарника угадать максимум</h1>
@@ -820,10 +825,6 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
           )}
         </div>
       </div>
-      {renderSettings()}
-      {renderWordControls()}
-      {renderPairPicker()}
-      {renderRoster()}
     </div>
   );
 
@@ -1033,6 +1034,39 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
         {stage === "round" && renderRound()}
         {stage === "summary" && renderSummary()}
       </div>
+      <AnimatePresence>
+        {settingsOpen && (
+          <motion.div
+            className="settings-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="panel settings-sheet"
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+            >
+              <div className="sheet-head">
+                <div>
+                  <p className="eyebrow">Настройки</p>
+                  <h3 className="section-title">Подготовка к партии</h3>
+                </div>
+                <button className="icon-btn" onClick={() => setSettingsOpen(false)}>
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="sheet-body">
+                {renderSettings()}
+                {renderWordControls()}
+                {renderPairPicker()}
+                {renderRoster()}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <Confetti
         refConfetti={(instance) => {
           confettiRef.current = instance;
