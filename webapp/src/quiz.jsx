@@ -536,13 +536,9 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
   useEffect(() => {
     if (!setBackHandler) return;
     setBackHandler(() => {
-      if (state.stage === "round") {
-        dispatch({ type: state.running ? "PAUSE" : "RESUME" });
-        return;
-      }
       goBack?.();
     });
-  }, [setBackHandler, state.stage, state.running, goBack]);
+  }, [setBackHandler, goBack]);
 
   // Progress ping
   useEffect(() => {
@@ -683,6 +679,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
             onAnswer={(isCorrect) => mark(isCorrect ? "correct" : "skip")}
             running={state.running}
             isPaused={state.isPaused}
+            onTogglePause={() => dispatch({ type: state.running ? "PAUSE" : "RESUME" })}
             onResume={() => dispatch({ type: "RESUME" })}
             onExit={goBack}
             roster={state.roster}
@@ -1126,6 +1123,7 @@ function Round({
   onAnswer,
   running,
   isPaused,
+  onTogglePause,
   onResume,
   onExit,
   roster,
@@ -1178,7 +1176,6 @@ function Round({
             <div className="round-name">{current?.name}</div>
           </div>
         </div>
-        <span className="round-pill dark">{roundProgress}</span>
         {onExit && (
           <motion.button
             className="round-exit"
@@ -1197,9 +1194,8 @@ function Round({
         seconds={seconds}
         running={running}
         current={current}
-        roundNumber={roundNumber}
-        totalLabel={`Игра до ${cap} раундов`}
-        playedLabel={`Вопросов: ${totalAsked}`}
+        roundProgress={roundProgress}
+        onTogglePause={onTogglePause}
       />
 
       <QuestionCard question={question} reveal={reveal} onReveal={onReveal} />
@@ -1280,9 +1276,10 @@ function Round({
   );
 }
 
-function TimerPacman({ pct, seconds, running, current, roundNumber, totalLabel, playedLabel }) {
+function TimerPacman({ pct, seconds, running, current, roundProgress, onTogglePause }) {
   const safePct = clamp(pct ?? 0, 0, 1);
   const remainingPct = Math.round(safePct * 100);
+  const progressText = roundProgress || "—";
   // 100% — старт справа, 0% — финиш слева
   const trackInsetPct = 4;
   const travelPct = 100 - trackInsetPct * 2;
@@ -1290,14 +1287,21 @@ function TimerPacman({ pct, seconds, running, current, roundNumber, totalLabel, 
   const remainingWidthPct = Math.max(0, pacLeftPct - trackInsetPct);
   const pacLeft = `${pacLeftPct}%`; // центр пакмана сидит на процентной шкале
 
-  const label =
-    remainingPct <= 0 ? "время вышло" : running ? "время идёт" : "пауза";
-
   return (
     <div className="pacman-timer">
       <div className="pacman-meta">
         <div className="timer-num">{seconds}s</div>
-        <div className="timer-sub">{label}</div>
+        <span className="round-pill dark pacman-round" aria-label="Прогресс раунда">
+          {progressText}
+        </span>
+        <motion.button
+          className={`pacman-pause ${running ? "" : "is-paused"}`}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => onTogglePause?.()}
+          aria-label={running ? "Поставить на паузу" : "Возобновить"}
+        >
+          {running ? <Pause size={16} /> : <Play size={16} />}
+        </motion.button>
       </div>
 
       <div

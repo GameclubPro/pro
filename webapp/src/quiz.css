@@ -1258,7 +1258,7 @@
 
 .round-meta {
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto;
   align-items: start;
   gap: 10px;
   font-weight: 800;
@@ -1360,11 +1360,6 @@
   font-weight: 900;
 }
 
-.timer-sub {
-  color: var(--quiz-muted);
-  font-size: 12px;
-}
-
 .pacman-timer {
   display: grid;
   gap: 6px;
@@ -1372,15 +1367,43 @@
 }
 
 .pacman-meta {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
   background: rgba(7, 12, 18, 0.7);
   border: 1px solid color-mix(in srgb, var(--quiz-border) 60%, rgba(0, 0, 0, 0.35));
   border-radius: 12px;
   padding: 8px 10px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.pacman-round {
+  justify-self: center;
+  align-self: center;
+  min-width: 72px;
+  text-align: center;
+}
+
+.pacman-pause {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--quiz-border) 60%, rgba(255, 255, 255, 0.12));
+  background:
+    radial-gradient(circle at 20% 20%, rgba(34, 211, 238, 0.16), transparent 60%),
+    rgba(255, 255, 255, 0.06);
+  display: grid;
+  place-items: center;
+  color: var(--quiz-fg);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.pacman-pause.is-paused {
+  border-color: color-mix(in srgb, var(--quiz-border) 60%, rgba(31, 238, 156, 0.5));
+  background:
+    radial-gradient(circle at 80% 20%, rgba(31, 238, 156, 0.18), transparent 60%),
+    rgba(255, 255, 255, 0.06);
 }
 
 .pacman-track {
