@@ -859,6 +859,8 @@
   color: #e9edf5;
   cursor: pointer;
   justify-content: space-between;
+}
+
 .choice-toggle-chip.on {
   border-color: rgba(34, 211, 238, 0.7);
   background: linear-gradient(135deg, rgba(34, 211, 238, 0.16), rgba(139, 92, 246, 0.14));
@@ -976,7 +978,7 @@
   .choice-top {
     flex-wrap: wrap;
   }
-  .chips-row {
+  .choice-chips-row {
     grid-template-columns: 1fr;
   }
   .choice-section-header {
