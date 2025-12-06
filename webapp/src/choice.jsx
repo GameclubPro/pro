@@ -349,13 +349,15 @@ const randomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
 const initialChoiceRoster = (mode = "free") => {
-  const count = mode === "solo" ? 1 : 3;
-  return Array.from({ length: count }).map((_, idx) => ({
-    id: `c-${idx}`,
-    name: mode === "solo" ? "Игрок" : `Участник ${idx + 1}`,
-    emoji: EMOJIS[idx % EMOJIS.length],
-    color: PALETTE[idx % PALETTE.length],
-  }));
+  if (mode === "solo") {
+    return Array.from({ length: 2 }).map((_, idx) => ({
+      id: `c-${idx}`,
+      name: `Игрок ${idx + 1}`,
+      emoji: EMOJIS[idx % EMOJIS.length],
+      color: PALETTE[idx % PALETTE.length],
+    }));
+  }
+  return [];
 };
 
 const useHaptics = (enabled) =>
@@ -534,6 +536,10 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
   );
 
   const startGame = () => {
+    if (settings.mode === "solo" && roster.length < 2) {
+      setToast("Добавь минимум 2 участника");
+      return;
+    }
     if (!pool.length) {
       setToast("Нет вопросов — выбери темы");
       return;
@@ -617,13 +623,15 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     });
   };
 
-  // --- Roster handlers (intro only)
   const modeIsSolo = settings.mode === "solo";
-  const minPlayers = modeIsSolo ? 1 : 1;
+  const minPlayers = modeIsSolo ? 2 : 0;
+
+  // --- Roster handlers (intro only)
   const changeName = (id, name) => {
     setRoster((list) => list.map((r) => (r.id === id ? { ...r, name } : r)));
   };
   const shuffleColor = (id) => {
+    if (!modeIsSolo) return;
     setRoster((list) =>
       list.map((r) =>
         r.id === id
@@ -637,6 +645,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     );
   };
   const addMember = () => {
+    if (!modeIsSolo) return;
     setRoster((list) => {
       const idx = list.length;
       return [
@@ -651,6 +660,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     });
   };
   const removeMember = (id) => {
+    if (!modeIsSolo) return;
     setRoster((list) => {
       if (list.length <= minPlayers) return list;
       return list.filter((r) => r.id !== id);
@@ -914,57 +924,80 @@ function Landing({
           })}
         </div>
 
-        <div className="choice-section-header">
-          <div>
-            <div className="choice-section-title">Состав</div>
-            <div className="choice-section-sub">Для настроения можно назвать и раскрасить</div>
-          </div>
-          <motion.button
-            className="choice-gear"
-            onClick={() => setSettingsOpen(true)}
-            whileTap={{ scale: 0.92 }}
-            whileHover={{ rotate: -4 }}
-            aria-label="Открыть настройки"
-          >
-            <span className="choice-gear-inner">
-              <Settings size={18} />
-            </span>
-            <span className="choice-gear-glow" />
-          </motion.button>
-        </div>
-        <div className="choice-roster-list">
-          {roster.map((item) => (
-            <div className="choice-roster-row" key={item.id}>
-              <button
-                className="choice-avatar-btn"
-                style={{ background: item.color }}
-                onClick={() => onShuffleColor(item.id)}
-                aria-label="Сменить цвет"
+        {modeIsSolo ? (
+          <>
+            <div className="choice-section-header">
+              <div>
+                <div className="choice-section-title">Состав</div>
+                <div className="choice-section-sub">Минимум 2 участника, назови и раскрась</div>
+              </div>
+              <motion.button
+                className="choice-gear"
+                onClick={() => setSettingsOpen(true)}
+                whileTap={{ scale: 0.92 }}
+                whileHover={{ rotate: -4 }}
+                aria-label="Открыть настройки"
               >
-                {item.emoji}
-              </button>
-              <input
-                value={item.name}
-                onChange={(e) => onChangeName(item.id, e.target.value)}
-                maxLength={18}
-                aria-label="Имя"
-              />
-              <button
-                className="choice-icon-btn"
-                onClick={() => onRemoveMember(item.id)}
-                disabled={roster.length <= minPlayers}
-                aria-label="Удалить"
-                title="Удалить"
-              >
-                <Trash2 size={16} />
+                <span className="choice-gear-inner">
+                  <Settings size={18} />
+                </span>
+                <span className="choice-gear-glow" />
+              </motion.button>
+            </div>
+            <div className="choice-roster-list">
+              {roster.map((item) => (
+                <div className="choice-roster-row" key={item.id}>
+                  <button
+                    className="choice-avatar-btn"
+                    style={{ background: item.color }}
+                    onClick={() => onShuffleColor(item.id)}
+                    aria-label="Сменить цвет"
+                  >
+                    {item.emoji}
+                  </button>
+                  <input
+                    value={item.name}
+                    onChange={(e) => onChangeName(item.id, e.target.value)}
+                    maxLength={18}
+                    aria-label="Имя"
+                  />
+                  <button
+                    className="choice-icon-btn"
+                    onClick={() => onRemoveMember(item.id)}
+                    disabled={roster.length <= minPlayers}
+                    aria-label="Удалить"
+                    title="Удалить"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+              <button className="choice-ghost-line" onClick={onAddMember}>
+                <Plus size={16} />
+                Добавить участника
               </button>
             </div>
-          ))}
-          <button className="choice-ghost-line" onClick={onAddMember}>
-            <Plus size={16} />
-            Добавить участника
-          </button>
-        </div>
+          </>
+        ) : (
+          <div className="choice-section-header">
+            <div>
+              <div className="choice-section-title">Настройки</div>
+              <div className="choice-section-sub">Темы и звук</div>
+            </div>
+            <motion.button
+              className="choice-gear"
+              onClick={() => setSettingsOpen(true)}
+              whileTap={{ scale: 0.92 }}
+              whileHover={{ rotate: -4 }}
+              aria-label="Открыть настройки"
+            >
+              <span className="choice-gear-inner">
+                <Settings size={18} />
+              </span>
+              <span className="choice-gear-glow" />
+            </motion.button>
+          </div>
+        )}
 
         <div className="choice-hero-actions">
           <button className="choice-primary" onClick={onStart}>
