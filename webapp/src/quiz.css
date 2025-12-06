@@ -1661,7 +1661,7 @@
 
 .options {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
   padding-inline: 0;
   margin-inline: 0;
@@ -1882,9 +1882,6 @@
     grid-template-columns: 1fr;
   }
   .controls {
-    grid-template-columns: 1fr;
-  }
-  .options {
     grid-template-columns: 1fr;
   }
 }
