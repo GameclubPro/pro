@@ -804,10 +804,6 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
     updateRoster(initialRoster(mode));
   };
 
-  const adjustSetting = (key, delta, min, max) => {
-    onChangeSetting(key, clamp((settings?.[key] || 0) + delta, min, max));
-  };
-
   const toggleCategory = (cat) => {
     const has = selectedCategories.includes(cat);
     const next = has
@@ -859,47 +855,57 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
             </div>
 
             <div className="settings-grid">
-              <div className="setting-card accent">
-                <div className="setting-card-top">
-                  <span className="pill">Таймер</span>
-                  <div className="setting-number">{settings.roundSeconds}s</div>
+              <label className="slider-field" htmlFor="quiz-timer">
+                <div className="slider-field__top">
+                  <span className="field-label">Время ответа</span>
+                  <span className="slider-field__value">{settings.roundSeconds}s</span>
                 </div>
-                <div className="meter">
-                  <div className="meter-track">
-                    <div className="meter-fill" style={{ width: `${timerPct}%` }} />
-                    <span className="meter-thumb" style={{ left: `${timerPct}%` }} />
+                <div className="slider-field__control">
+                  <div className="slider-field__rail">
+                    <div className="slider-field__progress" style={{ width: `${timerPct}%` }} />
                   </div>
-                  <div className="meter-scale">
-                    <span>20с</span>
-                    <span>90с</span>
-                  </div>
+                  <input
+                    id="quiz-timer"
+                    className="slider-field__input"
+                    type="range"
+                    min={20}
+                    max={90}
+                    step={5}
+                    value={settings.roundSeconds}
+                    onChange={(e) => onChangeSetting("roundSeconds", Number(e.target.value) || 20)}
+                  />
                 </div>
-                <div className="setting-actions">
-                  <button onClick={() => adjustSetting("roundSeconds", -5, 20, 90)}>−5с</button>
-                  <button onClick={() => adjustSetting("roundSeconds", 5, 20, 90)}>+5с</button>
+                <div className="slider-field__footer">
+                  <span>20с</span>
+                  <span>90с</span>
                 </div>
-              </div>
+              </label>
 
-              <div className="setting-card glass">
-                <div className="setting-card-top">
-                  <span className="pill">Раунды до победы</span>
-                  <div className="setting-number">{settings.targetScore}</div>
+              <label className="slider-field" htmlFor="quiz-target">
+                <div className="slider-field__top">
+                  <span className="field-label">Раунды до победы</span>
+                  <span className="slider-field__value">{settings.targetScore}</span>
                 </div>
-                <div className="meter">
-                  <div className="meter-track alt">
-                    <div className="meter-fill alt" style={{ width: `${roundsPct}%` }} />
-                    <span className="meter-thumb" style={{ left: `${roundsPct}%` }} />
+                <div className="slider-field__control">
+                  <div className="slider-field__rail">
+                    <div className="slider-field__progress" style={{ width: `${roundsPct}%` }} />
                   </div>
-                  <div className="meter-scale">
-                    <span>5</span>
-                    <span>30</span>
-                  </div>
+                  <input
+                    id="quiz-target"
+                    className="slider-field__input"
+                    type="range"
+                    min={5}
+                    max={30}
+                    step={1}
+                    value={settings.targetScore}
+                    onChange={(e) => onChangeSetting("targetScore", Number(e.target.value) || 5)}
+                  />
                 </div>
-                <div className="setting-actions">
-                  <button onClick={() => adjustSetting("targetScore", -1, 5, 30)}>−1</button>
-                  <button onClick={() => adjustSetting("targetScore", 1, 5, 30)}>+1</button>
+                <div className="slider-field__footer">
+                  <span>5</span>
+                  <span>30</span>
                 </div>
-              </div>
+              </label>
             </div>
 
             <div className="settings-toggles">
