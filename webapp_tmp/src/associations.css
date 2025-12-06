@@ -12,12 +12,17 @@
   gap: 14px;
 }
 
+.setup-panel {
+  position: relative;
+}
+
 .setup-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 10px;
+  padding-right: 52px;
 }
 
 .settings-fab {
@@ -31,6 +36,9 @@
   color: var(--croco-fg);
   font-weight: 800;
   box-shadow: var(--croco-shadow);
+  position: absolute;
+  top: 12px;
+  right: 12px;
 }
 
 .cta-row {
