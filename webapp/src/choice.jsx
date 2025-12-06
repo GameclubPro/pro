@@ -683,7 +683,7 @@ function Landing({
     <AnimatePresence>
       {settingsOpen && (
         <motion.div
-          className="settings-overlay choice-settings"
+          className="choice-settings-overlay"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -691,20 +691,20 @@ function Landing({
           onClick={() => setSettingsOpen(false)}
         >
           <motion.div
-            className="settings-window choice-settings-window"
+            className="choice-settings-window"
             initial={{ y: 30, opacity: 0, scale: 0.98 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 14, opacity: 0, scale: 0.98 }}
             transition={{ type: "tween", ease: "easeOut", duration: 0.22 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="settings-head">
+            <div className="choice-settings-head">
               <div>
-                <div className="settings-title">Настройки подборки</div>
-                <div className="settings-sub">Свободный режим без команд — только вопросы</div>
+                <div className="choice-settings-title">Настройки подборки</div>
+                <div className="choice-settings-sub">Свободный режим без команд — только вопросы</div>
               </div>
               <motion.button
-                className="settings-close"
+                className="choice-settings-close"
                 whileTap={{ scale: 0.95 }}
                 whileHover={{ rotate: 4 }}
                 onClick={() => setSettingsOpen(false)}
@@ -714,32 +714,32 @@ function Landing({
               </motion.button>
             </div>
 
-            <div className="settings-toggles">
+            <div className="choice-settings-toggles">
               <button
-                className={`toggle-chip ${settings.sound ? "on" : ""}`}
+                className={`choice-toggle-chip ${settings.sound ? "on" : ""}`}
                 onClick={() => onChangeSetting?.("sound", !settings.sound)}
               >
                 <Volume2 size={16} />
                 Звук
-                <span className="toggle-dot" />
+                <span className="choice-toggle-dot" />
               </button>
               <button
-                className={`toggle-chip ${settings.haptics ? "on" : ""}`}
+                className={`choice-toggle-chip ${settings.haptics ? "on" : ""}`}
                 onClick={() => onChangeSetting?.("haptics", !settings.haptics)}
               >
                 <Sparkles size={16} />
                 Вибро
-                <span className="toggle-dot" />
+                <span className="choice-toggle-dot" />
               </button>
             </div>
 
-            <div className="settings-block">
-              <div className="settings-block-head">
+            <div className="choice-settings-block">
+              <div className="choice-settings-block-head">
                 <div>
-                  <div className="settings-title sm">Пачки вопросов</div>
-                  <div className="settings-sub">Выбрано: {selectedCount} из {totalThemes}</div>
+                  <div className="choice-settings-title sm">Пачки вопросов</div>
+                  <div className="choice-settings-sub">Выбрано: {selectedCount} из {totalThemes}</div>
                 </div>
-                <button className="ghost-btn compact" onClick={onSelectAllThemes}>
+                <button className="choice-ghost-btn compact" onClick={onSelectAllThemes}>
                   Все темы
                 </button>
               </div>
@@ -799,58 +799,58 @@ function Landing({
         </button>
       </div>
 
-      <div className="panel hero-panel">
-        <div className="panel-head">
-          <p className="eyebrow">Свободный режим</p>
-          <div className="panel-title">Выбор без команд</div>
-          <p className="panel-sub">Просто пачки вопросов, никаких участников. Залетайте в раунд и отвечайте.</p>
+      <div className="choice-panel choice-hero-panel">
+        <div className="choice-panel-head">
+          <p className="choice-eyebrow">Свободный режим</p>
+          <div className="choice-panel-title">Выбор без команд</div>
+          <p className="choice-panel-sub">Просто пачки вопросов, никаких участников. Залетайте в раунд и отвечайте.</p>
         </div>
 
-        <div className="chips-row">
+        <div className="choice-chips-row">
           {CHOICE_MODES.map((mode) => {
             const active = settings.mode === mode.id;
             return (
               <button
                 key={mode.id}
-                className={`seg ${active ? "seg-active" : ""}`}
+                className={`choice-seg ${active ? "choice-seg-active" : ""}`}
                 onClick={() => onModeChange?.(mode.id)}
                 aria-pressed={active}
               >
-                <span className="seg-icon">{mode.badge}</span>
-                <span className="seg-text">
-                  <span className="seg-title">{mode.label}</span>
-                  <span className="seg-sub">{mode.desc}</span>
+                <span className="choice-seg-icon">{mode.badge}</span>
+                <span className="choice-seg-text">
+                  <span className="choice-seg-title">{mode.label}</span>
+                  <span className="choice-seg-sub">{mode.desc}</span>
                 </span>
               </button>
             );
           })}
         </div>
 
-        <div className="section-header">
+        <div className="choice-section-header">
           <div>
-            <div className="section-title">Настройки</div>
-            <div className="section-sub">Звук и темы вопросов</div>
+            <div className="choice-section-title">Настройки</div>
+            <div className="choice-section-sub">Звук и темы вопросов</div>
           </div>
           <motion.button
-            className="settings-gear"
+            className="choice-gear"
             onClick={() => setSettingsOpen(true)}
             whileTap={{ scale: 0.92 }}
             whileHover={{ rotate: -4 }}
             aria-label="Открыть настройки"
           >
-            <span className="gear-inner">
+            <span className="choice-gear-inner">
               <Settings size={18} />
             </span>
-            <span className="gear-glow" />
+            <span className="choice-gear-glow" />
           </motion.button>
         </div>
 
-        <div className="hero-actions compact">
-          <button className="primary large" onClick={onStart}>
+        <div className="choice-hero-actions">
+          <button className="choice-primary" onClick={onStart}>
             <Zap size={18} />
             Играть
           </button>
-          <button className="ghost-btn" onClick={() => setSettingsOpen(true)}>
+          <button className="choice-ghost-btn" onClick={() => setSettingsOpen(true)}>
             <Settings size={16} />
             Настройки
           </button>
