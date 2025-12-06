@@ -917,7 +917,6 @@ function Landing({
                 <span className="choice-seg-icon">{mode.badge}</span>
                 <span className="choice-seg-text">
                   <span className="choice-seg-title">{mode.label}</span>
-                  <span className="choice-seg-sub">{mode.desc}</span>
                 </span>
               </button>
             );
