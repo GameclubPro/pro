@@ -493,13 +493,16 @@
   position: relative;
   padding: 12px;
   border-radius: 16px;
-  border: 1px solid color-mix(in srgb, var(--quiz-border) 70%, rgba(255, 255, 255, 0.06));
+  border: 1px solid color-mix(in srgb, var(--quiz-border) 55%, rgba(255, 255, 255, 0.2));
   background:
-    linear-gradient(135deg, rgba(19, 29, 45, 0.9), rgba(9, 17, 28, 0.9)),
-    radial-gradient(circle at 15% 15%, rgba(34, 211, 238, 0.16), transparent 55%),
-    radial-gradient(circle at 85% 80%, rgba(139, 92, 246, 0.16), transparent 45%),
-    radial-gradient(circle at 50% -20%, rgba(255, 255, 255, 0.05), transparent 55%);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    linear-gradient(135deg, rgba(32, 44, 66, 0.78), rgba(16, 26, 42, 0.78)),
+    radial-gradient(circle at 15% 15%, rgba(34, 211, 238, 0.22), transparent 55%),
+    radial-gradient(circle at 85% 80%, rgba(139, 92, 246, 0.2), transparent 45%),
+    radial-gradient(circle at 50% -20%, rgba(255, 255, 255, 0.1), transparent 55%);
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.38),
+    0 0 0 1px rgba(56, 189, 248, 0.08),
+    0 8px 26px rgba(139, 92, 246, 0.12);
   overflow: hidden;
 }
 
