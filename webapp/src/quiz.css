@@ -1716,6 +1716,13 @@
   .setting-actions {
     grid-template-columns: 1fr;
   }
+  .settings-two-col {
+    grid-template-columns: 1fr;
+  }
+  .category-grid,
+  .difficulty-grid {
+    grid-template-columns: 1fr;
+  }
   .hero-main {
     grid-template-columns: 1fr;
     justify-items: center;
