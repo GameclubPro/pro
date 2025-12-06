@@ -632,7 +632,6 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
   const renderSettings = () => (
     <div className="panel">
       <div className="panel-head">
-        <p className="eyebrow">Настройки</p>
         <h3 className="panel-title">Раунд</h3>
       </div>
       <div className="grid two">
