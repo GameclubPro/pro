@@ -390,18 +390,21 @@ const paletteFor = (theme, vibe) => {
 };
 
 export default function Choice({ goBack, onProgress, setBackHandler }) {
-  const [settings, setSettings] = useState(() =>
-    readPersisted(STORAGE_KEYS.settings, {
-      mode: "free",
-      sound: true,
-      haptics: true,
-      selectedThemes: Object.keys(THEMES),
-    })
+  const savedSettings = useMemo(
+    () =>
+      readPersisted(STORAGE_KEYS.settings, {
+        mode: "free",
+        sound: true,
+        haptics: true,
+        selectedThemes: Object.keys(THEMES),
+      }),
+    []
   );
+  const [settings, setSettings] = useState(savedSettings);
   const [roster, setRoster] = useState(() => {
     const saved = readPersisted(STORAGE_KEYS.roster, null);
     if (Array.isArray(saved) && saved.length) return saved;
-    return initialChoiceRoster(settings.mode);
+    return initialChoiceRoster(savedSettings?.mode || "free");
   });
   const [stats, setStats] = useState(() =>
     readPersisted(STORAGE_KEYS.stats, { answered: 0, rare: 0, streak: 0, bestStreak: 0, perQuestion: {}, history: [] })
