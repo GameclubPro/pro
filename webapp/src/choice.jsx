@@ -57,6 +57,12 @@ const CHOICE_MODES = [
   { id: "free", label: "Быстрый старт", desc: "Без списка, просто вопросы", badge: "✨" },
 ];
 
+const CHOICE_DIFFICULTIES = [
+  { id: "normal", label: "Обычный", emoji: "🙂" },
+  { id: "spicy", label: "Острый", emoji: "🌶️" },
+  { id: "insane", label: "П@#$%ц", emoji: "💀" },
+];
+
 const RAW_PACKS = [
   {
     id: "health",
@@ -412,6 +418,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
         sound: true,
         haptics: true,
         selectedThemes: Object.keys(THEMES),
+        difficulty: "normal",
       }),
     []
   );
@@ -449,6 +456,10 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     const allowed = CHOICE_MODES.some((m) => m.id === modeId) ? modeId : "free";
     setSettings((s) => ({ ...s, mode: allowed }));
     setRoster(initialChoiceRoster(allowed));
+  }, []);
+  const handleDifficultyChange = useCallback((id) => {
+    const allowed = CHOICE_DIFFICULTIES.some((d) => d.id === id) ? id : "normal";
+    setSettings((s) => ({ ...s, difficulty: allowed }));
   }, []);
   const handleSelectAllThemes = useCallback(() => {
     setSettings((s) => ({ ...s, selectedThemes: Object.keys(THEMES) }));
@@ -701,6 +712,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
             onToggleTheme={handleThemeToggle}
             onChangeSetting={handleSettingChange}
             onModeChange={handleModeChange}
+            onDifficultyChange={handleDifficultyChange}
             onSelectAllThemes={handleSelectAllThemes}
             roster={roster}
             onShuffleColor={shuffleColor}
@@ -763,6 +775,7 @@ function Landing({
   onToggleTheme,
   onChangeSetting,
   onModeChange,
+  onDifficultyChange,
   onSelectAllThemes,
   roster,
   onShuffleColor,
@@ -892,9 +905,23 @@ function Landing({
 
       <div className="choice-panel choice-hero-panel">
         <div className="choice-panel-head">
-          <p className="choice-eyebrow">Свободный режим</p>
-          <div className="choice-panel-title">Выбор без команд</div>
-          <p className="choice-panel-sub">Просто пачки вопросов, никаких участников. Залетайте в раунд и отвечайте.</p>
+          <div>
+            <p className="choice-eyebrow">Свободный режим</p>
+            <div className="choice-panel-title">Выбор без команд</div>
+            <p className="choice-panel-sub">Просто пачки вопросов, никаких участников. Залетайте в раунд и отвечайте.</p>
+          </div>
+          <motion.button
+            className="choice-gear"
+            onClick={() => setSettingsOpen(true)}
+            whileTap={{ scale: 0.92 }}
+            whileHover={{ rotate: -4 }}
+            aria-label="Открыть настройки"
+          >
+            <span className="choice-gear-inner">
+              <Settings size={18} />
+            </span>
+            <span className="choice-gear-glow" />
+          </motion.button>
         </div>
 
         <div className="choice-chips-row">
@@ -923,18 +950,6 @@ function Landing({
                 <div className="choice-section-title">Состав</div>
                 <div className="choice-section-sub">Минимум 2 участника, назови и раскрась</div>
               </div>
-              <motion.button
-                className="choice-gear"
-                onClick={() => setSettingsOpen(true)}
-                whileTap={{ scale: 0.92 }}
-                whileHover={{ rotate: -4 }}
-                aria-label="Открыть настройки"
-              >
-                <span className="choice-gear-inner">
-                  <Settings size={18} />
-                </span>
-                <span className="choice-gear-glow" />
-              </motion.button>
             </div>
             <div className="choice-roster-list">
               {roster.map((item) => (
@@ -970,26 +985,30 @@ function Landing({
               </button>
             </div>
           </>
-        ) : (
-          <div className="choice-section-header">
-            <div>
-              <div className="choice-section-title">Настройки</div>
-              <div className="choice-section-sub">Темы и звук</div>
-            </div>
-            <motion.button
-              className="choice-gear"
-              onClick={() => setSettingsOpen(true)}
-              whileTap={{ scale: 0.92 }}
-              whileHover={{ rotate: -4 }}
-              aria-label="Открыть настройки"
-            >
-              <span className="choice-gear-inner">
-                <Settings size={18} />
-              </span>
-              <span className="choice-gear-glow" />
-            </motion.button>
+        ) : null}
+
+        <div className="choice-section-header">
+          <div>
+            <div className="choice-section-title">Сложность</div>
+            <div className="choice-section-sub">Выбери настроение раунда</div>
           </div>
-        )}
+        </div>
+        <div className="choice-difficulty-row">
+          {CHOICE_DIFFICULTIES.map((d) => {
+            const active = settings.difficulty === d.id;
+            return (
+              <button
+                key={d.id}
+                className={`choice-diff ${active ? "on" : ""}`}
+                onClick={() => onDifficultyChange?.(d.id)}
+                aria-pressed={active}
+              >
+                <span className="choice-diff-emoji">{d.emoji}</span>
+                <span className="choice-diff-label">{d.label}</span>
+              </button>
+            );
+          })}
+        </div>
 
         <div className="choice-hero-actions">
           <button className="choice-primary" onClick={onStart}>
