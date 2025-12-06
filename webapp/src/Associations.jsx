@@ -790,13 +790,16 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
   const renderSetup = () => (
     <div className="explain-grid">
       <div className="panel setup-panel">
-        <button className="settings-fab" onClick={() => setSettingsOpen(true)}>
-          <Settings size={16} />
-          Настройки
-        </button>
+        <div className="setup-head">
+          <div>
+            <p className="eyebrow">Объясни слово</p>
+            <h1 className="panel-title">Помоги напарнику отгадать как можно больше</h1>
+          </div>
+          <button className="settings-fab" onClick={() => setSettingsOpen(true)} aria-label="Настройки">
+            <Settings size={16} />
+          </button>
+        </div>
         <div className="setup-content">
-          <p className="eyebrow">Объясни слово</p>
-          <h1 className="panel-title">Помоги напарнику отгадать как можно больше</h1>
           <p className="muted">
             Один объясняет, второй угадывает. Нельзя использовать однокоренные и однозвучные подсказки. Таймер тикает —
             зарабатывайте очки сериями.
