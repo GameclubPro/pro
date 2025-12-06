@@ -912,6 +912,11 @@
   font-size: 18px;
 }
 
+.metric-hint {
+  color: #9fb2c5;
+  font-size: 13px;
+}
+
 .settings-overlay.choice-settings {
   position: fixed;
   inset: 0;

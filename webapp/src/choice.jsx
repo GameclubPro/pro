@@ -37,12 +37,9 @@ const THEMES = {
   custom: { label: "Свои", icon: "✨" },
 };
 
-const MODE_PRESETS = [
-  { id: "classic", label: "Свободный", desc: "Все темы вперемешку", badge: "✨" },
-  { id: "party", label: "Вечеринка", desc: "Больше весёлых и смелых вопросов", badge: "🎉" },
-  { id: "calm", label: "Спокойно", desc: "Мягкие, уютные темы без остроты", badge: "🌿" },
-  { id: "local", label: "Про жизнь", desc: "Быт, отношения, город и привычки", badge: "🏠" },
-  { id: "hard", label: "Остро", desc: "Этика и 16+ для искателей перчинки", badge: "⚡️" },
+const CHOICE_MODES = [
+  { id: "solo", label: "Соло", desc: "Отвечает один", badge: "🧑‍🚀" },
+  { id: "free", label: "Свободный", desc: "Без команд, все темы", badge: "✨" },
 ];
 
 const RAW_PACKS = [
@@ -383,7 +380,7 @@ const paletteFor = (theme, vibe) => {
 export default function Choice({ goBack, onProgress, setBackHandler }) {
   const [settings, setSettings] = useState(() =>
     readPersisted(STORAGE_KEYS.settings, {
-      mode: "classic",
+      mode: "free",
       sound: true,
       haptics: true,
       selectedThemes: Object.keys(THEMES),
@@ -414,7 +411,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     setSettings((s) => ({ ...s, [key]: value }));
   }, []);
   const handleModeChange = useCallback((modeId) => {
-    const allowed = MODE_PRESETS.some((m) => m.id === modeId) ? modeId : "classic";
+    const allowed = CHOICE_MODES.some((m) => m.id === modeId) ? modeId : "free";
     setSettings((s) => ({ ...s, mode: allowed }));
   }, []);
   const handleSelectAllThemes = useCallback(() => {
@@ -422,7 +419,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
   }, []);
 
   const pool = useMemo(() => {
-    const mode = MODE_PRESETS.some((m) => m.id === settings.mode) ? settings.mode : "classic";
+    const mode = CHOICE_MODES.some((m) => m.id === settings.mode) ? settings.mode : "free";
     const customs = customList.map((c, idx) => ({
       ...c,
       id: c.id || `custom-${idx}`,
@@ -435,10 +432,6 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     const merged = [...BASE_DILEMMAS, ...customs];
     const themeSet = new Set(settings.selectedThemes || []);
     const matchesMode = (q) => {
-      if (mode === "hard") return q.tone === "ethics" || q.rating === "16+";
-      if (mode === "party") return q.tone === "party" || q.theme === "party";
-      if (mode === "local") return ["health", "life", "money", "love", "city", "social", "calm"].includes(q.theme);
-      if (mode === "calm") return q.tone === "calm" || q.vibe === "calm";
       return true;
     };
     const filtered = merged.filter((q) => {
@@ -687,8 +680,14 @@ function Landing({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const selectedCount = selectedThemes?.length || 0;
   const totalThemes = Object.keys(themes).length;
-  const modeMeta = MODE_PRESETS.find((m) => m.id === settings.mode) || MODE_PRESETS[0];
+  const modeMeta = CHOICE_MODES.find((m) => m.id === settings.mode) || CHOICE_MODES[1];
   const portalTarget = typeof document !== "undefined" ? document.body : null;
+  const selectedPreview = (() => {
+    const labels = (selectedThemes || []).map((k) => themes[k]?.label).filter(Boolean);
+    if (!labels.length) return "Не выбрано";
+    if (labels.length <= 3) return labels.join(", ");
+    return `${labels.slice(0, 3).join(", ")} +${labels.length - 3}`;
+  })();
   const rules = [
     "Без команд: кто угодно выбирает вариант",
     "Отметь пачки тем и жми «Играть»",
@@ -729,39 +728,6 @@ function Landing({
               >
                 <X size={16} />
               </motion.button>
-            </div>
-
-            <div className="settings-block">
-              <div className="settings-block-head">
-                <div>
-                  <div className="settings-title sm">Режим вопросов</div>
-                  <div className="settings-sub">Фильтр тем под настроение</div>
-                </div>
-              </div>
-              <div className="mode-grid">
-                {MODE_PRESETS.map((mode) => {
-                  const active = settings.mode === mode.id;
-                  return (
-                    <motion.button
-                      key={mode.id}
-                      className={`mode-card ${active ? "on" : ""}`}
-                      whileTap={{ scale: 0.98 }}
-                      whileHover={{ y: -1 }}
-                      onClick={() => onModeChange?.(mode.id)}
-                      aria-pressed={active}
-                    >
-                      <div className="mode-chip">{mode.badge}</div>
-                      <div className="mode-body">
-                        <div className="mode-title">{mode.label}</div>
-                        <div className="mode-sub">{mode.desc}</div>
-                      </div>
-                      <span className={`mode-check ${active ? "on" : ""}`} aria-hidden>
-                        <Check size={14} />
-                      </span>
-                    </motion.button>
-                  );
-                })}
-              </div>
             </div>
 
             <div className="settings-toggles">
@@ -890,7 +856,7 @@ function Landing({
         </div>
 
         <div className="chips-row">
-          {MODE_PRESETS.map((mode) => {
+          {CHOICE_MODES.map((mode) => {
             const active = settings.mode === mode.id;
             return (
               <button
@@ -905,64 +871,6 @@ function Landing({
                   <span className="seg-sub">{mode.desc}</span>
                 </span>
               </button>
-            );
-          })}
-        </div>
-
-        <div className="section-header">
-          <div>
-            <div className="section-title">Пачки вопросов</div>
-            <div className="section-sub">Выбрано: {selectedCount} из {totalThemes}</div>
-          </div>
-          <motion.button
-            className="settings-gear ghosted"
-            onClick={() => setSettingsOpen(true)}
-            whileTap={{ scale: 0.92 }}
-            whileHover={{ rotate: -4 }}
-            aria-label="Открыть настройки"
-          >
-            <span className="gear-inner">
-              <Settings size={16} />
-            </span>
-            <span className="gear-glow" />
-          </motion.button>
-        </div>
-
-        <div className="theme-grid">
-          {Object.entries(themes).map(([key, value]) => {
-            const active = (selectedThemes || []).includes(key);
-            const palette = PALETTES[key] || ["#22d3ee", "#8b5cf6"];
-            const meta = PACK_META[key];
-            const toneLabel =
-              meta?.tone === "party"
-                ? "Движ"
-                : meta?.tone === "calm"
-                ? "Спокойно"
-                : meta?.tone === "ethics"
-                ? "Остро"
-                : meta?.tone === "future"
-                ? "Будущее"
-                : "Смешано";
-            const subtitle = `${meta?.rating || "12+"} • ${toneLabel}`;
-            return (
-              <motion.button
-                key={key}
-                className={`theme-card ${active ? "on" : ""}`}
-                whileTap={{ scale: 0.98 }}
-                whileHover={{ y: -1 }}
-                onClick={() => onToggleTheme?.(key)}
-                style={{ "--theme-from": palette[0], "--theme-to": palette[1] }}
-                aria-pressed={active}
-              >
-                <div className="theme-icon">{value.icon}</div>
-                <div className="theme-body">
-                  <div className="theme-title">{value.label}</div>
-                  <div className="theme-sub">{subtitle}</div>
-                </div>
-                <span className={`theme-check ${active ? "on" : ""}`} aria-hidden>
-                  <Check size={14} />
-                </span>
-              </motion.button>
             );
           })}
         </div>
@@ -991,6 +899,11 @@ function Landing({
             <div className="metric-label">Лучшая серия</div>
             <div className="metric-value">{stats.bestStreak || stats.streak || 0}</div>
           </div>
+          <div className="metric-card">
+            <div className="metric-label">Тем выбрано</div>
+            <div className="metric-value">{selectedCount} / {totalThemes}</div>
+            <div className="metric-hint">{selectedPreview}</div>
+          </div>
         </div>
 
         <div className="card-ghost rules">
@@ -1000,6 +913,9 @@ function Landing({
               <li key={r}>{r}</li>
             ))}
           </ul>
+          <button className="ghost-btn compact" onClick={() => setSettingsOpen(true)}>
+            Настроить темы
+          </button>
         </div>
       </div>
     </div>
