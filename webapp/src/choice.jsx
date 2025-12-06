@@ -61,6 +61,7 @@ const CHOICE_DIFFICULTIES = [
   { id: "normal", label: "Обычный", emoji: "🙂" },
   { id: "spicy", label: "Острый", emoji: "🌶️" },
   { id: "insane", label: "П@#$%ц", emoji: "💀" },
+  { id: "apocalypse", label: "Апокалипсис", emoji: "☄️" },
 ];
 
 const RAW_PACKS = [
@@ -1011,6 +1012,12 @@ function Landing({
         </div>
 
         <div className="choice-hero-actions">
+          <button className="choice-gear hero" onClick={() => setSettingsOpen(true)} aria-label="Настройки">
+            <span className="choice-gear-inner">
+              <Settings size={18} />
+            </span>
+            <span className="choice-gear-glow" />
+          </button>
           <button className="choice-primary" onClick={onStart}>
             <Sparkles size={18} />
             Играть
