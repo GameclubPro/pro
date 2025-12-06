@@ -386,6 +386,7 @@
   padding: env(safe-area-inset-top) env(safe-area-inset-left) env(safe-area-inset-bottom) env(safe-area-inset-right);
   z-index: 1200;
   overflow: hidden;
+}
 .quiz-settings-window.settings-window {
   position: relative;
   width: calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right));
@@ -406,6 +407,7 @@
   margin: 0;
   flex-shrink: 0;
   overflow-y: auto;
+}
 .quiz-settings-window::before {
   content: "";
   position: absolute;
@@ -415,6 +417,7 @@
     radial-gradient(40% 40% at 20% 30%, rgba(139, 92, 246, 0.18), transparent 60%),
     radial-gradient(60% 60% at 80% 50%, rgba(34, 211, 238, 0.18), transparent 65%);
   pointer-events: none;
+}
 .quiz-settings-window::after {
   content: "";
   position: absolute;
@@ -427,6 +430,7 @@
   background-repeat: no-repeat;
   mix-blend-mode: screen;
   pointer-events: none;
+}
 .quiz-settings-window::-webkit-scrollbar {
   width: 0;
   height: 0;
