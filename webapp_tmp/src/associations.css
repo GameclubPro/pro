@@ -1,5 +1,10 @@
 .explain {
   color: var(--croco-fg);
+  background:
+    radial-gradient(120% 120% at 20% 18%, rgba(99, 102, 241, 0.26), transparent 52%),
+    radial-gradient(110% 120% at 78% 10%, rgba(14, 165, 233, 0.24), transparent 55%),
+    radial-gradient(120% 120% at 50% 120%, rgba(24, 24, 36, 0.6), transparent 62%),
+    linear-gradient(160deg, #0d0f24, #0b1329 45%, #0a1122 78%, #090f1f);
 }
 
 .explain-grid {

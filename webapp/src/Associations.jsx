@@ -796,7 +796,7 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
         </button>
         <div className="setup-content">
           <p className="eyebrow">Объясни слово</p>
-          <h1 className="panel-title">Уговори напарника угадать максимум</h1>
+          <h1 className="panel-title">Помоги напарнику отгадать как можно больше</h1>
           <p className="muted">
             Один объясняет, второй угадывает. Нельзя использовать однокоренные и однозвучные подсказки. Таймер тикает —
             зарабатывайте очки сериями.
