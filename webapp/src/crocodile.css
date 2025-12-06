@@ -180,7 +180,8 @@
   position: relative;
   display: grid;
   justify-items: center;
-  padding-top: calc(env(safe-area-inset-top) + clamp(150px, 24vw, 200px));
+  /* Меньше верхний отступ, чтобы арт поднимался ближе к верхнему краю */
+  padding-top: calc(env(safe-area-inset-top) + clamp(120px, 18vw, 168px));
   padding-bottom: clamp(180px, 28vw, 260px);
 }
 
