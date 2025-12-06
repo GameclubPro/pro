@@ -1152,6 +1152,7 @@ function Round({
   const hasChoice = selected != null;
   const cap = Math.max(1, Number(targetScore) || 1);
   const totalAsked = (perTeam || []).reduce((sum, n) => sum + (Number(n) || 0), 0);
+  const roundProgress = `${Math.max(1, Number(roundNumber) || 1)}/${cap}`;
   const progressItems = (roster || []).map((item, idx) => {
     const answered = perTeam?.[idx] ?? 0;
     const correctPct = clamp(Math.min(item.score, cap) / cap, 0, 1) * 100;
@@ -1168,12 +1169,16 @@ function Round({
   return (
     <div className="round">
       <div className="round-meta">
-        <div className="bubble small" style={{ background: current?.color }}>
-          {current?.emoji}
+        <div className="round-left">
+          <div className="bubble small" style={{ background: current?.color }}>
+            {current?.emoji}
+          </div>
+          <div className="round-text">
+            <div className="round-mode">{mode === "teams" ? "Команды" : "Соло"}</div>
+            <div className="round-name">{current?.name}</div>
+          </div>
         </div>
-        <div className="round-name">{current?.name}</div>
-        <span className="dot" />
-        <div className="round-mode">{mode === "teams" ? "Команды" : "Соло"}</div>
+        <span className="round-pill dark">{roundProgress}</span>
         {onExit && (
           <motion.button
             className="round-exit"
@@ -1293,9 +1298,6 @@ function TimerPacman({ pct, seconds, running, current, roundNumber, totalLabel, 
       <div className="pacman-meta">
         <div className="timer-num">{seconds}s</div>
         <div className="timer-sub">{label}</div>
-        {typeof roundNumber === "number" && (
-          <span className="round-pill dark">Раунд {roundNumber}</span>
-        )}
       </div>
 
       <div

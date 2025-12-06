@@ -1257,16 +1257,30 @@
 }
 
 .round-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: start;
+  gap: 10px;
   font-weight: 800;
   background: rgba(7, 12, 18, 0.7);
   border: 1px solid color-mix(in srgb, var(--quiz-border) 60%, rgba(0, 0, 0, 0.4));
   border-radius: 12px;
   padding: 10px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.round-left {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.round-text {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
 }
 
 .round-name {
@@ -1279,6 +1293,9 @@
 
 .round-mode {
   color: var(--quiz-muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .dot {
@@ -1310,6 +1327,8 @@
   background: rgba(7, 12, 18, 0.7);
   border-color: color-mix(in srgb, var(--quiz-border) 60%, rgba(0, 0, 0, 0.35));
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+  justify-self: end;
+  align-self: start;
 }
 
 .round-exit {
