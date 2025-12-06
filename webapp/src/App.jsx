@@ -601,7 +601,7 @@ function Shell({ scheme, user, status, level, games, section, setSection, onOpen
             back={() => setSection("home")}
             items={[
               { icon: "🎭", name: "Крокодил", desc: "покажи — не говори", action: () => onOpenGame("crocodile") },
-              { icon: "🧩", name: "Ассоциации", desc: "угадай по намёкам", action: () => onOpenGame("associations") },
+              { icon: "🧩", name: "Обьясни слово", desc: "угадай по намёкам", action: () => onOpenGame("associations") },
               { icon: "❓", name: "Блиц-викторина", desc: "быстро и на счёт", action: () => onOpenGame("quiz") },
               { icon: "✍️", name: "Скетч-баттл", desc: "рисуй за 30 сек", action: () => onOpenGame("sketch") },
               { icon: "⚖️", name: "Выбор", desc: "два варианта — один выбор", action: () => onOpenGame("choice") },
