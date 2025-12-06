@@ -890,13 +890,6 @@ function Landing({
     <div className="choice-home">
       {portalTarget ? createPortal(settingsModal, portalTarget) : settingsModal}
 
-      <div className="choice-top">
-        <button className="ghost" onClick={onBack}>
-          <ArrowLeft size={18} />
-          <span>Назад</span>
-        </button>
-      </div>
-
       <div className="choice-panel choice-hero-panel">
         <div className="choice-panel-head">
           <p className="choice-eyebrow">Свободный режим</p>

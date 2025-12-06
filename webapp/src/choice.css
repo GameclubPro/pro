@@ -54,7 +54,7 @@
   z-index: 1;
   max-width: 820px;
   margin: 0 auto;
-  padding: calc(24px + env(safe-area-inset-top)) clamp(14px, 4vw, 28px) calc(30px + env(safe-area-inset-bottom));
+  padding: calc(18px + env(safe-area-inset-top)) clamp(12px, 3vw, 22px) calc(26px + env(safe-area-inset-bottom));
   display: grid;
   gap: 14px;
   min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
