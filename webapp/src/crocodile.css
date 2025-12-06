@@ -216,7 +216,9 @@
   width: min(92%, 420px);
   max-width: 96vw;
   height: auto;
-  filter: drop-shadow(0 10px 26px rgba(0, 0, 0, 0.26));
+  filter:
+    drop-shadow(0 0 2px rgba(0, 0, 0, 0.6)) /* тонкий контур вокруг рук */
+    drop-shadow(0 10px 26px rgba(0, 0, 0, 0.26));
 }
 
 .croco-legs {
