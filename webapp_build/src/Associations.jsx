@@ -809,10 +809,6 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
               <Play size={18} />
               Старт раунда
             </button>
-            <button className="btn ghost" onClick={resetMatch}>
-              <RotateCcw size={16} />
-              Сбросить прогресс
-            </button>
           </div>
           {!canStart && (
             <div className="warning">
@@ -1048,10 +1044,9 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
               <div className="sheet-head">
                 <div>
                   <p className="eyebrow">Настройки</p>
-                  <h3 className="section-title">Подготовка к партии</h3>
                 </div>
-                <button className="icon-btn" onClick={() => setSettingsOpen(false)}>
-                  <X size={16} />
+                <button className="btn ghost" onClick={() => setSettingsOpen(false)}>
+                  Закрыть
                 </button>
               </div>
               <div className="sheet-body">
