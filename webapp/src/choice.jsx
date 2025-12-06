@@ -761,6 +761,8 @@ function Landing({
   onRemoveMember,
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const modeIsSolo = settings.mode === "solo";
+  const minPlayers = modeIsSolo ? 1 : 1;
   const selectedCount = selectedThemes?.length || 0;
   const totalThemes = Object.keys(themes).length;
   const portalTarget = typeof document !== "undefined" ? document.body : null;
@@ -914,15 +916,21 @@ function Landing({
 
         <div className="choice-section-header">
           <div>
-            <div className="choice-section-title">Участники</div>
+            <div className="choice-section-title">Состав</div>
             <div className="choice-section-sub">Для настроения можно назвать и раскрасить</div>
           </div>
-          <div className="choice-roster-actions">
-            <button className="choice-ghost-btn compact" onClick={onAddMember}>
-              <Plus size={14} />
-              Добавить
-            </button>
-          </div>
+          <motion.button
+            className="choice-gear"
+            onClick={() => setSettingsOpen(true)}
+            whileTap={{ scale: 0.92 }}
+            whileHover={{ rotate: -4 }}
+            aria-label="Открыть настройки"
+          >
+            <span className="choice-gear-inner">
+              <Settings size={18} />
+            </span>
+            <span className="choice-gear-glow" />
+          </motion.button>
         </div>
         <div className="choice-roster-list">
           {roster.map((item) => (
@@ -944,6 +952,7 @@ function Landing({
               <button
                 className="choice-icon-btn"
                 onClick={() => onRemoveMember(item.id)}
+                disabled={roster.length <= minPlayers}
                 aria-label="Удалить"
                 title="Удалить"
               >
@@ -957,33 +966,10 @@ function Landing({
           </button>
         </div>
 
-        <div className="choice-section-header">
-          <div>
-            <div className="choice-section-title">Настройки</div>
-            <div className="choice-section-sub">Звук и темы вопросов</div>
-          </div>
-          <motion.button
-            className="choice-gear"
-            onClick={() => setSettingsOpen(true)}
-            whileTap={{ scale: 0.92 }}
-            whileHover={{ rotate: -4 }}
-            aria-label="Открыть настройки"
-          >
-            <span className="choice-gear-inner">
-              <Settings size={18} />
-            </span>
-            <span className="choice-gear-glow" />
-          </motion.button>
-        </div>
-
         <div className="choice-hero-actions">
           <button className="choice-primary" onClick={onStart}>
-            <Zap size={18} />
+            <Sparkles size={18} />
             Играть
-          </button>
-          <button className="choice-ghost-btn" onClick={() => setSettingsOpen(true)}>
-            <Settings size={16} />
-            Настройки
           </button>
         </div>
       </div>

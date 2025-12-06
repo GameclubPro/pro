@@ -684,6 +684,7 @@
   display: grid;
   place-items: center;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .choice-gear .choice-gear-inner {
