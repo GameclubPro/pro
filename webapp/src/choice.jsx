@@ -22,6 +22,19 @@ const STORAGE_KEYS = {
   roster: "pt_choice_roster_v1",
 };
 
+const PALETTE = [
+  "#8b5cf6",
+  "#22d3ee",
+  "#fb7185",
+  "#10b981",
+  "#f59e0b",
+  "#6366f1",
+  "#ec4899",
+  "#06b6d4",
+];
+
+const EMOJIS = ["⚡️", "🔥", "🌊", "🍀", "🌟", "🛰️", "🎯", "🧠", "🚀", "💎"];
+
 const THEMES = {
   health: { label: "ЗОЖ", icon: "💪" },
   money: { label: "Карьера", icon: "💼" },
