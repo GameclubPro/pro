@@ -9,6 +9,8 @@ import {
   Volume2,
   X,
   Zap,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import "./choice.css";
 
@@ -17,6 +19,7 @@ const STORAGE_KEYS = {
   stats: "pt_choice_stats_v1",
   custom: "pt_choice_custom_v1",
   daily: "pt_choice_daily_v1",
+  roster: "pt_choice_roster_v1",
 };
 
 const THEMES = {
@@ -332,6 +335,16 @@ const readPersisted = (key, fallback) => {
 const randomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
 const todayKey = () => new Date().toISOString().slice(0, 10);
 
+const initialChoiceRoster = (mode = "free") => {
+  const count = mode === "solo" ? 1 : 3;
+  return Array.from({ length: count }).map((_, idx) => ({
+    id: `c-${idx}`,
+    name: mode === "solo" ? "Игрок" : `Участник ${idx + 1}`,
+    emoji: EMOJIS[idx % EMOJIS.length],
+    color: PALETTE[idx % PALETTE.length],
+  }));
+};
+
 const useHaptics = (enabled) =>
   useCallback(
     (style = "light") => {
@@ -385,6 +398,11 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
       selectedThemes: Object.keys(THEMES),
     })
   );
+  const [roster, setRoster] = useState(() => {
+    const saved = readPersisted(STORAGE_KEYS.roster, null);
+    if (Array.isArray(saved) && saved.length) return saved;
+    return initialChoiceRoster(settings.mode);
+  });
   const [stats, setStats] = useState(() =>
     readPersisted(STORAGE_KEYS.stats, { answered: 0, rare: 0, streak: 0, bestStreak: 0, perQuestion: {}, history: [] })
   );
@@ -412,6 +430,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
   const handleModeChange = useCallback((modeId) => {
     const allowed = CHOICE_MODES.some((m) => m.id === modeId) ? modeId : "free";
     setSettings((s) => ({ ...s, mode: allowed }));
+    setRoster(initialChoiceRoster(allowed));
   }, []);
   const handleSelectAllThemes = useCallback(() => {
     setSettings((s) => ({ ...s, selectedThemes: Object.keys(THEMES) }));
@@ -481,6 +500,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
   useEffect(() => persist(STORAGE_KEYS.stats, stats), [stats]);
   useEffect(() => persist(STORAGE_KEYS.custom, customList), [customList]);
   useEffect(() => persist(STORAGE_KEYS.daily, daily), [daily]);
+  useEffect(() => persist(STORAGE_KEYS.roster, roster), [roster]);
 
   useEffect(() => {
     if (progressGiven.current) return;
@@ -581,6 +601,46 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     });
   };
 
+  // --- Roster handlers (intro only)
+  const modeIsSolo = settings.mode === "solo";
+  const minPlayers = modeIsSolo ? 1 : 1;
+  const changeName = (id, name) => {
+    setRoster((list) => list.map((r) => (r.id === id ? { ...r, name } : r)));
+  };
+  const shuffleColor = (id) => {
+    setRoster((list) =>
+      list.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+              emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
+            }
+          : r
+      )
+    );
+  };
+  const addMember = () => {
+    setRoster((list) => {
+      const idx = list.length;
+      return [
+        ...list,
+        {
+          id: `c-${idx}-${Date.now()}`,
+          name: modeIsSolo ? `Игрок ${idx + 1}` : `Участник ${idx + 1}`,
+          emoji: EMOJIS[idx % EMOJIS.length],
+          color: PALETTE[idx % PALETTE.length],
+        },
+      ];
+    });
+  };
+  const removeMember = (id) => {
+    setRoster((list) => {
+      if (list.length <= minPlayers) return list;
+      return list.filter((r) => r.id !== id);
+    });
+  };
+
   const handleTouchStart = (e) => {
     touchStartY.current = e.touches?.[0]?.clientY || null;
   };
@@ -616,6 +676,11 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
             onChangeSetting={handleSettingChange}
             onModeChange={handleModeChange}
             onSelectAllThemes={handleSelectAllThemes}
+            roster={roster}
+            onShuffleColor={shuffleColor}
+            onChangeName={changeName}
+            onAddMember={addMember}
+            onRemoveMember={removeMember}
           />
         ) : (
           <div className="play-vertical">
@@ -673,6 +738,11 @@ function Landing({
   onChangeSetting,
   onModeChange,
   onSelectAllThemes,
+  roster,
+  onShuffleColor,
+  onChangeName,
+  onAddMember,
+  onRemoveMember,
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const selectedCount = selectedThemes?.length || 0;
@@ -824,6 +894,51 @@ function Landing({
               </button>
             );
           })}
+        </div>
+
+        <div className="choice-section-header">
+          <div>
+            <div className="choice-section-title">Участники</div>
+            <div className="choice-section-sub">Для настроения можно назвать и раскрасить</div>
+          </div>
+          <div className="choice-roster-actions">
+            <button className="choice-ghost-btn compact" onClick={onAddMember}>
+              <Plus size={14} />
+              Добавить
+            </button>
+          </div>
+        </div>
+        <div className="choice-roster-list">
+          {roster.map((item) => (
+            <div className="choice-roster-row" key={item.id}>
+              <button
+                className="choice-avatar-btn"
+                style={{ background: item.color }}
+                onClick={() => onShuffleColor(item.id)}
+                aria-label="Сменить цвет"
+              >
+                {item.emoji}
+              </button>
+              <input
+                value={item.name}
+                onChange={(e) => onChangeName(item.id, e.target.value)}
+                maxLength={18}
+                aria-label="Имя"
+              />
+              <button
+                className="choice-icon-btn"
+                onClick={() => onRemoveMember(item.id)}
+                aria-label="Удалить"
+                title="Удалить"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))}
+          <button className="choice-ghost-line" onClick={onAddMember}>
+            <Plus size={16} />
+            Добавить участника
+          </button>
         </div>
 
         <div className="choice-section-header">
