@@ -14,6 +14,14 @@
 
 .setup-panel {
   position: relative;
+  background: var(--croco-surface);
+  border: 1px solid var(--croco-border);
+  box-shadow: var(--croco-shadow);
+  overflow: hidden;
+}
+
+.setup-panel::before {
+  display: none;
 }
 
 .setup-head {
