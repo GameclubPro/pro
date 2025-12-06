@@ -1211,14 +1211,29 @@
 
 .round-meta {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
   font-weight: 800;
+}
+
+.round-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.round-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
 .round-name {
   font-size: 16px;
+  font-weight: 900;
   max-width: 52vw;
   white-space: nowrap;
   overflow: hidden;
@@ -1227,13 +1242,23 @@
 
 .round-mode {
   color: var(--croco-muted);
+  font-size: 12px;
 }
 
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.6);
+.round-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(34, 197, 94, 0.12), transparent 60%),
+    rgba(6, 10, 12, 0.72);
+  border: 1px solid color-mix(in srgb, var(--croco-border) 60%, rgba(255, 255, 255, 0.12));
+  font-weight: 800;
+  color: var(--croco-fg);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .round-exit {
@@ -1277,9 +1302,47 @@
 }
 
 .pacman-meta {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  background: rgba(6, 10, 14, 0.72);
+  border: 1px solid color-mix(in srgb, var(--croco-border) 60%, rgba(0, 0, 0, 0.35));
+  border-radius: 12px;
+  padding: 8px 10px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.timer-stack {
+  display: grid;
+  gap: 2px;
+}
+
+.pacman-round {
+  justify-self: center;
+  min-width: 88px;
+  text-align: center;
+}
+
+.pacman-pause {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--croco-border) 60%, rgba(255, 255, 255, 0.12));
+  background:
+    radial-gradient(circle at 20% 20%, rgba(34, 197, 94, 0.14), transparent 60%),
+    rgba(255, 255, 255, 0.06);
+  display: grid;
+  place-items: center;
+  color: var(--croco-fg);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.pacman-pause.is-paused {
+  border-color: color-mix(in srgb, var(--croco-border) 60%, rgba(31, 238, 156, 0.5));
+  background:
+    radial-gradient(circle at 80% 20%, rgba(31, 238, 156, 0.18), transparent 60%),
+    rgba(255, 255, 255, 0.06);
 }
 
 .pacman-track {

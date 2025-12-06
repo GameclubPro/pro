@@ -1183,16 +1183,26 @@ function Round({
   showTimeoutPrompt,
   onTimeoutAnswer,
 }) {
+  const safeWordsTotal = Math.max(1, Number(wordsTotal) || 1);
+  const currentWordNumber = Math.min(
+    safeWordsTotal,
+    Math.max(1, safeWordsTotal - Math.max(0, wordsLeft) + 1)
+  );
+  const roundProgress = `${currentWordNumber}/${safeWordsTotal}`;
+
   return (
     <div className="round">
       <div className="round-meta">
-        <div className="bubble small" style={{ background: current?.color }}>
-          {current?.emoji}
+        <div className="round-left">
+          <div className="bubble small" style={{ background: current?.color }}>
+            {current?.emoji}
+          </div>
+          <div className="round-text">
+            <div className="round-mode">{mode === "teams" ? "Команды" : "Соло"}</div>
+            <div className="round-name">{current?.name}</div>
+          </div>
         </div>
-        <div className="round-name">{current?.name}</div>
-        <span className="dot" />
-        <div className="round-mode">{mode === "teams" ? "Команды" : "Соло"}</div>
-        <span className="pill">Слова: {wordsTotal - wordsLeft + 1}/{wordsTotal}</span>
+        <span className="round-pill">{`Слова ${roundProgress}`}</span>
         {onExit && (
           <motion.button
             className="round-exit"
@@ -1212,6 +1222,8 @@ function Round({
         running={running}
         current={current}
         dimmed={showTimeoutPrompt}
+        roundProgress={`Слова ${roundProgress}`}
+        onTogglePause={onPauseToggle}
       />
 
       <WordCard word={word} tip={tip} hints={hints} lastResult={lastResult} />
@@ -1234,22 +1246,6 @@ function Round({
         >
           <RefreshCw size={18} />
           Пропуск
-        </motion.button>
-        <motion.button
-          className="option-btn ghost"
-          whileTap={{ scale: 0.98 }}
-          onClick={onPauseToggle}
-          disabled={showTimeoutPrompt}
-        >
-          {isPaused ? (
-            <>
-              <Play size={16} /> Продолжить
-            </>
-          ) : (
-            <>
-              <Pause size={16} /> Пауза
-            </>
-          )}
         </motion.button>
       </div>
 
@@ -1295,7 +1291,7 @@ function Round({
   );
 }
 
-function TimerPacman({ pct, seconds, running, current, dimmed = false }) {
+function TimerPacman({ pct, seconds, running, current, dimmed = false, roundProgress, onTogglePause }) {
   const safePct = clamp(pct ?? 0, 0, 1);
   const remainingPct = Math.round(safePct * 100);
   const trackInsetPct = 4;
@@ -1313,8 +1309,23 @@ function TimerPacman({ pct, seconds, running, current, dimmed = false }) {
   return (
     <div className="pacman-timer">
       <div className="pacman-meta">
-        <div className="timer-num">{seconds}s</div>
-        <div className="timer-sub">{label}</div>
+        <div className="timer-stack">
+          <div className="timer-num">{seconds}s</div>
+          <div className="timer-sub">{label}</div>
+        </div>
+        {typeof roundProgress === "string" && roundProgress ? (
+          <span className="round-pill pacman-round">{roundProgress}</span>
+        ) : (
+          <span className="round-pill pacman-round" aria-hidden />
+        )}
+        <motion.button
+          className={`pacman-pause ${running ? "" : "is-paused"}`}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => onTogglePause?.()}
+          aria-label={running ? "Поставить на паузу" : "Возобновить"}
+        >
+          {running ? <Pause size={16} /> : <Play size={16} />}
+        </motion.button>
       </div>
 
       <div className={trackClass} aria-hidden>
