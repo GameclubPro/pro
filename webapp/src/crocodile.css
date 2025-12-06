@@ -1210,12 +1210,20 @@
 }
 
 .round-meta {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
-  justify-content: space-between;
   gap: 10px;
   flex-wrap: wrap;
   font-weight: 800;
+}
+
+.round-meta-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .round-left {
@@ -1262,7 +1270,6 @@
 }
 
 .round-exit {
-  margin-left: auto;
   display: inline-flex;
   align-items: center;
   gap: 6px;

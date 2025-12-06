@@ -1193,16 +1193,18 @@ function Round({
   return (
     <div className="round">
       <div className="round-meta">
-        <div className="round-left">
-          <div className="bubble small" style={{ background: current?.color }}>
-            {current?.emoji}
+        <div className="round-meta-main">
+          <div className="round-left">
+            <div className="bubble small" style={{ background: current?.color }}>
+              {current?.emoji}
+            </div>
+            <div className="round-text">
+              <div className="round-mode">{mode === "teams" ? "Команды" : "Соло"}</div>
+              <div className="round-name">{current?.name}</div>
+            </div>
           </div>
-          <div className="round-text">
-            <div className="round-mode">{mode === "teams" ? "Команды" : "Соло"}</div>
-            <div className="round-name">{current?.name}</div>
-          </div>
+          <span className="round-pill">{`Слова ${roundProgress}`}</span>
         </div>
-        <span className="round-pill">{`Слова ${roundProgress}`}</span>
         {onExit && (
           <motion.button
             className="round-exit"
@@ -1222,7 +1224,6 @@ function Round({
         running={running}
         current={current}
         dimmed={showTimeoutPrompt}
-        roundProgress={`Слова ${roundProgress}`}
         onTogglePause={onPauseToggle}
       />
 
@@ -1291,7 +1292,7 @@ function Round({
   );
 }
 
-function TimerPacman({ pct, seconds, running, current, dimmed = false, roundProgress, onTogglePause }) {
+function TimerPacman({ pct, seconds, running, current, dimmed = false, onTogglePause }) {
   const safePct = clamp(pct ?? 0, 0, 1);
   const remainingPct = Math.round(safePct * 100);
   const trackInsetPct = 4;
@@ -1313,11 +1314,6 @@ function TimerPacman({ pct, seconds, running, current, dimmed = false, roundProg
           <div className="timer-num">{seconds}s</div>
           <div className="timer-sub">{label}</div>
         </div>
-        {typeof roundProgress === "string" && roundProgress ? (
-          <span className="round-pill pacman-round">{roundProgress}</span>
-        ) : (
-          <span className="round-pill pacman-round" aria-hidden />
-        )}
         <motion.button
           className={`pacman-pause ${running ? "" : "is-paused"}`}
           whileTap={{ scale: 0.9 }}
