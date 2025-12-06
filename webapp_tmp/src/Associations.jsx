@@ -801,12 +801,6 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
             Один объясняет, второй угадывает. Нельзя использовать однокоренные и однозвучные подсказки. Таймер тикает —
             зарабатывайте очки сериями.
           </p>
-          <div className="tips">
-            <div className="tip">
-              <Sparkles size={16} />
-              {tip}
-            </div>
-          </div>
           <div className="cta-row">
             <button className="btn primary" onClick={startRound} disabled={!canStart}>
               <Play size={18} />
