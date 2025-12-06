@@ -372,7 +372,7 @@
   pointer-events: none;
 }
 
-.settings-overlay {
+.quiz-settings.settings-overlay {
   position: fixed;
   inset: 0;
   background:
@@ -386,9 +386,7 @@
   padding: env(safe-area-inset-top) env(safe-area-inset-left) env(safe-area-inset-bottom) env(safe-area-inset-right);
   z-index: 1200;
   overflow: hidden;
-}
-
-.settings-window {
+.quiz-settings-window.settings-window {
   position: relative;
   width: calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right));
   border-radius: 18px;
@@ -408,9 +406,7 @@
   margin: 0;
   flex-shrink: 0;
   overflow-y: auto;
-}
-
-.settings-window::before {
+.quiz-settings-window::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -419,9 +415,7 @@
     radial-gradient(40% 40% at 20% 30%, rgba(139, 92, 246, 0.18), transparent 60%),
     radial-gradient(60% 60% at 80% 50%, rgba(34, 211, 238, 0.18), transparent 65%);
   pointer-events: none;
-}
-
-.settings-window::after {
+.quiz-settings-window::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -433,14 +427,12 @@
   background-repeat: no-repeat;
   mix-blend-mode: screen;
   pointer-events: none;
-}
-
-.settings-window::-webkit-scrollbar {
+.quiz-settings-window::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
 
-.settings-head {
+.quiz-settings-window .settings-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -448,22 +440,22 @@
   flex-wrap: wrap;
 }
 
-.settings-title {
+.quiz-settings-window .settings-title {
   font-size: 20px;
   font-weight: 900;
 }
 
-.settings-title.sm {
+.quiz-settings-window .settings-title.sm {
   font-size: 16px;
 }
 
-.settings-sub {
+.quiz-settings-window .settings-sub {
   color: var(--quiz-muted);
   font-size: 13px;
   margin-top: 2px;
 }
 
-.settings-close {
+.quiz-settings-window .settings-close {
   width: 36px;
   height: 36px;
   border-radius: 12px;
@@ -475,21 +467,21 @@
   box-shadow: var(--quiz-shadow);
 }
 
-.settings-grid {
+.quiz-settings-window .settings-grid {
   margin-top: 12px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 12px;
 }
 
-.field-label {
+.quiz-settings-window .field-label {
   font-size: 11px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--quiz-muted);
 }
 
-.slider-field {
+.quiz-settings-window .slider-field {
   position: relative;
   padding: 12px;
   border-radius: 16px;
@@ -506,7 +498,7 @@
   overflow: hidden;
 }
 
-.slider-field::after {
+.quiz-settings-window .slider-field::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -515,21 +507,21 @@
   pointer-events: none;
 }
 
-.slider-field__top {
+.quiz-settings-window .slider-field__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.slider-field__value {
+.quiz-settings-window .slider-field__value {
   font-weight: 900;
   font-size: 18px;
   color: #38bdf8;
   text-shadow: 0 0 18px rgba(56, 189, 248, 0.35);
 }
 
-.slider-field__control {
+.quiz-settings-window .slider-field__control {
   position: relative;
   margin-top: 12px;
   height: 42px;
@@ -537,7 +529,7 @@
   align-items: center;
 }
 
-.slider-field__rail {
+.quiz-settings-window .slider-field__rail {
   position: absolute;
   left: 0;
   right: 0;
@@ -550,7 +542,7 @@
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
-.slider-field__progress {
+.quiz-settings-window .slider-field__progress {
   position: absolute;
   inset: 0;
   background: linear-gradient(90deg, rgba(56, 189, 248, 0.9), rgba(168, 85, 247, 0.9));
@@ -559,7 +551,7 @@
     0 0 32px rgba(168, 85, 247, 0.3);
 }
 
-.slider-field__input {
+.quiz-settings-window .slider-field__input {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -571,7 +563,7 @@
   margin: 0;
 }
 
-.slider-field__input::-webkit-slider-thumb {
+.quiz-settings-window .slider-field__input::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 22px;
   height: 22px;
@@ -587,7 +579,7 @@
     box-shadow 0.16s ease-out;
 }
 
-.slider-field__input::-moz-range-thumb {
+.quiz-settings-window .slider-field__input::-moz-range-thumb {
   width: 22px;
   height: 22px;
   border-radius: 50%;
@@ -601,25 +593,25 @@
     box-shadow 0.16s ease-out;
 }
 
-.slider-field__input::-webkit-slider-thumb:active,
-.slider-field__input::-moz-range-thumb:active {
+.quiz-settings-window .slider-field__input::-webkit-slider-thumb:active,
+.quiz-settings-window .slider-field__input::-moz-range-thumb:active {
   transform: scale(1.08);
   box-shadow:
     0 0 24px rgba(56, 189, 248, 0.8),
     0 0 0 8px rgba(56, 189, 248, 0.16);
 }
 
-.slider-field__input::-webkit-slider-runnable-track {
+.quiz-settings-window .slider-field__input::-webkit-slider-runnable-track {
   background: transparent;
   height: 10px;
 }
 
-.slider-field__input::-moz-range-track {
+.quiz-settings-window .slider-field__input::-moz-range-track {
   background: transparent;
   height: 10px;
 }
 
-.slider-field__footer {
+.quiz-settings-window .slider-field__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -791,10 +783,10 @@
 }
 
 @media (max-width: 768px) {
-  .settings-overlay {
+  .quiz-settings.settings-overlay {
     padding: calc(8px + env(safe-area-inset-top)) env(safe-area-inset-left) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-right);
   }
-  .settings-window {
+  .quiz-settings-window.settings-window {
     width: calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right));
     max-width: none;
     height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
@@ -803,22 +795,22 @@
     padding: 14px 12px 16px;
     box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
   }
-  .settings-head {
+  .quiz-settings-window .settings-head {
     flex-direction: column;
     align-items: flex-start;
   }
-  .settings-close {
+  .quiz-settings-window .settings-close {
     position: absolute;
     top: 10px;
     right: 10px;
   }
-  .settings-grid {
+  .quiz-settings-window .settings-grid {
     grid-template-columns: 1fr;
   }
-  .settings-toggles {
+  .quiz-settings-window .settings-toggles {
     grid-template-columns: 1fr;
   }
-  .setting-card {
+  .quiz-settings-window .setting-card {
     padding: 12px;
   }
 }
