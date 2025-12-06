@@ -631,17 +631,9 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
 
   const renderSettings = () => (
     <div className="panel">
-      <div className="panel-head with-gear">
-        <div>
-          <p className="eyebrow">Настройки</p>
-          <h3 className="panel-title">Раунд</h3>
-        </div>
-        <div className="settings-gear">
-          <div className="gear-inner">
-            <Settings size={18} />
-          </div>
-          <div className="gear-glow" />
-        </div>
+      <div className="panel-head">
+        <p className="eyebrow">Настройки</p>
+        <h3 className="panel-title">Раунд</h3>
       </div>
       <div className="grid two">
         <label className="field">
@@ -1042,11 +1034,9 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
               exit={{ y: 20, opacity: 0 }}
             >
               <div className="sheet-head">
-                <div>
-                  <p className="eyebrow">Настройки</p>
-                </div>
-                <button className="btn ghost" onClick={() => setSettingsOpen(false)}>
-                  Закрыть
+                <p className="eyebrow">Настройки</p>
+                <button className="icon-btn" onClick={() => setSettingsOpen(false)} aria-label="Закрыть">
+                  <X size={16} />
                 </button>
               </div>
               <div className="sheet-body">
