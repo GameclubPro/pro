@@ -7,7 +7,6 @@ import {
   Settings,
   Sparkles,
   Volume2,
-  VolumeX,
   X,
   Zap,
 } from "lucide-react";
@@ -613,7 +612,6 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
             themes={THEMES}
             selectedThemes={settings.selectedThemes}
             settings={settings}
-            stats={stats}
             onToggleTheme={handleThemeToggle}
             onChangeSetting={handleSettingChange}
             onModeChange={handleModeChange}
@@ -671,7 +669,6 @@ function Landing({
   themes,
   selectedThemes,
   settings,
-  stats,
   onToggleTheme,
   onChangeSetting,
   onModeChange,
@@ -680,20 +677,7 @@ function Landing({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const selectedCount = selectedThemes?.length || 0;
   const totalThemes = Object.keys(themes).length;
-  const modeMeta = CHOICE_MODES.find((m) => m.id === settings.mode) || CHOICE_MODES[1];
   const portalTarget = typeof document !== "undefined" ? document.body : null;
-  const selectedPreview = (() => {
-    const labels = (selectedThemes || []).map((k) => themes[k]?.label).filter(Boolean);
-    if (!labels.length) return "Не выбрано";
-    if (labels.length <= 3) return labels.join(", ");
-    return `${labels.slice(0, 3).join(", ")} +${labels.length - 3}`;
-  })();
-  const rules = [
-    "Без команд: кто угодно выбирает вариант",
-    "Отметь пачки тем и жми «Играть»",
-    "Свайпай вверх/вниз или нажимай на варианты",
-    "Редкие ответы собирают серию",
-  ];
 
   const settingsModal = (
     <AnimatePresence>
@@ -813,39 +797,6 @@ function Landing({
           <ArrowLeft size={18} />
           <span>Назад</span>
         </button>
-        <div className="home-metrics">
-          <span className="pill">Ответов: {stats.answered || 0}</span>
-          <span className="pill">Редких: {stats.rare || 0}</span>
-          <span className="pill">Стрик: {stats.streak || 0}</span>
-        </div>
-        <div className="top-actions">
-          <button
-            className="icon"
-            onClick={() => onChangeSetting?.("sound", !settings.sound)}
-            aria-label="Звук"
-          >
-            {settings.sound ? <Volume2 size={18} /> : <VolumeX size={18} />}
-          </button>
-          <button
-            className="icon"
-            onClick={() => onChangeSetting?.("haptics", !settings.haptics)}
-            aria-label="Вибро"
-          >
-            <Sparkles size={18} />
-          </button>
-          <motion.button
-            className="settings-gear"
-            onClick={() => setSettingsOpen(true)}
-            whileTap={{ scale: 0.92 }}
-            whileHover={{ rotate: -4 }}
-            aria-label="Открыть настройки"
-          >
-            <span className="gear-inner">
-              <Settings size={18} />
-            </span>
-            <span className="gear-glow" />
-          </motion.button>
-        </div>
       </div>
 
       <div className="panel hero-panel">
@@ -875,6 +826,25 @@ function Landing({
           })}
         </div>
 
+        <div className="section-header">
+          <div>
+            <div className="section-title">Настройки</div>
+            <div className="section-sub">Звук и темы вопросов</div>
+          </div>
+          <motion.button
+            className="settings-gear"
+            onClick={() => setSettingsOpen(true)}
+            whileTap={{ scale: 0.92 }}
+            whileHover={{ rotate: -4 }}
+            aria-label="Открыть настройки"
+          >
+            <span className="gear-inner">
+              <Settings size={18} />
+            </span>
+            <span className="gear-glow" />
+          </motion.button>
+        </div>
+
         <div className="hero-actions compact">
           <button className="primary large" onClick={onStart}>
             <Zap size={18} />
@@ -883,38 +853,6 @@ function Landing({
           <button className="ghost-btn" onClick={() => setSettingsOpen(true)}>
             <Settings size={16} />
             Настройки
-          </button>
-        </div>
-
-        <div className="metric-row">
-          <div className="metric-card">
-            <div className="metric-label">Режим</div>
-            <div className="metric-value">{modeMeta.label}</div>
-          </div>
-          <div className="metric-card">
-            <div className="metric-label">Ответов</div>
-            <div className="metric-value">{stats.answered || 0}</div>
-          </div>
-          <div className="metric-card">
-            <div className="metric-label">Лучшая серия</div>
-            <div className="metric-value">{stats.bestStreak || stats.streak || 0}</div>
-          </div>
-          <div className="metric-card">
-            <div className="metric-label">Тем выбрано</div>
-            <div className="metric-value">{selectedCount} / {totalThemes}</div>
-            <div className="metric-hint">{selectedPreview}</div>
-          </div>
-        </div>
-
-        <div className="card-ghost rules">
-          <p className="eyebrow">Как играем</p>
-          <ul>
-            {rules.map((r) => (
-              <li key={r}>{r}</li>
-            ))}
-          </ul>
-          <button className="ghost-btn compact" onClick={() => setSettingsOpen(true)}>
-            Настроить темы
           </button>
         </div>
       </div>
