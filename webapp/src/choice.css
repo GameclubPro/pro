@@ -608,9 +608,11 @@
 }
 
 .choice-chips-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  display: flex;
   gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 
 .choice-seg {
@@ -1047,9 +1049,6 @@
   }
   .choice-top {
     flex-wrap: wrap;
-  }
-  .choice-chips-row {
-    grid-template-columns: 1fr;
   }
   .choice-section-header {
     flex-direction: column;
