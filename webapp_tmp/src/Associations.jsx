@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   Clock,
   Flag,
-  Gauge,
   ListChecks,
   Pause,
   Play,
@@ -78,6 +77,13 @@ const TIPS = [
   "Ищи противоположности и ассоциации, а не перевод.",
   "Дроби на категории: кто? что делает? зачем? где встречается?",
 ];
+
+const PACK_STICKERS = {
+  easy: "🌱",
+  medium: "⚡️",
+  hard: "🔥",
+  custom: "🎨",
+};
 
 const randomId = () =>
   (typeof crypto !== "undefined" && crypto.randomUUID
@@ -261,6 +267,19 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
   const canStart = roster.length >= 2 && wordPool.length > 0;
   const timePct = clamp(timerMs / (settings.roundSeconds * 1000 || 1), 0, 1);
   const canPass = passCount < settings.passLimit;
+  const roundPct = useMemo(
+    () => clamp(Math.round(((settings.roundSeconds - 30) / (120 - 30)) * 100), 0, 100),
+    [settings.roundSeconds]
+  );
+  const passPct = useMemo(() => clamp(Math.round((settings.passLimit / 6) * 100), 0, 100), [settings.passLimit]);
+  const foulPct = useMemo(
+    () => clamp(Math.round(((settings.foulPenalty - 1) / (3 - 1)) * 100), 0, 100),
+    [settings.foulPenalty]
+  );
+  const passPenaltyPct = useMemo(
+    () => clamp(Math.round((settings.passPenalty / 2) * 100), 0, 100),
+    [settings.passPenalty]
+  );
 
   useEffect(() => {
     persist(STORAGE_KEYS.settings, settings);
@@ -505,8 +524,6 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
     setSettings((s) => ({ ...s, sound: !s.sound }));
   };
 
-  const soundToggleIcon = settings.sound ? <Volume2 size={18} /> : <VolumeX size={18} />;
-
   const summaryStats = useMemo(() => {
     const guessed = results.filter((r) => r.status === "guessed").length;
     const passed = results.filter((r) => r.status === "pass").length;
@@ -517,15 +534,12 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
   const streakLabel = streak >= 3 ? "поток" : streak >= 1 ? "серия" : null;
 
   const renderRoster = () => (
-    <div className="roster-block panel">
-      <div className="panel-head">
-        <p className="eyebrow">Состав</p>
-        <div className="section-header">
-          <h3 className="section-title">Кто играет</h3>
-          <div className="pill ghost">
-            <Users size={16} />
-            {roster.length}
-          </div>
+    <div className="settings-block">
+      <div className="section-header">
+        <h3 className="section-title">Состав</h3>
+        <div className="pill ghost">
+          <Users size={16} />
+          {roster.length}
         </div>
       </div>
       <div className="roster-list">
@@ -562,47 +576,48 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
   );
 
   const renderWordControls = () => (
-    <div className="panel">
-      <div className="panel-head">
-        <p className="eyebrow">Слова</p>
-        <div className="section-header">
-          <h3 className="section-title">Наборы</h3>
-          <div className="pill ghost">
-            <ListChecks size={16} />
-            {wordPool.length} слов
-          </div>
-        </div>
+    <div className="settings-block">
+      <div className="section-header">
+        <div className="section-title">Колода слов</div>
+        <span className="pill">Всего: {wordPool.length}</span>
       </div>
-      <div className="chips-row">
-        {["easy", "medium", "hard"].map((pack) => {
-          const active = normalizedPacks.includes(pack);
+      <div className="pack-grid">
+        {[
+          { key: "easy", label: "Лайт" },
+          { key: "medium", label: "Стандарт" },
+          { key: "hard", label: "Хард" },
+          { key: "custom", label: "Свои" },
+        ].map((p) => {
+          const active = normalizedPacks.includes(p.key);
           return (
             <button
-              key={pack}
-              className={`seg ${active ? "seg-active" : ""}`}
-              onClick={() => togglePack(pack)}
+              key={p.key}
+              className={`pack-chip ${active ? "pack-active" : ""}`}
+              onClick={() => togglePack(p.key)}
+              aria-pressed={active}
             >
-              <Sparkles size={16} />
-              {pack === "easy" && "Базовые"}
-              {pack === "medium" && "Продвинутые"}
-              {pack === "hard" && "Сложные"}
+              <div className="pack-top">
+                <span className="pack-sticker" aria-hidden>
+                  {PACK_STICKERS[p.key]}
+                </span>
+                <span className="pack-label">{p.label}</span>
+                {active && (
+                  <span className="pill check-pill" aria-label="Пак выбран">
+                    <Check size={14} />
+                  </span>
+                )}
+              </div>
             </button>
           );
         })}
-        <button
-          className={`seg ${normalizedPacks.includes("custom") ? "seg-active" : ""}`}
-          onClick={() => togglePack("custom")}
-        >
-          <Wand2 size={16} />
-          Свои
-        </button>
       </div>
-      <div className="custom-words">
+      <div className="custom-words custom-block">
         <div className="section-header">
           <h4 className="section-title">Свои слова</h4>
           <span className="muted">{customWords.length} шт.</span>
         </div>
         <textarea
+          className="croco-textarea"
           value={customText}
           onChange={(e) => setCustomText(e.target.value)}
           rows={4}
@@ -629,107 +644,134 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
     </div>
   );
 
+  const renderToggles = () => (
+    <div className="settings-toggles">
+      <button
+        className={`toggle-chip ${settings.autoDifficulty ? "on" : ""}`}
+        onClick={() => setSettings((s) => ({ ...s, autoDifficulty: !s.autoDifficulty }))}
+      >
+        <Activity size={16} />
+        Авто-сложность
+        <span className="toggle-dot" />
+      </button>
+      <button
+        className={`toggle-chip ${settings.autoRotate ? "on" : ""}`}
+        onClick={() => setSettings((s) => ({ ...s, autoRotate: !s.autoRotate }))}
+      >
+        <ArrowRightLeft size={16} />
+        Ротация ролей
+        <span className="toggle-dot" />
+      </button>
+      <button className={`toggle-chip ${settings.sound ? "on" : ""}`} onClick={toggleSound}>
+        {settings.sound ? <Volume2 size={16} /> : <VolumeX size={16} />}
+        Звук
+        <span className="toggle-dot" />
+      </button>
+    </div>
+  );
+
   const renderSettings = () => (
-    <div className="panel">
-      <div className="panel-head">
-        <h3 className="panel-title">Раунд</h3>
+    <div className="settings-grid">
+      <div className="setting-card accent">
+        <div className="setting-card-top">
+          <span className="pill">Таймер</span>
+          <div className="setting-number">{settings.roundSeconds} c</div>
+        </div>
+        <div className="settings-slider-row">
+          <input
+            type="range"
+            min="30"
+            max="120"
+            step="5"
+            value={settings.roundSeconds}
+            onChange={(e) => setSettings((s) => ({ ...s, roundSeconds: Number(e.target.value) }))}
+            className="settings-slider"
+            style={{ "--slider-progress": `${roundPct}%` }}
+          />
+          <div className="meter-scale">
+            <span>30с</span>
+            <span>120с</span>
+          </div>
+        </div>
       </div>
-      <div className="grid two">
-        <label className="field">
-          <div className="label">Время на раунд</div>
-          <div className="slider-row">
-            <input
-              type="range"
-              min="30"
-              max="120"
-              step="5"
-              value={settings.roundSeconds}
-              onChange={(e) => setSettings((s) => ({ ...s, roundSeconds: Number(e.target.value) }))}
-            />
-            <div className="pill ghost">
-              <Clock size={14} />
-              {settings.roundSeconds} c
-            </div>
+
+      <div className="setting-card glass">
+        <div className="setting-card-top">
+          <span className="pill">Лимит пасов</span>
+          <div className="setting-number">{settings.passLimit}</div>
+        </div>
+        <div className="settings-slider-row">
+          <input
+            type="range"
+            min="0"
+            max="6"
+            step="1"
+            value={settings.passLimit}
+            onChange={(e) => setSettings((s) => ({ ...s, passLimit: Number(e.target.value) }))}
+            className="settings-slider"
+            style={{ "--slider-progress": `${passPct}%` }}
+          />
+          <div className="meter-scale">
+            <span>0</span>
+            <span>6</span>
           </div>
-        </label>
-        <label className="field">
-          <div className="label">Лимит пасов</div>
-          <div className="slider-row">
-            <input
-              type="range"
-              min="0"
-              max="6"
-              step="1"
-              value={settings.passLimit}
-              onChange={(e) => setSettings((s) => ({ ...s, passLimit: Number(e.target.value) }))}
-            />
-            <div className="pill ghost">
-              <Gauge size={14} />
-              {settings.passLimit}
-            </div>
-          </div>
-        </label>
-        <label className="field">
-          <div className="label">Штраф за однокоренное</div>
-          <div className="slider-row">
-            <input
-              type="range"
-              min="1"
-              max="3"
-              step="1"
-              value={settings.foulPenalty}
-              onChange={(e) => setSettings((s) => ({ ...s, foulPenalty: Number(e.target.value) }))}
-            />
-            <div className="pill ghost">
-              -{settings.foulPenalty}
-            </div>
-          </div>
-        </label>
-        <label className="field">
-          <div className="label">Пасс штраф</div>
-          <div className="slider-row">
-            <input
-              type="range"
-              min="0"
-              max="2"
-              step="1"
-              value={settings.passPenalty}
-              onChange={(e) => setSettings((s) => ({ ...s, passPenalty: Number(e.target.value) }))}
-            />
-            <div className="pill ghost">
-              {settings.passPenalty ? `-${settings.passPenalty}` : "без штрафа"}
-            </div>
-          </div>
-        </label>
+        </div>
       </div>
-      <div className="toggles">
-        <button
-          className={`toggle ${settings.autoDifficulty ? "on" : ""}`}
-          onClick={() => setSettings((s) => ({ ...s, autoDifficulty: !s.autoDifficulty }))}
-        >
-          <div className="dot" />
-          Авто-сложность
-        </button>
-        <button
-          className={`toggle ${settings.autoRotate ? "on" : ""}`}
-          onClick={() => setSettings((s) => ({ ...s, autoRotate: !s.autoRotate }))}
-        >
-          <div className="dot" />
-          Ротация ролей
-        </button>
-        <button className={`toggle ${settings.sound ? "on" : ""}`} onClick={toggleSound}>
-          <div className="dot" />
-          Звук {soundToggleIcon}
-        </button>
+
+      <div className="setting-card glass">
+        <div className="setting-card-top">
+          <span className="pill">Штраф за однокоренное</span>
+          <div className="setting-number">-{settings.foulPenalty}</div>
+        </div>
+        <div className="settings-slider-row">
+          <input
+            type="range"
+            min="1"
+            max="3"
+            step="1"
+            value={settings.foulPenalty}
+            onChange={(e) => setSettings((s) => ({ ...s, foulPenalty: Number(e.target.value) }))}
+            className="settings-slider"
+            style={{ "--slider-progress": `${foulPct}%` }}
+          />
+          <div className="meter-scale">
+            <span>-1</span>
+            <span>-3</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="setting-card glass">
+        <div className="setting-card-top">
+          <span className="pill">Пасс штраф</span>
+          <div className="setting-number">
+            {settings.passPenalty ? `-${settings.passPenalty}` : "без штрафа"}
+          </div>
+        </div>
+        <div className="settings-slider-row">
+          <input
+            type="range"
+            min="0"
+            max="2"
+            step="1"
+            value={settings.passPenalty}
+            onChange={(e) => setSettings((s) => ({ ...s, passPenalty: Number(e.target.value) }))}
+            className="settings-slider"
+            style={{ "--slider-progress": `${passPenaltyPct}%` }}
+          />
+          <div className="meter-scale">
+            <span>0</span>
+            <span>-2</span>
+          </div>
+        </div>
       </div>
     </div>
   );
 
   const renderPairPicker = () => (
-    <div className="panel">
-      <div className="panel-head">
-        <p className="eyebrow">Роли</p>
-        <h3 className="section-title">Кто объясняет</h3>
+    <div className="settings-block">
+      <div className="section-header">
+        <h3 className="section-title">Роли</h3>
       </div>
       <div className="pair-grid">
         <div className="pair-card">
@@ -1021,29 +1063,40 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
       <AnimatePresence>
         {settingsOpen && (
           <motion.div
-            className="settings-overlay"
+            className="croco-settings-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            onClick={() => setSettingsOpen(false)}
           >
             <motion.div
-              className="panel settings-sheet"
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 20, opacity: 0 }}
+              className="croco-settings-window"
+              initial={{ y: 30, opacity: 0, scale: 0.98 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 14, opacity: 0, scale: 0.98 }}
+              transition={{ type: "tween", ease: "easeOut", duration: 0.22 }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="sheet-head">
-                <p className="eyebrow">Настройки</p>
-                <button className="icon-btn" onClick={() => setSettingsOpen(false)} aria-label="Закрыть">
+              <div className="settings-head">
+                <div>
+                  <div className="settings-title">Настройки игры</div>
+                  <div className="muted">таймер, слова, роли, состав</div>
+                </div>
+                <motion.button
+                  className="settings-close"
+                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ rotate: 4 }}
+                  onClick={() => setSettingsOpen(false)}
+                  aria-label="Закрыть"
+                >
                   <X size={16} />
-                </button>
+                </motion.button>
               </div>
-              <div className="sheet-body">
-                {renderSettings()}
-                {renderWordControls()}
-                {renderPairPicker()}
-                {renderRoster()}
-              </div>
+              {renderSettings()}
+              {renderWordControls()}
+              {renderToggles()}
+              {renderPairPicker()}
+              {renderRoster()}
             </motion.div>
           </motion.div>
         )}
