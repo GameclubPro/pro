@@ -38,8 +38,6 @@ import {
 } from "./crocodile-helpers";
 import "./crocodile.css";
 import "./associations.css";
-import crocoHands from "../crocohands.png";
-import crocoLegs from "../crocolegs.png";
 
 const STORAGE_KEYS = {
   settings: "pt_explain_settings_v1",
@@ -820,12 +818,6 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
               Нужно минимум 2 игрока и хоть один набор слов
             </div>
           )}
-        </div>
-        <div className="croco-hands hold-panel">
-          <img src={crocoHands} alt="" />
-        </div>
-        <div className="croco-legs">
-          <img src={crocoLegs} alt="" />
         </div>
       </div>
       {renderSettings()}
