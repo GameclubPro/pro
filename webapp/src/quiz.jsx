@@ -938,14 +938,14 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
                       onClick={() => toggleCategory(key)}
                       style={{ "--cat-from": meta.from, "--cat-to": meta.to }}
                       aria-pressed={active}
-                      >
-                        <span className="cat-icon">{meta.icon}</span>
-                        <div className="cat-text">
-                          <div className="cat-name">{meta.label}</div>
-                        </div>
-                        <span className={`cat-check ${active ? "on" : ""}`} aria-hidden>
-                          ✓
-                        </span>
+                    >
+                      <span className="cat-icon">{meta.icon}</span>
+                      <div className="cat-text">
+                        <div className="cat-name">{meta.label}</div>
+                      </div>
+                      <span className={`cat-check ${active ? "on" : ""}`} aria-hidden>
+                        ✓
+                      </span>
                     </motion.button>
                   );
                 })}
@@ -976,10 +976,10 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
                         <div className="difficulty-labels">
                           <div className="difficulty-label">{item.label}</div>
                         </div>
+                        <span className={`cat-check diff ${active ? "on" : ""}`} aria-hidden>
+                          ✓
+                        </span>
                       </div>
-                      <span className={`difficulty-active ${active ? "on" : ""}`}>
-                        {active ? "Выбрано" : "Нажми, чтобы выбрать"}
-                      </span>
                     </motion.button>
                   );
                 })}

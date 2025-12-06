@@ -759,6 +759,7 @@
   font-size: 13px;
   color: var(--quiz-muted);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transform: translateY(-3px);
 }
 
 .cat-check.on {
@@ -766,6 +767,11 @@
   color: #041017;
   border: none;
   box-shadow: 0 10px 26px color-mix(in srgb, var(--cat-to) 28%, rgba(0, 0, 0, 0.45));
+}
+
+.cat-check.diff {
+  margin-left: auto;
+  transform: translateY(-2px);
 }
 
 .difficulty-grid {
@@ -851,24 +857,6 @@
   color: var(--quiz-muted);
   font-size: 13px;
   line-height: 1.3;
-}
-
-.difficulty-active {
-  position: relative;
-  z-index: 1;
-  font-size: 12px;
-  font-weight: 800;
-  padding: 6px 8px;
-  border-radius: 10px;
-  border: 1px solid var(--quiz-border);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.difficulty-active.on {
-  background: linear-gradient(135deg, var(--diff-from), var(--diff-to));
-  color: #041017;
-  border: none;
-  box-shadow: 0 10px 28px color-mix(in srgb, var(--diff-to) 28%, rgba(0, 0, 0, 0.4));
 }
 
 .roster-card {
