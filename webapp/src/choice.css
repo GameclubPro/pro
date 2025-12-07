@@ -3,6 +3,7 @@
 .choice {
   position: relative;
   min-height: 100dvh;
+  height: 100dvh;
   background:
     radial-gradient(160% 120% at 20% 10%, rgba(34, 211, 238, 0.18), transparent 60%),
     radial-gradient(180% 120% at 90% 0%, rgba(236, 72, 153, 0.12), transparent 55%),
@@ -10,7 +11,7 @@
     #060a11;
   color: #e9edf5;
   font-family: "Space Grotesk", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .choice-bg {
@@ -58,6 +59,8 @@
   display: grid;
   gap: 14px;
   min-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-y: auto;
   align-content: start;
 }
 
