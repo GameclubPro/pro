@@ -943,7 +943,6 @@ function Landing({
             <span className="choice-gear-inner">
               <Settings size={18} />
             </span>
-            <span className="choice-gear-glow" />
           </motion.button>
         </div>
 
