@@ -232,7 +232,7 @@
 
 .croco-legs {
   position: absolute;
-  left: 57%;
+  left: 64%;
   top: 100%;
   transform: translate(-50%, 0%);
   width: min(108%, 770px);
@@ -336,7 +336,7 @@
     transform: translate(26%, -2px) rotate(3deg);
   }
   .croco-legs {
-    left: 59%;
+    left: 66%;
     transform: translate(-50%, 0%);
     width: min(112%, 640px);
     max-width: 800px;
