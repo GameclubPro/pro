@@ -294,12 +294,13 @@
 .setup-panel-wrap .croco-hands.hold-panel .hand {
   width: clamp(120px, 22vw, 180px);
   max-width: 36%;
+  flex-shrink: 0;
 }
 .setup-panel-wrap .croco-hands.hold-panel .hand-left {
-  transform: translateY(-6px) rotate(-2deg);
+  transform: translate(-12%, -6px) rotate(-2deg);
 }
 .setup-panel-wrap .croco-hands.hold-panel .hand-right {
-  transform: translateY(-4px) rotate(3deg);
+  transform: translate(12%, -4px) rotate(3deg);
 }
 
 .roster-shell {
@@ -326,6 +327,13 @@
   }
   .setup-panel-wrap .croco-hands.hold-panel .hand {
     width: clamp(110px, 28vw, 160px);
+    max-width: 40%;
+  }
+  .setup-panel-wrap .croco-hands.hold-panel .hand-left {
+    transform: translate(-16%, -4px) rotate(-2deg);
+  }
+  .setup-panel-wrap .croco-hands.hold-panel .hand-right {
+    transform: translate(16%, -2px) rotate(3deg);
   }
   .croco-legs {
     transform: translate(-50%, -4%);
