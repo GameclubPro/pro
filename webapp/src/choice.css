@@ -685,6 +685,97 @@
   margin-top: 2px;
 }
 
+.choice-diff-pill {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.choice-diff-pill-btn {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e9edf5;
+  cursor: pointer;
+  min-width: 170px;
+}
+
+.choice-diff-pill-btn.open {
+  border-color: rgba(34, 211, 238, 0.7);
+  box-shadow: 0 10px 24px rgba(34, 211, 238, 0.2);
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.14), rgba(139, 92, 246, 0.12));
+}
+
+.choice-diff-pill-label {
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.choice-diff-caret {
+  color: #9fb2c5;
+}
+
+.choice-diff-emoji.tiny {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  font-size: 16px;
+}
+
+.choice-diff-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 220px;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(9, 21, 30, 0.95);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+  z-index: 6;
+  display: grid;
+  gap: 6px;
+}
+
+.choice-diff-menu-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e9edf5;
+  text-align: left;
+}
+
+.choice-diff-menu-item.on {
+  border-color: rgba(34, 211, 238, 0.7);
+  box-shadow: 0 10px 24px rgba(34, 211, 238, 0.2);
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.12), rgba(139, 92, 246, 0.12));
+}
+
+.choice-diff-menu-labels {
+  display: grid;
+  gap: 2px;
+}
+
+.choice-diff-menu-title {
+  font-weight: 800;
+}
+
+.choice-diff-menu-tag {
+  font-size: 12px;
+  color: #9fb2c5;
+}
+
 .choice-difficulty-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -1109,6 +1200,15 @@
   .choice-section-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .choice-diff-pill,
+  .choice-diff-pill-btn,
+  .choice-diff-menu {
+    width: 100%;
+  }
+  .choice-diff-menu {
+    left: 0;
+    right: auto;
   }
   .split {
     grid-template-columns: 1fr;

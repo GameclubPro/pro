@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
   Check,
+  ChevronDown,
   Settings,
   Sparkles,
   Volume2,
@@ -785,11 +786,32 @@ function Landing({
   onRemoveMember,
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [difficultyMenuOpen, setDifficultyMenuOpen] = useState(false);
+  const difficultyMenuRef = useRef(null);
   const modeIsSolo = settings.mode === "solo";
   const minPlayers = modeIsSolo ? 1 : 1;
   const selectedCount = selectedThemes?.length || 0;
   const totalThemes = Object.keys(themes).length;
   const portalTarget = typeof document !== "undefined" ? document.body : null;
+  const currentDifficulty = CHOICE_DIFFICULTIES.find((d) => d.id === settings.difficulty) || CHOICE_DIFFICULTIES[0];
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (!difficultyMenuRef.current) return;
+      if (!difficultyMenuRef.current.contains(e.target)) setDifficultyMenuOpen(false);
+    };
+    const handleKey = (e) => {
+      if (e.key === "Escape") setDifficultyMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("touchstart", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("touchstart", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, []);
 
   const settingsModal = (
     <AnimatePresence>
@@ -992,6 +1014,57 @@ function Landing({
           <div>
             <div className="choice-section-title">Сложность</div>
             <div className="choice-section-sub">Выбери настроение раунда</div>
+          </div>
+          <div className="choice-diff-pill" ref={difficultyMenuRef}>
+            <motion.button
+              className={`choice-diff-pill-btn ${difficultyMenuOpen ? "open" : ""}`}
+              whileTap={{ scale: 0.97 }}
+              whileHover={{ y: -1 }}
+              onClick={() => setDifficultyMenuOpen((prev) => !prev)}
+              aria-haspopup="listbox"
+              aria-expanded={difficultyMenuOpen}
+              type="button"
+            >
+              <span className="choice-diff-emoji tiny">{currentDifficulty?.emoji}</span>
+              <span className="choice-diff-pill-label">{currentDifficulty?.label}</span>
+              <ChevronDown size={14} className="choice-diff-caret" />
+            </motion.button>
+            <AnimatePresence>
+              {difficultyMenuOpen ? (
+                <motion.div
+                  className="choice-diff-menu"
+                  role="listbox"
+                  initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                  transition={{ duration: 0.16 }}
+                >
+                  {CHOICE_DIFFICULTIES.map((d) => {
+                    const active = settings.difficulty === d.id;
+                    return (
+                      <button
+                        key={d.id}
+                        className={`choice-diff-menu-item ${active ? "on" : ""}`}
+                        onClick={() => {
+                          onDifficultyChange?.(d.id);
+                          setDifficultyMenuOpen(false);
+                        }}
+                        aria-pressed={active}
+                        role="option"
+                        type="button"
+                      >
+                        <span className="choice-diff-emoji tiny">{d.emoji}</span>
+                        <div className="choice-diff-menu-labels">
+                          <span className="choice-diff-menu-title">{d.label}</span>
+                          {active ? <span className="choice-diff-menu-tag">Текущий уровень</span> : null}
+                        </div>
+                        {active ? <Check size={14} /> : null}
+                      </button>
+                    );
+                  })}
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
           </div>
         </div>
         <div className="choice-difficulty-row">
