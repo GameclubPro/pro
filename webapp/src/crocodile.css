@@ -215,6 +215,7 @@
   position: absolute;
   display: flex;
   justify-content: center;
+  align-items: center;
   pointer-events: none;
   z-index: 3;
 }
@@ -279,16 +280,26 @@
 }
 
 .setup-panel-wrap .croco-hands.hold-panel {
-  top: clamp(96px, 18vw, 150px);
+  top: clamp(92px, 18vw, 142px);
   left: 50%;
   transform: translateX(-50%);
-  width: calc(100% + 40px);
-  max-width: 900px;
+  width: min(96%, 780px);
+  max-width: 880px;
+  padding: 0 clamp(12px, 4vw, 28px);
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: clamp(6px, 2vw, 18px);
   z-index: 3;
 }
-.setup-panel-wrap .croco-hands.hold-panel img {
-  width: 100%;
-  max-width: none;
+.setup-panel-wrap .croco-hands.hold-panel .hand {
+  width: clamp(120px, 22vw, 180px);
+  max-width: 36%;
+}
+.setup-panel-wrap .croco-hands.hold-panel .hand-left {
+  transform: translateY(-6px) rotate(-2deg);
+}
+.setup-panel-wrap .croco-hands.hold-panel .hand-right {
+  transform: translateY(-4px) rotate(3deg);
 }
 
 .roster-shell {
@@ -307,9 +318,14 @@
     padding-bottom: calc(var(--croco-legs-space) + 24px);
   }
   .setup-panel-wrap .croco-hands.hold-panel {
-    top: clamp(88px, 22vw, 150px);
-    width: calc(100% + 28px);
-    max-width: 760px;
+    top: clamp(86px, 21vw, 138px);
+    width: min(98%, 640px);
+    max-width: 720px;
+    padding: 0 clamp(10px, 5vw, 22px);
+    gap: clamp(6px, 3vw, 14px);
+  }
+  .setup-panel-wrap .croco-hands.hold-panel .hand {
+    width: clamp(110px, 28vw, 160px);
   }
   .croco-legs {
     transform: translate(-50%, -4%);

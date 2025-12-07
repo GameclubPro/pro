@@ -26,7 +26,8 @@ import {
   removeCustomWordAt,
 } from "./crocodile-helpers";
 import crocoHead from "../crocohead.png";
-import crocoHands from "../crocohands.png";
+import crocoHandsLeft from "../crocohandsleft.png";
+import crocoHandsRight from "../crocohandsright.png";
 import crocoLegs from "../crocolegs.png";
 import "./crocodile.css";
 
@@ -1027,7 +1028,8 @@ function Setup({
             <img src={crocoHead} alt="" />
           </div>
           <div className="croco-hands hold-panel" aria-hidden="true">
-            <img src={crocoHands} alt="" />
+            <img src={crocoHandsLeft} alt="" className="hand hand-left" />
+            <img src={crocoHandsRight} alt="" className="hand hand-right" />
           </div>
           <div className="croco-legs" aria-hidden="true">
             <img src={crocoLegs} alt="" />
