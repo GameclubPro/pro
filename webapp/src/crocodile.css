@@ -180,7 +180,7 @@
   position: relative;
   display: grid;
   justify-items: center;
-  --croco-head-space: clamp(160px, 24vw, 210px);
+  --croco-head-space: clamp(240px, 36vw, 315px);
   --croco-legs-space: clamp(180px, 32vw, 280px);
   padding-top: calc(env(safe-area-inset-top) + var(--croco-head-space));
   padding-bottom: calc(var(--croco-legs-space) + clamp(80px, 18vw, 140px));
@@ -199,7 +199,7 @@
   left: 50%;
   top: 0;
   transform: translate(-50%, -100%);
-  width: clamp(200px, 48vw, 260px);
+  width: clamp(300px, 72vw, 390px);
   pointer-events: none;
   filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.45));
   z-index: 4;
@@ -347,7 +347,7 @@
 
 @media (max-width: 480px) {
   .croco-head {
-    width: clamp(160px, 46vw, 200px);
+    width: clamp(240px, 69vw, 300px);
   }
 }
 
