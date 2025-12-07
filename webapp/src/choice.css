@@ -706,11 +706,6 @@
   font-size: 16px;
 }
 
-.choice-section-sub {
-  color: #9fb2c5;
-  margin-top: 2px;
-}
-
 .choice-diff-pill {
   position: relative;
   flex-shrink: 0;
@@ -1228,12 +1223,9 @@
     flex-wrap: wrap;
   }
   .choice-section-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .choice-diff-pill,
-  .choice-diff-pill-btn {
-    width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
   }
   .split {
     grid-template-columns: 1fr;

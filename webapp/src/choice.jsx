@@ -936,17 +936,6 @@ function Landing({
             <div className="choice-panel-title">Выбор без команд</div>
             <p className="choice-panel-sub">Просто пачки вопросов, никаких участников. Залетайте в раунд и отвечайте.</p>
           </div>
-          <motion.button
-            className="choice-gear"
-            onClick={() => setSettingsOpen(true)}
-            whileTap={{ scale: 0.92 }}
-            whileHover={{ rotate: -4 }}
-            aria-label="Открыть настройки"
-          >
-            <span className="choice-gear-inner">
-              <Settings size={18} />
-            </span>
-          </motion.button>
         </div>
 
         <div className="choice-chips-row">
@@ -971,7 +960,6 @@ function Landing({
         <div className="choice-section-header">
           <div>
             <div className="choice-section-title">Сложность</div>
-            <div className="choice-section-sub">Выбери настроение раунда</div>
           </div>
           <div className="choice-diff-pill">
             <motion.button
@@ -1033,7 +1021,6 @@ function Landing({
             <div className="choice-section-header">
               <div>
                 <div className="choice-section-title">Состав</div>
-                <div className="choice-section-sub">Минимум 2 участника, назови и раскрась</div>
               </div>
             </div>
             <div className="choice-roster-list">
