@@ -10,7 +10,7 @@
     #060a11;
   color: #e9edf5;
   font-family: "Space Grotesk", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .choice-bg {
@@ -258,7 +258,7 @@
   gap: 10px;
   align-items: center;
   justify-content: space-between;
-  margin: 10px 0 6px;
+  margin: 10px 0 0;
   padding: 10px 12px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.04);
@@ -714,6 +714,8 @@
 .choice-diff-pill {
   position: relative;
   flex-shrink: 0;
+  margin-left: auto;
+  margin-bottom: 6px;
 }
 
 .choice-diff-pill-btn {
@@ -753,10 +755,9 @@
 }
 
 .choice-diff-menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 8px);
-  width: 220px;
+  position: fixed;
+  inset: auto;
+  width: 240px;
   padding: 6px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -768,6 +769,7 @@
   gap: 6px;
   max-height: min(320px, 60vh);
   overflow-y: auto;
+  max-width: calc(100vw - 12px);
 }
 
 .choice-diff-menu-item {
@@ -1230,13 +1232,8 @@
     align-items: flex-start;
   }
   .choice-diff-pill,
-  .choice-diff-pill-btn,
-  .choice-diff-menu {
+  .choice-diff-pill-btn {
     width: 100%;
-  }
-  .choice-diff-menu {
-    left: 0;
-    right: auto;
   }
   .split {
     grid-template-columns: 1fr;
