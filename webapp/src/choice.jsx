@@ -1067,22 +1067,6 @@ function Landing({
             </AnimatePresence>
           </div>
         </div>
-        <div className="choice-difficulty-row">
-          {CHOICE_DIFFICULTIES.map((d) => {
-            const active = settings.difficulty === d.id;
-            return (
-              <button
-                key={d.id}
-                className={`choice-diff ${active ? "on" : ""}`}
-                onClick={() => onDifficultyChange?.(d.id)}
-                aria-pressed={active}
-              >
-                <span className="choice-diff-emoji">{d.emoji}</span>
-                <span className="choice-diff-label">{d.label}</span>
-              </button>
-            );
-          })}
-        </div>
 
         <div className="choice-hero-actions">
           <button className="choice-gear hero" onClick={() => setSettingsOpen(true)} aria-label="Настройки">
