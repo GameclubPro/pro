@@ -10,7 +10,7 @@
     #060a11;
   color: #e9edf5;
   font-family: "Space Grotesk", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 .choice-bg {
@@ -715,7 +715,7 @@
   position: relative;
   flex-shrink: 0;
   margin-left: auto;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .choice-diff-pill-btn {
@@ -764,7 +764,7 @@
   background: rgba(9, 21, 30, 0.95);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(12px);
-  z-index: 6;
+  z-index: 20;
   display: grid;
   gap: 6px;
   max-height: min(320px, 60vh);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -820,6 +820,7 @@ function Landing({
     const handleKey = (e) => {
       if (e.key === "Escape") setDifficultyMenuOpen(false);
     };
+    updateDifficultyMenuPos();
     document.addEventListener("mousedown", handleClick);
     document.addEventListener("touchstart", handleClick);
     document.addEventListener("keydown", handleKey);
@@ -830,7 +831,7 @@ function Landing({
     };
   }, [difficultyMenuOpen]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!difficultyMenuOpen) return undefined;
     updateDifficultyMenuPos();
     const handle = () => updateDifficultyMenuPos();
