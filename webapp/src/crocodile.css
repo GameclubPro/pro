@@ -283,9 +283,9 @@
   top: clamp(92px, 18vw, 142px);
   left: 50%;
   transform: translateX(-50%);
-  width: min(96%, 780px);
-  max-width: 880px;
-  padding: 0 clamp(12px, 4vw, 28px);
+  width: calc(100% + clamp(80px, 18vw, 200px));
+  max-width: none;
+  padding: 0 clamp(20px, 5vw, 32px);
   justify-content: space-between;
   align-items: flex-start;
   gap: clamp(6px, 2vw, 18px);
@@ -297,10 +297,10 @@
   flex-shrink: 0;
 }
 .setup-panel-wrap .croco-hands.hold-panel .hand-left {
-  transform: translate(-12%, -6px) rotate(-2deg);
+  transform: translate(-18%, -6px) rotate(-2deg);
 }
 .setup-panel-wrap .croco-hands.hold-panel .hand-right {
-  transform: translate(12%, -4px) rotate(3deg);
+  transform: translate(18%, -4px) rotate(3deg);
 }
 
 .roster-shell {
@@ -320,20 +320,20 @@
   }
   .setup-panel-wrap .croco-hands.hold-panel {
     top: clamp(86px, 21vw, 138px);
-    width: min(98%, 640px);
-    max-width: 720px;
-    padding: 0 clamp(10px, 5vw, 22px);
-    gap: clamp(6px, 3vw, 14px);
+    width: calc(100% + clamp(60px, 18vw, 160px));
+    max-width: none;
+    padding: 0 clamp(14px, 6vw, 26px);
+    gap: clamp(6px, 3vw, 16px);
   }
   .setup-panel-wrap .croco-hands.hold-panel .hand {
     width: clamp(110px, 28vw, 160px);
     max-width: 40%;
   }
   .setup-panel-wrap .croco-hands.hold-panel .hand-left {
-    transform: translate(-16%, -4px) rotate(-2deg);
+    transform: translate(-20%, -4px) rotate(-2deg);
   }
   .setup-panel-wrap .croco-hands.hold-panel .hand-right {
-    transform: translate(16%, -2px) rotate(3deg);
+    transform: translate(20%, -2px) rotate(3deg);
   }
   .croco-legs {
     transform: translate(-50%, -4%);
