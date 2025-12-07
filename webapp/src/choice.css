@@ -715,7 +715,6 @@
   position: relative;
   flex-shrink: 0;
   margin-left: auto;
-  margin-bottom: 8px;
 }
 
 .choice-diff-pill-btn {
@@ -755,8 +754,9 @@
 }
 
 .choice-diff-menu {
-  position: fixed;
-  inset: auto;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
   width: 240px;
   padding: 6px;
   border-radius: 14px;
@@ -764,7 +764,7 @@
   background: rgba(9, 21, 30, 0.95);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(12px);
-  z-index: 20;
+  z-index: 12;
   display: grid;
   gap: 6px;
   max-height: min(320px, 60vh);
