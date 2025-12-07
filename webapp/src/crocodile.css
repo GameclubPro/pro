@@ -180,9 +180,10 @@
   position: relative;
   display: grid;
   justify-items: center;
-  /* Меньше верхний отступ, чтобы арт поднимался ближе к верхнему краю */
-  padding-top: calc(env(safe-area-inset-top) + clamp(120px, 18vw, 168px));
-  padding-bottom: clamp(180px, 28vw, 260px);
+  --croco-head-space: clamp(120px, 22vw, 180px);
+  --croco-legs-space: clamp(120px, 26vw, 200px);
+  padding-top: calc(env(safe-area-inset-top) + var(--croco-head-space));
+  padding-bottom: calc(var(--croco-legs-space) + clamp(80px, 18vw, 140px));
 }
 
 .croco-head {
@@ -242,7 +243,8 @@
   position: relative;
   z-index: 1;
   overflow: visible;
-  padding-bottom: clamp(100px, 18vw, 150px);
+  padding-top: calc(var(--croco-head-space) + 24px);
+  padding-bottom: calc(var(--croco-legs-space) + 20px);
   background: transparent;
   border-color: transparent;
   box-shadow: none;
@@ -271,16 +273,16 @@
 
 .setup-panel .croco-head {
   position: absolute;
-  bottom: 100%;
-  top: auto;
+  top: 0;
+  bottom: auto;
   left: 50%;
-  transform: translate(-50%, 0);
-  width: clamp(180px, 46vw, 240px);
-  z-index: 5;
+  transform: translate(-50%, -38%);
+  width: clamp(190px, 48vw, 250px);
+  z-index: 6;
 }
 
 .setup-panel .croco-hands.hold-panel {
-  top: clamp(108px, 19vw, 158px);
+  top: calc(var(--croco-head-space) - 18px);
   left: 50%;
   transform: translateX(-50%);
   width: calc(100% + 32px);
@@ -294,10 +296,11 @@
 
 .setup-panel .croco-legs {
   top: 100%;
+  bottom: auto;
   left: 50%;
-  transform: translate(-50%, 0);
-  width: min(72%, 520px);
-  max-width: 650px;
+  transform: translate(-50%, -6%);
+  width: min(76%, 540px);
+  max-width: 660px;
   z-index: 2;
 }
 
@@ -313,16 +316,17 @@
 
 @media (max-width: 768px) {
   .setup-panel {
-    padding-bottom: clamp(110px, 24vw, 180px);
+    padding-top: calc(var(--croco-head-space) + 14px);
+    padding-bottom: calc(var(--croco-legs-space) + 16px);
   }
   .setup-panel .croco-hands.hold-panel {
-    top: clamp(112px, 26vw, 166px);
+    top: calc(var(--croco-head-space) - 6px);
     width: calc(100% + 26px);
     max-width: 720px;
   }
   .setup-panel .croco-legs {
-    top: 100%;
-    width: min(84%, 480px);
+    transform: translate(-50%, -4%);
+    width: min(84%, 500px);
     max-width: 560px;
   }
   .roster-shell {
