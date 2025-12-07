@@ -34,8 +34,7 @@ import {
   normalizePacks,
   parseWords,
   removeCustomWordAt,
-} from "./crocodile-helpers";
-import "./crocodile.css";
+} from "./associations-helpers";
 import "./associations.css";
 
 const STORAGE_KEYS = {
