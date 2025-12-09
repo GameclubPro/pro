@@ -18,9 +18,14 @@ import "./choice.css";
 const STORAGE_KEYS = {
   settings: "pt_choice_settings_v1",
   stats: "pt_choice_stats_v1",
-  custom: "pt_choice_custom_v1",
-  daily: "pt_choice_daily_v1",
   roster: "pt_choice_roster_v1",
+};
+
+const DEFAULT_SETTINGS = {
+  mode: "free",
+  sound: true,
+  haptics: true,
+  difficulty: "normal",
 };
 
 const PALETTE = [
@@ -329,7 +334,17 @@ const buildDilemmas = () => {
 };
 
 const BASE_DILEMMAS = buildDilemmas();
-const BASE_MAP = new Map(BASE_DILEMMAS.map((q) => [q.id, q]));
+const QUESTION_BUCKETS = (() => {
+  const buckets = {};
+  CHOICE_DIFFICULTIES.forEach((d) => {
+    buckets[d.id] = [];
+  });
+  BASE_DILEMMAS.forEach((q) => {
+    const level = buckets[q.difficulty] ? q.difficulty : "normal";
+    buckets[level].push(q);
+  });
+  return buckets;
+})();
 
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 const persist = (key, value) => {
@@ -684,7 +699,6 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
   const promptTitle = activeMember?.name?.trim()
     ? `${activeMember.name.trim()}, что бы ты выбрал?`
     : "Что бы ты выбрал?";
-  const promptTheme = current?.theme ? THEMES[current.theme] : null;
   const promptQuestion = current?.prompt || "Готовим вопрос...";
   const promptStyle = { "--prompt-from": palette[0], "--prompt-to": palette[1] };
 
@@ -712,30 +726,14 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
           />
         ) : (
           <div className="play-vertical">
-            <div className="play-top">
+            <div className="play-head">
               <button className="choice-back-btn" onClick={() => setStage("intro")}>
                 <ArrowLeft size={16} />
-                К темам
+                К настройкам
               </button>
               <div className="prompt-card" style={promptStyle}>
                 <div className="prompt-title">{promptTitle}</div>
-                <div className="prompt-question">{promptQuestion}</div>
-                {activeMember || promptTheme ? (
-                  <div className="prompt-meta">
-                    {activeMember ? (
-                      <span className="prompt-chip player">
-                        <span className="prompt-chip-emoji">{activeMember.emoji}</span>
-                        {activeMember.name}
-                      </span>
-                    ) : null}
-                    {promptTheme ? (
-                      <span className="prompt-chip">
-                        <span className="prompt-chip-emoji">{promptTheme.icon}</span>
-                        {promptTheme.label}
-                      </span>
-                    ) : null}
-                  </div>
-                ) : null}
+                <div className="prompt-body">{promptQuestion}</div>
               </div>
             </div>
             <div className="vertical-split" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
