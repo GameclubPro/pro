@@ -657,7 +657,6 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
   const promptTitle = modeIsSolo && activeMember?.name?.trim()
     ? `${activeMember.name.trim()}, что бы ты выбрал?`
     : "Что бы ты выбрал?";
-  const promptQuestion = "Выбери вариант";
   const promptStyle = { "--prompt-from": "#ef4444", "--prompt-to": "#3b82f6" };
 
   return (
@@ -696,7 +695,6 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
                 >
                   {promptTitle}
                 </div>
-                <div style={{ fontSize: "clamp(22px, 4vw, 28px)", fontWeight: 800, lineHeight: 1.15 }}>{promptQuestion}</div>
               </div>
             </div>
             <div className="vertical-split" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
