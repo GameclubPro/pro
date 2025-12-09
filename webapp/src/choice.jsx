@@ -1,18 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  ArrowLeft,
-  Check,
-  ChevronDown,
-  Settings,
-  Sparkles,
-  Volume2,
-  X,
-  Zap,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { Check, ChevronDown, Settings, Sparkles, Volume2, X, Plus, Trash2 } from "lucide-react";
 import "./choice.css";
 
 const STORAGE_KEYS = {
@@ -729,10 +718,6 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
         ) : (
           <div className="play-vertical">
             <div className="play-head">
-              <button onClick={() => setStage("intro")}>
-                <ArrowLeft size={16} />
-                К настройкам
-              </button>
               <div className="prompt-card" style={promptStyle}>
                 <div className="prompt-title">{promptTitle}</div>
                 <div className="prompt-body">{promptQuestion}</div>
@@ -752,6 +737,10 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
                   <div className="option-label">{current?.left}</div>
                 </motion.button>
               </AnimatePresence>
+
+              <div className="choice-or" aria-hidden="true">
+                или
+              </div>
 
               <AnimatePresence mode="wait">
                 <motion.button
