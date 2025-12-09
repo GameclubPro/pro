@@ -288,10 +288,10 @@ const buildDilemmas = () => {
   const items = [];
   RAW_PACKS.forEach((pack) => {
     pack.items.forEach((row, idx) => {
-      const [prompt, left, right, baseline = pack.baseline || [50, 50]] = row;
+      const [, left, right, baseline = pack.baseline || [50, 50]] = row;
       items.push({
         id: `${pack.id}-${idx + 1}`,
-        prompt,
+        prompt: null,
         left,
         right,
         baseline,
@@ -557,7 +557,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
         const streak = rarePick ? (s.streak || 0) + 1 : 0;
         const historyItem = {
           id: current.id,
-          prompt: current.prompt,
+          prompt: null,
           left: current.left,
           right: current.right,
           side,
@@ -657,7 +657,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
   const promptTitle = modeIsSolo && activeMember?.name?.trim()
     ? `${activeMember.name.trim()}, что бы ты выбрал?`
     : "Что бы ты выбрал?";
-  const promptQuestion = current?.prompt || "Готовим вопрос...";
+  const promptQuestion = "Выбери вариант";
   const promptStyle = { "--prompt-from": "#ef4444", "--prompt-to": "#3b82f6" };
 
   return (
