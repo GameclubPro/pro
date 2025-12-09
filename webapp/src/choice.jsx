@@ -267,23 +267,6 @@ const RAW_PACKS = [
   },
 ];
 
-const PALETTES = {
-  health: ["#16a34a", "#22d3ee"],
-  money: ["#22d3ee", "#6366f1"],
-  love: ["#ec4899", "#f97316"],
-  ethics: ["#8b5cf6", "#22d3ee"],
-  tech: ["#38bdf8", "#6366f1"],
-  future: ["#22d3ee", "#84cc16"],
-  travel: ["#06b6d4", "#0ea5e9"],
-  party: ["#f97316", "#ec4899"],
-  social: ["#f59e0b", "#ef4444"],
-  city: ["#6366f1", "#06b6d4"],
-  wild: ["#ef4444", "#f59e0b"],
-  calm: ["#14b8a6", "#22d3ee"],
-  life: ["#0ea5e9", "#10b981"],
-  custom: ["#a855f7", "#f472b6"],
-};
-
 const PACK_DIFFICULTY = {
   health: "normal",
   money: "spicy",
@@ -305,18 +288,13 @@ const buildDilemmas = () => {
   const items = [];
   RAW_PACKS.forEach((pack) => {
     pack.items.forEach((row, idx) => {
-      const [prompt, left, right, baseline = pack.baseline || [50, 50], tone = pack.tone, note = null] = row;
+      const [prompt, left, right, baseline = pack.baseline || [50, 50]] = row;
       items.push({
         id: `${pack.id}-${idx + 1}`,
         prompt,
         left,
         right,
-        theme: pack.id,
-        rating: pack.rating,
-        tone,
-        vibe: pack.vibe,
         baseline,
-        note: note || pack.note || null,
         difficulty: PACK_DIFFICULTY[pack.id] || "normal",
       });
     });
@@ -407,13 +385,6 @@ const useClickSound = (enabled) => {
   }, [enabled]);
 };
 
-const paletteFor = (theme, vibe) => {
-  if (vibe === "party") return ["#f97316", "#ec4899"];
-  if (vibe === "calm") return ["#14b8a6", "#22c55e"];
-  if (vibe === "deep") return ["#312e81", "#0ea5e9"];
-  return PALETTES[theme] || ["#22d3ee", "#8b5cf6"];
-};
-
 export default function Choice({ goBack, onProgress, setBackHandler }) {
   const savedSettings = useMemo(
     () =>
@@ -470,10 +441,6 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     const customs = customList.map((c, idx) => ({
       ...c,
       id: c.id || `custom-${idx}`,
-      theme: "custom",
-      rating: c.rating || "12+",
-      tone: c.tone || "party",
-      vibe: c.vibe || "calm",
       baseline: c.baseline || [50, 50],
       difficulty: c.difficulty || "normal",
     }));
@@ -591,7 +558,6 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
         const historyItem = {
           id: current.id,
           prompt: current.prompt,
-          theme: current.theme,
           left: current.left,
           right: current.right,
           side,
@@ -616,7 +582,9 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
           date: todayKey(),
           answered: (isToday ? d.answered : 0) + 1,
           rare: (isToday ? d.rare : 0) + (rarePick ? 1 : 0),
-          hard: (isToday ? d.hard : 0) + (current.tone === "ethics" || current.rating === "16+" ? 1 : 0),
+          hard:
+            (isToday ? d.hard : 0) +
+            (current.difficulty === "insane" || current.difficulty === "apocalypse" ? 1 : 0),
         };
       });
 
@@ -679,7 +647,6 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     touchStartY.current = null;
   };
 
-  const palette = paletteFor(current?.theme, current?.vibe);
   const leftBg = "linear-gradient(135deg, #ef4444, #f97316)";
   const rightBg = "linear-gradient(135deg, #22d3ee, #3b82f6)";
   const activeMember = useMemo(() => {
@@ -691,7 +658,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     ? `${activeMember.name.trim()}, что бы ты выбрал?`
     : "Что бы ты выбрал?";
   const promptQuestion = current?.prompt || "Готовим вопрос...";
-  const promptStyle = { "--prompt-from": palette[0], "--prompt-to": palette[1] };
+  const promptStyle = { "--prompt-from": "#ef4444", "--prompt-to": "#3b82f6" };
 
   return (
     <div className="choice">
@@ -720,7 +687,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
             <div className="play-head">
               <div className="prompt-card" style={promptStyle}>
                 <div className="prompt-title">{promptTitle}</div>
-                <div className="prompt-question">{promptQuestion}</div>
+                <div className="prompt-text">{promptQuestion}</div>
               </div>
             </div>
             <div className="vertical-split" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
