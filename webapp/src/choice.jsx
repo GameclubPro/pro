@@ -445,6 +445,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
   const [result, setResult] = useState(null);
   const [reveal, setReveal] = useState(false);
   const [toast, setToast] = useState("");
+  const [turnIndex, setTurnIndex] = useState(0);
   const touchStartY = useRef(null);
   const autoNextRef = useRef(null);
   const progressGiven = useRef(false);
@@ -489,12 +490,18 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     });
     return filtered.length ? filtered : merged;
   }, [settings.selectedThemes, settings.mode, customList]);
+  const modeIsSolo = settings.mode === "solo";
+  const minPlayers = modeIsSolo ? 2 : 0;
 
   const pickNext = useCallback(
     (force = false) => {
       if (!pool.length) return;
       setReveal(false);
       setResult(null);
+      setTurnIndex((idx) => {
+        if (!modeIsSolo || !roster.length) return 0;
+        return force ? 0 : (idx + 1) % roster.length;
+      });
       setUsedIds((prevUsed) => {
         const used = force ? [] : prevUsed;
         const available = pool.filter((q) => !used.includes(q.id));
@@ -505,7 +512,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
         return updated.slice(-pool.length);
       });
     },
-    [pool]
+    [pool, modeIsSolo, roster.length]
   );
 
   useEffect(() => {
@@ -560,6 +567,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     haptic("medium");
     clickSound();
     setUsedIds([]);
+    setTurnIndex(0);
     setStage("play");
   };
 
@@ -636,9 +644,6 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     });
   };
 
-  const modeIsSolo = settings.mode === "solo";
-  const minPlayers = modeIsSolo ? 2 : 0;
-
   // --- Roster handlers (intro only)
   const changeName = (id, name) => {
     setRoster((list) => list.map((r) => (r.id === id ? { ...r, name } : r)));
@@ -695,6 +700,17 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
   const palette = paletteFor(current?.theme, current?.vibe);
   const leftBg = `linear-gradient(135deg, ${palette[0]}, rgba(4, 16, 23, 0.12))`;
   const rightBg = `linear-gradient(135deg, ${palette[1]}, rgba(4, 16, 23, 0.12))`;
+  const activeMember = useMemo(() => {
+    if (!modeIsSolo || !roster.length) return null;
+    const idx = ((turnIndex % roster.length) + roster.length) % roster.length;
+    return roster[idx];
+  }, [modeIsSolo, roster, turnIndex]);
+  const promptTitle = activeMember?.name?.trim()
+    ? `${activeMember.name.trim()}, что бы ты выбрал?`
+    : "Что бы ты выбрал?";
+  const promptTheme = current?.theme ? THEMES[current.theme] : null;
+  const promptQuestion = current?.prompt || "Готовим вопрос...";
+  const promptStyle = { "--prompt-from": palette[0], "--prompt-to": palette[1] };
 
   return (
     <div className="choice">
@@ -725,11 +741,30 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
         ) : (
           <div className="play-vertical">
             <div className="play-top">
-              <button className="ghost" onClick={() => setStage("intro")}>
+              <button className="choice-back-btn" onClick={() => setStage("intro")}>
                 <ArrowLeft size={16} />
-                Назад
+                К темам
               </button>
-              <div className="prompt">{current?.prompt}</div>
+              <div className="prompt-card" style={promptStyle}>
+                <div className="prompt-title">{promptTitle}</div>
+                <div className="prompt-question">{promptQuestion}</div>
+                {activeMember || promptTheme ? (
+                  <div className="prompt-meta">
+                    {activeMember ? (
+                      <span className="prompt-chip player">
+                        <span className="prompt-chip-emoji">{activeMember.emoji}</span>
+                        {activeMember.name}
+                      </span>
+                    ) : null}
+                    {promptTheme ? (
+                      <span className="prompt-chip">
+                        <span className="prompt-chip-emoji">{promptTheme.icon}</span>
+                        {promptTheme.label}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
             </div>
             <div className="vertical-split" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
               <AnimatePresence mode="wait">
