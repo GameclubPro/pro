@@ -424,13 +424,6 @@
   pointer-events: none;
 }
 
-.prompt-title {
-  color: #c3d2e1;
-  font-size: clamp(15px, 2.6vw, 18px);
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
 .prompt-meta {
   display: flex;
   gap: 8px;

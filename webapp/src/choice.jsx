@@ -654,9 +654,6 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     const idx = ((turnIndex % roster.length) + roster.length) % roster.length;
     return roster[idx];
   }, [modeIsSolo, roster, turnIndex]);
-  const promptTitle = activeMember?.name?.trim()
-    ? `${activeMember.name.trim()}, что бы ты выбрал?`
-    : "Что бы ты выбрал?";
   const promptQuestion = current?.prompt || "Готовим вопрос...";
   const promptStyle = { "--prompt-from": "#ef4444", "--prompt-to": "#3b82f6" };
 
@@ -686,8 +683,9 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
           <div className="play-vertical">
             <div className="play-head">
               <div className="prompt-card" style={promptStyle}>
-                <div className="prompt-title">{promptTitle}</div>
-                <div>{promptQuestion}</div>
+                <div style={{ fontSize: "clamp(22px, 4vw, 28px)", fontWeight: 800, lineHeight: 1.15 }}>
+                  {promptQuestion}
+                </div>
               </div>
             </div>
             <div className="vertical-split" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
