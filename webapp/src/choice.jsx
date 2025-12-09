@@ -19,6 +19,8 @@ const STORAGE_KEYS = {
   settings: "pt_choice_settings_v1",
   stats: "pt_choice_stats_v1",
   roster: "pt_choice_roster_v1",
+  custom: "pt_choice_custom_v1",
+  daily: "pt_choice_daily_v1",
 };
 
 const DEFAULT_SETTINGS = {
