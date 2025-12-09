@@ -687,7 +687,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
             <div className="play-head">
               <div className="prompt-card" style={promptStyle}>
                 <div className="prompt-title">{promptTitle}</div>
-                <div className="prompt-text">{promptQuestion}</div>
+                <div>{promptQuestion}</div>
               </div>
             </div>
             <div className="vertical-split" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
