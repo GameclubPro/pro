@@ -288,10 +288,11 @@ const buildDilemmas = () => {
   const items = [];
   RAW_PACKS.forEach((pack) => {
     pack.items.forEach((row, idx) => {
-      const [, left, right, baseline = pack.baseline || [50, 50]] = row;
+      const [rawPrompt, left, right, baseline = pack.baseline || [50, 50]] = row;
+      const prompt = typeof rawPrompt === "string" ? rawPrompt.trim() : "";
       items.push({
         id: `${pack.id}-${idx + 1}`,
-        prompt: null,
+        prompt: prompt || null,
         left,
         right,
         baseline,
@@ -557,7 +558,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
         const streak = rarePick ? (s.streak || 0) + 1 : 0;
         const historyItem = {
           id: current.id,
-          prompt: null,
+          prompt: current.prompt || null,
           left: current.left,
           right: current.right,
           side,
@@ -654,9 +655,14 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     const idx = ((turnIndex % roster.length) + roster.length) % roster.length;
     return roster[idx];
   }, [modeIsSolo, roster, turnIndex]);
-  const promptTitle = modeIsSolo && activeMember?.name?.trim()
-    ? `${activeMember.name.trim()}, что бы ты выбрал?`
-    : "Что бы ты выбрал?";
+  const promptTitle = (() => {
+    const name = modeIsSolo && activeMember?.name?.trim() ? activeMember.name.trim() : "";
+    const story = current?.prompt?.trim();
+    if (name && story) return `${name}, ${story}`;
+    if (name) return `${name}, сделай выбор`;
+    if (story) return story;
+    return "Сделай выбор";
+  })();
   const promptStyle = { "--prompt-from": "#ef4444", "--prompt-to": "#3b82f6" };
 
   return (
@@ -687,9 +693,9 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
               <div className="prompt-card" style={promptStyle}>
                 <div
                   style={{
-                    color: "#c3d2e1",
+                    color: "#f8fbff",
                     fontSize: "clamp(15px, 2.6vw, 18px)",
-                    fontWeight: 700,
+                    fontWeight: 800,
                     marginBottom: 4,
                   }}
                 >
