@@ -729,7 +729,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
         ) : (
           <div className="play-vertical">
             <div className="play-head">
-              <button className="choice-back-btn" onClick={() => setStage("intro")}>
+              <button onClick={() => setStage("intro")}>
                 <ArrowLeft size={16} />
                 К настройкам
               </button>
