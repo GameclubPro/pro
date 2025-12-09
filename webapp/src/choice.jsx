@@ -680,8 +680,8 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
   };
 
   const palette = paletteFor(current?.theme, current?.vibe);
-  const leftBg = `linear-gradient(135deg, ${palette[0]}, rgba(4, 16, 23, 0.12))`;
-  const rightBg = `linear-gradient(135deg, ${palette[1]}, rgba(4, 16, 23, 0.12))`;
+  const leftBg = "linear-gradient(135deg, #ef4444, #f97316)";
+  const rightBg = "linear-gradient(135deg, #22d3ee, #3b82f6)";
   const activeMember = useMemo(() => {
     if (!modeIsSolo || !roster.length) return null;
     const idx = ((turnIndex % roster.length) + roster.length) % roster.length;
@@ -720,7 +720,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
             <div className="play-head">
               <div className="prompt-card" style={promptStyle}>
                 <div className="prompt-title">{promptTitle}</div>
-                <div className="prompt-body">{promptQuestion}</div>
+                <div className="prompt-question">{promptQuestion}</div>
               </div>
             </div>
             <div className="vertical-split" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>

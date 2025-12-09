@@ -431,7 +431,6 @@
   margin-bottom: 4px;
 }
 
-.prompt-body,
 .prompt-question {
   font-size: clamp(22px, 4vw, 28px);
   font-weight: 800;
@@ -472,8 +471,8 @@
 
 .vertical-split {
   display: grid;
-  grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  grid-template-rows: 1fr auto 1fr;
+  gap: 10px;
   width: 100%;
   min-height: 0;
   flex: 1;
@@ -496,14 +495,14 @@
   font-size: clamp(20px, 4vw, 28px);
   text-align: center;
   box-shadow:
-    0 18px 38px rgba(0, 0, 0, 0.35),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    0 12px 26px rgba(0, 0, 0, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
   display: grid;
   place-items: center;
   cursor: pointer;
   position: relative;
   overflow: hidden;
-  backdrop-filter: blur(4px);
+  z-index: 1;
 }
 
 .option-block.picked {
@@ -518,21 +517,20 @@
 }
 
 .choice-or {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: relative;
   padding: 8px 14px;
   border-radius: 999px;
-  background: rgba(4, 16, 23, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.26);
   color: #f8fbff;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.25);
   pointer-events: none;
   backdrop-filter: blur(6px);
+  z-index: 3;
+  place-self: center;
 }
 
 .choice-main {
