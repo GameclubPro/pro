@@ -36,23 +36,6 @@ const PALETTE = [
 
 const EMOJIS = ["⚡️", "🔥", "🌊", "🍀", "🌟", "🛰️", "🎯", "🧠", "🚀", "💎"];
 
-const THEMES = {
-  health: { label: "ЗОЖ", icon: "💪" },
-  money: { label: "Карьера", icon: "💼" },
-  love: { label: "Отношения", icon: "💞" },
-  ethics: { label: "Мораль", icon: "⚖️" },
-  tech: { label: "Технологии", icon: "🤖" },
-  future: { label: "Будущее", icon: "🚀" },
-  travel: { label: "Путешествия", icon: "✈️" },
-  party: { label: "Фан", icon: "🎉" },
-  social: { label: "Социум", icon: "🌐" },
-  city: { label: "Город", icon: "🏙️" },
-  wild: { label: "Экстрим", icon: "🧭" },
-  calm: { label: "Осознанность", icon: "🧘" },
-  life: { label: "Быт", icon: "🏠" },
-  custom: { label: "Свои", icon: "✨" },
-};
-
 const CHOICE_MODES = [
   { id: "solo", label: "Каждому своё", desc: "Именной список участников", badge: "🧑‍🚀" },
   { id: "free", label: "Быстрый старт", desc: "Без списка, просто вопросы", badge: "✨" },
@@ -288,11 +271,6 @@ const RAW_PACKS = [
   },
 ];
 
-const PACK_META = RAW_PACKS.reduce((acc, pack) => {
-  acc[pack.id] = pack;
-  return acc;
-}, {});
-
 const PALETTES = {
   health: ["#16a34a", "#22d3ee"],
   money: ["#22d3ee", "#6366f1"],
@@ -308,6 +286,23 @@ const PALETTES = {
   calm: ["#14b8a6", "#22d3ee"],
   life: ["#0ea5e9", "#10b981"],
   custom: ["#a855f7", "#f472b6"],
+};
+
+const PACK_DIFFICULTY = {
+  health: "normal",
+  money: "spicy",
+  love: "spicy",
+  ethics: "apocalypse",
+  tech: "insane",
+  future: "insane",
+  travel: "normal",
+  party: "spicy",
+  social: "normal",
+  city: "normal",
+  wild: "insane",
+  calm: "normal",
+  life: "normal",
+  custom: "normal",
 };
 
 const buildDilemmas = () => {
@@ -326,6 +321,7 @@ const buildDilemmas = () => {
         vibe: pack.vibe,
         baseline,
         note: note || pack.note || null,
+        difficulty: PACK_DIFFICULTY[pack.id] || "normal",
       });
     });
   });
@@ -419,7 +415,6 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
         mode: "free",
         sound: true,
         haptics: true,
-        selectedThemes: Object.keys(THEMES),
         difficulty: "normal",
       }),
     []
@@ -464,12 +459,8 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     const allowed = CHOICE_DIFFICULTIES.some((d) => d.id === id) ? id : "normal";
     setSettings((s) => ({ ...s, difficulty: allowed }));
   }, []);
-  const handleSelectAllThemes = useCallback(() => {
-    setSettings((s) => ({ ...s, selectedThemes: Object.keys(THEMES) }));
-  }, []);
 
   const pool = useMemo(() => {
-    const mode = CHOICE_MODES.some((m) => m.id === settings.mode) ? settings.mode : "free";
     const customs = customList.map((c, idx) => ({
       ...c,
       id: c.id || `custom-${idx}`,
@@ -478,18 +469,15 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
       tone: c.tone || "party",
       vibe: c.vibe || "calm",
       baseline: c.baseline || [50, 50],
+      difficulty: c.difficulty || "normal",
     }));
     const merged = [...BASE_DILEMMAS, ...customs];
-    const themeSet = new Set(settings.selectedThemes || []);
-    const matchesMode = (q) => {
-      return true;
-    };
-    const filtered = merged.filter((q) => {
-      const themeOk = !themeSet.size || themeSet.has(q.theme);
-      return themeOk && matchesMode(q);
-    });
+    const difficultyOk = CHOICE_DIFFICULTIES.some((d) => d.id === settings.difficulty)
+      ? settings.difficulty
+      : "normal";
+    const filtered = merged.filter((q) => q.difficulty === difficultyOk);
     return filtered.length ? filtered : merged;
-  }, [settings.selectedThemes, settings.mode, customList]);
+  }, [settings.difficulty, customList]);
   const modeIsSolo = settings.mode === "solo";
   const minPlayers = modeIsSolo ? 2 : 0;
 
@@ -632,18 +620,6 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     [current, reveal, stats.perQuestion, pickNext, haptic, clickSound]
   );
 
-  const handleThemeToggle = (key) => {
-    setSettings((s) => {
-      const set = new Set(s.selectedThemes || []);
-      if (set.has(key)) {
-        set.delete(key);
-      } else {
-        set.add(key);
-      }
-      return { ...s, selectedThemes: Array.from(set) };
-    });
-  };
-
   // --- Roster handlers (intro only)
   const changeName = (id, name) => {
     setRoster((list) => list.map((r) => (r.id === id ? { ...r, name } : r)));
@@ -724,14 +700,10 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
           <Landing
             onStart={startGame}
             onBack={() => goBack?.()}
-            themes={THEMES}
-            selectedThemes={settings.selectedThemes}
             settings={settings}
-            onToggleTheme={handleThemeToggle}
             onChangeSetting={handleSettingChange}
             onModeChange={handleModeChange}
             onDifficultyChange={handleDifficultyChange}
-            onSelectAllThemes={handleSelectAllThemes}
             roster={roster}
             onShuffleColor={shuffleColor}
             onChangeName={changeName}
@@ -806,14 +778,10 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
 function Landing({
   onStart,
   onBack,
-  themes,
-  selectedThemes,
   settings,
-  onToggleTheme,
   onChangeSetting,
   onModeChange,
   onDifficultyChange,
-  onSelectAllThemes,
   roster,
   onShuffleColor,
   onChangeName,
@@ -825,9 +793,7 @@ function Landing({
   const difficultyTriggerRef = useRef(null);
   const difficultyMenuRef = useRef(null);
   const modeIsSolo = settings.mode === "solo";
-  const minPlayers = modeIsSolo ? 1 : 1;
-  const selectedCount = selectedThemes?.length || 0;
-  const totalThemes = Object.keys(themes).length;
+  const minPlayers = modeIsSolo ? 2 : 1;
   const portalTarget = typeof document !== "undefined" ? document.body : null;
   const currentDifficulty = CHOICE_DIFFICULTIES.find((d) => d.id === settings.difficulty) || CHOICE_DIFFICULTIES[0];
 
@@ -903,56 +869,6 @@ function Landing({
                 Вибро
                 <span className="choice-toggle-dot" />
               </button>
-            </div>
-
-            <div className="choice-settings-block">
-              <div className="choice-settings-block-head">
-                <div>
-                  <div className="choice-settings-title sm">Пачки вопросов</div>
-                  <div className="choice-settings-sub">Выбрано: {selectedCount} из {totalThemes}</div>
-                </div>
-                <button className="choice-ghost-btn compact" onClick={onSelectAllThemes}>
-                  Все темы
-                </button>
-              </div>
-              <div className="theme-grid compact">
-                {Object.entries(themes).map(([key, value]) => {
-                  const active = (selectedThemes || []).includes(key);
-                  const palette = PALETTES[key] || ["#22d3ee", "#8b5cf6"];
-                  const meta = PACK_META[key];
-                  const toneLabel =
-                    meta?.tone === "party"
-                      ? "Движ"
-                      : meta?.tone === "calm"
-                      ? "Спокойно"
-                      : meta?.tone === "ethics"
-                      ? "Остро"
-                      : meta?.tone === "future"
-                      ? "Будущее"
-                      : "Смешано";
-                  const subtitle = `${meta?.rating || "12+"} • ${toneLabel}`;
-                  return (
-                    <motion.button
-                      key={key}
-                      className={`theme-card ${active ? "on" : ""}`}
-                      whileTap={{ scale: 0.98 }}
-                      whileHover={{ y: -1 }}
-                      onClick={() => onToggleTheme?.(key)}
-                      style={{ "--theme-from": palette[0], "--theme-to": palette[1] }}
-                      aria-pressed={active}
-                    >
-                      <div className="theme-icon">{value.icon}</div>
-                      <div className="theme-body">
-                        <div className="theme-title">{value.label}</div>
-                        <div className="theme-sub">{subtitle}</div>
-                      </div>
-                      <span className={`theme-check ${active ? "on" : ""}`} aria-hidden>
-                        <Check size={14} />
-                      </span>
-                    </motion.button>
-                  );
-                })}
-              </div>
             </div>
           </motion.div>
         </motion.div>
