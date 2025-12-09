@@ -654,7 +654,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
     const idx = ((turnIndex % roster.length) + roster.length) % roster.length;
     return roster[idx];
   }, [modeIsSolo, roster, turnIndex]);
-  const promptQuestion = current?.prompt || "Готовим вопрос...";
+  const promptQuestion = current ? `${current.left} или ${current.right}?` : "Готовим вопрос...";
   const promptStyle = { "--prompt-from": "#ef4444", "--prompt-to": "#3b82f6" };
 
   return (
