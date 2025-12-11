@@ -11,6 +11,7 @@ import Compatibility from "./compatibility"; // «Совместимость»
 import Choice from "./choice"; // «Выбор»
 import SketchBattle from "./SketchBattle"; // «Скетч-баттл»
 import Auction from "./Auction.tsx"; // 💰 «Аукцион»
+import KnyazCourt from "./KnyazCourt.jsx"; // 🏰 «Княжий суд»
 
 /**
  * Play Team — Telegram WebApp
@@ -19,7 +20,7 @@ import Auction from "./Auction.tsx"; // 💰 «Аукцион»
  *  - "game:<name>" — полноэкранная игра, никаких элементов оболочки
  *
  * Поддерживаемые игры:
- *  - mafia | auction | crocodile | associations | quiz | questions | truthordare | compatibility | choice | sketch
+ *  - mafia | auction | crocodile | associations | quiz | questions | truthordare | compatibility | choice | sketch | knyaz
  */
 
 const DEFAULT_API_BASE = "https://api.play-team.ru";
@@ -531,6 +532,9 @@ export default function App() {
           {route.name === "choice" && (
             <Choice goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
           )}
+          {route.name === "knyaz" && (
+            <KnyazCourt goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
+          )}
           {route.name === "sketch" && (
             <SketchBattle goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
           )}
@@ -602,6 +606,7 @@ function Shell({ scheme, user, status, level, games, section, setSection, onOpen
             items={[
               { icon: "🎭", name: "Крокодил", desc: "покажи — не говори", action: () => onOpenGame("crocodile") },
               { icon: "🧩", name: "Обьясни слово", desc: "угадай по намёкам", action: () => onOpenGame("associations") },
+              { icon: "🏰", name: "Княжий суд", desc: "допросы и приговор", action: () => onOpenGame("knyaz") },
               { icon: "❓", name: "Блиц-викторина", desc: "быстро и на счёт", action: () => onOpenGame("quiz") },
               { icon: "✍️", name: "Скетч-баттл", desc: "рисуй за 30 сек", action: () => onOpenGame("sketch") },
               { icon: "⚖️", name: "Выбор", desc: "два варианта — один выбор", action: () => onOpenGame("choice") },
