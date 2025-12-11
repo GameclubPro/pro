@@ -116,14 +116,18 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
+  padding-top: 110px;
 }
 
 .kc-portrait-wrap {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
   width: 100%;
   display: grid;
   place-items: center;
-  z-index: 3;
+  z-index: 1;
 }
 
 .kc-portrait {
@@ -134,10 +138,16 @@
 }
 
 .kc-portrait-top {
-  margin-top: -30px;
-  margin-bottom: -28px;
+  margin-top: 0;
+  margin-bottom: -40px;
   z-index: 1;
   pointer-events: none;
+}
+
+.kc-suspect-panel {
+  position: relative;
+  z-index: 2;
+  margin-top: -30px;
 }
 
 .kc-council-pill {
