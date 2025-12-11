@@ -438,6 +438,10 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                 ))}
               </div>
             )}
+            <div className="kc-action-row">
+              <button className="kc-cta" onClick={goToVerdict}>Принять решение</button>
+              <button className="kc-ghost" onClick={startDialog}>Выслушать</button>
+            </div>
           </section>
         </div>
       </div>

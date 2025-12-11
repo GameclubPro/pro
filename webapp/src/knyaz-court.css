@@ -273,7 +273,7 @@
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: 4px 8px;
+  gap: 2px 8px;
   width: 100%;
 }
 
@@ -288,7 +288,7 @@
   position: relative;
   margin: 0;
   width: 100%;
-  height: 4px;
+  height: 6px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
   overflow: hidden;
@@ -418,9 +418,14 @@
 }
 
 .kc-action-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  display: flex;
   gap: 10px;
+  justify-content: space-between;
+}
+
+.kc-action-row .kc-cta,
+.kc-action-row .kc-ghost {
+  flex: 1 1 0;
 }
 
 .kc-root button {
@@ -705,7 +710,7 @@
   }
 
   .kc-meter .kc-bar {
-    height: 3px;
+    height: 5px;
   }
 
   .kc-council-pill {
