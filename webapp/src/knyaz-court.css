@@ -242,11 +242,9 @@
 }
 
 .kc-meter {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-rows: auto auto;
-  align-items: center;
-  gap: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.04));
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
@@ -255,10 +253,10 @@
 }
 
 .kc-meter-top {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 9px;
-  grid-column: 1 / -1;
+  gap: 8px;
 }
 
 .kc-meter .kc-icon {
@@ -271,17 +269,26 @@
   font-size: 16px;
 }
 
+.kc-meter-body {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 8px;
+  width: 100%;
+}
+
 .kc-meter .kc-label {
   color: #f1e4d2;
   font-weight: 700;
   font-size: 10.5px;
+  grid-column: 1 / -1;
 }
 
 .kc-meter .kc-bar {
   position: relative;
   margin: 0;
   width: 100%;
-  height: 3px;
+  height: 4px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
   overflow: hidden;
@@ -331,8 +338,6 @@
 }
 
 .kc-suspect-panel,
-.kc-dialog-panel,
-.kc-verdict-panel,
 .kc-final-panel {
   display: flex;
   flex-direction: column;
