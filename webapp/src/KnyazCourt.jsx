@@ -248,6 +248,13 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const [typedText, setTypedText] = useState("");
   const progressGiven = useRef(false);
 
+  const asked = answers.filter(Boolean);
+  const currentRound = activeCase?.rounds?.[roundIndex] || [];
+  const currentAnswer = answers[roundIndex];
+  const showQuestions = phase === "dialog";
+  const showVerdicts = phase === "verdict" || phase === "result";
+  const displayText = phase === "dialog" ? typedText : typedText || activeCase?.description;
+
   const finished = caseIndex >= CASES.length;
   const activeCase = useMemo(() => (finished ? null : CASES[caseIndex]), [finished, caseIndex]);
 
@@ -403,13 +410,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
       </div>
     );
   }
-
-  const asked = answers.filter(Boolean);
-  const currentRound = activeCase?.rounds?.[roundIndex] || [];
-  const currentAnswer = answers[roundIndex];
-  const showQuestions = phase === "dialog";
-  const showVerdicts = phase === "verdict" || phase === "result";
-  const displayText = phase === "dialog" ? typedText : typedText || activeCase?.description;
 
   return (
     <div className="kc-root">
