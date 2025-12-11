@@ -123,18 +123,19 @@
   width: 100%;
   display: grid;
   place-items: center;
+  z-index: 3;
 }
 
 .kc-portrait {
-  max-width: 140px;
-  width: 50%;
-  min-width: 120px;
+  max-width: 120px;
+  width: 46%;
+  min-width: 96px;
   filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.5));
 }
 
 .kc-portrait-top {
-  margin-bottom: -18px;
-  z-index: 2;
+  margin-bottom: -10px;
+  z-index: 3;
   pointer-events: none;
 }
 
