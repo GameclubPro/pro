@@ -343,13 +343,13 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const councilControls = (
     <>
       <button
-        className="council-pill"
+        className="kc-council-pill"
         type="button"
         onClick={() => setShowCouncil((v) => !v)}
         aria-expanded={showCouncil}
         aria-label="Влияние элит"
       >
-        <span className="icon" aria-hidden>👑</span>
+        <span className="kc-icon" aria-hidden>👑</span>
       </button>
       <CouncilOverlay open={showCouncil} onClose={() => setShowCouncil(false)} data={COUNCIL} />
     </>
@@ -357,29 +357,29 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
 
   if (finished) {
     return (
-      <div className="knyaz">
+      <div className="kc-root">
         <Background />
-        <div className="knyaz-shell">
+        <div className="kc-shell">
           {councilControls}
-          <header className="knyaz-header">
+          <header className="kc-header">
             <div>
-              <p className="eyebrow">Княжий суд</p>
+              <p className="kc-eyebrow">Княжий суд</p>
             </div>
-            <div className="meter-row final">
+            <div className="kc-meter-row kc-final">
               <StatMeter icon="🛡️" color="var(--accent-amber)" label="Страх" value={stats.fear} pulse={pulse} />
               <StatMeter icon="⚖️" color="var(--accent-green)" label="Уважение" value={stats.respect} pulse={pulse} />
               <StatMeter icon="💰" color="var(--accent-gold)" label="Казна" value={stats.treasury} pulse={pulse} />
             </div>
           </header>
-          <section className="parchment final-card">
-            <ul className="summary">
+          <section className="kc-card kc-final-panel">
+            <ul className="kc-summary">
               <li>Люди помнят каждое слово и каждый жест твоего суда.</li>
               <li>Дружина сравнивает строгость с милостью и готовится к новым приказам.</li>
               <li>Казначей складывает записи — казна ждёт следующего дня.</li>
             </ul>
-            <div className="final-actions">
-              <button className="ghost" onClick={goBack}>Вернуться к играм</button>
-              <button className="cta" onClick={restartDay}>Начать заново</button>
+            <div className="kc-final-actions">
+              <button className="kc-ghost" onClick={goBack}>Вернуться к играм</button>
+              <button className="kc-cta" onClick={restartDay}>Начать заново</button>
             </div>
           </section>
         </div>
@@ -392,25 +392,25 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const currentAnswer = answers[roundIndex];
 
   return (
-    <div className="knyaz">
+    <div className="kc-root">
       <Background />
-      <div className="knyaz-shell">
+      <div className="kc-shell">
         {councilControls}
-        <header className="knyaz-header">
+        <header className="kc-header">
           <div>
-            <p className="eyebrow">Княжий суд</p>
+            <p className="kc-eyebrow">Княжий суд</p>
           </div>
-          <div className="meter-row">
+          <div className="kc-meter-row">
             <StatMeter icon="🛡️" color="var(--accent-amber)" label="Страх" value={stats.fear} pulse={pulse} />
             <StatMeter icon="⚖️" color="var(--accent-green)" label="Уважение" value={stats.respect} pulse={pulse} />
             <StatMeter icon="💰" color="var(--accent-gold)" label="Казна" value={stats.treasury} pulse={pulse} />
           </div>
         </header>
 
-        <div className="knyaz-grid">
-          <section className="parchment suspect-card">
-            <div className="suspect-head">
-              <div className={`badge ${activeCase?.portrait || "portrait"}`} aria-hidden>
+        <div className="kc-grid">
+          <section className="kc-card kc-suspect-panel">
+            <div className="kc-suspect-head">
+              <div className="kc-badge" aria-hidden>
                 {activeCase?.portrait === "guard" && "🛡️"}
                 {activeCase?.portrait === "merchant" && "📜"}
                 {activeCase?.portrait === "noble" && "👑"}
@@ -418,43 +418,43 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                 {!activeCase?.portrait && "🧭"}
               </div>
               <div>
-                <div className="eyebrow">{activeCase?.status}</div>
-                <div className="suspect-name">{activeCase?.name}</div>
+                <div className="kc-eyebrow">{activeCase?.status}</div>
+                <div className="kc-suspect-name">{activeCase?.name}</div>
               </div>
             </div>
-            <div className="case-text">
+            <div className="kc-case-text">
               <h3>{activeCase?.title}</h3>
               <p>{activeCase?.description}</p>
             </div>
             {asked.length > 0 && (
-              <div className="mini-log" aria-live="polite">
-                <div className="mini-log-title">Что уже сказано</div>
+              <div className="kc-mini-log" aria-live="polite">
+                <div className="kc-mini-log-title">Что уже сказано</div>
                 {asked.map((item, idx) => (
-                  <div key={`${item.text}-${idx}`} className="mini-log-line">
-                    <span className="pill">Раунд {item.round + 1}</span>
-                    <span className="q">{item.text}</span>
-                    <span className="a">{item.answer}</span>
+                  <div key={`${item.text}-${idx}`} className="kc-mini-log-line">
+                    <span className="kc-pill">Раунд {item.round + 1}</span>
+                    <span className="kc-q">{item.text}</span>
+                    <span className="kc-a">{item.answer}</span>
                   </div>
                 ))}
               </div>
             )}
-            <div className="action-row">
-              <button className="cta" onClick={goToVerdict}>Вынести решение</button>
-              <button className="ghost" onClick={startDialog}>Выслушать подозреваемого</button>
+            <div className="kc-action-row">
+              <button className="kc-cta" onClick={goToVerdict}>Вынести решение</button>
+              <button className="kc-ghost" onClick={startDialog}>Выслушать подозреваемого</button>
             </div>
           </section>
 
-          <section className="parchment dialog-card">
-            <div className="section-title">
+          <section className="kc-card kc-dialog-panel">
+            <div className="kc-section-title">
               <div>
-                <p className="eyebrow">Допрос</p>
+                <p className="kc-eyebrow">Допрос</p>
                 <h3>Раунд {roundIndex + 1} из 3</h3>
               </div>
-              <div className="round-dots">
+              <div className="kc-round-dots">
                 {activeCase?.rounds?.map((_, idx) => (
                   <span
                     key={`dot-${idx}`}
-                    className={`dot ${idx === roundIndex ? "active" : ""} ${answers[idx] ? "done" : ""}`}
+                    className={`kc-dot ${idx === roundIndex ? "kc-active" : ""} ${answers[idx] ? "kc-done" : ""}`}
                     aria-label={`Раунд ${idx + 1}`}
                   />
                 ))}
@@ -463,32 +463,32 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
 
             {phase === "dialog" && (
               <>
-                <div className="questions">
+                <div className="kc-questions">
                   {currentRound.map((q, idx) => {
                     const answered = !!currentAnswer;
                     const isChosen = currentAnswer?.text === q.text;
                     return (
                       <button
                         key={q.text}
-                        className={`question ${isChosen ? "chosen" : ""}`}
+                        className={`kc-question ${isChosen ? "kc-chosen" : ""}`}
                         disabled={answered && !isChosen}
                         onClick={() => selectQuestion(q)}
                       >
-                        <span className="pill">Вопрос {idx + 1}</span>
+                        <span className="kc-pill">Вопрос {idx + 1}</span>
                         <span>{q.text}</span>
                       </button>
                     );
                   })}
                 </div>
                 {currentAnswer && (
-                  <div className="answer">
-                    <div className="eyebrow">Ответ</div>
+                  <div className="kc-answer">
+                    <div className="kc-eyebrow">Ответ</div>
                     <p>{currentAnswer.answer}</p>
                   </div>
                 )}
                 {currentAnswer && (
-                  <div className="next-row">
-                    <button className="cta" onClick={nextRound}>
+                  <div className="kc-next-row">
+                    <button className="kc-cta" onClick={nextRound}>
                       {roundIndex >= 2 ? "Перейти к решению" : "Следующий раунд"}
                     </button>
                   </div>
@@ -497,14 +497,14 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
             )}
           </section>
 
-          <section className="parchment verdict-card">
-            <div className="section-title">
+          <section className="kc-card kc-verdict-panel">
+            <div className="kc-section-title">
               <div>
-                <p className="eyebrow">Приговор</p>
+                <p className="kc-eyebrow">Приговор</p>
                 <h3>Что решит князь?</h3>
               </div>
             </div>
-            <div className="verdict-options">
+            <div className="kc-verdict-options">
               {activeCase?.verdicts?.map((option) => {
                 const isPicked = decision?.key === option.key;
                 const preview =
@@ -512,16 +512,16 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                 return (
                   <button
                     key={option.key}
-                    className={`verdict ${isPicked ? "chosen" : ""}`}
+                    className={`kc-verdict ${isPicked ? "kc-chosen" : ""}`}
                     onClick={() => chooseVerdict(option)}
                     disabled={!!decision}
                   >
-                    <span className="icon">{option.icon}</span>
-                    <div className="verdict-meta">
-                      <div className="label">{option.label}</div>
+                    <span className="kc-icon">{option.icon}</span>
+                    <div className="kc-verdict-meta">
+                      <div className="kc-label">{option.label}</div>
                       <p>{preview}</p>
                     </div>
-                    <div className="effects">
+                    <div className="kc-effects">
                       <Effect label="Страх" value={option.effects?.fear} />
                       <Effect label="Уважение" value={option.effects?.respect} />
                       <Effect label="Казна" value={option.effects?.treasury} />
@@ -531,12 +531,12 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
               })}
             </div>
             {decision && (
-              <div className="result">
-                <div className="eyebrow">Последствия</div>
+              <div className="kc-result">
+                <div className="kc-eyebrow">Последствия</div>
                 <p>{decision.outcome}</p>
-                <div className="next-row">
-                  <button className="ghost" onClick={goBack}>Завершить игру</button>
-                  <button className="cta" onClick={moveNextCase}>
+                <div className="kc-next-row">
+                  <button className="kc-ghost" onClick={goBack}>Завершить игру</button>
+                  <button className="kc-cta" onClick={moveNextCase}>
                     {caseIndex >= CASES.length - 1 ? "Итоги дня" : "Следующее дело"}
                   </button>
                 </div>
@@ -552,40 +552,40 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
 function StatMeter({ icon, label, value, color, pulse }) {
   const safeValue = clamp(value || 0);
   return (
-    <div className="meter" data-pulse={pulse}>
-      <div className="meter-top">
-        <span className="icon">{icon}</span>
-        <div className="label">{label}</div>
+    <div className="kc-meter" data-pulse={pulse}>
+      <div className="kc-meter-top">
+        <span className="kc-icon">{icon}</span>
+        <div className="kc-label">{label}</div>
       </div>
-      <div className="bar">
-        <span className="fill" style={{ width: `${safeValue}%`, background: color }} />
+      <div className="kc-bar">
+        <span className="kc-fill" style={{ width: `${safeValue}%`, background: color }} />
       </div>
-      <div className="value">{safeValue}</div>
+      <div className="kc-value">{safeValue}</div>
     </div>
   );
 }
 
 function CouncilOverlay({ open, onClose, data }) {
   return (
-    <div className={`council-overlay ${open ? "open" : ""}`} aria-hidden={!open}>
-      <div className="council-panel" role="dialog" aria-label="Влияние элит">
-        <div className="council-header">
-          <div className="title">
-            <span className="icon" aria-hidden>👑</span>
+    <div className={`kc-council-overlay ${open ? "kc-open" : ""}`} aria-hidden={!open}>
+      <div className="kc-council-panel" role="dialog" aria-label="Влияние элит">
+        <div className="kc-council-header">
+          <div className="kc-title">
+            <span className="kc-icon" aria-hidden>👑</span>
             <span>Влияние элит</span>
           </div>
-          <button className="close" type="button" onClick={onClose} aria-label="Закрыть">
+          <button className="kc-close" type="button" onClick={onClose} aria-label="Закрыть">
             ✕
           </button>
         </div>
-        <div className="council-body">
+        <div className="kc-council-body">
           {data.map((group) => (
-            <div key={group.name} className="council-row">
-              <span className="name">{group.name}:</span>
-              <div className="council-meter">
-                <div className="council-meter-fill" style={{ width: `${clamp(group.value)}%` }} />
+            <div key={group.name} className="kc-council-row">
+              <span className="kc-name">{group.name}:</span>
+              <div className="kc-council-meter">
+                <div className="kc-council-meter-fill" style={{ width: `${clamp(group.value)}%` }} />
               </div>
-              <span className="score">{clamp(group.value)}</span>
+              <span className="kc-score">{clamp(group.value)}</span>
             </div>
           ))}
         </div>
@@ -595,10 +595,10 @@ function CouncilOverlay({ open, onClose, data }) {
 }
 function Effect({ label, value }) {
   if (value === undefined || value === null) return null;
-  const tone = value > 0 ? "up" : value < 0 ? "down" : "neutral";
+  const tone = value > 0 ? "kc-up" : value < 0 ? "kc-down" : "kc-neutral";
   const sign = value > 0 ? "+" : "";
   return (
-    <span className={`effect ${tone}`}>
+    <span className={`kc-effect ${tone}`}>
       {label} {sign}
       {value}
     </span>
@@ -606,5 +606,5 @@ function Effect({ label, value }) {
 }
 
 function Background() {
-  return <div className="knyaz-bg" aria-hidden />;
+  return <div className="kc-bg" aria-hidden />;
 }
