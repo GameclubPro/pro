@@ -3,9 +3,9 @@ import "./knyaz-court.css";
 
 const INITIAL_STATS = { fear: 46, respect: 54, treasury: 48 };
 const COUNCIL = [
-  { name: "Бояре", value: 63 },
-  { name: "Дружина", value: 41 },
-  { name: "Духовенство", value: 78 },
+  { name: "Бояре", value: 50 },
+  { name: "Дружина", value: 50 },
+  { name: "Духовенство", value: 50 },
 ];
 
 const CASES = [
@@ -598,7 +598,6 @@ function CouncilOverlay({ open, onClose, data }) {
               <span className="name">{group.name}:</span>
               <div className="council-meter">
                 <div className="council-meter-fill" style={{ width: `${clamp(group.value)}%` }} />
-                <span className="council-meter-text">{progressBlocks(group.value)}</span>
               </div>
               <span className="score">{clamp(group.value)}</span>
             </div>
@@ -608,13 +607,6 @@ function CouncilOverlay({ open, onClose, data }) {
     </div>
   );
 }
-
-function progressBlocks(value) {
-  const safe = clamp(value || 0);
-  const filled = Math.round(safe / 20);
-  return "▓".repeat(filled).padEnd(5, "▒");
-}
-
 function Effect({ label, value }) {
   if (value === undefined || value === null) return null;
   const tone = value > 0 ? "up" : value < 0 ? "down" : "neutral";
