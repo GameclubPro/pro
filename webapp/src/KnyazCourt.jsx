@@ -428,12 +428,13 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
         </header>
 
         <div className="kc-grid">
-          <section className="kc-card kc-suspect-panel">
+          <div className="kc-case-stack">
             {activeCase?.portrait === "guard" && (
-              <div className="kc-portrait-wrap">
+              <div className="kc-portrait-wrap kc-portrait-top">
                 <img src={VseslavPortrait} alt="Всеслав Молодой" className="kc-portrait" />
               </div>
             )}
+            <section className="kc-card kc-suspect-panel">
             <div className="kc-suspect-head">
               <div className="kc-badge" aria-hidden>
                 {activeCase?.portrait === "guard" && "🛡️"}
@@ -547,7 +548,8 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                 )}
               </div>
             )}
-          </section>
+            </section>
+          </div>
         </div>
       </div>
     </div>
