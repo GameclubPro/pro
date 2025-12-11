@@ -364,10 +364,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
           <header className="knyaz-header">
             <div>
               <p className="eyebrow">Княжий суд</p>
-              <h1>Дела на сегодня решены</h1>
-              <p className="muted">
-                Княжество живёт с твоими решениями. Стража шепчется, бояре оценивают, люди смотрят на казну.
-              </p>
             </div>
             <div className="meter-row final">
               <StatMeter icon="🛡️" color="var(--accent-amber)" label="Страх" value={stats.fear} pulse={pulse} />
@@ -376,7 +372,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
             </div>
           </header>
           <section className="parchment final-card">
-            <p className="muted">Советники шепчут итоги:</p>
             <ul className="summary">
               <li>Люди помнят каждое слово и каждый жест твоего суда.</li>
               <li>Дружина сравнивает строгость с милостью и готовится к новым приказам.</li>
@@ -404,10 +399,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
         <header className="knyaz-header">
           <div>
             <p className="eyebrow">Княжий суд</p>
-            <h1>{activeCase?.title}</h1>
-            <p className="muted">
-              Дело {caseIndex + 1} из {CASES.length}. Страх, уважение и казна меняются с каждым приговором.
-            </p>
           </div>
           <div className="meter-row">
             <StatMeter icon="🛡️" color="var(--accent-amber)" label="Страх" value={stats.fear} pulse={pulse} />
@@ -470,10 +461,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
               </div>
             </div>
 
-            {phase !== "dialog" && (
-              <p className="muted">Нажми «Выслушать подозреваемого», чтобы задать три вопроса — по одному в каждом раунде.</p>
-            )}
-
             {phase === "dialog" && (
               <>
                 <div className="questions">
@@ -516,7 +503,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                 <p className="eyebrow">Приговор</p>
                 <h3>Что решит князь?</h3>
               </div>
-              <div className="muted small">Выбор сразу доступен, но допрос может помочь.</div>
             </div>
             <div className="verdict-options">
               {activeCase?.verdicts?.map((option) => {
@@ -533,7 +519,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                     <span className="icon">{option.icon}</span>
                     <div className="verdict-meta">
                       <div className="label">{option.label}</div>
-                      <p className="muted">{preview}</p>
+                      <p>{preview}</p>
                     </div>
                     <div className="effects">
                       <Effect label="Страх" value={option.effects?.fear} />
