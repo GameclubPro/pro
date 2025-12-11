@@ -347,9 +347,9 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
         type="button"
         onClick={() => setShowCouncil((v) => !v)}
         aria-expanded={showCouncil}
+        aria-label="Влияние элит"
       >
         <span className="icon" aria-hidden>👑</span>
-        <span>Совет элит</span>
       </button>
       <CouncilOverlay open={showCouncil} onClose={() => setShowCouncil(false)} data={COUNCIL} />
     </>
@@ -582,11 +582,11 @@ function StatMeter({ icon, label, value, color, pulse }) {
 function CouncilOverlay({ open, onClose, data }) {
   return (
     <div className={`council-overlay ${open ? "open" : ""}`} aria-hidden={!open}>
-      <div className="council-panel" role="dialog" aria-label="Совет элит">
+      <div className="council-panel" role="dialog" aria-label="Влияние элит">
         <div className="council-header">
           <div className="title">
             <span className="icon" aria-hidden>👑</span>
-            <span>Совет элит</span>
+            <span>Влияние элит</span>
           </div>
           <button className="close" type="button" onClick={onClose} aria-label="Закрыть">
             ✕
