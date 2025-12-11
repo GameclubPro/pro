@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./knyaz-court.css";
 import VseslavPortrait from "./assets/knyaz/Vseslav_young.png";
-import VseslavPortrait from "./assets/knyaz/Vseslav_young.png";
 
 const INITIAL_STATS = { fear: 46, respect: 54, treasury: 48 };
 const COUNCIL = [
