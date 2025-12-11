@@ -110,6 +110,21 @@
   min-width: 0;
 }
 
+.kc-portrait-wrap {
+  position: relative;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  margin: 0 0 6px;
+}
+
+.kc-portrait {
+  max-width: 140px;
+  width: 50%;
+  min-width: 120px;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.5));
+}
+
 .kc-council-pill {
   position: fixed;
   top: 90px;

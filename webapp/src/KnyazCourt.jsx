@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./knyaz-court.css";
+import VseslavPortrait from "./assets/knyaz/Vseslav_young.png";
+import VseslavPortrait from "./assets/knyaz/Vseslav_young.png";
 
 const INITIAL_STATS = { fear: 46, respect: 54, treasury: 48 };
 const COUNCIL = [
@@ -428,6 +430,11 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
 
         <div className="kc-grid">
           <section className="kc-card kc-suspect-panel">
+            {activeCase?.portrait === "guard" && (
+              <div className="kc-portrait-wrap">
+                <img src={VseslavPortrait} alt="Всеслав Молодой" className="kc-portrait" />
+              </div>
+            )}
             <div className="kc-suspect-head">
               <div className="kc-badge" aria-hidden>
                 {activeCase?.portrait === "guard" && "🛡️"}
