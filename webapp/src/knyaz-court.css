@@ -115,19 +115,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding-top: 150px;
+  gap: 0;
+  padding-top: 0;
 }
 
 .kc-portrait-wrap {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
   width: 100%;
   display: grid;
   place-items: center;
   z-index: 1;
+  margin-bottom: 0;
 }
 
 .kc-portrait {
