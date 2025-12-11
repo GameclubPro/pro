@@ -2,6 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import "./knyaz-court.css";
 
 const INITIAL_STATS = { fear: 46, respect: 54, treasury: 48 };
+const COUNCIL = [
+  { name: "Бояре", value: 63 },
+  { name: "Дружина", value: 41 },
+  { name: "Духовенство", value: 78 },
+];
 
 const CASES = [
   {
@@ -239,6 +244,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const [decision, setDecision] = useState(null);
   const [stats, setStats] = useState(INITIAL_STATS);
   const [pulse, setPulse] = useState(0);
+  const [showCouncil, setShowCouncil] = useState(false);
   const progressGiven = useRef(false);
 
   const finished = caseIndex >= CASES.length;
@@ -334,11 +340,27 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setDecision(null);
   };
 
+  const councilControls = (
+    <>
+      <button
+        className="council-pill"
+        type="button"
+        onClick={() => setShowCouncil((v) => !v)}
+        aria-expanded={showCouncil}
+      >
+        <span className="icon" aria-hidden>👑</span>
+        <span>Совет элит</span>
+      </button>
+      <CouncilOverlay open={showCouncil} onClose={() => setShowCouncil(false)} data={COUNCIL} />
+    </>
+  );
+
   if (finished) {
     return (
       <div className="knyaz">
         <Background />
         <div className="knyaz-shell">
+          {councilControls}
           <header className="knyaz-header">
             <div>
               <p className="eyebrow">Княжий суд</p>
@@ -378,6 +400,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     <div className="knyaz">
       <Background />
       <div className="knyaz-shell">
+        {councilControls}
         <header className="knyaz-header">
           <div>
             <p className="eyebrow">Княжий суд</p>
@@ -554,6 +577,42 @@ function StatMeter({ icon, label, value, color, pulse }) {
       <div className="value">{safeValue}</div>
     </div>
   );
+}
+
+function CouncilOverlay({ open, onClose, data }) {
+  return (
+    <div className={`council-overlay ${open ? "open" : ""}`} aria-hidden={!open}>
+      <div className="council-panel" role="dialog" aria-label="Совет элит">
+        <div className="council-header">
+          <div className="title">
+            <span className="icon" aria-hidden>👑</span>
+            <span>Совет элит</span>
+          </div>
+          <button className="close" type="button" onClick={onClose} aria-label="Закрыть">
+            ✕
+          </button>
+        </div>
+        <div className="council-body">
+          {data.map((group) => (
+            <div key={group.name} className="council-row">
+              <span className="name">{group.name}:</span>
+              <div className="council-meter">
+                <div className="council-meter-fill" style={{ width: `${clamp(group.value)}%` }} />
+                <span className="council-meter-text">{progressBlocks(group.value)}</span>
+              </div>
+              <span className="score">{clamp(group.value)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function progressBlocks(value) {
+  const safe = clamp(value || 0);
+  const filled = Math.round(safe / 20);
+  return "▓".repeat(filled).padEnd(5, "▒");
 }
 
 function Effect({ label, value }) {
