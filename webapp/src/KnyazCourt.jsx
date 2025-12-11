@@ -238,7 +238,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const [answers, setAnswers] = useState([]);
   const [decision, setDecision] = useState(null);
   const [stats, setStats] = useState(INITIAL_STATS);
-  const [delta, setDelta] = useState({ fear: 0, respect: 0, treasury: 0 });
   const [pulse, setPulse] = useState(0);
   const progressGiven = useRef(false);
 
@@ -277,7 +276,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setRoundIndex(0);
     setAnswers([]);
     setDecision(null);
-    setDelta({ fear: 0, respect: 0, treasury: 0 });
   }, [caseIndex]);
 
   const startDialog = () => {
@@ -315,11 +313,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     const effects = option.effects || {};
     setDecision(option);
     setPhase("result");
-    setDelta({
-      fear: effects.fear || 0,
-      respect: effects.respect || 0,
-      treasury: effects.treasury || 0,
-    });
     setPulse((v) => v + 1);
     setStats((prev) => ({
       fear: clamp(prev.fear + (effects.fear || 0)),
@@ -339,7 +332,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setRoundIndex(0);
     setAnswers([]);
     setDecision(null);
-    setDelta({ fear: 0, respect: 0, treasury: 0 });
   };
 
   if (finished) {
@@ -356,9 +348,9 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
               </p>
             </div>
             <div className="meter-row final">
-              <StatMeter icon="🛡️" color="var(--accent-amber)" label="Страх" value={stats.fear} delta={delta.fear} pulse={pulse} />
-              <StatMeter icon="⚖️" color="var(--accent-green)" label="Уважение" value={stats.respect} delta={delta.respect} pulse={pulse} />
-              <StatMeter icon="💰" color="var(--accent-gold)" label="Казна" value={stats.treasury} delta={delta.treasury} pulse={pulse} />
+              <StatMeter icon="🛡️" color="var(--accent-amber)" label="Страх" value={stats.fear} pulse={pulse} />
+              <StatMeter icon="⚖️" color="var(--accent-green)" label="Уважение" value={stats.respect} pulse={pulse} />
+              <StatMeter icon="💰" color="var(--accent-gold)" label="Казна" value={stats.treasury} pulse={pulse} />
             </div>
           </header>
           <section className="parchment final-card">
@@ -395,9 +387,9 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
             </p>
           </div>
           <div className="meter-row">
-            <StatMeter icon="🛡️" color="var(--accent-amber)" label="Страх" value={stats.fear} delta={delta.fear} pulse={pulse} />
-            <StatMeter icon="⚖️" color="var(--accent-green)" label="Уважение" value={stats.respect} delta={delta.respect} pulse={pulse} />
-            <StatMeter icon="💰" color="var(--accent-gold)" label="Казна" value={stats.treasury} delta={delta.treasury} pulse={pulse} />
+            <StatMeter icon="🛡️" color="var(--accent-amber)" label="Страх" value={stats.fear} pulse={pulse} />
+            <StatMeter icon="⚖️" color="var(--accent-green)" label="Уважение" value={stats.respect} pulse={pulse} />
+            <StatMeter icon="💰" color="var(--accent-gold)" label="Казна" value={stats.treasury} pulse={pulse} />
           </div>
         </header>
 
@@ -548,20 +540,13 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   );
 }
 
-function StatMeter({ icon, label, value, delta, color, pulse }) {
+function StatMeter({ icon, label, value, color, pulse }) {
   const safeValue = clamp(value || 0);
-  const sign = delta > 0 ? "+" : "";
-  const tone = delta > 0 ? "up" : delta < 0 ? "down" : "neutral";
   return (
     <div className="meter" data-pulse={pulse}>
       <div className="meter-top">
         <span className="icon">{icon}</span>
-        <div>
-          <div className="label">{label}</div>
-          <div className="delta">
-            <span className={tone}>{delta ? `${sign}${delta}` : "±0"}</span>
-          </div>
-        </div>
+        <div className="label">{label}</div>
       </div>
       <div className="bar">
         <span className="fill" style={{ width: `${safeValue}%`, background: color }} />

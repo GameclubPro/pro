@@ -143,23 +143,7 @@
 .meter .label {
   color: #f1e4d2;
   font-weight: 700;
-  font-size: 13px;
-}
-
-.meter .delta {
-  font-size: 11.5px;
-}
-
-.meter .delta .up {
-  color: #9ad06b;
-}
-
-.meter .delta .down {
-  color: #ff7a7a;
-}
-
-.meter .delta .neutral {
-  color: var(--muted);
+  font-size: 12px;
 }
 
 .meter .bar {
@@ -573,11 +557,7 @@
   }
 
   .meter .label {
-    font-size: 12px;
-  }
-
-  .meter .delta {
-    font-size: 10.5px;
+    font-size: 11px;
   }
 
   .meter .value {
