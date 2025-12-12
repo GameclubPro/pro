@@ -415,6 +415,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     phase === "dialog"
       ? typedText || dialogLine
       : typedText || activeCase?.description;
+  const showCaseTitle = phase !== "dialog";
   const badgeIcon = useMemo(() => {
     if (!activeCase) return "🧭";
     if (activeCase.portrait === "guard") return "🛡️";
@@ -497,7 +498,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     if (!pleaPlayed && activeCase?.plea) {
       setDialogLine(activeCase.plea);
       setPleaPlayed(true);
-      setTypedText("");
+      setTypedText(activeCase.plea);
     } else {
       setTypedText(dialogLine || "");
     }
@@ -577,8 +578,12 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     if (phase === "dialog") {
       target = currentAnswer?.answer || dialogLine || "";
     }
+    if (phase === "dialog") {
+      setTypedText(target || "");
+      return undefined;
+    }
     setTypedText("");
-    if (!target) return;
+    if (!target) return undefined;
     let i = 0;
     const id = setInterval(() => {
       i += 1;
@@ -698,7 +703,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
             )}
             <section className="kc-card kc-suspect-panel">
               <div className="kc-case-text">
-                <h3>{activeCase?.title}</h3>
+                {showCaseTitle && <h3>{activeCase?.title}</h3>}
                 <p>{displayText}</p>
               </div>
               {!showQuestions && !showVerdicts && (
