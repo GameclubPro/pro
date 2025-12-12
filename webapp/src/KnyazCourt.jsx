@@ -24,7 +24,7 @@ const CASES = [
     title: "Обошёл пошлину на соляном обозе",
     description:
       "Стража говорит, что Гридя провёл обоз ночью и записал половину бочек как милостыню монастырю, чтобы не платить пошлину.",
-    plea: "Я купец честный: шёл ночью, чтобы соль не отсырела, и не думал скрываться от пошлины.",
+    plea: "Княже, вёз соль ночью, чтобы не сгнила. Записал часть на милостыню по глупости, а не ради воровства. Готов оплатить пошлину и починить заставу.",
     portrait: "merchant",
     rounds: [
       [
@@ -125,7 +125,7 @@ const CASES = [
     title: "Выбивал дань с избытком",
     description:
       "Деревни жалуются: Всеслав взял двойную дань и выбил ворота амбара. Один старик умер после допроса.",
-    plea: "Шёл по приказу сотника, не ради грабежа. Если перегнул — готов отвечать, но приказ был чужой.",
+    plea: "Шёл за данью по слову сотника, не ради грабежа. Признаю горячность своих людей. Готов вернуть лишнее и стать на караул, если прикажешь.",
     portrait: "guard",
     rounds: [
       [
@@ -214,7 +214,7 @@ const CASES = [
     title: "Укрыла беглого смерда",
     description:
       "Говорят, Милослава спрятала беглого кузнеца, чтобы оставить его у себя. Господин требует холопа назад с платой.",
-    plea: "Я спасла раненого кузнеца, не прятала его от суда. Готова отвечать и договориться по закону.",
+    plea: "Приняла раненого холопа, чтобы не умер у ворот. Не прятала его от суда и посылала гонца хозяину. Готова заплатить выкуп и решить дело по закону.",
     portrait: "noble",
     rounds: [
       [
@@ -287,7 +287,7 @@ const CASES = [
     title: "Ковал оружие для разбойников",
     description:
       "Стража нашла клинки с меткой волка — знак разбойничьей шайки. Лютко говорит, что думал, будто работает на дружину.",
-    plea: "Я ковал по слову посланника воеводы. Не знал, что это шайка. Готов вернуть серебро и помочь поймать их.",
+    plea: "Ковал по слову посланника воеводы, думал служу дружине. Когда понял про шайку — стыжусь. Готов вернуть серебро, выдать приметы заказчиков и идти в облаву.",
     portrait: "smith",
     rounds: [
       [
@@ -399,6 +399,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const [pulse, setPulse] = useState(0);
   const [showCouncil, setShowCouncil] = useState(false);
   const [typedText, setTypedText] = useState("");
+  const [dialogLine, setDialogLine] = useState("");
   const progressGiven = useRef(false);
   const autoAdvanceRef = useRef(null);
 
@@ -411,7 +412,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const showVerdicts = phase === "verdict" || phase === "result";
   const displayText =
     phase === "dialog"
-      ? typedText || activeCase?.plea
+      ? typedText || dialogLine
       : typedText || activeCase?.description;
   const badgeIcon = useMemo(() => {
     if (!activeCase) return "🧭";
@@ -448,6 +449,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
         setRoundIndex(0);
         setAnswers([]);
         setDecision(null);
+        setDialogLine("");
         clearTimeout(autoAdvanceRef.current);
         return;
       }
@@ -476,6 +478,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setAnswers([]);
     setDecision(null);
     clearTimeout(autoAdvanceRef.current);
+    setDialogLine("");
   }, [caseIndex]);
 
   useEffect(() => () => clearTimeout(autoAdvanceRef.current), []);
@@ -486,6 +489,8 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setRoundIndex(0);
     setAnswers([]);
     setDecision(null);
+    setDialogLine(activeCase?.plea || "");
+    setTypedText("");
   };
 
   const goToVerdict = () => {
@@ -502,6 +507,8 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
       next[roundIndex] = { ...question, round: roundIndex };
       return next;
     });
+    setDialogLine(question.answer || "");
+    setTypedText("");
     const isLastRound = roundIndex >= (activeCase.rounds?.length || 0) - 1;
     if (isLastRound) {
       setPhase("verdict");
@@ -554,7 +561,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   useEffect(() => {
     let target = activeCase?.description || "";
     if (phase === "dialog") {
-      target = currentAnswer?.answer || activeCase?.plea || "";
+      target = currentAnswer?.answer || dialogLine || "";
     }
     setTypedText("");
     if (!target) return;
@@ -565,7 +572,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
       if (i >= target.length) clearInterval(id);
     }, 18);
     return () => clearInterval(id);
-  }, [phase, currentAnswer?.answer, activeCase?.description]);
+  }, [phase, currentAnswer?.answer, dialogLine, activeCase?.description]);
 
   const councilControls = (
     <>
