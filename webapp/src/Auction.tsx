@@ -184,9 +184,9 @@ export default function Auction({
   const [settingsDirty, setSettingsDirty] = useState(false);
   const [basketPlayerId, setBasketPlayerId] = useState<number | null>(null);
   const [lootboxReveal, setLootboxReveal] = useState<LootboxRevealEvent | null>(null);
-  const [lootboxStage, setLootboxStage] = useState<"intro" | "opening" | "reveal">(
-    "intro"
-  );
+  const [lootboxStage, setLootboxStage] = useState<
+    "intro" | "shake" | "explode" | "reveal"
+  >("intro");
   const lastSyncedSettingsRef = useRef({
     slots: settingsSlots,
     budget: settingsBudget,
@@ -282,6 +282,12 @@ export default function Auction({
     const match = name.match(/([\u{1F300}-\u{1FAFF}])/u);
     if (match?.[0]) return match[0];
     return currentSlot?.type === "lootbox" ? "🎁" : "🏆";
+  }, [currentSlot?.name, currentSlot?.type]);
+
+  const isRegularLootboxSlot = useMemo(() => {
+    if (currentSlot?.type !== "lootbox") return false;
+    const name = String(currentSlot?.name || "");
+    return name.includes(REGULAR_LOOTBOX_NAME_HINT);
   }, [currentSlot?.name, currentSlot?.type]);
 
   const heroBidText = useMemo(() => {
@@ -646,12 +652,14 @@ export default function Auction({
     setLootboxStage("intro");
     lootboxConfettiFiredRef.current = null;
 
-    const openTimer = setTimeout(() => setLootboxStage("opening"), 240);
-    const revealTimer = setTimeout(() => setLootboxStage("reveal"), 1240);
+    const shakeTimer = setTimeout(() => setLootboxStage("shake"), 200);
+    const explodeTimer = setTimeout(() => setLootboxStage("explode"), 780);
+    const revealTimer = setTimeout(() => setLootboxStage("reveal"), 1750);
     const closeTimer = setTimeout(() => setLootboxReveal(null), 5200);
 
     return () => {
-      clearTimeout(openTimer);
+      clearTimeout(shakeTimer);
+      clearTimeout(explodeTimer);
       clearTimeout(revealTimer);
       clearTimeout(closeTimer);
     };
@@ -1814,7 +1822,16 @@ export default function Auction({
               )}
             </AnimatePresence>
             <div className="lot-hero__emoji" aria-hidden="true">
-              {lotEmoji}
+              {isRegularLootboxSlot ? (
+                <img
+                  className="lot-hero__emoji-img"
+                  src={regularLootboxImageUrl}
+                  alt=""
+                  draggable={false}
+                />
+              ) : (
+                lotEmoji
+              )}
             </div>
           </div>
           <div className="lot-hero__bid">
@@ -2303,7 +2320,8 @@ export default function Auction({
         : effectKind === "lot"
         ? prizeBasePriceText || "Предмет"
         : "Ничего";
-    const shatterExploded = lootboxStage !== "intro";
+    const shatterExploded = lootboxStage === "explode" || lootboxStage === "reveal";
+    const shatterShaking = lootboxStage === "shake";
 
     return (
       <div
@@ -2341,7 +2359,12 @@ export default function Auction({
           <div className="lootbox-stage">
             <div className="lootbox-shatter-stage" aria-hidden="true">
               <div
-                className="lootbox-shatter"
+                className={[
+                  "lootbox-shatter",
+                  shatterShaking ? "lootbox-shatter--shaking" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 style={{
                   width: LOOTBOX_SHATTER_SIZE,
                   height: LOOTBOX_SHATTER_SIZE,
@@ -2376,14 +2399,14 @@ export default function Auction({
                         : { x: 0, y: 0, rotate: 0, opacity: 1 }
                     }
                     transition={{
-                      duration: 0.95,
+                      duration: 0.82,
                       delay: piece.delay,
                       ease: "easeOut",
                     }}
                   />
                 ))}
                 <AnimatePresence initial={false}>
-                  {lootboxStage === "opening" && (
+                  {lootboxStage === "explode" && (
                     <motion.div
                       className="lootbox-burst"
                       initial={{ opacity: 0, scale: 0.7 }}
