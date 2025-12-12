@@ -257,6 +257,28 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const showQuestions = phase === "dialog";
   const showVerdicts = phase === "verdict" || phase === "result";
   const displayText = phase === "dialog" ? typedText : typedText || activeCase?.description;
+  const badgeIcon = useMemo(() => {
+    if (!activeCase) return "🧭";
+    if (activeCase.portrait === "guard") return "🛡️";
+    if (activeCase.portrait === "merchant") return "📜";
+    if (activeCase.portrait === "noble") return "👑";
+    if (activeCase.portrait === "smith") return "⚒️";
+    return "🧭";
+  }, [activeCase]);
+  const headerLabel = activeCase?.status || "Княжий суд";
+  const suspectName = useMemo(() => {
+    const parts = (activeCase?.name || "").split(" ").filter(Boolean);
+    if (parts.length === 2) {
+      return (
+        <>
+          {parts[0]}
+          <br />
+          {parts[1]}
+        </>
+      );
+    }
+    return activeCase?.name || "—";
+  }, [activeCase?.name]);
 
   useEffect(() => {
     if (!setBackHandler) return undefined;
@@ -383,11 +405,14 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     return (
       <div className="kc-root">
         <Background />
-        <div className="kc-shell">
+      <div className="kc-shell">
           {councilControls}
           <header className="kc-header">
-            <div>
-              <p className="kc-eyebrow">Княжий суд</p>
+            <div className="kc-header-mark">
+              <div className="kc-badge" aria-hidden>
+                {badgeIcon}
+              </div>
+              <p className="kc-eyebrow kc-eyebrow-on-dark">{headerLabel}</p>
             </div>
             <div className="kc-meter-row kc-final">
               <StatMeter icon="🛡️" color="var(--accent-amber)" label="Страх" value={stats.fear} pulse={pulse} />
@@ -417,8 +442,11 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
       <div className="kc-shell">
         {councilControls}
         <header className="kc-header">
-          <div>
-            <p className="kc-eyebrow">Княжий суд</p>
+          <div className="kc-header-mark">
+            <div className="kc-badge" aria-hidden>
+              {badgeIcon}
+            </div>
+            <p className="kc-eyebrow kc-eyebrow-on-dark">{headerLabel}</p>
           </div>
           <div className="kc-meter-row">
             <StatMeter icon="🛡️" color="var(--accent-amber)" label="Страх" value={stats.fear} pulse={pulse} />
@@ -429,125 +457,121 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
 
         <div className="kc-grid">
           <div className="kc-case-stack">
-            {activeCase?.portrait === "guard" && (
-              <div className="kc-portrait-wrap kc-portrait-top">
-                <img src={VseslavPortrait} alt="Всеслав Молодой" className="kc-portrait" />
-              </div>
-            )}
             <section className="kc-card kc-suspect-panel">
-            <div className="kc-suspect-head">
-              <div className="kc-badge" aria-hidden>
-                {activeCase?.portrait === "guard" && "🛡️"}
-                {activeCase?.portrait === "merchant" && "📜"}
-                {activeCase?.portrait === "noble" && "👑"}
-                {activeCase?.portrait === "smith" && "⚒️"}
-                {!activeCase?.portrait && "🧭"}
-              </div>
-              <div>
-                <div className="kc-eyebrow">{activeCase?.status}</div>
-                <div className="kc-suspect-name">{activeCase?.name}</div>
-              </div>
-            </div>
-            <div className="kc-case-text">
-              <h3>{activeCase?.title}</h3>
-              <p>{displayText}</p>
-            </div>
-            {asked.length > 0 && (
-              <div className="kc-mini-log" aria-live="polite">
-                <div className="kc-mini-log-title">Что уже сказано</div>
-                {asked.map((item, idx) => (
-                  <div key={`${item.text}-${idx}`} className="kc-mini-log-line">
-                    <span className="kc-pill">Раунд {item.round + 1}</span>
-                    <span className="kc-q">{item.text}</span>
-                    <span className="kc-a">{item.answer}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {!showQuestions && !showVerdicts && (
-              <div className="kc-action-row">
-                <button className="kc-cta" onClick={goToVerdict}>Принять решение</button>
-                <button className="kc-ghost" onClick={startDialog}>Выслушать</button>
-              </div>
-            )}
-            {showQuestions && (
-              <>
-                <div className="kc-questions">
-                  {currentRound.map((q, idx) => {
-                    const answered = !!currentAnswer;
-                    const isChosen = currentAnswer?.text === q.text;
-                    return (
-                      <button
-                        key={q.text}
-                        className={`kc-question ${isChosen ? "kc-chosen" : ""}`}
-                        disabled={answered && !isChosen}
-                        onClick={() => selectQuestion(q)}
-                      >
-                        <span className="kc-pill">Вопрос {idx + 1}</span>
-                        <span>{q.text}</span>
-                      </button>
-                    );
-                  })}
+              <div className="kc-suspect-head">
+                <div className="kc-suspect-name-block">
+                  <div className="kc-suspect-name">{suspectName}</div>
                 </div>
-                {currentAnswer && (
-                  <div className="kc-answer">
-                    <div className="kc-eyebrow">Ответ</div>
-                    <p>{currentAnswer.answer}</p>
+                {activeCase?.portrait === "guard" && (
+                  <div className="kc-portrait-wrap kc-portrait-inline">
+                    <img
+                      src={VseslavPortrait}
+                      alt={activeCase?.name || "Портрет подозреваемого"}
+                      className="kc-portrait"
+                    />
                   </div>
                 )}
-                {currentAnswer && (
-                  <div className="kc-next-row">
-                    {roundIndex >= (activeCase?.rounds?.length || 0) - 1 ? (
-                      <button className="kc-cta" onClick={goToVerdict}>Перейти к приговору</button>
-                    ) : (
-                      <button className="kc-cta" onClick={nextRound}>Следующий раунд</button>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-            {showVerdicts && (
-              <div className="kc-verdict-block">
-                <div className="kc-verdict-options">
-                  {activeCase?.verdicts?.map((option) => {
-                    const isPicked = decision?.key === option.key;
-                    const preview =
-                      option.outcome.length > 86 ? `${option.outcome.slice(0, 86)}…` : option.outcome;
-                    return (
-                      <button
-                        key={option.key}
-                        className={`kc-verdict ${isPicked ? "kc-chosen" : ""}`}
-                        onClick={() => chooseVerdict(option)}
-                        disabled={!!decision}
-                      >
-                        <span className="kc-icon">{option.icon}</span>
-                        <div className="kc-verdict-meta">
-                          <div className="kc-label">{option.label}</div>
-                          <p>{preview}</p>
-                        </div>
-                        <div className="kc-effects">
-                          <Effect label="Страх" value={option.effects?.fear} />
-                          <Effect label="Уважение" value={option.effects?.respect} />
-                          <Effect label="Казна" value={option.effects?.treasury} />
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-                {decision && (
-                  <div className="kc-result">
-                    <div className="kc-eyebrow">Последствия</div>
-                    <p>{decision.outcome}</p>
-                    <div className="kc-next-row">
-                      <button className="kc-ghost" onClick={goBack}>Завершить игру</button>
-                      <button className="kc-cta" onClick={moveNextCase}>
-                        {caseIndex >= CASES.length - 1 ? "Итоги дня" : "Следующее дело"}
-                      </button>
+              </div>
+              <div className="kc-case-text">
+                <h3>{activeCase?.title}</h3>
+                <p>{displayText}</p>
+              </div>
+              {asked.length > 0 && (
+                <div className="kc-mini-log" aria-live="polite">
+                  <div className="kc-mini-log-title">Что уже сказано</div>
+                  {asked.map((item, idx) => (
+                    <div key={`${item.text}-${idx}`} className="kc-mini-log-line">
+                      <span className="kc-pill">Раунд {item.round + 1}</span>
+                      <span className="kc-q">{item.text}</span>
+                      <span className="kc-a">{item.answer}</span>
                     </div>
+                  ))}
+                </div>
+              )}
+              {!showQuestions && !showVerdicts && (
+                <div className="kc-action-row">
+                  <button className="kc-cta" onClick={goToVerdict}>Принять решение</button>
+                  <button className="kc-ghost" onClick={startDialog}>Выслушать</button>
+                </div>
+              )}
+              {showQuestions && (
+                <>
+                  <div className="kc-questions">
+                    {currentRound.map((q, idx) => {
+                      const answered = !!currentAnswer;
+                      const isChosen = currentAnswer?.text === q.text;
+                      return (
+                        <button
+                          key={q.text}
+                          className={`kc-question ${isChosen ? "kc-chosen" : ""}`}
+                          disabled={answered && !isChosen}
+                          onClick={() => selectQuestion(q)}
+                        >
+                          <span className="kc-pill">Вопрос {idx + 1}</span>
+                          <span>{q.text}</span>
+                        </button>
+                      );
+                    })}
                   </div>
-                )}
-              </div>
-            )}
+                  {currentAnswer && (
+                    <div className="kc-answer">
+                      <div className="kc-eyebrow">Ответ</div>
+                      <p>{currentAnswer.answer}</p>
+                    </div>
+                  )}
+                  {currentAnswer && (
+                    <div className="kc-next-row">
+                      {roundIndex >= (activeCase?.rounds?.length || 0) - 1 ? (
+                        <button className="kc-cta" onClick={goToVerdict}>Перейти к приговору</button>
+                      ) : (
+                        <button className="kc-cta" onClick={nextRound}>Следующий раунд</button>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+              {showVerdicts && (
+                <div className="kc-verdict-block">
+                  <div className="kc-verdict-options">
+                    {activeCase?.verdicts?.map((option) => {
+                      const isPicked = decision?.key === option.key;
+                      const preview =
+                        option.outcome.length > 86 ? `${option.outcome.slice(0, 86)}…` : option.outcome;
+                      return (
+                        <button
+                          key={option.key}
+                          className={`kc-verdict ${isPicked ? "kc-chosen" : ""}`}
+                          onClick={() => chooseVerdict(option)}
+                          disabled={!!decision}
+                        >
+                          <span className="kc-icon">{option.icon}</span>
+                          <div className="kc-verdict-meta">
+                            <div className="kc-label">{option.label}</div>
+                            <p>{preview}</p>
+                          </div>
+                          <div className="kc-effects">
+                            <Effect label="Страх" value={option.effects?.fear} />
+                            <Effect label="Уважение" value={option.effects?.respect} />
+                            <Effect label="Казна" value={option.effects?.treasury} />
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {decision && (
+                    <div className="kc-result">
+                      <div className="kc-eyebrow">Последствия</div>
+                      <p>{decision.outcome}</p>
+                      <div className="kc-next-row">
+                        <button className="kc-ghost" onClick={goBack}>Завершить игру</button>
+                        <button className="kc-cta" onClick={moveNextCase}>
+                          {caseIndex >= CASES.length - 1 ? "Итоги дня" : "Следующее дело"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </section>
           </div>
         </div>

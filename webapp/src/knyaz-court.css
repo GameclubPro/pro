@@ -72,12 +72,24 @@
   display: flex;
   gap: 20px;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   margin-bottom: 16px;
 }
 
 .kc-header h1 {
   font-size: clamp(22px, 4vw, 28px);
+}
+
+.kc-header-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kc-header .kc-eyebrow-on-dark {
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
 }
 
 .kc-meter-row {
@@ -383,7 +395,8 @@
 
 .kc-suspect-head {
   display: flex;
-  gap: 12px;
+  gap: 14px;
+  justify-content: space-between;
   align-items: center;
 }
 
@@ -398,10 +411,32 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 12px 30px rgba(0, 0, 0, 0.15);
 }
 
+.kc-suspect-name-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  flex: 1 1 auto;
+}
+
 .kc-suspect-name {
   font-size: 22px;
   font-weight: 700;
   color: var(--paper-ink);
+  line-height: 1.05;
+  max-width: 260px;
+}
+
+.kc-portrait-inline {
+  width: 140px;
+  justify-content: flex-end;
+  transform: translateX(10px);
+}
+
+.kc-portrait-inline .kc-portrait {
+  width: 120px;
+  max-width: 120px;
+  min-width: 96px;
 }
 
 .kc-case-text h3 {
