@@ -412,10 +412,12 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const currentAnswer = answers[roundIndex];
   const showQuestions = phase === "dialog";
   const showVerdicts = phase === "verdict" || phase === "result";
-  const targetText = useMemo(
-    () => (phase === "dialog" ? currentAnswer?.answer || dialogLine || "" : activeCase?.description || ""),
-    [phase, currentAnswer?.answer, dialogLine, activeCase?.description],
-  );
+  const targetText = useMemo(() => {
+    if (phase === "dialog" || phase === "verdict") {
+      return currentAnswer?.answer || dialogLine || "";
+    }
+    return activeCase?.description || "";
+  }, [phase, currentAnswer?.answer, dialogLine, activeCase?.description]);
   const displayText = typedText || "";
   const showCaseTitle = phase !== "dialog";
   const badgeIcon = useMemo(() => {
