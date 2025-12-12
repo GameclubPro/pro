@@ -487,11 +487,12 @@
 
 .kc-mini-log-line .kc-q {
   font-weight: 600;
+  color: #3a2d23;
 }
 
 .kc-mini-log-line .kc-a {
-  grid-column: 2 / span 1;
   color: #3a2d23;
+  grid-column: 1 / -1;
 }
 
 .kc-action-row {

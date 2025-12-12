@@ -404,7 +404,8 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const currentAnswer = answers[roundIndex];
   const showQuestions = phase === "dialog";
   const showVerdicts = phase === "verdict" || phase === "result";
-  const displayText = phase === "dialog" ? typedText : typedText || activeCase?.description;
+  const displayText =
+    phase === "dialog" && currentAnswer?.answer ? typedText : typedText || activeCase?.description;
   const badgeIcon = useMemo(() => {
     if (!activeCase) return "🧭";
     if (activeCase.portrait === "guard") return "🛡️";
@@ -662,11 +663,11 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
               {showQuestions && (
                 <>
                   <div className="kc-questions">
-                    {currentRound.map((q, idx) => {
-                      const answered = !!currentAnswer;
-                      const isChosen = currentAnswer?.text === q.text;
-                    return (
-                      <button
+                {currentRound.map((q, idx) => {
+                  const answered = !!currentAnswer;
+                  const isChosen = currentAnswer?.text === q.text;
+                  return (
+                    <button
                         key={q.text}
                         className={`kc-question ${isChosen ? "kc-chosen" : ""}`}
                         disabled={answered && !isChosen}
@@ -677,12 +678,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                     );
                   })}
                 </div>
-                  {currentAnswer && (
-                    <div className="kc-answer">
-                      <div className="kc-eyebrow">Ответ</div>
-                      <p>{currentAnswer.answer}</p>
-                    </div>
-                  )}
                   {currentAnswer && (
                     <div className="kc-next-row">
                       {roundIndex >= (activeCase?.rounds?.length || 0) - 1 ? (
