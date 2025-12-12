@@ -132,6 +132,32 @@
   width: 100%;
 }
 
+.kc-next-case-bar {
+  margin: 10px 0 0;
+  display: flex;
+  justify-content: center;
+}
+
+.kc-next-case-btn {
+  background: linear-gradient(135deg, #c67939, #a44b2f);
+  color: #fdf4e3;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+  padding: 12px 26px;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.2px;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.kc-next-case-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.24);
+  filter: brightness(1.03);
+}
+
 .kc-portrait-wrap {
   width: 100%;
   display: grid;

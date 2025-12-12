@@ -602,9 +602,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     decisionAdvanceRef.current = setTimeout(() => {
       setMeterPops([]);
     }, 1600);
-    resultAdvanceRef.current = setTimeout(() => {
-      moveNextCase();
-    }, 3000);
   };
 
   const moveNextCase = () => {
@@ -788,6 +785,13 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                 </div>
               )}
             </section>
+            {decision && (
+              <div className="kc-next-case-bar">
+                <button className="kc-next-case-btn" onClick={moveNextCase}>
+                  Ведите следующего
+                </button>
+              </div>
+            )}
             {showQuestions && (
               <section className="kc-card kc-questions-panel">
                 <div className="kc-questions-title">Вопросы</div>
