@@ -481,7 +481,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                   <div className="kc-mini-log-title">Что уже сказано</div>
                   {asked.map((item, idx) => (
                     <div key={`${item.text}-${idx}`} className="kc-mini-log-line">
-                      <span className="kc-pill">Раунд {item.round + 1}</span>
                       <span className="kc-q">{item.text}</span>
                       <span className="kc-a">{item.answer}</span>
                     </div>
@@ -500,19 +499,18 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                     {currentRound.map((q, idx) => {
                       const answered = !!currentAnswer;
                       const isChosen = currentAnswer?.text === q.text;
-                      return (
-                        <button
-                          key={q.text}
-                          className={`kc-question ${isChosen ? "kc-chosen" : ""}`}
-                          disabled={answered && !isChosen}
-                          onClick={() => selectQuestion(q)}
-                        >
-                          <span className="kc-pill">Вопрос {idx + 1}</span>
+                    return (
+                      <button
+                        key={q.text}
+                        className={`kc-question ${isChosen ? "kc-chosen" : ""}`}
+                        disabled={answered && !isChosen}
+                        onClick={() => selectQuestion(q)}
+                      >
                           <span>{q.text}</span>
                         </button>
-                      );
-                    })}
-                  </div>
+                    );
+                  })}
+                </div>
                   {currentAnswer && (
                     <div className="kc-answer">
                       <div className="kc-eyebrow">Ответ</div>
