@@ -425,7 +425,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     return activeCase?.description || "";
   }, [phase, currentAnswer?.answer, dialogLine, activeCase?.description]);
   const displayText = typedText || "";
-  const showCaseTitle = phase !== "dialog";
+  const showCaseTitle = phase === "summary";
   const badgeIcon = useMemo(() => {
     if (!activeCase) return "🧭";
     if (activeCase.portrait === "guard") return "🛡️";
@@ -603,9 +603,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
       setMeterPops([]);
     }, 1600);
     resultAdvanceRef.current = setTimeout(() => {
-      if (caseIndex < CASES.length - 1) {
-        moveNextCase();
-      }
+      moveNextCase();
     }, 3000);
   };
 
@@ -832,20 +830,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                     );
                   })}
                 </div>
-                {decision && (
-                  <div className="kc-result">
-                    <div className="kc-eyebrow">Последствия</div>
-                    <p>{decision.outcome}</p>
-                    {caseIndex >= CASES.length - 1 && (
-                      <div className="kc-next-row">
-                        <button className="kc-ghost" onClick={goBack}>Завершить игру</button>
-                        <button className="kc-cta" onClick={moveNextCase}>
-                          Итоги дня
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
               </section>
             )}
           </div>
