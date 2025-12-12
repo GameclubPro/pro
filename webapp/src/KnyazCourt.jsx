@@ -403,6 +403,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const [pleaPlayed, setPleaPlayed] = useState(false);
   const progressGiven = useRef(false);
   const autoAdvanceRef = useRef(null);
+  const lastPrintedRef = useRef("");
 
   const finished = caseIndex >= CASES.length;
   const activeCase = useMemo(() => (finished ? null : CASES[caseIndex]), [finished, caseIndex]);
@@ -454,6 +455,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
         setDialogLine("");
         setTypedText("");
         setPleaPlayed(false);
+        lastPrintedRef.current = "";
         clearTimeout(autoAdvanceRef.current);
         return;
       }
@@ -485,6 +487,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setDialogLine("");
     setTypedText("");
     setPleaPlayed(false);
+    lastPrintedRef.current = "";
   }, [caseIndex]);
 
   useEffect(() => () => clearTimeout(autoAdvanceRef.current), []);
@@ -571,6 +574,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setDialogLine("");
     setTypedText("");
     setPleaPlayed(false);
+    lastPrintedRef.current = "";
   };
 
   useEffect(() => {
@@ -578,12 +582,17 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     if (phase === "dialog") {
       target = currentAnswer?.answer || dialogLine || "";
     }
+    if (!target) return undefined;
+    if (target === lastPrintedRef.current) {
+      if (typedText !== target) setTypedText(target);
+      return undefined;
+    }
+    lastPrintedRef.current = target;
     if (phase === "dialog") {
-      setTypedText(target || "");
+      setTypedText(target);
       return undefined;
     }
     setTypedText("");
-    if (!target) return undefined;
     let i = 0;
     const id = setInterval(() => {
       i += 1;
