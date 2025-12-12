@@ -389,6 +389,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const [phase, setPhase] = useState("summary"); // summary | dialog | verdict | result
   const [roundIndex, setRoundIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
+  const [showMiniLog, setShowMiniLog] = useState(false);
   const [decision, setDecision] = useState(null);
   const [stats, setStats] = useState(INITIAL_STATS);
   const [pulse, setPulse] = useState(0);
@@ -452,6 +453,12 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
       onProgress?.();
     }
   }, [decision, onProgress]);
+
+  useEffect(() => {
+    if (asked.length === 0 && showMiniLog) {
+      setShowMiniLog(false);
+    }
+  }, [asked.length, showMiniLog]);
 
   useEffect(() => {
     if (caseIndex >= CASES.length) return;
@@ -617,23 +624,35 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                   />
                 </div>
               )}
+              {asked.length > 0 && (
+                <button
+                  type="button"
+                  className="kc-mini-log-pill"
+                  onClick={() => setShowMiniLog((v) => !v)}
+                  aria-pressed={showMiniLog}
+                  aria-label="Что уже сказано"
+                >
+                  <span aria-hidden>💬</span>
+                  <span className="kc-mini-log-count">{asked.length}</span>
+                </button>
+              )}
             </div>
+            {showMiniLog && asked.length > 0 && (
+              <div className="kc-mini-log kc-mini-log-flyout" aria-live="polite">
+                <div className="kc-mini-log-title">Что уже сказано</div>
+                {asked.map((item, idx) => (
+                  <div key={`${item.text}-${idx}`} className="kc-mini-log-line">
+                    <span className="kc-q">{formatQuestionText(item)}</span>
+                    <span className="kc-a">{item.answer}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <section className="kc-card kc-suspect-panel">
               <div className="kc-case-text">
                 <h3>{activeCase?.title}</h3>
                 <p>{displayText}</p>
               </div>
-              {asked.length > 0 && (
-                <div className="kc-mini-log" aria-live="polite">
-                  <div className="kc-mini-log-title">Что уже сказано</div>
-                  {asked.map((item, idx) => (
-                    <div key={`${item.text}-${idx}`} className="kc-mini-log-line">
-                      <span className="kc-q">{formatQuestionText(item)}</span>
-                      <span className="kc-a">{item.answer}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
               {!showQuestions && !showVerdicts && (
                 <div className="kc-action-row">
                   <button className="kc-cta" onClick={goToVerdict}>Принять решение</button>

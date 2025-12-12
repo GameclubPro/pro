@@ -403,9 +403,10 @@
 }
 
 .kc-suspect-topline {
+  position: relative;
   width: min(760px, 100%);
   margin: 0;
-  padding: 0;
+  padding: 0 56px 0 0;
 }
 
 .kc-badge {
@@ -481,6 +482,7 @@
   gap: 4px;
   grid-template-columns: 1fr;
   align-items: start;
+  grid-auto-flow: row;
 }
 
 .kc-mini-log-line .kc-q {
@@ -811,4 +813,58 @@
     padding: 8px;
     gap: 5px;
   }
+
+  .kc-suspect-topline {
+    padding-right: 48px;
+  }
+
+  .kc-mini-log-pill {
+    right: 2px;
+  }
+
+  .kc-mini-log-flyout {
+    width: calc(100% - 8px);
+  }
+}
+
+.kc-mini-log-pill {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #f6f0e9;
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+}
+
+.kc-mini-log-count {
+  min-width: 16px;
+}
+
+.kc-mini-log-flyout {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: min(360px, calc(100% - 16px));
+  background: rgba(245, 232, 199, 0.96);
+  border: 1px solid rgba(92, 64, 44, 0.25);
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.28);
+  z-index: 4;
+}
+
+.kc-mini-log-flyout .kc-mini-log-title {
+  color: #2c1d13;
+}
+
+.kc-mini-log-flyout .kc-a {
+  color: #3a2d23;
 }
