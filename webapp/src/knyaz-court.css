@@ -126,9 +126,10 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
   gap: 0;
   padding-top: 0;
+  width: 100%;
 }
 
 .kc-portrait-wrap {
@@ -396,14 +397,14 @@
 .kc-suspect-head {
   display: flex;
   gap: 14px;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
 }
 
 .kc-suspect-topline {
-  width: 100%;
-  margin: 0 0 10px;
-  padding: 0 4px;
+  width: min(760px, 100%);
+  margin: 0 0 6px;
+  padding: 0;
 }
 
 .kc-badge {
@@ -422,9 +423,10 @@
 .kc-suspect-name-block {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 6px;
   flex: 1 1 auto;
+  text-align: center;
 }
 
 .kc-suspect-name {
@@ -437,8 +439,8 @@
 
 .kc-portrait-inline {
   width: 140px;
-  justify-content: end;
-  transform: translateX(10px);
+  justify-content: center;
+  transform: translateX(0);
 }
 
 .kc-portrait-inline .kc-portrait {
