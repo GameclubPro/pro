@@ -412,10 +412,11 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const currentAnswer = answers[roundIndex];
   const showQuestions = phase === "dialog";
   const showVerdicts = phase === "verdict" || phase === "result";
-  const displayText =
-    phase === "dialog"
-      ? typedText || dialogLine
-      : typedText || activeCase?.description;
+  const targetText = useMemo(
+    () => (phase === "dialog" ? currentAnswer?.answer || dialogLine || "" : activeCase?.description || ""),
+    [phase, currentAnswer?.answer, dialogLine, activeCase?.description],
+  );
+  const displayText = typedText || "";
   const showCaseTitle = phase !== "dialog";
   const badgeIcon = useMemo(() => {
     if (!activeCase) return "🧭";
@@ -498,12 +499,18 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setRoundIndex(0);
     setAnswers([]);
     setDecision(null);
-    if (!pleaPlayed && activeCase?.plea) {
-      setDialogLine(activeCase.plea);
-      setPleaPlayed(true);
-      setTypedText(activeCase.plea);
+    const nextLine = (!pleaPlayed && activeCase?.plea) ? activeCase.plea : dialogLine || activeCase?.plea || "";
+    if (nextLine) {
+      setDialogLine(nextLine);
+      if (!pleaPlayed) setPleaPlayed(true);
+      if (nextLine === lastPrintedRef.current) {
+        setTypedText(nextLine);
+      } else {
+        setTypedText("");
+      }
     } else {
-      setTypedText(dialogLine || "");
+      setDialogLine("");
+      setTypedText("");
     }
   };
 
@@ -515,14 +522,21 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const selectQuestion = (question) => {
     if (!activeCase) return;
     clearTimeout(autoAdvanceRef.current);
+    const nextLine = question.answer || "";
+    if (nextLine === dialogLine || nextLine === typedText) {
+      setDialogLine(nextLine);
+      setTypedText(nextLine);
+    } else {
+      setDialogLine(nextLine);
+      setTypedText("");
+      lastPrintedRef.current = "";
+    }
     setAnswers((prev) => {
       if (prev[roundIndex]) return prev;
       const next = [...prev];
       next[roundIndex] = { ...question, round: roundIndex };
       return next;
     });
-    setDialogLine(question.answer || "");
-    setTypedText("");
     setPleaPlayed(true);
     const isLastRound = roundIndex >= (activeCase.rounds?.length || 0) - 1;
     if (isLastRound) {
@@ -578,15 +592,14 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   };
 
   useEffect(() => {
-    let target = activeCase?.description || "";
-    if (phase === "dialog") {
-      target = currentAnswer?.answer || dialogLine || "";
-    }
+    const target = targetText;
     if (!target) {
       setTypedText("");
+      lastPrintedRef.current = "";
       return undefined;
     }
     if (target === lastPrintedRef.current) {
+      setTypedText(target);
       return undefined;
     }
     lastPrintedRef.current = target;
@@ -598,7 +611,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
       if (i >= target.length) clearInterval(id);
     }, 18);
     return () => clearInterval(id);
-  }, [phase, currentAnswer?.answer, dialogLine, activeCase?.description, typedText]);
+  }, [targetText]);
 
   const councilControls = (
     <>
