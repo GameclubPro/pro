@@ -700,10 +700,7 @@
 }
 
 .kc-verdict-preview {
-  line-height: 1.45;
-  color: #3a2d23;
-  font-weight: 500;
-  opacity: 0.9;
+  display: none;
 }
 
 .kc-verdict .kc-effects {

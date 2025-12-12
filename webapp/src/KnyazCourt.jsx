@@ -405,6 +405,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const progressGiven = useRef(false);
   const autoAdvanceRef = useRef(null);
   const decisionAdvanceRef = useRef(null);
+  const resultAdvanceRef = useRef(null);
   const lastPrintedRef = useRef("");
 
   const finished = caseIndex >= CASES.length;
@@ -496,12 +497,15 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setTypedText("");
     setPleaPlayed(false);
     setMeterPops([]);
+    clearTimeout(decisionAdvanceRef.current);
+    clearTimeout(resultAdvanceRef.current);
     lastPrintedRef.current = "";
   }, [caseIndex]);
 
   useEffect(() => () => {
     clearTimeout(autoAdvanceRef.current);
     clearTimeout(decisionAdvanceRef.current);
+    clearTimeout(resultAdvanceRef.current);
   }, []);
 
   const startDialog = () => {
@@ -575,9 +579,13 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     if (!activeCase || decision) return;
     clearTimeout(autoAdvanceRef.current);
     clearTimeout(decisionAdvanceRef.current);
+    clearTimeout(resultAdvanceRef.current);
     const effects = option.effects || {};
     setDecision(option);
     setPhase("result");
+    setDialogLine(option.outcome || dialogLine || "");
+    setTypedText("");
+    lastPrintedRef.current = "";
     setPulse((v) => v + 1);
     const applied = {
       fear: clamp((stats.fear || 0) + (effects.fear || 0)),
@@ -593,10 +601,12 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setMeterPops(pops);
     decisionAdvanceRef.current = setTimeout(() => {
       setMeterPops([]);
+    }, 1600);
+    resultAdvanceRef.current = setTimeout(() => {
       if (caseIndex < CASES.length - 1) {
         moveNextCase();
       }
-    }, 1600);
+    }, 3000);
   };
 
   const moveNextCase = () => {
@@ -807,8 +817,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                 <div className="kc-verdict-options">
                   {activeCase?.verdicts?.map((option) => {
                     const isPicked = decision?.key === option.key;
-                    const preview =
-                      option.outcome.length > 86 ? `${option.outcome.slice(0, 86)}…` : option.outcome;
                     return (
                       <button
                         key={option.key}
@@ -819,7 +827,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                         <span className="kc-icon">{option.icon}</span>
                         <div className="kc-verdict-meta">
                           <div className="kc-label">{option.label}</div>
-                          <div className="kc-verdict-preview">{preview}</div>
                         </div>
                       </button>
                     );
