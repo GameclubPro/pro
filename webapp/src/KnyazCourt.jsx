@@ -400,6 +400,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const [showCouncil, setShowCouncil] = useState(false);
   const [typedText, setTypedText] = useState("");
   const [dialogLine, setDialogLine] = useState("");
+  const [pleaPlayed, setPleaPlayed] = useState(false);
   const progressGiven = useRef(false);
   const autoAdvanceRef = useRef(null);
 
@@ -450,6 +451,8 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
         setAnswers([]);
         setDecision(null);
         setDialogLine("");
+        setTypedText("");
+        setPleaPlayed(false);
         clearTimeout(autoAdvanceRef.current);
         return;
       }
@@ -479,6 +482,8 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setDecision(null);
     clearTimeout(autoAdvanceRef.current);
     setDialogLine("");
+    setTypedText("");
+    setPleaPlayed(false);
   }, [caseIndex]);
 
   useEffect(() => () => clearTimeout(autoAdvanceRef.current), []);
@@ -489,8 +494,13 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setRoundIndex(0);
     setAnswers([]);
     setDecision(null);
-    setDialogLine(activeCase?.plea || "");
-    setTypedText("");
+    if (!pleaPlayed && activeCase?.plea) {
+      setDialogLine(activeCase.plea);
+      setPleaPlayed(true);
+      setTypedText("");
+    } else {
+      setTypedText(dialogLine || "");
+    }
   };
 
   const goToVerdict = () => {
@@ -509,6 +519,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     });
     setDialogLine(question.answer || "");
     setTypedText("");
+    setPleaPlayed(true);
     const isLastRound = roundIndex >= (activeCase.rounds?.length || 0) - 1;
     if (isLastRound) {
       setPhase("verdict");
@@ -556,6 +567,9 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setAnswers([]);
     setDecision(null);
     clearTimeout(autoAdvanceRef.current);
+    setDialogLine("");
+    setTypedText("");
+    setPleaPlayed(false);
   };
 
   useEffect(() => {
