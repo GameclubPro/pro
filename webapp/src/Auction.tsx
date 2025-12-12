@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Confetti from "react-canvas-confetti";
 import io from "socket.io-client";
 import "./Auction.css";
 
@@ -77,6 +78,20 @@ function playerDisplayName(player: any) {
   );
 }
 
+type LootboxEffect = {
+  kind: "money" | "penalty" | "empty" | string;
+  delta?: number;
+};
+
+type LootboxRevealEvent = {
+  id: string;
+  slotIndex: number;
+  slotName: string;
+  winnerPlayerId: number;
+  winBid: number;
+  effect: LootboxEffect;
+};
+
 export default function Auction({
   apiBase,
   initData,
@@ -121,6 +136,10 @@ export default function Auction({
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsDirty, setSettingsDirty] = useState(false);
   const [basketPlayerId, setBasketPlayerId] = useState<number | null>(null);
+  const [lootboxReveal, setLootboxReveal] = useState<LootboxRevealEvent | null>(null);
+  const [lootboxStage, setLootboxStage] = useState<"intro" | "opening" | "reveal">(
+    "intro"
+  );
   const lastSyncedSettingsRef = useRef({
     slots: settingsSlots,
     budget: settingsBudget,
@@ -134,6 +153,9 @@ export default function Auction({
   const lastSubscriptionSocketIdRef = useRef<string | null>(null);
   const progressSentRef = useRef(false);
   const lastBidAtRef = useRef(0);
+  const lootboxHistoryLenRef = useRef<number | null>(null);
+  const lootboxConfettiFiredRef = useRef<string | null>(null);
+  const confettiRef = useRef<any>(null);
 
   const moneyFormatter = useMemo(() => new Intl.NumberFormat("ru-RU"), []);
   const sanitizedAutoCode = useMemo(
@@ -463,6 +485,83 @@ export default function Auction({
   const showLobby = !showLanding && phase === "lobby";
   const showGame = !showLanding && phase === "in_progress";
   const showResults = !showLanding && phase === "finished";
+
+  // ---------- LOOTBOX REVEAL ----------
+
+  const closeLootboxReveal = useCallback(() => setLootboxReveal(null), []);
+
+  const fireLootboxConfetti = useCallback((kind: string) => {
+    if (!confettiRef.current) return;
+    if (kind !== "money") return;
+    confettiRef.current({
+      particleCount: 180,
+      spread: 75,
+      origin: { y: 0.32 },
+      colors: ["#22c55e", "#38bdf8", "#a855f7", "#fbbf24"],
+    });
+  }, []);
+
+  useEffect(() => {
+    const len = safeHistory.length;
+    const prevLen = lootboxHistoryLenRef.current;
+    if (prevLen == null) {
+      lootboxHistoryLenRef.current = len;
+      return;
+    }
+    if (len <= prevLen) {
+      lootboxHistoryLenRef.current = len;
+      return;
+    }
+
+    const diff = len - prevLen;
+    lootboxHistoryLenRef.current = len;
+    if (diff !== 1) return;
+    if (phase === "lobby") return;
+
+    const latest = safeHistory[len - 1];
+    if (!latest || latest.type !== "lootbox") return;
+    const winnerPlayerId = latest.winnerPlayerId;
+    const effect = latest.effect;
+    if (winnerPlayerId == null || !effect) return;
+
+    setLootboxReveal({
+      id: `${latest.index}-${winnerPlayerId}-${Date.now()}`,
+      slotIndex: latest.index,
+      slotName: latest.name || "Лутбокс",
+      winnerPlayerId,
+      winBid: Number(latest.winBid || 0) || 0,
+      effect,
+    });
+  }, [phase, safeHistory]);
+
+  useEffect(() => {
+    if (!lootboxReveal) {
+      setLootboxStage("intro");
+      lootboxConfettiFiredRef.current = null;
+      return;
+    }
+
+    setLootboxStage("intro");
+    lootboxConfettiFiredRef.current = null;
+
+    const openTimer = setTimeout(() => setLootboxStage("opening"), 260);
+    const revealTimer = setTimeout(() => setLootboxStage("reveal"), 1150);
+    const closeTimer = setTimeout(() => setLootboxReveal(null), 5200);
+
+    return () => {
+      clearTimeout(openTimer);
+      clearTimeout(revealTimer);
+      clearTimeout(closeTimer);
+    };
+  }, [lootboxReveal?.id]);
+
+  useEffect(() => {
+    if (!lootboxReveal) return;
+    if (lootboxStage !== "reveal") return;
+    if (lootboxConfettiFiredRef.current === lootboxReveal.id) return;
+    lootboxConfettiFiredRef.current = lootboxReveal.id;
+    fireLootboxConfetti(String(lootboxReveal.effect?.kind || ""));
+  }, [fireLootboxConfetti, lootboxReveal, lootboxStage]);
 
   // ---------- TOАSTS ----------
 
@@ -2006,6 +2105,119 @@ export default function Auction({
     );
   };
 
+  const renderLootboxRevealModal = () => {
+    if (!lootboxReveal) return null;
+
+    const winnerPlayer =
+      safePlayers.find((p) => p?.id === lootboxReveal.winnerPlayerId) || null;
+    const winnerName = winnerPlayer
+      ? playerDisplayName(winnerPlayer)
+      : `Игрок ${lootboxReveal.winnerPlayerId}`;
+
+    const effectKind = String(lootboxReveal.effect?.kind || "");
+    const deltaAbs = Math.abs(Number(lootboxReveal.effect?.delta || 0));
+    const deltaText = moneyFormatter.format(deltaAbs);
+
+    const toneClass =
+      effectKind === "money"
+        ? "lootbox-panel--good"
+        : effectKind === "penalty"
+        ? "lootbox-panel--bad"
+        : "lootbox-panel--empty";
+
+    const prizeTitle =
+      effectKind === "money"
+        ? "Бонус"
+        : effectKind === "penalty"
+        ? "Штраф"
+        : "Пусто";
+
+    const prizeValue =
+      effectKind === "money"
+        ? `+${deltaText}$`
+        : effectKind === "penalty"
+        ? `-${deltaText}$`
+        : "Ничего";
+
+    const boxClassName = [
+      "lootbox-box",
+      lootboxStage === "opening" ? "lootbox-box--shaking" : "",
+      lootboxStage !== "intro" ? "lootbox-box--open" : "",
+      lootboxStage === "reveal" ? "lootbox-box--glow" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    return (
+      <div
+        className="lootbox-modal"
+        role="dialog"
+        aria-modal="true"
+        onClick={closeLootboxReveal}
+      >
+        <motion.div
+          className={["lootbox-panel", toneClass].filter(Boolean).join(" ")}
+          onClick={(e) => e.stopPropagation()}
+          initial={{ opacity: 0, y: 14, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 10, scale: 0.98 }}
+          transition={{ duration: 0.22, ease: "easeOut" }}
+        >
+          <div className="lootbox-panel__head">
+            <div>
+              <div className="lootbox-panel__label">Лутбокс</div>
+              <h3 className="lootbox-panel__title">{lootboxReveal.slotName}</h3>
+              <p className="lootbox-panel__subtitle">
+                Открывает: {winnerName} · Ставка {moneyFormatter.format(lootboxReveal.winBid)}$
+              </p>
+            </div>
+            <button
+              type="button"
+              className="icon-btn icon-btn--ghost lootbox-close"
+              aria-label="Закрыть"
+              onClick={closeLootboxReveal}
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="lootbox-stage">
+            <div className="lootbox-box-stage" aria-hidden="true">
+              <div className={boxClassName}>
+                <div className="lootbox-box__lid">
+                  <div className="lootbox-box__bow" />
+                </div>
+                <div className="lootbox-box__body">
+                  <div className="lootbox-box__ribbon" />
+                  <div className="lootbox-box__shine" />
+                </div>
+              </div>
+            </div>
+
+            <AnimatePresence initial={false}>
+              {lootboxStage === "reveal" && (
+                <motion.div
+                  key={lootboxReveal.id}
+                  className="lootbox-prize"
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                >
+                  <div className="lootbox-prize__title">{prizeTitle}</div>
+                  <div className="lootbox-prize__value">{prizeValue}</div>
+                  <div className="lootbox-prize__hint muted">
+                    Тапните по экрану, чтобы закрыть
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      </div>
+    );
+  };
+
   const renderSettingsModal = () => {
     if (!settingsOpen) return null;
     return (
@@ -2180,9 +2392,16 @@ export default function Auction({
           </main>
         </div>
       )}
+      {renderLootboxRevealModal()}
       {renderBasketModal()}
       {renderSettingsModal()}
       {renderToastStack()}
+      <Confetti
+        refConfetti={(instance) => {
+          confettiRef.current = instance;
+        }}
+        style={{ position: "fixed", inset: 0, zIndex: 1600, pointerEvents: "none" }}
+      />
     </div>
   );
 }
