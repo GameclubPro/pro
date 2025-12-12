@@ -582,16 +582,14 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     if (phase === "dialog") {
       target = currentAnswer?.answer || dialogLine || "";
     }
-    if (!target) return undefined;
+    if (!target) {
+      setTypedText("");
+      return undefined;
+    }
     if (target === lastPrintedRef.current) {
-      if (typedText !== target) setTypedText(target);
       return undefined;
     }
     lastPrintedRef.current = target;
-    if (phase === "dialog") {
-      setTypedText(target);
-      return undefined;
-    }
     setTypedText("");
     let i = 0;
     const id = setInterval(() => {
@@ -600,7 +598,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
       if (i >= target.length) clearInterval(id);
     }, 18);
     return () => clearInterval(id);
-  }, [phase, currentAnswer?.answer, dialogLine, activeCase?.description]);
+  }, [phase, currentAnswer?.answer, dialogLine, activeCase?.description, typedText]);
 
   const councilControls = (
     <>
