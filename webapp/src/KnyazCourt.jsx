@@ -17,6 +17,7 @@ const QUESTION_TONES = {
 };
 
 const CASES = [
+  {
     id: "tribute",
     name: "Всеслав Молодой",
     status: "младший дружинник",
@@ -105,8 +106,6 @@ const CASES = [
       },
     ],
   },
-  {
-  {
 ];
 
 const clamp = (value) => Math.max(0, Math.min(100, value));
