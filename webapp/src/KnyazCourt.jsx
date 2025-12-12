@@ -415,8 +415,11 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const showQuestions = phase === "dialog";
   const showVerdicts = phase === "verdict" || phase === "result";
   const targetText = useMemo(() => {
-    if (phase === "dialog" || phase === "verdict" || phase === "result") {
-      return currentAnswer?.answer || dialogLine || "";
+    if (phase === "dialog") {
+      return currentAnswer?.answer || dialogLine || activeCase?.description || "";
+    }
+    if (phase === "verdict" || phase === "result") {
+      return currentAnswer?.answer || dialogLine || activeCase?.description || "";
     }
     return activeCase?.description || "";
   }, [phase, currentAnswer?.answer, dialogLine, activeCase?.description]);
@@ -816,7 +819,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                         <span className="kc-icon">{option.icon}</span>
                         <div className="kc-verdict-meta">
                           <div className="kc-label">{option.label}</div>
-                          <p>{preview}</p>
+                          <span className="kc-muted">{preview}</span>
                         </div>
                       </button>
                     );
