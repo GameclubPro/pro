@@ -401,8 +401,10 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const [typedText, setTypedText] = useState("");
   const [dialogLine, setDialogLine] = useState("");
   const [pleaPlayed, setPleaPlayed] = useState(false);
+  const [meterPops, setMeterPops] = useState([]);
   const progressGiven = useRef(false);
   const autoAdvanceRef = useRef(null);
+  const decisionAdvanceRef = useRef(null);
   const lastPrintedRef = useRef("");
 
   const finished = caseIndex >= CASES.length;
@@ -413,7 +415,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const showQuestions = phase === "dialog";
   const showVerdicts = phase === "verdict" || phase === "result";
   const targetText = useMemo(() => {
-    if (phase === "dialog" || phase === "verdict") {
+    if (phase === "dialog" || phase === "verdict" || phase === "result") {
       return currentAnswer?.answer || dialogLine || "";
     }
     return activeCase?.description || "";
@@ -490,10 +492,14 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setDialogLine("");
     setTypedText("");
     setPleaPlayed(false);
+    setMeterPops([]);
     lastPrintedRef.current = "";
   }, [caseIndex]);
 
-  useEffect(() => () => clearTimeout(autoAdvanceRef.current), []);
+  useEffect(() => () => {
+    clearTimeout(autoAdvanceRef.current);
+    clearTimeout(decisionAdvanceRef.current);
+  }, []);
 
   const startDialog = () => {
     clearTimeout(autoAdvanceRef.current);
@@ -524,6 +530,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const selectQuestion = (question) => {
     if (!activeCase) return;
     clearTimeout(autoAdvanceRef.current);
+    clearTimeout(decisionAdvanceRef.current);
     const nextLine = question.answer || "";
     if (nextLine === dialogLine || nextLine === typedText) {
       setDialogLine(nextLine);
@@ -564,15 +571,29 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const chooseVerdict = (option) => {
     if (!activeCase || decision) return;
     clearTimeout(autoAdvanceRef.current);
+    clearTimeout(decisionAdvanceRef.current);
     const effects = option.effects || {};
     setDecision(option);
     setPhase("result");
     setPulse((v) => v + 1);
-    setStats((prev) => ({
-      fear: clamp(prev.fear + (effects.fear || 0)),
-      respect: clamp(prev.respect + (effects.respect || 0)),
-      treasury: clamp(prev.treasury + (effects.treasury || 0)),
-    }));
+    const applied = {
+      fear: clamp((stats.fear || 0) + (effects.fear || 0)),
+      respect: clamp((stats.respect || 0) + (effects.respect || 0)),
+      treasury: clamp((stats.treasury || 0) + (effects.treasury || 0)),
+    };
+    setStats(applied);
+    const pops = [
+      effects.fear ? { key: "fear", value: effects.fear } : null,
+      effects.respect ? { key: "respect", value: effects.respect } : null,
+      effects.treasury ? { key: "treasury", value: effects.treasury } : null,
+    ].filter(Boolean);
+    setMeterPops(pops);
+    decisionAdvanceRef.current = setTimeout(() => {
+      setMeterPops([]);
+      if (caseIndex < CASES.length - 1) {
+        moveNextCase();
+      }
+    }, 1600);
   };
 
   const moveNextCase = () => {
@@ -643,7 +664,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
               </div>
               <p className="kc-eyebrow kc-eyebrow-on-dark">{headerLabel}</p>
             </div>
-            <div className="kc-meter-row kc-final">
+          <div className="kc-meter-row kc-final">
               <StatMeter icon="🛡️" color="var(--accent-amber)" label="Страх" value={stats.fear} pulse={pulse} />
               <StatMeter icon="⚖️" color="var(--accent-green)" label="Уважение" value={stats.respect} pulse={pulse} />
               <StatMeter icon="💰" color="var(--accent-gold)" label="Казна" value={stats.treasury} pulse={pulse} />
@@ -678,9 +699,30 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
             <p className="kc-eyebrow kc-eyebrow-on-dark">{headerLabel}</p>
           </div>
           <div className="kc-meter-row">
-            <StatMeter icon="🛡️" color="var(--accent-amber)" label="Страх" value={stats.fear} pulse={pulse} />
-            <StatMeter icon="⚖️" color="var(--accent-green)" label="Уважение" value={stats.respect} pulse={pulse} />
-            <StatMeter icon="💰" color="var(--accent-gold)" label="Казна" value={stats.treasury} pulse={pulse} />
+            <StatMeter
+              icon="🛡️"
+              color="var(--accent-amber)"
+              label="Страх"
+              value={stats.fear}
+              pulse={pulse}
+              pop={meterPops.find((p) => p.key === "fear")}
+            />
+            <StatMeter
+              icon="⚖️"
+              color="var(--accent-green)"
+              label="Уважение"
+              value={stats.respect}
+              pulse={pulse}
+              pop={meterPops.find((p) => p.key === "respect")}
+            />
+            <StatMeter
+              icon="💰"
+              color="var(--accent-gold)"
+              label="Казна"
+              value={stats.treasury}
+              pulse={pulse}
+              pop={meterPops.find((p) => p.key === "treasury")}
+            />
           </div>
         </header>
 
@@ -734,48 +776,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                   <button className="kc-ghost" onClick={startDialog}>Выслушать</button>
                 </div>
               )}
-              {showVerdicts && (
-                <div className="kc-verdict-block">
-                  <div className="kc-verdict-options">
-                    {activeCase?.verdicts?.map((option) => {
-                      const isPicked = decision?.key === option.key;
-                      const preview =
-                        option.outcome.length > 86 ? `${option.outcome.slice(0, 86)}…` : option.outcome;
-                      return (
-                        <button
-                          key={option.key}
-                          className={`kc-verdict ${isPicked ? "kc-chosen" : ""}`}
-                          onClick={() => chooseVerdict(option)}
-                          disabled={!!decision}
-                        >
-                          <span className="kc-icon">{option.icon}</span>
-                          <div className="kc-verdict-meta">
-                            <div className="kc-label">{option.label}</div>
-                            <p>{preview}</p>
-                          </div>
-                          <div className="kc-effects">
-                            <Effect label="Страх" value={option.effects?.fear} />
-                            <Effect label="Уважение" value={option.effects?.respect} />
-                            <Effect label="Казна" value={option.effects?.treasury} />
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {decision && (
-                    <div className="kc-result">
-                      <div className="kc-eyebrow">Последствия</div>
-                      <p>{decision.outcome}</p>
-                      <div className="kc-next-row">
-                        <button className="kc-ghost" onClick={goBack}>Завершить игру</button>
-                        <button className="kc-cta" onClick={moveNextCase}>
-                          {caseIndex >= CASES.length - 1 ? "Итоги дня" : "Следующее дело"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
             </section>
             {showQuestions && (
               <section className="kc-card kc-questions-panel">
@@ -798,6 +798,46 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                 </div>
               </section>
             )}
+            {showVerdicts && (
+              <section className="kc-card kc-verdict-panel">
+                <div className="kc-questions-title">Приговор</div>
+                <div className="kc-verdict-options">
+                  {activeCase?.verdicts?.map((option) => {
+                    const isPicked = decision?.key === option.key;
+                    const preview =
+                      option.outcome.length > 86 ? `${option.outcome.slice(0, 86)}…` : option.outcome;
+                    return (
+                      <button
+                        key={option.key}
+                        className={`kc-verdict ${isPicked ? "kc-chosen" : ""}`}
+                        onClick={() => chooseVerdict(option)}
+                        disabled={!!decision}
+                      >
+                        <span className="kc-icon">{option.icon}</span>
+                        <div className="kc-verdict-meta">
+                          <div className="kc-label">{option.label}</div>
+                          <p>{preview}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                {decision && (
+                  <div className="kc-result">
+                    <div className="kc-eyebrow">Последствия</div>
+                    <p>{decision.outcome}</p>
+                    {caseIndex >= CASES.length - 1 && (
+                      <div className="kc-next-row">
+                        <button className="kc-ghost" onClick={goBack}>Завершить игру</button>
+                        <button className="kc-cta" onClick={moveNextCase}>
+                          Итоги дня
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </section>
+            )}
           </div>
         </div>
       </div>
@@ -805,7 +845,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   );
 }
 
-function StatMeter({ icon, label, value, color, pulse }) {
+function StatMeter({ icon, label, value, color, pulse, pop }) {
   const safeValue = clamp(value || 0);
   return (
     <div className="kc-meter" data-pulse={pulse}>
@@ -815,6 +855,15 @@ function StatMeter({ icon, label, value, color, pulse }) {
           <div className="kc-label">{label}</div>
           <div className="kc-bar">
             <span className="kc-fill" style={{ width: `${safeValue}%`, background: color }} />
+            {pop ? (
+              <span
+                className={`kc-meter-pop ${pop.value > 0 ? "kc-pop-up" : "kc-pop-down"}`}
+                style={{ left: `${Math.min(Math.max(safeValue, 6), 96)}%` }}
+                aria-hidden
+              >
+                {pop.value > 0 ? `+${pop.value}` : pop.value}
+              </span>
+            ) : null}
           </div>
           <div className="kc-value">{safeValue}</div>
         </div>
