@@ -19,8 +19,8 @@ const COUNTDOWN_START_FROM = 3;
 const REGULAR_LOOTBOX_NAME_HINT = "Обычный лутбокс";
 const LOOTBOX_FALLBACK_IMAGE_URL = "/lootbox.svg";
 const LOOTBOX_SHATTER_SIZE = 240;
-const LOOTBOX_SHATTER_COLS = 8;
-const LOOTBOX_SHATTER_ROWS = 8;
+const LOOTBOX_SHATTER_MIN_PIECES = 20;
+const LOOTBOX_SHATTER_MAX_PIECES = 30;
 const PHASE_LABEL: Record<string, string> = {
   lobby: "Лобби",
   in_progress: "Торги",
@@ -133,6 +133,7 @@ type LootboxShatterPiece = {
   top: number;
   width: number;
   height: number;
+  clipPath: string;
   dx: number;
   dy: number;
   rotate: number;
@@ -563,48 +564,150 @@ export default function Auction({
     const seed = hashStringToSeed(lootboxReveal.id);
     const rnd = mulberry32(seed);
 
-    const cols = LOOTBOX_SHATTER_COLS;
-    const rows = LOOTBOX_SHATTER_ROWS;
     const size = LOOTBOX_SHATTER_SIZE;
-    const pieceW = size / cols;
-    const pieceH = size / rows;
     const midX = size / 2;
     const midY = size / 2;
 
-    const pieces: LootboxShatterPiece[] = [];
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        const left = col * pieceW;
-        const top = row * pieceH;
-        const centerX = left + pieceW / 2;
-        const centerY = top + pieceH / 2;
+    const clampPct = (value: number) => clamp(value, 0, 100);
+    const rand = (min: number, max: number) => min + rnd() * (max - min);
 
-        const dirX = centerX - midX + (rnd() - 0.5) * 6;
-        const dirY = centerY - midY + (rnd() - 0.5) * 6;
-        const len = Math.max(1, Math.hypot(dirX, dirY));
-        const unitX = dirX / len;
-        const unitY = dirY / len;
+    const randomShardClipPath = () => {
+      const p = (x: number, y: number) =>
+        `${clampPct(x).toFixed(1)}% ${clampPct(y).toFixed(1)}%`;
 
-        const magnitude = 78 + rnd() * 150;
-        const jitterX = (rnd() - 0.5) * 56;
-        const jitterY = (rnd() - 0.5) * 46 - 22;
-        const dx = unitX * magnitude + jitterX;
-        const dy = unitY * magnitude + jitterY;
+      const p1 = [rand(0, 22), rand(0, 10)];
+      const p2 = [rand(35, 65), rand(0, 8)];
+      const p3 = [rand(78, 100), rand(0, 16)];
+      const p4 = [rand(90, 100), rand(22, 42)];
+      const p5 = [rand(90, 100), rand(58, 78)];
+      const p6 = [rand(78, 100), rand(88, 100)];
+      const p7 = [rand(35, 65), rand(92, 100)];
+      const p8 = [rand(0, 22), rand(82, 100)];
+      const p9 = [rand(0, 10), rand(60, 82)];
+      const p10 = [rand(0, 12), rand(22, 42)];
 
-        pieces.push({
-          key: `${row}-${col}`,
-          left,
-          top,
-          width: pieceW,
-          height: pieceH,
-          dx,
-          dy,
-          rotate: (rnd() - 0.5) * 240,
-          delay: rnd() * 0.08,
-        });
+      const base = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10];
+      const pick =
+        rnd() < 0.5
+          ? [base[0], base[2], base[3], base[4], base[5], base[7], base[8], base[9]]
+          : base;
+
+      return `polygon(${pick.map(([x, y]) => p(x, y)).join(", ")})`;
+    };
+
+    type Rect = { x: number; y: number; w: number; h: number };
+
+    const targetPieces =
+      LOOTBOX_SHATTER_MIN_PIECES +
+      Math.floor(
+        rnd() * (LOOTBOX_SHATTER_MAX_PIECES - LOOTBOX_SHATTER_MIN_PIECES + 1)
+      );
+
+    const minDim = Math.max(20, Math.floor(size / 10));
+    const rects: Rect[] = [{ x: 0, y: 0, w: size, h: size }];
+
+    let guard = 0;
+    while (rects.length < targetPieces && guard++ < 600) {
+      const candidates = rects
+        .map((r, idx) => ({
+          r,
+          idx,
+          canV: r.w >= minDim * 2,
+          canH: r.h >= minDim * 2,
+          area: r.w * r.h,
+        }))
+        .filter((c) => c.canV || c.canH);
+
+      if (!candidates.length) break;
+
+      let totalArea = 0;
+      for (const c of candidates) totalArea += c.area;
+      let pick = rnd() * totalArea;
+      let chosen = candidates[candidates.length - 1];
+      for (const c of candidates) {
+        pick -= c.area;
+        if (pick <= 0) {
+          chosen = c;
+          break;
+        }
+      }
+
+      const r = chosen.r;
+      const idx = chosen.idx;
+      const ratio = r.w / Math.max(1, r.h);
+
+      let vertical: boolean;
+      if (chosen.canV && chosen.canH) {
+        if (ratio > 1.25) vertical = true;
+        else if (ratio < 0.8) vertical = false;
+        else vertical = rnd() > 0.5;
+      } else {
+        vertical = chosen.canV;
+      }
+
+      if (vertical && !chosen.canV) vertical = false;
+      if (!vertical && !chosen.canH) vertical = true;
+
+      if (vertical && chosen.canV) {
+        const cutMin = minDim;
+        const cutMax = r.w - minDim;
+        if (cutMax <= cutMin) continue;
+        const cut = Math.floor(cutMin + rnd() * (cutMax - cutMin));
+        rects.splice(
+          idx,
+          1,
+          { x: r.x, y: r.y, w: cut, h: r.h },
+          { x: r.x + cut, y: r.y, w: r.w - cut, h: r.h }
+        );
+      } else if (!vertical && chosen.canH) {
+        const cutMin = minDim;
+        const cutMax = r.h - minDim;
+        if (cutMax <= cutMin) continue;
+        const cut = Math.floor(cutMin + rnd() * (cutMax - cutMin));
+        rects.splice(
+          idx,
+          1,
+          { x: r.x, y: r.y, w: r.w, h: cut },
+          { x: r.x, y: r.y + cut, w: r.w, h: r.h - cut }
+        );
+      } else {
+        break;
       }
     }
-    return pieces;
+
+    return rects.map((rect, i) => {
+      const left = rect.x;
+      const top = rect.y;
+      const width = rect.w;
+      const height = rect.h;
+      const centerX = left + width / 2;
+      const centerY = top + height / 2;
+
+      const dirX = centerX - midX + (rnd() - 0.5) * 12;
+      const dirY = centerY - midY + (rnd() - 0.5) * 12;
+      const len = Math.max(1, Math.hypot(dirX, dirY));
+      const unitX = dirX / len;
+      const unitY = dirY / len;
+
+      const magnitude = 110 + rnd() * 210;
+      const jitterX = (rnd() - 0.5) * 110;
+      const jitterY = (rnd() - 0.5) * 88 - 18;
+      const dx = unitX * magnitude + jitterX;
+      const dy = unitY * magnitude + jitterY;
+
+      return {
+        key: `${i}-${left}-${top}`,
+        left,
+        top,
+        width,
+        height,
+        clipPath: randomShardClipPath(),
+        dx,
+        dy,
+        rotate: (rnd() - 0.5) * 520,
+        delay: rnd() * 0.22,
+      };
+    });
   }, [lootboxReveal?.id]);
 
   useEffect(() => {
@@ -653,9 +756,9 @@ export default function Auction({
     lootboxConfettiFiredRef.current = null;
 
     const shakeTimer = setTimeout(() => setLootboxStage("shake"), 200);
-    const explodeTimer = setTimeout(() => setLootboxStage("explode"), 780);
-    const revealTimer = setTimeout(() => setLootboxStage("reveal"), 1750);
-    const closeTimer = setTimeout(() => setLootboxReveal(null), 5200);
+    const explodeTimer = setTimeout(() => setLootboxStage("explode"), 1500);
+    const revealTimer = setTimeout(() => setLootboxStage("reveal"), 3250);
+    const closeTimer = setTimeout(() => setLootboxReveal(null), 6700);
 
     return () => {
       clearTimeout(shakeTimer);
@@ -2322,6 +2425,8 @@ export default function Auction({
         : "Ничего";
     const shatterExploded = lootboxStage === "explode" || lootboxStage === "reveal";
     const shatterShaking = lootboxStage === "shake";
+    const showIntact = lootboxStage === "intro" || lootboxStage === "shake";
+    const showPieces = lootboxStage === "explode" || lootboxStage === "reveal";
 
     return (
       <div
@@ -2370,41 +2475,52 @@ export default function Auction({
                   height: LOOTBOX_SHATTER_SIZE,
                 }}
               >
-                {lootboxShatterPieces.map((piece) => (
-                  <motion.div
-                    key={piece.key}
-                    className={[
-                      "lootbox-piece",
-                      shatterExploded ? "lootbox-piece--exploded" : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    style={{
-                      left: piece.left,
-                      top: piece.top,
-                      width: piece.width,
-                      height: piece.height,
-                      backgroundImage: `url(${lootboxImageUrl})`,
-                      backgroundSize: `${LOOTBOX_SHATTER_SIZE}px ${LOOTBOX_SHATTER_SIZE}px`,
-                      backgroundPosition: `${-piece.left}px ${-piece.top}px`,
-                    }}
-                    animate={
-                      shatterExploded
-                        ? {
-                            x: piece.dx,
-                            y: piece.dy,
-                            rotate: piece.rotate,
-                            opacity: 0,
-                          }
-                        : { x: 0, y: 0, rotate: 0, opacity: 1 }
-                    }
-                    transition={{
-                      duration: 0.82,
-                      delay: piece.delay,
-                      ease: "easeOut",
-                    }}
-                  />
-                ))}
+                <AnimatePresence initial={false}>
+                  {showIntact && (
+                    <motion.img
+                      key="lootbox-intact"
+                      className="lootbox-shatter__img"
+                      src={lootboxImageUrl}
+                      alt=""
+                      draggable={false}
+                      initial={{ opacity: 0, scale: 0.985 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.985 }}
+                      transition={{ duration: 0.22, ease: "easeOut" }}
+                    />
+                  )}
+                </AnimatePresence>
+
+                {showPieces &&
+                  lootboxShatterPieces.map((piece) => (
+                    <motion.div
+                      key={piece.key}
+                      className="lootbox-piece"
+                      style={{
+                        left: piece.left,
+                        top: piece.top,
+                        width: piece.width,
+                        height: piece.height,
+                        clipPath: piece.clipPath,
+                        WebkitClipPath: piece.clipPath,
+                        backgroundImage: `url(${lootboxImageUrl})`,
+                        backgroundSize: `${LOOTBOX_SHATTER_SIZE}px ${LOOTBOX_SHATTER_SIZE}px`,
+                        backgroundPosition: `${-piece.left}px ${-piece.top}px`,
+                      }}
+                      initial={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
+                      animate={{
+                        x: shatterExploded ? piece.dx : 0,
+                        y: shatterExploded ? piece.dy : 0,
+                        rotate: shatterExploded ? piece.rotate : 0,
+                        opacity: shatterExploded ? 0 : 1,
+                      }}
+                      transition={{
+                        duration: 1.25,
+                        delay: piece.delay,
+                        ease: "easeOut",
+                      }}
+                    />
+                  ))}
                 <AnimatePresence initial={false}>
                   {lootboxStage === "explode" && (
                     <motion.div
@@ -2413,7 +2529,7 @@ export default function Auction({
                       animate={{ opacity: [0, 1, 0], scale: [0.7, 1.08, 1.25] }}
                       exit={{ opacity: 0 }}
                       transition={{
-                        duration: 0.85,
+                        duration: 1.2,
                         times: [0, 0.18, 1],
                         ease: "easeOut",
                       }}
@@ -2424,24 +2540,50 @@ export default function Auction({
                   {lootboxStage === "reveal" && (
                     <motion.div
                       key={lootboxReveal.id}
-                      className="lootbox-prize lootbox-prize--center"
-                      initial={{ opacity: 0, scale: 0.45, y: 10 }}
+                      className="lootbox-drop"
+                      initial={{ opacity: 0, scale: 0.6, y: 6 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.7, y: 10 }}
-                      transition={{ duration: 0.26, ease: "easeOut" }}
+                      exit={{ opacity: 0, scale: 0.7, y: 6 }}
+                      transition={{ duration: 0.32, ease: "easeOut" }}
                     >
-                      <div className="lootbox-prize__emoji" aria-hidden="true">
+                      <motion.div
+                        className="lootbox-drop__glow"
+                        aria-hidden="true"
+                        initial={{ opacity: 0, scale: 0.7 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.32, ease: "easeOut" }}
+                      />
+                      <motion.div
+                        className="lootbox-drop__name"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.28, duration: 0.26, ease: "easeOut" }}
+                      >
+                        {prizeName}
+                      </motion.div>
+                      <motion.div
+                        className="lootbox-drop__emoji"
+                        aria-hidden="true"
+                        initial={{ opacity: 0, scale: 0.3 }}
+                        animate={{ opacity: 1, scale: [0.3, 1.16, 1] }}
+                        transition={{ duration: 0.62, ease: "easeOut" }}
+                      >
                         {prizeEmoji}
-                      </div>
-                      <div className="lootbox-prize__meta">{effectLabel}</div>
-                      <div className="lootbox-prize__title">{prizeName}</div>
-                      <div className="lootbox-prize__value">{prizeValue}</div>
+                      </motion.div>
+                      <motion.div
+                        className="lootbox-drop__price"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.36, duration: 0.26, ease: "easeOut" }}
+                      >
+                        {prizeValue}
+                      </motion.div>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
             </div>
-            <div className="lootbox-prize__hint muted">
+            <div className="lootbox-drop__hint muted">
               Тапните по экрану, чтобы закрыть
             </div>
           </div>

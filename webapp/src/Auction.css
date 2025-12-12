@@ -2335,8 +2335,19 @@ button:active:not(:disabled) {
   filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.45));
 }
 
+.lootbox-shatter__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  user-select: none;
+  pointer-events: none;
+}
+
 .lootbox-shatter--shaking {
-  animation: lootbox-pre-shake 560ms ease-in-out 1;
+  animation: lootbox-pre-shake 560ms ease-in-out infinite;
 }
 
 @keyframes lootbox-pre-shake {
@@ -2367,12 +2378,12 @@ button:active:not(:disabled) {
   position: absolute;
   background-repeat: no-repeat;
   will-change: transform, opacity;
-}
-
-.lootbox-piece--exploded {
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+  pointer-events: none;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .lootbox-burst {
@@ -2387,6 +2398,83 @@ button:active:not(:disabled) {
   mix-blend-mode: screen;
   filter: blur(2px);
   pointer-events: none;
+}
+
+.lootbox-drop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 4;
+  pointer-events: none;
+  text-align: center;
+  isolation: isolate;
+}
+
+.lootbox-drop__glow {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 190px;
+  height: 190px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(251, 191, 36, 0.6),
+    rgba(168, 85, 247, 0.22),
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+  filter: blur(10px);
+  z-index: 0;
+}
+
+.lootbox-drop__emoji {
+  position: relative;
+  z-index: 1;
+  font-size: 64px;
+  line-height: 1;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.45));
+}
+
+.lootbox-drop__name {
+  position: relative;
+  z-index: 1;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  text-shadow: 0 12px 18px rgba(0, 0, 0, 0.55);
+  max-width: min(340px, calc(100% - 16px));
+}
+
+.lootbox-drop__price {
+  position: relative;
+  z-index: 1;
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: #f9fafb;
+  text-shadow: 0 12px 18px rgba(0, 0, 0, 0.55);
+}
+
+.lootbox-panel--good .lootbox-drop__price {
+  color: var(--accent-success);
+}
+
+.lootbox-panel--bad .lootbox-drop__price {
+  color: var(--accent-danger);
+}
+
+.lootbox-panel--empty .lootbox-drop__price {
+  color: color-mix(in srgb, var(--accent-gold) 85%, #f9fafb);
+}
+
+.lootbox-drop__hint {
+  font-size: 13px;
 }
 
 .lootbox-box-stage {
