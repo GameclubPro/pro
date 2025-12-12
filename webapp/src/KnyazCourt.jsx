@@ -396,6 +396,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const [showCouncil, setShowCouncil] = useState(false);
   const [typedText, setTypedText] = useState("");
   const progressGiven = useRef(false);
+  const autoAdvanceRef = useRef(null);
 
   const finished = caseIndex >= CASES.length;
   const activeCase = useMemo(() => (finished ? null : CASES[caseIndex]), [finished, caseIndex]);
@@ -441,6 +442,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
         setRoundIndex(0);
         setAnswers([]);
         setDecision(null);
+        clearTimeout(autoAdvanceRef.current);
         return;
       }
       goBack?.();
@@ -467,9 +469,13 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setRoundIndex(0);
     setAnswers([]);
     setDecision(null);
+    clearTimeout(autoAdvanceRef.current);
   }, [caseIndex]);
 
+  useEffect(() => () => clearTimeout(autoAdvanceRef.current), []);
+
   const startDialog = () => {
+    clearTimeout(autoAdvanceRef.current);
     setPhase("dialog");
     setRoundIndex(0);
     setAnswers([]);
@@ -477,17 +483,29 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   };
 
   const goToVerdict = () => {
+    clearTimeout(autoAdvanceRef.current);
     setPhase("verdict");
   };
 
   const selectQuestion = (question) => {
     if (!activeCase) return;
+    clearTimeout(autoAdvanceRef.current);
     setAnswers((prev) => {
       if (prev[roundIndex]) return prev;
       const next = [...prev];
       next[roundIndex] = { ...question, round: roundIndex };
       return next;
     });
+    const isLastRound = roundIndex >= (activeCase.rounds?.length || 0) - 1;
+    if (isLastRound) {
+      setPhase("verdict");
+      return;
+    }
+    const answerLength = (question.answer || "").length;
+    const delay = Math.min(Math.max(answerLength * 18 + 600, 1100), 3200);
+    autoAdvanceRef.current = setTimeout(() => {
+      setRoundIndex((idx) => Math.min(idx + 1, (activeCase.rounds?.length || 1) - 1));
+    }, delay);
   };
 
   const nextRound = () => {
@@ -501,6 +519,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
 
   const chooseVerdict = (option) => {
     if (!activeCase || decision) return;
+    clearTimeout(autoAdvanceRef.current);
     const effects = option.effects || {};
     setDecision(option);
     setPhase("result");
@@ -523,6 +542,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     setRoundIndex(0);
     setAnswers([]);
     setDecision(null);
+    clearTimeout(autoAdvanceRef.current);
   };
 
   useEffect(() => {
@@ -722,15 +742,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                     );
                   })}
                 </div>
-                {currentAnswer && (
-                  <div className="kc-next-row">
-                    {roundIndex >= (activeCase?.rounds?.length || 0) - 1 ? (
-                      <button className="kc-cta" onClick={goToVerdict}>Перейти к приговору</button>
-                    ) : (
-                      <button className="kc-cta" onClick={nextRound}>Следующий раунд</button>
-                    )}
-                  </div>
-                )}
               </section>
             )}
           </div>
