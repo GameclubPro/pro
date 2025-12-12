@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Confetti from "react-canvas-confetti";
 import io from "socket.io-client";
+import regularLootboxImageUrl from "./assets/auction/RegularLootBox.png";
 import "./Auction.css";
 
 const INITIAL_BANK = 1_000_000;
@@ -15,8 +16,9 @@ const MAX_BUDGET = 5_000_000;
 const BUDGET_STEP = 50_000;
 const COUNTDOWN_STEP_MS = 4_000;
 const COUNTDOWN_START_FROM = 3;
-const LOOTBOX_IMAGE_URL = "/lootbox.svg";
-const LOOTBOX_SHATTER_SIZE = 192;
+const REGULAR_LOOTBOX_NAME_HINT = "Обычный лутбокс";
+const LOOTBOX_FALLBACK_IMAGE_URL = "/lootbox.svg";
+const LOOTBOX_SHATTER_SIZE = 240;
 const LOOTBOX_SHATTER_COLS = 8;
 const LOOTBOX_SHATTER_ROWS = 8;
 const PHASE_LABEL: Record<string, string> = {
@@ -37,6 +39,14 @@ function normalizeCode(value = "") {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function splitEmojiLabel(label: string) {
+  const raw = String(label || "").trim();
+  const match = raw.match(/([\u{1F300}-\u{1FAFF}])/u);
+  const emoji = match?.[0] || "";
+  const text = emoji ? raw.replace(emoji, "").trim() : raw;
+  return { emoji, text, raw };
 }
 
 function hashStringToSeed(value = "") {
@@ -105,7 +115,7 @@ function playerDisplayName(player: any) {
 type LootboxEffect = {
   kind: "money" | "penalty" | "empty" | string;
   delta?: number;
-  prize?: { emoji?: string; name?: string } | null;
+  prize?: { emoji?: string; name?: string; fullName?: string; basePrice?: number } | null;
 };
 
 type LootboxRevealEvent = {
@@ -529,12 +539,15 @@ export default function Auction({
 
   const fireLootboxConfetti = useCallback((kind: string) => {
     if (!confettiRef.current) return;
-    if (kind !== "money") return;
+    if (kind !== "money" && kind !== "lot") return;
     confettiRef.current({
       particleCount: 180,
       spread: 75,
       origin: { y: 0.32 },
-      colors: ["#22c55e", "#38bdf8", "#a855f7", "#fbbf24"],
+      colors:
+        kind === "lot"
+          ? ["#fbbf24", "#38bdf8", "#a855f7", "#f59e0b"]
+          : ["#22c55e", "#38bdf8", "#a855f7", "#fbbf24"],
     });
   }, []);
 
@@ -607,6 +620,8 @@ export default function Auction({
 
     const latest = safeHistory[len - 1];
     if (!latest || latest.type !== "lootbox") return;
+    const slotName = String(latest.name || "");
+    if (!slotName.includes(REGULAR_LOOTBOX_NAME_HINT)) return;
     const winnerPlayerId = latest.winnerPlayerId;
     const effect = latest.effect;
     if (winnerPlayerId == null || !effect) return;
@@ -614,7 +629,7 @@ export default function Auction({
     setLootboxReveal({
       id: `${latest.index}-${winnerPlayerId}-${Date.now()}`,
       slotIndex: latest.index,
-      slotName: latest.name || "Лутбокс",
+      slotName: slotName || "Лутбокс",
       winnerPlayerId,
       winBid: Number(latest.winBid || 0) || 0,
       effect,
@@ -2146,6 +2161,7 @@ export default function Auction({
               const base = Number(item.basePrice ?? 0) || 0;
               const value = Number(item.value ?? (paid || base)) || 0;
               const effect = item.effect;
+              const effectKind = String(effect?.kind || "");
               const prizeName =
                 effect?.prize && typeof effect.prize === "object"
                   ? String(effect.prize.name || "").trim()
@@ -2154,15 +2170,27 @@ export default function Auction({
                 effect?.prize && typeof effect.prize === "object"
                   ? String(effect.prize.emoji || "").trim()
                   : "";
-              const prizeSuffix = prizeName
-                ? ` · ${prizeEmoji ? `${prizeEmoji} ` : ""}${prizeName}`
+              const prizeLabel = prizeName
+                ? `${prizeEmoji ? `${prizeEmoji} ` : ""}${prizeName}`
                 : "";
               const effectClass =
-                effect?.kind === "penalty"
+                effectKind === "penalty"
                   ? "basket-item__effect--bad"
-                  : effect?.kind === "money"
+                  : effectKind === "money" || effectKind === "lot"
                   ? "basket-item__effect--good"
                   : "";
+              const effectText =
+                effectKind === "penalty"
+                  ? `Штраф ${moneyFormatter.format(Math.abs(effect?.delta || 0))}$${prizeLabel ? ` · ${prizeLabel}` : ""}`
+                  : effectKind === "money"
+                  ? `Бонус ${moneyFormatter.format(Math.abs(effect?.delta || 0))}$${prizeLabel ? ` · ${prizeLabel}` : ""}`
+                  : effectKind === "lot"
+                  ? prizeLabel
+                    ? `Приз: ${prizeLabel}`
+                    : "Приз"
+                  : prizeLabel
+                  ? `Пусто · ${prizeLabel}`
+                  : "Пусто";
 
               return (
                 <div className="basket-item" key={key}>
@@ -2187,11 +2215,7 @@ export default function Auction({
                         .filter(Boolean)
                         .join(" ")}
                     >
-                      {effect.kind === "penalty"
-                        ? `Штраф ${moneyFormatter.format(Math.abs(effect.delta || 0))}$${prizeSuffix}`
-                        : effect.kind === "money"
-                        ? `Бонус ${moneyFormatter.format(Math.abs(effect.delta || 0))}$${prizeSuffix}`
-                        : `Пусто${prizeSuffix}`}
+                      {effectText}
                     </div>
                   )}
                 </div>
@@ -2216,6 +2240,11 @@ export default function Auction({
     const deltaAbs = Math.abs(Number(lootboxReveal.effect?.delta || 0));
     const deltaText = moneyFormatter.format(deltaAbs);
 
+    const isRegularLootbox = lootboxReveal.slotName.includes(REGULAR_LOOTBOX_NAME_HINT);
+    const lootboxImageUrl = isRegularLootbox
+      ? regularLootboxImageUrl
+      : LOOTBOX_FALLBACK_IMAGE_URL;
+
     const toneClass =
       effectKind === "money"
         ? "lootbox-panel--good"
@@ -2228,26 +2257,42 @@ export default function Auction({
         ? "Бонус"
         : effectKind === "penalty"
         ? "Штраф"
+        : effectKind === "lot"
+        ? "Приз"
         : "Пусто";
 
-    const prizeEmojiRaw =
+    const prizeObj =
       lootboxReveal.effect?.prize && typeof lootboxReveal.effect.prize === "object"
-        ? String(lootboxReveal.effect.prize.emoji || "").trim()
-        : "";
-    const prizeNameRaw =
-      lootboxReveal.effect?.prize && typeof lootboxReveal.effect.prize === "object"
-        ? String(lootboxReveal.effect.prize.name || "").trim()
-        : "";
+        ? lootboxReveal.effect.prize
+        : null;
+    const prizeEmojiRaw = prizeObj ? String(prizeObj.emoji || "").trim() : "";
+    const prizeNameRaw = prizeObj ? String(prizeObj.name || "").trim() : "";
+    const prizeFullNameRaw = prizeObj ? String(prizeObj.fullName || "").trim() : "";
+    const prizeParsed = prizeFullNameRaw ? splitEmojiLabel(prizeFullNameRaw) : null;
+    const prizeBasePrice = prizeObj?.basePrice;
+    const prizeBasePriceText = Number.isFinite(Number(prizeBasePrice))
+      ? `${moneyFormatter.format(Number(prizeBasePrice))}$`
+      : "";
 
     const prizeEmoji =
       prizeEmojiRaw ||
-      (effectKind === "money" ? "💰" : effectKind === "penalty" ? "💣" : "🕸️");
+      prizeParsed?.emoji ||
+      (effectKind === "money"
+        ? "💰"
+        : effectKind === "penalty"
+        ? "💣"
+        : effectKind === "lot"
+        ? "🎁"
+        : "🕸️");
     const prizeName =
       prizeNameRaw ||
+      prizeParsed?.text ||
       (effectKind === "money"
         ? "Денежный приз"
         : effectKind === "penalty"
         ? "Неприятность"
+        : effectKind === "lot"
+        ? "Предмет"
         : "Ничего");
 
     const prizeValue =
@@ -2255,6 +2300,8 @@ export default function Auction({
         ? `+${deltaText}$`
         : effectKind === "penalty"
         ? `-${deltaText}$`
+        : effectKind === "lot"
+        ? prizeBasePriceText || "Предмет"
         : "Ничего";
     const shatterExploded = lootboxStage !== "intro";
 
@@ -2314,7 +2361,7 @@ export default function Auction({
                       top: piece.top,
                       width: piece.width,
                       height: piece.height,
-                      backgroundImage: `url(${LOOTBOX_IMAGE_URL})`,
+                      backgroundImage: `url(${lootboxImageUrl})`,
                       backgroundSize: `${LOOTBOX_SHATTER_SIZE}px ${LOOTBOX_SHATTER_SIZE}px`,
                       backgroundPosition: `${-piece.left}px ${-piece.top}px`,
                     }}
@@ -2350,31 +2397,30 @@ export default function Auction({
                     />
                   )}
                 </AnimatePresence>
+                <AnimatePresence initial={false}>
+                  {lootboxStage === "reveal" && (
+                    <motion.div
+                      key={lootboxReveal.id}
+                      className="lootbox-prize lootbox-prize--center"
+                      initial={{ opacity: 0, scale: 0.45, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.7, y: 10 }}
+                      transition={{ duration: 0.26, ease: "easeOut" }}
+                    >
+                      <div className="lootbox-prize__emoji" aria-hidden="true">
+                        {prizeEmoji}
+                      </div>
+                      <div className="lootbox-prize__meta">{effectLabel}</div>
+                      <div className="lootbox-prize__title">{prizeName}</div>
+                      <div className="lootbox-prize__value">{prizeValue}</div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
-
-            <AnimatePresence initial={false}>
-              {lootboxStage === "reveal" && (
-                <motion.div
-                  key={lootboxReveal.id}
-                  className="lootbox-prize"
-                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                  transition={{ duration: 0.22, ease: "easeOut" }}
-                >
-                  <div className="lootbox-prize__emoji" aria-hidden="true">
-                    {prizeEmoji}
-                  </div>
-                  <div className="lootbox-prize__meta">{effectLabel}</div>
-                  <div className="lootbox-prize__title">{prizeName}</div>
-                  <div className="lootbox-prize__value">{prizeValue}</div>
-                  <div className="lootbox-prize__hint muted">
-                    Тапните по экрану, чтобы закрыть
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <div className="lootbox-prize__hint muted">
+              Тапните по экрану, чтобы закрыть
+            </div>
           </div>
         </motion.div>
       </div>

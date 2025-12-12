@@ -2515,6 +2515,17 @@ button:active:not(:disabled) {
   text-align: center;
 }
 
+.lootbox-prize--center {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  transform: translate(-50%, -50%);
+  width: min(240px, calc(100% - 22px));
+  z-index: 3;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+}
+
 .lootbox-prize__emoji {
   font-size: 44px;
   line-height: 1;

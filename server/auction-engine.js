@@ -46,11 +46,13 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
   ];
 
   const LOOTBOX_ITEMS = [
-    '🎁 Малый лутбокс',
+    '📦 Обычный лутбокс',
     '🎁 Средний лутбокс',
     '🎁 Большой лутбокс',
     '🎁 Мистический лутбокс',
   ];
+
+  const REGULAR_LOOTBOX_NAME_HINT = 'Обычный лутбокс';
 
   const LOOTBOX_PRIZES = Object.freeze({
     money: [
@@ -79,6 +81,44 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     const list = LOOTBOX_PRIZES?.[kind] || LOOTBOX_PRIZES.empty;
     const safe = Array.isArray(list) && list.length ? list : LOOTBOX_PRIZES.empty;
     return safe[randomInt(0, safe.length)];
+  }
+
+  function isRegularLootbox(slot) {
+    const name = String(slot?.name || '');
+    return name.includes(REGULAR_LOOTBOX_NAME_HINT);
+  }
+
+  function parseEmojiAndName(label) {
+    const raw = String(label || '').trim();
+    const match = raw.match(/([\u{1F300}-\u{1FAFF}])/u);
+    const emoji = match?.[0] || '🎁';
+    const name = raw ? raw.replace(match?.[0] || '', '').trim() : '';
+    return {
+      emoji,
+      name: name || raw || 'Приз',
+      fullName: raw || 'Приз',
+    };
+  }
+
+  function pickRegularLootboxPrizeLot(state) {
+    const sourceSlots = Array.isArray(state?.slots) ? state.slots : [];
+    const lotSlots = sourceSlots.filter((s) => s && s.type === 'lot' && s.name);
+
+    const picked = lotSlots.length
+      ? lotSlots[randomInt(0, lotSlots.length)]
+      : {
+          name: LOT_ITEMS[randomInt(0, LOT_ITEMS.length)],
+          basePrice: randomInt(80_000, 350_001),
+        };
+
+    const basePrice = Number.isFinite(Number(picked.basePrice))
+      ? Math.max(0, Math.floor(Number(picked.basePrice)))
+      : randomInt(80_000, 350_001);
+
+    return {
+      ...parseEmojiAndName(picked.name),
+      basePrice,
+    };
   }
 
   // roomId -> in-memory state
@@ -124,7 +164,11 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     return slots;
   }
 
-  function applyLootboxEffect(state, winnerId) {
+  function applyLootboxEffect(state, winnerId, slot) {
+    if (isRegularLootbox(slot)) {
+      return { kind: 'lot', delta: 0, prize: pickRegularLootboxPrizeLot(state) };
+    }
+
     const roll = Math.random();
     if (roll < 0.4) {
       const bonus = randomInt(50_000, 250_001);
@@ -451,27 +495,39 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       const balance = state.balances[winnerId] || 0;
       state.balances[winnerId] = Math.max(0, balance - maxBid);
       if (slot.type === 'lootbox') {
-        effect = applyLootboxEffect(state, winnerId);
+        effect = applyLootboxEffect(state, winnerId, slot);
       }
 
       // обновляем корзину победителя
       const base = Number(slot.basePrice) || 0;
       let value = base;
+      let basketItemType = slot.type;
+      let basketItemName = slot.name;
+      let basketItemBasePrice = base;
 
       // для лутбокса учитываем рандомный эффект (может быть штрафом)
       if (slot.type === 'lootbox') {
-        const delta = (effect && typeof effect.delta === 'number')
-          ? effect.delta
-          : 0;
-        value = Math.max(0, base + delta);
+        if (effect && effect.kind === 'lot' && effect.prize) {
+          const prizeBase = Number(effect.prize.basePrice);
+          const prizeName = String(effect.prize.fullName || effect.prize.name || '').trim();
+          basketItemType = 'lot';
+          basketItemName = prizeName || slot.name;
+          basketItemBasePrice = Number.isFinite(prizeBase) ? prizeBase : base;
+          value = basketItemBasePrice;
+        } else {
+          const delta = (effect && typeof effect.delta === 'number')
+            ? effect.delta
+            : 0;
+          value = Math.max(0, base + delta);
+        }
       }
 
       if (!state.baskets[winnerId]) state.baskets[winnerId] = [];
       state.baskets[winnerId].push({
         index: slotIndex,
-        type: slot.type,
-        name: slot.name,
-        basePrice: base,
+        type: basketItemType,
+        name: basketItemName,
+        basePrice: basketItemBasePrice,
         paid: maxBid,
         value,
         effect: effect || null,
