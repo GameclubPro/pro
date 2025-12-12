@@ -420,10 +420,10 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
       return currentAnswer?.answer || dialogLine || activeCase?.description || "";
     }
     if (phase === "verdict" || phase === "result") {
-      return currentAnswer?.answer || dialogLine || activeCase?.description || "";
+      return decision?.outcome || dialogLine || currentAnswer?.answer || activeCase?.description || "";
     }
     return activeCase?.description || "";
-  }, [phase, currentAnswer?.answer, dialogLine, activeCase?.description]);
+  }, [phase, currentAnswer?.answer, dialogLine, activeCase?.description, decision?.outcome]);
   const displayText = typedText || "";
   const showCaseTitle = phase === "summary";
   const badgeIcon = useMemo(() => {
