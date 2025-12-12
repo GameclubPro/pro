@@ -15,6 +15,10 @@ const MAX_BUDGET = 5_000_000;
 const BUDGET_STEP = 50_000;
 const COUNTDOWN_STEP_MS = 4_000;
 const COUNTDOWN_START_FROM = 3;
+const LOOTBOX_IMAGE_URL = "/lootbox.svg";
+const LOOTBOX_SHATTER_SIZE = 192;
+const LOOTBOX_SHATTER_COLS = 8;
+const LOOTBOX_SHATTER_ROWS = 8;
 const PHASE_LABEL: Record<string, string> = {
   lobby: "Лобби",
   in_progress: "Торги",
@@ -33,6 +37,26 @@ function normalizeCode(value = "") {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function hashStringToSeed(value = "") {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function mulberry32(seed: number) {
+  let t = seed >>> 0;
+  return () => {
+    t += 0x6d2b79f5;
+    let r = t;
+    r = Math.imul(r ^ (r >>> 15), r | 1);
+    r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
 const EMPTY_ARRAY: any[] = Object.freeze([]);
@@ -81,6 +105,7 @@ function playerDisplayName(player: any) {
 type LootboxEffect = {
   kind: "money" | "penalty" | "empty" | string;
   delta?: number;
+  prize?: { emoji?: string; name?: string } | null;
 };
 
 type LootboxRevealEvent = {
@@ -90,6 +115,18 @@ type LootboxRevealEvent = {
   winnerPlayerId: number;
   winBid: number;
   effect: LootboxEffect;
+};
+
+type LootboxShatterPiece = {
+  key: string;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  dx: number;
+  dy: number;
+  rotate: number;
+  delay: number;
 };
 
 export default function Auction({
@@ -501,6 +538,56 @@ export default function Auction({
     });
   }, []);
 
+  const lootboxShatterPieces = useMemo((): LootboxShatterPiece[] => {
+    if (!lootboxReveal?.id) return [];
+
+    const seed = hashStringToSeed(lootboxReveal.id);
+    const rnd = mulberry32(seed);
+
+    const cols = LOOTBOX_SHATTER_COLS;
+    const rows = LOOTBOX_SHATTER_ROWS;
+    const size = LOOTBOX_SHATTER_SIZE;
+    const pieceW = size / cols;
+    const pieceH = size / rows;
+    const midX = size / 2;
+    const midY = size / 2;
+
+    const pieces: LootboxShatterPiece[] = [];
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const left = col * pieceW;
+        const top = row * pieceH;
+        const centerX = left + pieceW / 2;
+        const centerY = top + pieceH / 2;
+
+        const dirX = centerX - midX + (rnd() - 0.5) * 6;
+        const dirY = centerY - midY + (rnd() - 0.5) * 6;
+        const len = Math.max(1, Math.hypot(dirX, dirY));
+        const unitX = dirX / len;
+        const unitY = dirY / len;
+
+        const magnitude = 78 + rnd() * 150;
+        const jitterX = (rnd() - 0.5) * 56;
+        const jitterY = (rnd() - 0.5) * 46 - 22;
+        const dx = unitX * magnitude + jitterX;
+        const dy = unitY * magnitude + jitterY;
+
+        pieces.push({
+          key: `${row}-${col}`,
+          left,
+          top,
+          width: pieceW,
+          height: pieceH,
+          dx,
+          dy,
+          rotate: (rnd() - 0.5) * 240,
+          delay: rnd() * 0.08,
+        });
+      }
+    }
+    return pieces;
+  }, [lootboxReveal?.id]);
+
   useEffect(() => {
     const len = safeHistory.length;
     const prevLen = lootboxHistoryLenRef.current;
@@ -544,8 +631,8 @@ export default function Auction({
     setLootboxStage("intro");
     lootboxConfettiFiredRef.current = null;
 
-    const openTimer = setTimeout(() => setLootboxStage("opening"), 260);
-    const revealTimer = setTimeout(() => setLootboxStage("reveal"), 1150);
+    const openTimer = setTimeout(() => setLootboxStage("opening"), 240);
+    const revealTimer = setTimeout(() => setLootboxStage("reveal"), 1240);
     const closeTimer = setTimeout(() => setLootboxReveal(null), 5200);
 
     return () => {
@@ -2059,6 +2146,17 @@ export default function Auction({
               const base = Number(item.basePrice ?? 0) || 0;
               const value = Number(item.value ?? (paid || base)) || 0;
               const effect = item.effect;
+              const prizeName =
+                effect?.prize && typeof effect.prize === "object"
+                  ? String(effect.prize.name || "").trim()
+                  : "";
+              const prizeEmoji =
+                effect?.prize && typeof effect.prize === "object"
+                  ? String(effect.prize.emoji || "").trim()
+                  : "";
+              const prizeSuffix = prizeName
+                ? ` · ${prizeEmoji ? `${prizeEmoji} ` : ""}${prizeName}`
+                : "";
               const effectClass =
                 effect?.kind === "penalty"
                   ? "basket-item__effect--bad"
@@ -2090,10 +2188,10 @@ export default function Auction({
                         .join(" ")}
                     >
                       {effect.kind === "penalty"
-                        ? `Штраф ${moneyFormatter.format(Math.abs(effect.delta || 0))}$`
+                        ? `Штраф ${moneyFormatter.format(Math.abs(effect.delta || 0))}$${prizeSuffix}`
                         : effect.kind === "money"
-                        ? `Бонус ${moneyFormatter.format(Math.abs(effect.delta || 0))}$`
-                        : "Пусто"}
+                        ? `Бонус ${moneyFormatter.format(Math.abs(effect.delta || 0))}$${prizeSuffix}`
+                        : `Пусто${prizeSuffix}`}
                     </div>
                   )}
                 </div>
@@ -2125,12 +2223,32 @@ export default function Auction({
         ? "lootbox-panel--bad"
         : "lootbox-panel--empty";
 
-    const prizeTitle =
+    const effectLabel =
       effectKind === "money"
         ? "Бонус"
         : effectKind === "penalty"
         ? "Штраф"
         : "Пусто";
+
+    const prizeEmojiRaw =
+      lootboxReveal.effect?.prize && typeof lootboxReveal.effect.prize === "object"
+        ? String(lootboxReveal.effect.prize.emoji || "").trim()
+        : "";
+    const prizeNameRaw =
+      lootboxReveal.effect?.prize && typeof lootboxReveal.effect.prize === "object"
+        ? String(lootboxReveal.effect.prize.name || "").trim()
+        : "";
+
+    const prizeEmoji =
+      prizeEmojiRaw ||
+      (effectKind === "money" ? "💰" : effectKind === "penalty" ? "💣" : "🕸️");
+    const prizeName =
+      prizeNameRaw ||
+      (effectKind === "money"
+        ? "Денежный приз"
+        : effectKind === "penalty"
+        ? "Неприятность"
+        : "Ничего");
 
     const prizeValue =
       effectKind === "money"
@@ -2138,15 +2256,7 @@ export default function Auction({
         : effectKind === "penalty"
         ? `-${deltaText}$`
         : "Ничего";
-
-    const boxClassName = [
-      "lootbox-box",
-      lootboxStage === "opening" ? "lootbox-box--shaking" : "",
-      lootboxStage !== "intro" ? "lootbox-box--open" : "",
-      lootboxStage === "reveal" ? "lootbox-box--glow" : "",
-    ]
-      .filter(Boolean)
-      .join(" ");
+    const shatterExploded = lootboxStage !== "intro";
 
     return (
       <div
@@ -2182,15 +2292,64 @@ export default function Auction({
           </div>
 
           <div className="lootbox-stage">
-            <div className="lootbox-box-stage" aria-hidden="true">
-              <div className={boxClassName}>
-                <div className="lootbox-box__lid">
-                  <div className="lootbox-box__bow" />
-                </div>
-                <div className="lootbox-box__body">
-                  <div className="lootbox-box__ribbon" />
-                  <div className="lootbox-box__shine" />
-                </div>
+            <div className="lootbox-shatter-stage" aria-hidden="true">
+              <div
+                className="lootbox-shatter"
+                style={{
+                  width: LOOTBOX_SHATTER_SIZE,
+                  height: LOOTBOX_SHATTER_SIZE,
+                }}
+              >
+                {lootboxShatterPieces.map((piece) => (
+                  <motion.div
+                    key={piece.key}
+                    className={[
+                      "lootbox-piece",
+                      shatterExploded ? "lootbox-piece--exploded" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                    style={{
+                      left: piece.left,
+                      top: piece.top,
+                      width: piece.width,
+                      height: piece.height,
+                      backgroundImage: `url(${LOOTBOX_IMAGE_URL})`,
+                      backgroundSize: `${LOOTBOX_SHATTER_SIZE}px ${LOOTBOX_SHATTER_SIZE}px`,
+                      backgroundPosition: `${-piece.left}px ${-piece.top}px`,
+                    }}
+                    animate={
+                      shatterExploded
+                        ? {
+                            x: piece.dx,
+                            y: piece.dy,
+                            rotate: piece.rotate,
+                            opacity: 0,
+                          }
+                        : { x: 0, y: 0, rotate: 0, opacity: 1 }
+                    }
+                    transition={{
+                      duration: 0.95,
+                      delay: piece.delay,
+                      ease: "easeOut",
+                    }}
+                  />
+                ))}
+                <AnimatePresence initial={false}>
+                  {lootboxStage === "opening" && (
+                    <motion.div
+                      className="lootbox-burst"
+                      initial={{ opacity: 0, scale: 0.7 }}
+                      animate={{ opacity: [0, 1, 0], scale: [0.7, 1.08, 1.25] }}
+                      exit={{ opacity: 0 }}
+                      transition={{
+                        duration: 0.85,
+                        times: [0, 0.18, 1],
+                        ease: "easeOut",
+                      }}
+                    />
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
@@ -2204,7 +2363,11 @@ export default function Auction({
                   exit={{ opacity: 0, y: 8, scale: 0.98 }}
                   transition={{ duration: 0.22, ease: "easeOut" }}
                 >
-                  <div className="lootbox-prize__title">{prizeTitle}</div>
+                  <div className="lootbox-prize__emoji" aria-hidden="true">
+                    {prizeEmoji}
+                  </div>
+                  <div className="lootbox-prize__meta">{effectLabel}</div>
+                  <div className="lootbox-prize__title">{prizeName}</div>
                   <div className="lootbox-prize__value">{prizeValue}</div>
                   <div className="lootbox-prize__hint muted">
                     Тапните по экрану, чтобы закрыть

@@ -2314,6 +2314,44 @@ button:active:not(:disabled) {
   text-align: center;
 }
 
+.lootbox-shatter-stage {
+  display: grid;
+  place-items: center;
+  padding: 8px 0 4px;
+}
+
+.lootbox-shatter {
+  position: relative;
+  border-radius: 26px;
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.45));
+}
+
+.lootbox-piece {
+  position: absolute;
+  background-repeat: no-repeat;
+  will-change: transform, opacity;
+}
+
+.lootbox-piece--exploded {
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+}
+
+.lootbox-burst {
+  position: absolute;
+  inset: -34px;
+  background: radial-gradient(
+    circle at 50% 40%,
+    rgba(251, 191, 36, 0.52),
+    rgba(168, 85, 247, 0.22),
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+  filter: blur(2px);
+  pointer-events: none;
+}
+
 .lootbox-box-stage {
   display: grid;
   place-items: center;
@@ -2472,14 +2510,28 @@ button:active:not(:disabled) {
   background: color-mix(in srgb, var(--card) 85%, transparent);
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.78);
   display: grid;
-  gap: 6px;
+  gap: 4px;
+  justify-items: center;
+  text-align: center;
 }
 
-.lootbox-prize__title {
+.lootbox-prize__emoji {
+  font-size: 44px;
+  line-height: 1;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.35));
+}
+
+.lootbox-prize__meta {
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+.lootbox-prize__title {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
 }
 
 .lootbox-prize__value {

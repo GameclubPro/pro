@@ -52,6 +52,35 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     '🎁 Мистический лутбокс',
   ];
 
+  const LOOTBOX_PRIZES = Object.freeze({
+    money: [
+      { emoji: '💰', name: 'Мешок денег' },
+      { emoji: '💎', name: 'Алмазная находка' },
+      { emoji: '🏦', name: 'Банковский чек' },
+      { emoji: '🪙', name: 'Горсть монет' },
+      { emoji: '📈', name: 'Инвестиция выстрелила' },
+    ],
+    penalty: [
+      { emoji: '💸', name: 'Налоговый штраф' },
+      { emoji: '🕳️', name: 'Чёрная дыра' },
+      { emoji: '🧾', name: 'Неожиданный счёт' },
+      { emoji: '💣', name: 'Бомба' },
+      { emoji: '🧯', name: 'Пожарные расходы' },
+    ],
+    empty: [
+      { emoji: '🕸️', name: 'Паутина' },
+      { emoji: '🥲', name: 'Пусто' },
+      { emoji: '🫥', name: 'Ничего' },
+      { emoji: '📦', name: 'Пустая коробка' },
+    ],
+  });
+
+  function pickLootboxPrize(kind) {
+    const list = LOOTBOX_PRIZES?.[kind] || LOOTBOX_PRIZES.empty;
+    const safe = Array.isArray(list) && list.length ? list : LOOTBOX_PRIZES.empty;
+    return safe[randomInt(0, safe.length)];
+  }
+
   // roomId -> in-memory state
   const states = new Map();
   // roomId -> timer handle
@@ -100,15 +129,15 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     if (roll < 0.4) {
       const bonus = randomInt(50_000, 250_001);
       state.balances[winnerId] = (state.balances[winnerId] || 0) + bonus;
-      return { kind: 'money', delta: bonus };
+      return { kind: 'money', delta: bonus, prize: pickLootboxPrize('money') };
     }
     if (roll < 0.8) {
       const loss = randomInt(50_000, 200_001);
       const prev = state.balances[winnerId] || 0;
       state.balances[winnerId] = Math.max(0, prev - loss);
-      return { kind: 'penalty', delta: -loss };
+      return { kind: 'penalty', delta: -loss, prize: pickLootboxPrize('penalty') };
     }
-    return { kind: 'empty', delta: 0 };
+    return { kind: 'empty', delta: 0, prize: pickLootboxPrize('empty') };
   }
 
   function roomPlayersList(room) {
