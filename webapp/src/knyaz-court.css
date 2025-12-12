@@ -680,6 +680,7 @@
   align-items: center;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
   text-align: left;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .kc-verdict .kc-icon {
@@ -698,8 +699,11 @@
   font-size: 17px;
 }
 
-.kc-verdict .kc-muted {
-  line-height: 1.4;
+.kc-verdict-preview {
+  line-height: 1.45;
+  color: #3a2d23;
+  font-weight: 500;
+  opacity: 0.9;
 }
 
 .kc-verdict .kc-effects {
@@ -734,6 +738,7 @@
 .kc-verdict:hover:not(:disabled) {
   border-color: #a45c35;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
 }
 
 .kc-verdict:disabled {
@@ -743,7 +748,8 @@
 
 .kc-verdict.kc-chosen {
   outline: 2px solid rgba(164, 92, 53, 0.4);
-  background: #f2e2c1;
+  background: linear-gradient(140deg, #f4e6c6, #e6d2ad);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.14);
 }
 
 .kc-result {

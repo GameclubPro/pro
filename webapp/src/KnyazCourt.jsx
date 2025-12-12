@@ -819,7 +819,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                         <span className="kc-icon">{option.icon}</span>
                         <div className="kc-verdict-meta">
                           <div className="kc-label">{option.label}</div>
-                          <span className="kc-muted">{preview}</span>
+                          <div className="kc-verdict-preview">{preview}</div>
                         </div>
                       </button>
                     );
