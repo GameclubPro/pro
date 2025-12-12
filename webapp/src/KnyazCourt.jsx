@@ -457,21 +457,21 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
 
         <div className="kc-grid">
           <div className="kc-case-stack">
-            <section className="kc-card kc-suspect-panel">
-              <div className="kc-suspect-head">
-                <div className="kc-suspect-name-block">
-                  <div className="kc-suspect-name">{suspectName}</div>
-                </div>
-                {activeCase?.portrait === "guard" && (
-                  <div className="kc-portrait-wrap kc-portrait-inline">
-                    <img
-                      src={VseslavPortrait}
-                      alt={activeCase?.name || "Портрет подозреваемого"}
-                      className="kc-portrait"
-                    />
-                  </div>
-                )}
+            <div className="kc-suspect-head kc-suspect-topline">
+              <div className="kc-suspect-name-block">
+                <div className="kc-suspect-name">{suspectName}</div>
               </div>
+              {activeCase?.portrait === "guard" && (
+                <div className="kc-portrait-wrap kc-portrait-inline">
+                  <img
+                    src={VseslavPortrait}
+                    alt={activeCase?.name || "Портрет подозреваемого"}
+                    className="kc-portrait"
+                  />
+                </div>
+              )}
+            </div>
+            <section className="kc-card kc-suspect-panel">
               <div className="kc-case-text">
                 <h3>{activeCase?.title}</h3>
                 <p>{displayText}</p>
