@@ -660,35 +660,6 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                   <button className="kc-ghost" onClick={startDialog}>Выслушать</button>
                 </div>
               )}
-              {showQuestions && (
-                <>
-                  <div className="kc-questions">
-                {currentRound.map((q, idx) => {
-                  const answered = !!currentAnswer;
-                  const isChosen = currentAnswer?.text === q.text;
-                  return (
-                    <button
-                        key={q.text}
-                        className={`kc-question ${isChosen ? "kc-chosen" : ""}`}
-                        disabled={answered && !isChosen}
-                        onClick={() => selectQuestion(q)}
-                      >
-                          <span>{formatQuestionText(q)}</span>
-                        </button>
-                    );
-                  })}
-                </div>
-                  {currentAnswer && (
-                    <div className="kc-next-row">
-                      {roundIndex >= (activeCase?.rounds?.length || 0) - 1 ? (
-                        <button className="kc-cta" onClick={goToVerdict}>Перейти к приговору</button>
-                      ) : (
-                        <button className="kc-cta" onClick={nextRound}>Следующий раунд</button>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
               {showVerdicts && (
                 <div className="kc-verdict-block">
                   <div className="kc-verdict-options">
@@ -732,6 +703,36 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                 </div>
               )}
             </section>
+            {showQuestions && (
+              <section className="kc-card kc-questions-panel">
+                <div className="kc-questions-title">Вопросы</div>
+                <div className="kc-questions">
+                  {currentRound.map((q) => {
+                    const answered = !!currentAnswer;
+                    const isChosen = currentAnswer?.text === q.text;
+                    return (
+                      <button
+                        key={q.text}
+                        className={`kc-question ${isChosen ? "kc-chosen" : ""}`}
+                        disabled={answered && !isChosen}
+                        onClick={() => selectQuestion(q)}
+                      >
+                        <span>{formatQuestionText(q)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {currentAnswer && (
+                  <div className="kc-next-row">
+                    {roundIndex >= (activeCase?.rounds?.length || 0) - 1 ? (
+                      <button className="kc-cta" onClick={goToVerdict}>Перейти к приговору</button>
+                    ) : (
+                      <button className="kc-cta" onClick={nextRound}>Следующий раунд</button>
+                    )}
+                  </div>
+                )}
+              </section>
+            )}
           </div>
         </div>
       </div>
