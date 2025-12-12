@@ -813,7 +813,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                 </div>
               </section>
             )}
-            {showVerdicts && (
+            {showVerdicts && !decision && (
               <section className="kc-card kc-verdict-panel">
                 <div className="kc-questions-title">Приговор</div>
                 <div className="kc-verdict-options">
