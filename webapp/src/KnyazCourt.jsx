@@ -11,9 +11,9 @@ const COUNCIL = [
 
 const QUESTION_TONES = {
   threat: { icon: "👊", label: "Угрожающий" },
-  friendly: { icon: "😊", label: "Дружелюбный" },
-  rational: { icon: "🧠", label: "Рациональный" },
-  cunning: { icon: "🦊", label: "Хитрый" },
+  friendly: { icon: "🕊️", label: "Дружелюбный" },
+  rational: { icon: "⚖️", label: "Рациональный" },
+  cunning: { icon: "🐍", label: "Хитрый" },
 };
 
 const CASES = [
@@ -142,6 +142,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   const asked = answers.filter(Boolean);
   const currentRound = activeCase?.rounds?.[roundIndex] || [];
   const currentAnswer = answers[roundIndex];
+  const showLog = showMiniLog && asked.length > 0;
   const showQuestions = phase === "dialog";
   const showVerdicts = phase === "verdict" || phase === "result";
   const targetText = useMemo(() => {
@@ -491,7 +492,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                 </button>
               )}
             </div>
-            {showMiniLog && asked.length > 0 && (
+            {showLog ? (
               <div className="kc-mini-log kc-mini-log-flyout" aria-live="polite">
                 <div className="kc-mini-log-title">Что уже сказано</div>
                 {asked.map((item, idx) => (
@@ -501,69 +502,72 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
                   </div>
                 ))}
               </div>
-            )}
-            <section className="kc-card kc-suspect-panel">
-              <div className="kc-case-text">
-                {showCaseTitle && <h3>{activeCase?.title}</h3>}
-                <p>{displayText}</p>
-              </div>
-              {!showQuestions && !showVerdicts && (
-                <div className="kc-action-row">
-                  <button className="kc-cta" onClick={goToVerdict}>Принять решение</button>
-                  <button className="kc-ghost" onClick={startDialog}>Выслушать</button>
-                </div>
-              )}
-            </section>
-            {decision && (
-              <div className="kc-next-case-bar">
-                <button className="kc-next-case-btn" onClick={moveNextCase}>
-                  Ведите следующего
-                </button>
-              </div>
-            )}
-            {showQuestions && (
-              <section className="kc-card kc-questions-panel">
-                <div className="kc-questions-title">Вопросы</div>
-                <div className="kc-questions">
-                  {currentRound.map((q) => {
-                    const answered = !!currentAnswer;
-                    const isChosen = currentAnswer?.text === q.text;
-                    return (
-                      <button
-                        key={q.text}
-                        className={`kc-question ${isChosen ? "kc-chosen" : ""}`}
-                        disabled={answered && !isChosen}
-                        onClick={() => selectQuestion(q)}
-                      >
-                        <span>{formatQuestionText(q)}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-            {showVerdicts && !decision && (
-              <section className="kc-card kc-verdict-panel">
-                <div className="kc-questions-title">Приговор</div>
-                <div className="kc-verdict-options">
-                  {activeCase?.verdicts?.map((option) => {
-                    const isPicked = decision?.key === option.key;
-                    return (
-                      <button
-                        key={option.key}
-                        className={`kc-verdict ${isPicked ? "kc-chosen" : ""}`}
-                        onClick={() => chooseVerdict(option)}
-                        disabled={!!decision}
-                      >
-                        <span className="kc-icon">{option.icon}</span>
-                        <div className="kc-verdict-meta">
-                          <div className="kc-label">{option.label}</div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
+            ) : (
+              <>
+                <section className="kc-card kc-suspect-panel">
+                  <div className="kc-case-text">
+                    {showCaseTitle && <h3>{activeCase?.title}</h3>}
+                    <p>{displayText}</p>
+                  </div>
+                  {!showQuestions && !showVerdicts && (
+                    <div className="kc-action-row">
+                      <button className="kc-cta" onClick={goToVerdict}>Принять решение</button>
+                      <button className="kc-ghost" onClick={startDialog}>Выслушать</button>
+                    </div>
+                  )}
+                </section>
+                {decision && (
+                  <div className="kc-next-case-bar">
+                    <button className="kc-next-case-btn" onClick={moveNextCase}>
+                      Ведите следующего
+                    </button>
+                  </div>
+                )}
+                {showQuestions && (
+                  <section className="kc-card kc-questions-panel">
+                    <div className="kc-questions-title">Вопросы</div>
+                    <div className="kc-questions">
+                      {currentRound.map((q) => {
+                        const answered = !!currentAnswer;
+                        const isChosen = currentAnswer?.text === q.text;
+                        return (
+                          <button
+                            key={q.text}
+                            className={`kc-question ${isChosen ? "kc-chosen" : ""}`}
+                            disabled={answered && !isChosen}
+                            onClick={() => selectQuestion(q)}
+                          >
+                            <span>{formatQuestionText(q)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
+                {showVerdicts && !decision && (
+                  <section className="kc-card kc-verdict-panel">
+                    <div className="kc-questions-title">Приговор</div>
+                    <div className="kc-verdict-options">
+                      {activeCase?.verdicts?.map((option) => {
+                        const isPicked = decision?.key === option.key;
+                        return (
+                          <button
+                            key={option.key}
+                            className={`kc-verdict ${isPicked ? "kc-chosen" : ""}`}
+                            onClick={() => chooseVerdict(option)}
+                            disabled={!!decision}
+                          >
+                            <span className="kc-icon">{option.icon}</span>
+                            <div className="kc-verdict-meta">
+                              <div className="kc-label">{option.label}</div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
+              </>
             )}
           </div>
         </div>
