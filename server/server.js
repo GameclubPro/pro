@@ -84,8 +84,10 @@ ensure('WEBHOOK_SECRET_PATH', WEBHOOK_SECRET_PATH, 'tgwh-<random>');
 
 // Кнопка «Играть» (меню в чате) — можно указать t.me-link, чтобы открыть main Mini App.
 // По умолчанию используем startapp=home (full-height по умолчанию для main mini app).
-const CHAT_MENU_BUTTON_URL = MENU_BUTTON_URL || `https://t.me/${BOT_USERNAME}?startapp=home`;
+const BOT_USERNAME_CLEAN = String(BOT_USERNAME || '').replace(/^@+/, '');
+const CHAT_MENU_BUTTON_URL = MENU_BUTTON_URL || `https://t.me/${BOT_USERNAME_CLEAN}?startapp=home`;
 const CHAT_MENU_BUTTON_TEXT = MENU_BUTTON_TEXT || 'ИГРАТЬ';
+console.log(`🧷 Chat Menu Button: text="${CHAT_MENU_BUTTON_TEXT}", url="${CHAT_MENU_BUTTON_URL}"`);
 
 const MAX_PLAYERS = Math.max(4, parseInt(ROOM_MAX_PLAYERS, 10) || 12);
 const NIGHT_SEC = Math.max(20, parseInt(MAFIA_NIGHT_SEC, 10) || 70);
@@ -516,6 +518,20 @@ app.get('/version', (_req, res) =>
 /* ============================ Telegram Bot ============================ */
 const bot = new Telegraf(BOT_TOKEN);
 
+async function applyMenuButtonForPrivateChat(ctx) {
+  try {
+    const chatId = ctx?.chat?.id;
+    const chatType = ctx?.chat?.type;
+    if (!chatId || chatType !== 'private') return;
+    await bot.telegram.setChatMenuButton({
+      chat_id: chatId,
+      menu_button: { type: 'web_app', text: CHAT_MENU_BUTTON_TEXT, web_app: { url: CHAT_MENU_BUTTON_URL } },
+    });
+  } catch (e) {
+    console.warn('applyMenuButtonForPrivateChat failed:', e?.response?.description || e?.message || e);
+  }
+}
+
 function openKeyboard(payload = 'home') {
   const code = payload.startsWith('join-') ? payload.slice(5) : '';
   const u = new URL(PUBLIC_APP_URL);
@@ -581,6 +597,7 @@ async function joinRoomByCodeViaBot(codeRaw, tgUser) {
 
 bot.start(async (ctx) => {
   try {
+    await applyMenuButtonForPrivateChat(ctx);
     const payload = String(ctx.startPayload || '').trim();
     const m = payload.match(/^join-([A-Z0-9]{4,8})$/i);
     if (m) {
@@ -613,6 +630,7 @@ bot.start(async (ctx) => {
 
 bot.command('open', async (ctx) => {
   try {
+    await applyMenuButtonForPrivateChat(ctx);
     await ctx.reply('Открываем игру:', { reply_markup: openKeyboard('home') });
   } catch (e) {
     console.error('open handler error:', e);
