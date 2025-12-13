@@ -110,6 +110,66 @@ export default function App() {
   // Telegram WebApp API (если открыто в вебвью Telegram)
   const tg = typeof window !== "undefined" ? window?.Telegram?.WebApp : undefined;
 
+  // Современные safe-area для Telegram Mini App: синхронизируем инкрусты и высоту viewport
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const root = document.documentElement;
+    const parsePx = (val) => {
+      const n = Number.parseFloat(val);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const readCssVar = (name) => parsePx(getComputedStyle(root).getPropertyValue(name));
+
+    const update = () => {
+      try {
+        const inset = tg?.safeAreaInsets || tg?.safeAreaInset || {};
+        const vv = window.visualViewport;
+        const overlayGuard = tg ? 32 : 0; // Telegram UI overlay height hint
+        const top = Math.max(inset.top || 0, vv?.offsetTop || 0, readCssVar("--safe-top"), overlayGuard);
+        const bottom = Math.max(
+          inset.bottom || 0,
+          vv ? Math.max(0, window.innerHeight - (vv.height + vv.offsetTop)) : 0,
+          readCssVar("--safe-bottom")
+        );
+        const left = Math.max(inset.left || 0, vv?.offsetLeft || 0, readCssVar("--safe-left"));
+        const right = Math.max(
+          inset.right || 0,
+          vv ? Math.max(0, window.innerWidth - (vv.width + vv.offsetLeft)) : 0,
+          readCssVar("--safe-right")
+        );
+
+        root.style.setProperty("--safe-top", `${top}px`);
+        root.style.setProperty("--safe-bottom", `${bottom}px`);
+        root.style.setProperty("--safe-left", `${left}px`);
+        root.style.setProperty("--safe-right", `${right}px`);
+
+        const vh = tg?.viewportHeight || 0;
+        const vhs = tg?.viewportStableHeight || vh;
+        if (vh) root.style.setProperty("--tg-viewport-height", `${vh}px`);
+        if (vhs) root.style.setProperty("--tg-viewport-stable-height", `${vhs}px`);
+      } catch {
+        /* noop */
+      }
+    };
+
+    update();
+    const handler = () => requestAnimationFrame(update);
+
+    window.addEventListener("resize", handler);
+    window.addEventListener("orientationchange", handler);
+    window.visualViewport?.addEventListener("resize", handler);
+    window.visualViewport?.addEventListener("scroll", handler);
+    tg?.onEvent?.("viewportChanged", handler);
+
+    return () => {
+      window.removeEventListener("resize", handler);
+      window.removeEventListener("orientationchange", handler);
+      window.visualViewport?.removeEventListener("resize", handler);
+      window.visualViewport?.removeEventListener("scroll", handler);
+      tg?.offEvent?.("viewportChanged", handler);
+    };
+  }, [tg]);
+
   // Доп. источник initData: некоторые клиенты прокидывают tgWebAppData в URL
   const initFromUrl =
     typeof window !== "undefined"
@@ -893,9 +953,11 @@ function GlobalReset() {
       dangerouslySetInnerHTML={{
         __html: `
 * { box-sizing: border-box; }
-html, body, #root { height: 100%; }
+html, body, #root { height: 100%; min-height: var(--tg-viewport-height, 100dvh); }
 :root {
   color-scheme: light dark;
+  --tg-viewport-height: 100dvh;
+  --tg-viewport-stable-height: 100dvh;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
@@ -916,7 +978,7 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 
 /* Общий контейнер */
-.app { min-height: 100dvh; width: 100%; position: relative; overflow: hidden; background: var(--bg); }
+.app { min-height: var(--tg-viewport-stable-height, var(--tg-viewport-height, 100dvh)); width: 100%; position: relative; overflow: hidden; background: var(--bg); }
 
 /* ===== SHELL ONLY (всё, что ниже префиксировано .shell и не влияет на игры) ===== */
 .shell .backdrop { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
