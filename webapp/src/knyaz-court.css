@@ -15,6 +15,8 @@
   position: relative;
   min-height: 100%;
   color: #f6f0e9;
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
   font-family: "Spectral", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   background: radial-gradient(1200px 900px at 20% 5%, rgba(208, 139, 55, 0.16), transparent),
     radial-gradient(900px 700px at 80% 15%, rgba(118, 164, 111, 0.14), transparent),
@@ -36,7 +38,7 @@
   z-index: 1;
   max-width: 100%;
   margin: 0;
-  padding: calc(100px + var(--safe-top)) clamp(14px, 3vw, 24px) calc(40px + var(--safe-bottom));
+  padding: 100px clamp(14px, 3vw, 24px) 40px;
 }
 
 .kc-root h1,
