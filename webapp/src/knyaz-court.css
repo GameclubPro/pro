@@ -96,7 +96,11 @@
 
 .kc-meter-row {
   position: fixed;
+<<<<<<< ours
   top: calc(var(--safe-top) + 14px);
+=======
+  top: 0;
+>>>>>>> theirs
   left: 0;
   right: 0;
   width: 100%;
@@ -190,8 +194,13 @@
 
 .kc-council-pill {
   position: fixed;
+<<<<<<< ours
   top: calc(var(--safe-top) + 150px);
   right: calc(12px + var(--safe-right));
+=======
+  top: 90px;
+  right: 12px;
+>>>>>>> theirs
   display: grid;
   place-items: center;
   width: 38px;
@@ -224,8 +233,8 @@
 
 .kc-council-panel {
   position: absolute;
-  right: calc(10px + var(--safe-right));
-  bottom: calc(10px + var(--safe-bottom));
+  right: 10px;
+  bottom: 10px;
   width: min(340px, calc(100% - 16px));
   background: linear-gradient(180deg, rgba(22, 18, 14, 0.92), rgba(15, 12, 11, 0.95));
   border: 1px solid rgba(255, 255, 255, 0.12);
