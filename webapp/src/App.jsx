@@ -903,6 +903,14 @@ html, body, #root { height: 100%; }
   --shell-pad-x: clamp(10px, 4vw, 18px);
   --shell-pad-y: clamp(10px, 2.2vh, 16px);
 }
+@supports (padding: max(0px, 1px)) {
+  :root {
+    --safe-top: max(env(safe-area-inset-top, 0px), var(--tg-safe-area-inset-top, 0px), var(--tg-content-safe-area-inset-top, 0px));
+    --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px), var(--tg-content-safe-area-inset-bottom, 0px));
+    --safe-left: max(env(safe-area-inset-left, 0px), var(--tg-safe-area-inset-left, 0px), var(--tg-content-safe-area-inset-left, 0px));
+    --safe-right: max(env(safe-area-inset-right, 0px), var(--tg-safe-area-inset-right, 0px), var(--tg-content-safe-area-inset-right, 0px));
+  }
+}
 body {
   margin: 0;
   background: var(--bg, #000);
@@ -916,7 +924,7 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 
 /* Общий контейнер */
-.app { min-height: 100dvh; width: 100%; position: relative; overflow: hidden; background: var(--bg); }
+.app { min-height: var(--tg-viewport-height, 100dvh); width: 100%; position: relative; overflow: hidden; background: var(--bg); }
 
 /* ===== SHELL ONLY (всё, что ниже префиксировано .shell и не влияет на игры) ===== */
 .shell .backdrop { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
