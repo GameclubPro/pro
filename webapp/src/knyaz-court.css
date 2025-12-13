@@ -96,7 +96,7 @@
 
 .kc-meter-row {
   position: fixed;
-  top: calc(var(--safe-top) + 6px);
+  top: calc(var(--safe-top) + 14px);
   left: 0;
   right: 0;
   width: 100%;
@@ -190,7 +190,7 @@
 
 .kc-council-pill {
   position: fixed;
-  top: calc(var(--safe-top) + 110px);
+  top: calc(var(--safe-top) + 150px);
   right: calc(12px + var(--safe-right));
   display: grid;
   place-items: center;
