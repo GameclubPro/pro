@@ -964,10 +964,6 @@ html, body, #root { height: 100%; min-height: var(--tg-viewport-height, 100dvh);
   --safe-right: env(safe-area-inset-right, 0px);
   --shell-pad-x: clamp(10px, 4vw, 18px);
   --shell-pad-y: clamp(10px, 2.2vh, 16px);
-  --dock-height: clamp(58px, 8vh, 72px);
-  --dock-gap: clamp(12px, 3vw, 14px);
-  --dock-pad-x: clamp(12px, 4vw, 16px);
-  --shell-bottom-pad: calc(var(--dock-height) + var(--dock-gap) + var(--safe-bottom) + 28px);
 }
 body {
   margin: 0;
@@ -1017,7 +1013,7 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
   padding-left: calc(var(--shell-pad-x) + var(--safe-left));
   padding-right: calc(var(--shell-pad-x) + var(--safe-right));
   padding-top: calc(var(--shell-pad-y) + var(--safe-top));
-  padding-bottom: calc(max(var(--shell-bottom-pad) + 20px, clamp(140px, 18vh, 210px)));
+  padding-bottom: calc(max(clamp(82px, 12vh, 112px), var(--safe-bottom)) + 6px);
   width: 100%;
   margin: 0 auto;
 }
@@ -1117,15 +1113,15 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 .shell .bottom {
   position: fixed; left: 0; right: 0;
   bottom: max(10px, var(--safe-bottom));
-  padding-left: calc(var(--dock-pad-x) + var(--safe-left));
-  padding-right: calc(var(--dock-pad-x) + var(--safe-right));
-  display:grid; grid-template-columns: clamp(52px, 16vw, 64px) 1fr clamp(52px, 16vw, 64px);
-  gap: var(--dock-gap);
+  padding-left: calc(clamp(8px, 3.6vw, 10px) + var(--safe-left));
+  padding-right: calc(clamp(8px, 3.6vw, 10px) + var(--safe-right));
+  display:grid; grid-template-columns: clamp(50px, 15vw, 60px) 1fr clamp(50px, 15vw, 60px);
+  gap: clamp(8px, 2.6vw, 10px);
   z-index: 50; pointer-events: none;
 }
 .shell .dockBtn, .shell .dockCTA {
   pointer-events: auto;
-  height: var(--dock-height);
+  height: clamp(50px, 7.5vh, 56px);
   border-radius: 16px; font-weight: 800;
   transition: transform .16s ease, box-shadow .16s ease, background .16s ease, color .16s ease, border-color .16s ease;
   border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
@@ -1146,25 +1142,12 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
   position: fixed; inset: 0; z-index: 1000;
   background: var(--bg, #000);
   display: block;
-  --safe-extra-top: max(0px, var(--safe-top) - env(safe-area-inset-top, 0px));
-  --safe-extra-bottom: max(0px, var(--safe-bottom) - env(safe-area-inset-bottom, 0px));
-  --safe-extra-left: max(0px, var(--safe-left) - env(safe-area-inset-left, 0px));
-  --safe-extra-right: max(0px, var(--safe-right) - env(safe-area-inset-right, 0px));
-  padding-top: var(--safe-extra-top);
-  padding-bottom: var(--safe-extra-bottom);
-  padding-left: var(--safe-extra-left);
-  padding-right: var(--safe-extra-right);
   overscroll-behavior: none;
   touch-action: manipulation;
 }
 .gameStage {
   position: relative; inset: 0;
   width: 100%; height: 100%;
-  min-height: calc(var(--tg-viewport-height, 100dvh) - var(--safe-top) - var(--safe-bottom));
-  padding-top: var(--safe-top);
-  padding-bottom: var(--safe-bottom);
-  padding-left: var(--safe-left);
-  padding-right: var(--safe-right);
   overflow: auto; -webkit-overflow-scrolling: touch;
   overscroll-behavior: none;
   touch-action: manipulation;
