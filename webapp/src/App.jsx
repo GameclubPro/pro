@@ -476,7 +476,13 @@ export default function App() {
     return (
       <div className="app" data-scheme={scheme} style={cssVars}>
         <GlobalReset />
-        <div style={{ padding: 16, display: "grid", gap: 12 }}>
+        <div
+          style={{
+            padding: "calc(16px + var(--safe-top)) calc(16px + var(--safe-right)) calc(16px + var(--safe-bottom)) calc(16px + var(--safe-left))",
+            display: "grid",
+            gap: 12,
+          }}
+        >
           <h2 style={{ margin: 0 }}>Открой игру в Telegram</h2>
           <p style={{ margin: 0, opacity: 0.8 }}>
             Кажется, приложение запущено в браузере. Чтобы войти, открой его через Telegram.
@@ -888,7 +894,15 @@ function GlobalReset() {
         __html: `
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
-:root { color-scheme: light dark; }
+:root {
+  color-scheme: light dark;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --shell-pad-x: clamp(10px, 4vw, 18px);
+  --shell-pad-y: clamp(10px, 2.2vh, 16px);
+}
 body {
   margin: 0;
   background: var(--bg, #000);
@@ -934,9 +948,10 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 
 .shell .wrap {
   position: relative;
-  padding-inline: clamp(10px, 4vw, 18px);
-  padding-top: clamp(10px, 2.2vh, 16px);
-  padding-bottom: calc(max(clamp(82px, 12vh, 112px), env(safe-area-inset-bottom)) + 6px);
+  padding-left: calc(var(--shell-pad-x) + var(--safe-left));
+  padding-right: calc(var(--shell-pad-x) + var(--safe-right));
+  padding-top: calc(var(--shell-pad-y) + var(--safe-top));
+  padding-bottom: calc(max(clamp(82px, 12vh, 112px), var(--safe-bottom)) + 6px);
   width: 100%;
   margin: 0 auto;
 }
@@ -1035,8 +1050,9 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 /* Bottom dock */
 .shell .bottom {
   position: fixed; left: 0; right: 0;
-  bottom: max(10px, env(safe-area-inset-bottom));
-  padding-inline: clamp(8px, 3.6vw, 10px);
+  bottom: max(10px, var(--safe-bottom));
+  padding-left: calc(clamp(8px, 3.6vw, 10px) + var(--safe-left));
+  padding-right: calc(clamp(8px, 3.6vw, 10px) + var(--safe-right));
   display:grid; grid-template-columns: clamp(50px, 15vw, 60px) 1fr clamp(50px, 15vw, 60px);
   gap: clamp(8px, 2.6vw, 10px);
   z-index: 50; pointer-events: none;
