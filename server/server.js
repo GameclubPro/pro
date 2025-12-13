@@ -37,6 +37,7 @@ const {
   WEBHOOK_SECRET_PATH,
   WEBHOOK_SECRET_TOKEN,
   NODE_ENV = 'production',
+  MENU_BUTTON_URL = '',
 
   ROOM_IDLE_MIN = '40',
   ROOM_MAX_PLAYERS = '12',
@@ -79,6 +80,10 @@ ensure('PUBLIC_API_URL', PUBLIC_API_URL, 'https://api.play-team.ru');
 ensure('PUBLIC_APP_URL', PUBLIC_APP_URL, 'https://app.play-team.ru');
 ensure('WEBAPP_ORIGIN', WEBAPP_ORIGIN, 'https://app.play-team.ru');
 ensure('WEBHOOK_SECRET_PATH', WEBHOOK_SECRET_PATH, 'tgwh-<random>');
+
+// Кнопка «Играть» (меню в чате) — можно указать t.me-link, чтобы открыть main Mini App.
+// По умолчанию используем startapp=home (full-height по умолчанию для main mini app).
+const CHAT_MENU_BUTTON_URL = MENU_BUTTON_URL || `https://t.me/${BOT_USERNAME}?startapp=home`;
 
 const MAX_PLAYERS = Math.max(4, parseInt(ROOM_MAX_PLAYERS, 10) || 12);
 const NIGHT_SEC = Math.max(20, parseInt(MAFIA_NIGHT_SEC, 10) || 70);
@@ -2416,13 +2421,15 @@ server.listen(PORT, async () => {
     console.error('setWebhook error:', e?.response?.description || e);
   }
 
-  try {
-    await bot.telegram.setChatMenuButton({
-      menu_button: { type: 'web_app', text: '🎮 Play Team', web_app: { url: PUBLIC_APP_URL } },
-    });
-    await bot.telegram.setMyCommands([
-      { command: 'open', description: 'Открыть игру' },
-      { command: 'invite', description: 'Пригласить друзей' },
+	  try {
+	    await bot.telegram.setChatMenuButton({
+	      // Bot API позволяет указывать t.me ссылку на WebApp бота вместо прямого URL.
+	      // Это открывает WebApp так, как если бы пользователь нажал direct link / startapp.
+	      menu_button: { type: 'web_app', text: '🎮 Play Team', web_app: { url: CHAT_MENU_BUTTON_URL } },
+	    });
+	    await bot.telegram.setMyCommands([
+	      { command: 'open', description: 'Открыть игру' },
+	      { command: 'invite', description: 'Пригласить друзей' },
     ]);
     console.log('✅ Chat Menu Button & commands set');
   } catch (e) {
