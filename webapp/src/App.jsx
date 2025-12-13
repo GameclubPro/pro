@@ -964,10 +964,10 @@ html, body, #root { height: 100%; min-height: var(--tg-viewport-height, 100dvh);
   --safe-right: env(safe-area-inset-right, 0px);
   --shell-pad-x: clamp(10px, 4vw, 18px);
   --shell-pad-y: clamp(10px, 2.2vh, 16px);
-  --dock-height: clamp(52px, 7.5vh, 60px);
-  --dock-gap: clamp(10px, 2.6vw, 12px);
-  --dock-pad-x: clamp(10px, 3.6vw, 14px);
-  --shell-bottom-pad: calc(var(--dock-height) + var(--dock-gap) + var(--safe-bottom) + 18px);
+  --dock-height: clamp(58px, 8vh, 72px);
+  --dock-gap: clamp(12px, 3vw, 14px);
+  --dock-pad-x: clamp(12px, 4vw, 16px);
+  --shell-bottom-pad: calc(var(--dock-height) + var(--dock-gap) + var(--safe-bottom) + 28px);
 }
 body {
   margin: 0;
@@ -1017,7 +1017,7 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
   padding-left: calc(var(--shell-pad-x) + var(--safe-left));
   padding-right: calc(var(--shell-pad-x) + var(--safe-right));
   padding-top: calc(var(--shell-pad-y) + var(--safe-top));
-  padding-bottom: calc(max(var(--shell-bottom-pad), clamp(108px, 14vh, 148px)));
+  padding-bottom: calc(max(var(--shell-bottom-pad) + 20px, clamp(140px, 18vh, 210px)));
   width: 100%;
   margin: 0 auto;
 }
@@ -1161,6 +1161,10 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
   position: relative; inset: 0;
   width: 100%; height: 100%;
   min-height: calc(var(--tg-viewport-height, 100dvh) - var(--safe-top) - var(--safe-bottom));
+  padding-top: var(--safe-top);
+  padding-bottom: var(--safe-bottom);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
   overflow: auto; -webkit-overflow-scrolling: touch;
   overscroll-behavior: none;
   touch-action: manipulation;
