@@ -105,6 +105,7 @@ export default function App() {
   const [games, setGames] = useState(() => Number(localStorage.getItem("pt_games") || 0));
 
   const [themeTick, setThemeTick] = useState(0);
+  const fullscreenAttemptsRef = useRef(0);
 
   // Telegram WebApp API (если открыто в вебвью Telegram)
   const tg = typeof window !== "undefined" ? window?.Telegram?.WebApp : undefined;
@@ -224,14 +225,45 @@ export default function App() {
     });
 
     // 2) Остальное — по отдельности, чтобы падение одного не срывало setUser
+    const ensureFullscreen = () => {
+      try { if (!tg.isExpanded) tg.expand(); } catch {}
+      try {
+        if (fullscreenAttemptsRef.current >= 5) return;
+        if (!tg?.requestFullscreen || typeof tg.requestFullscreen !== "function") {
+          fullscreenAttemptsRef.current = 5;
+          return;
+        }
+        if (tg.isFullscreen) {
+          fullscreenAttemptsRef.current = 5;
+          return;
+        }
+        fullscreenAttemptsRef.current += 1;
+        tg.requestFullscreen();
+      } catch {}
+    };
+
     try { tg.ready(); } catch {}
-    try { tg.expand(); } catch {}
+    ensureFullscreen();
     try { tg.setHeaderColor?.("secondary_bg_color"); } catch {}
 
     const handler = () => setThemeTick((v) => v + 1);
+    const viewportHandler = () => ensureFullscreen();
+    const interactionHandler = () => ensureFullscreen();
     tg?.onEvent?.("themeChanged", handler);
+    tg?.onEvent?.("viewportChanged", viewportHandler);
+    window.addEventListener("pointerdown", interactionHandler, { passive: true });
+    window.addEventListener("keydown", interactionHandler);
+
+    // Некоторые клиенты Telegram применяют viewport не сразу — повторим несколько раз.
+    const t1 = setTimeout(ensureFullscreen, 100);
+    const t2 = setTimeout(ensureFullscreen, 500);
     return () => {
       tg?.offEvent?.("themeChanged", handler);
+      tg?.offEvent?.("viewportChanged", viewportHandler);
+      window.removeEventListener("pointerdown", interactionHandler);
+      window.removeEventListener("keydown", interactionHandler);
+      clearTimeout(t1);
+      clearTimeout(t2);
       cancelAnimationFrame(raf);
     };
   }, [tg]);
