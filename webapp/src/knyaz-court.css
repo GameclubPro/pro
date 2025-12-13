@@ -15,8 +15,6 @@
   position: relative;
   min-height: 100%;
   color: #f6f0e9;
-  padding-top: var(--safe-top);
-  padding-bottom: var(--safe-bottom);
   font-family: "Spectral", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   background: radial-gradient(1200px 900px at 20% 5%, rgba(208, 139, 55, 0.16), transparent),
     radial-gradient(900px 700px at 80% 15%, rgba(118, 164, 111, 0.14), transparent),
@@ -38,7 +36,8 @@
   z-index: 1;
   max-width: 100%;
   margin: 0;
-  padding: 100px clamp(14px, 3vw, 24px) 40px;
+  padding: calc(100px + var(--safe-top)) calc(clamp(14px, 3vw, 24px) + var(--safe-right)) calc(40px + var(--safe-bottom))
+    calc(clamp(14px, 3vw, 24px) + var(--safe-left));
 }
 
 .kc-root h1,
@@ -97,9 +96,17 @@
 .kc-meter-row {
   position: fixed;
 <<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
   top: calc(var(--safe-top) + 14px);
 =======
   top: 0;
+>>>>>>> theirs
+=======
+  top: calc(var(--safe-top) + 6px);
+>>>>>>> theirs
+=======
+  top: var(--safe-top);
 >>>>>>> theirs
   left: 0;
   right: 0;
@@ -109,7 +116,7 @@
   align-items: stretch;
   justify-content: center;
   gap: 8px;
-  padding: 8px 10px;
+  padding: 8px calc(10px + var(--safe-right)) 8px calc(10px + var(--safe-left));
   background: linear-gradient(145deg, rgba(12, 10, 9, 0.96), rgba(27, 21, 16, 0.92));
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0 0 12px 12px;
@@ -195,11 +202,24 @@
 .kc-council-pill {
   position: fixed;
 <<<<<<< ours
+<<<<<<< ours
+<<<<<<< ours
   top: calc(var(--safe-top) + 150px);
+=======
+  top: calc(var(--safe-top) + 110px);
+>>>>>>> theirs
   right: calc(12px + var(--safe-right));
 =======
   top: 90px;
   right: 12px;
+>>>>>>> theirs
+=======
+  top: calc(90px + var(--safe-top));
+<<<<<<< ours
+  right: 12px;
+>>>>>>> theirs
+=======
+  right: calc(12px + var(--safe-right));
 >>>>>>> theirs
   display: grid;
   place-items: center;
@@ -233,8 +253,16 @@
 
 .kc-council-panel {
   position: absolute;
+<<<<<<< ours
   right: 10px;
+<<<<<<< ours
   bottom: 10px;
+=======
+=======
+  right: calc(10px + var(--safe-right));
+>>>>>>> theirs
+  bottom: calc(10px + var(--safe-bottom));
+>>>>>>> theirs
   width: min(340px, calc(100% - 16px));
   background: linear-gradient(180deg, rgba(22, 18, 14, 0.92), rgba(15, 12, 11, 0.95));
   border: 1px solid rgba(255, 255, 255, 0.12);
