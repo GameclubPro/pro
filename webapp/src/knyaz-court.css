@@ -12,16 +12,8 @@
   --accent-green: #7ea657;
   --accent-gold: #d6b25e;
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-  --kc-safe-top: env(safe-area-inset-top, 0px);
-  --kc-safe-bottom: env(safe-area-inset-bottom, 0px);
-  --kc-safe-left: env(safe-area-inset-left, 0px);
-  --kc-safe-right: env(safe-area-inset-right, 0px);
-  --kc-pad-inline: clamp(14px, 3vw, 24px);
-  --kc-pad-top: calc(96px + var(--kc-safe-top));
-  --kc-pad-bottom: calc(40px + var(--kc-safe-bottom));
-  --kc-pill-top: calc(90px + var(--kc-safe-top));
   position: relative;
-  min-height: 100dvh;
+  min-height: 100%;
   color: #f6f0e9;
   font-family: "Spectral", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   background: radial-gradient(1200px 900px at 20% 5%, rgba(208, 139, 55, 0.16), transparent),
@@ -44,10 +36,7 @@
   z-index: 1;
   max-width: 100%;
   margin: 0;
-  min-height: calc(100dvh - var(--kc-safe-top) - var(--kc-safe-bottom));
-  padding: var(--kc-pad-top) var(--kc-pad-inline) var(--kc-pad-bottom);
-  padding-left: calc(var(--kc-pad-inline) + var(--kc-safe-left));
-  padding-right: calc(var(--kc-pad-inline) + var(--kc-safe-right));
+  padding: 100px clamp(14px, 3vw, 24px) 40px;
 }
 
 .kc-root h1,
@@ -114,7 +103,7 @@
   align-items: stretch;
   justify-content: center;
   gap: 8px;
-  padding: calc(8px + var(--kc-safe-top)) calc(10px + var(--kc-safe-right)) 10px calc(10px + var(--kc-safe-left));
+  padding: 8px 10px;
   background: linear-gradient(145deg, rgba(12, 10, 9, 0.96), rgba(27, 21, 16, 0.92));
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0 0 12px 12px;
@@ -199,8 +188,8 @@
 
 .kc-council-pill {
   position: fixed;
-  top: var(--kc-pill-top);
-  right: calc(12px + var(--kc-safe-right));
+  top: 90px;
+  right: 12px;
   display: grid;
   place-items: center;
   width: 38px;
@@ -827,16 +816,13 @@
 }
 
 @media (max-width: 520px) {
-  .kc-root {
-    --kc-pad-top: calc(86px + var(--kc-safe-top));
-    --kc-pad-inline: clamp(12px, 4vw, 18px);
-    --kc-pad-bottom: calc(34px + var(--kc-safe-bottom));
-    --kc-pill-top: calc(80px + var(--kc-safe-top));
+  .kc-shell {
+    padding-top: 94px;
   }
 
   .kc-meter-row {
     gap: 6px;
-    padding: calc(6px + var(--kc-safe-top)) calc(8px + var(--kc-safe-right)) 8px calc(8px + var(--kc-safe-left));
+    padding: 6px;
     border-radius: 0 0 10px 10px;
   }
 
@@ -870,7 +856,8 @@
   }
 
   .kc-council-pill {
-    right: calc(10px + var(--kc-safe-right));
+    top: 80px;
+    right: 10px;
     width: 36px;
     height: 36px;
   }
