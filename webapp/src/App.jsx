@@ -110,61 +110,6 @@ export default function App() {
   // Telegram WebApp API (если открыто в вебвью Telegram)
   const tg = typeof window !== "undefined" ? window?.Telegram?.WebApp : undefined;
 
-  const syncTelegramLayout = useCallback(() => {
-    if (typeof window === "undefined" || typeof document === "undefined") return;
-    const root = document.documentElement;
-    if (!root?.style?.setProperty) return;
-
-    const toNum = (v) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
-
-    const vh = toNum(tg?.viewportHeight) || window.innerHeight || 0;
-    const vsh = toNum(tg?.viewportStableHeight) || vh;
-
-    const safe = tg?.safeAreaInset || {};
-    const content = tg?.contentSafeAreaInset || {};
-
-    const safeTop = toNum(safe.top);
-    const safeRight = toNum(safe.right);
-    const safeBottom = toNum(safe.bottom);
-    const safeLeft = toNum(safe.left);
-
-    const contentTop = toNum(content.top);
-    const contentRight = toNum(content.right);
-    const contentBottom = toNum(content.bottom);
-    const contentLeft = toNum(content.left);
-
-    root.style.setProperty("--pt-viewport-height", `${vh}px`);
-    root.style.setProperty("--pt-viewport-stable-height", `${vsh}px`);
-
-    root.style.setProperty("--pt-safe-area-inset-top", `${safeTop}px`);
-    root.style.setProperty("--pt-safe-area-inset-right", `${safeRight}px`);
-    root.style.setProperty("--pt-safe-area-inset-bottom", `${safeBottom}px`);
-    root.style.setProperty("--pt-safe-area-inset-left", `${safeLeft}px`);
-
-    root.style.setProperty("--pt-content-safe-area-inset-top", `${contentTop}px`);
-    root.style.setProperty("--pt-content-safe-area-inset-right", `${contentRight}px`);
-    root.style.setProperty("--pt-content-safe-area-inset-bottom", `${contentBottom}px`);
-    root.style.setProperty("--pt-content-safe-area-inset-left", `${contentLeft}px`);
-
-    root.style.setProperty("--pt-layout-inset-top", `${Math.max(contentTop, safeTop)}px`);
-    root.style.setProperty("--pt-layout-inset-right", `${Math.max(contentRight, safeRight)}px`);
-    root.style.setProperty("--pt-layout-inset-bottom", `${Math.max(contentBottom, safeBottom)}px`);
-    root.style.setProperty("--pt-layout-inset-left", `${Math.max(contentLeft, safeLeft)}px`);
-  }, [tg]);
-
-  useEffect(() => {
-    syncTelegramLayout();
-    if (typeof window === "undefined") return;
-
-    const handleResize = () => syncTelegramLayout();
-    window.addEventListener("resize", handleResize, { passive: true });
-    window.visualViewport?.addEventListener?.("resize", handleResize, { passive: true });
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.visualViewport?.removeEventListener?.("resize", handleResize);
-    };
-  }, [syncTelegramLayout]);
-
   // Доп. источник initData: некоторые клиенты прокидывают tgWebAppData в URL
   const initFromUrl =
     typeof window !== "undefined"
@@ -300,15 +245,12 @@ export default function App() {
     try { tg.ready(); } catch {}
     ensureFullscreen();
     try { tg.setHeaderColor?.("secondary_bg_color"); } catch {}
-    syncTelegramLayout();
 
     const handler = () => setThemeTick((v) => v + 1);
-    const viewportHandler = () => { ensureFullscreen(); syncTelegramLayout(); };
+    const viewportHandler = () => ensureFullscreen();
     const interactionHandler = () => ensureFullscreen();
     tg?.onEvent?.("themeChanged", handler);
     tg?.onEvent?.("viewportChanged", viewportHandler);
-    tg?.onEvent?.("safeAreaChanged", syncTelegramLayout);
-    tg?.onEvent?.("contentSafeAreaChanged", syncTelegramLayout);
     window.addEventListener("pointerdown", interactionHandler, { passive: true });
     window.addEventListener("keydown", interactionHandler);
 
@@ -318,15 +260,13 @@ export default function App() {
     return () => {
       tg?.offEvent?.("themeChanged", handler);
       tg?.offEvent?.("viewportChanged", viewportHandler);
-      tg?.offEvent?.("safeAreaChanged", syncTelegramLayout);
-      tg?.offEvent?.("contentSafeAreaChanged", syncTelegramLayout);
       window.removeEventListener("pointerdown", interactionHandler);
       window.removeEventListener("keydown", interactionHandler);
       clearTimeout(t1);
       clearTimeout(t2);
       cancelAnimationFrame(raf);
     };
-  }, [tg, syncTelegramLayout]);
+  }, [tg]);
 
   /* ---------- Надёжное получение initData с ретраями ---------- */
   const [resolvedInitData, setResolvedInitData] = useState("");
@@ -536,31 +476,29 @@ export default function App() {
     return (
       <div className="app" data-scheme={scheme} style={cssVars}>
         <GlobalReset />
-        <div className="tgLayout">
-          <div style={{ padding: 16, display: "grid", gap: 12 }}>
-            <h2 style={{ margin: 0 }}>Открой игру в Telegram</h2>
-            <p style={{ margin: 0, opacity: 0.8 }}>
-              Кажется, приложение запущено в браузере. Чтобы войти, открой его через Telegram.
-            </p>
-            <a
-              className="dockCTA"
-              href={deepLink}
-              rel="noopener noreferrer"
-              style={{
-                display: "inline-grid",
-                placeItems: "center",
-                textDecoration: "none",
-                width: "100%",
-                maxWidth: 360,
-                height: 52,
-                borderRadius: 16,
-                border: "1px solid color-mix(in srgb, var(--text) 12%, transparent)",
-                background: "color-mix(in srgb, var(--surface) 85%, transparent)"
-              }}
-            >
-              Открыть в Telegram
-            </a>
-          </div>
+        <div style={{ padding: 16, display: "grid", gap: 12 }}>
+          <h2 style={{ margin: 0 }}>Открой игру в Telegram</h2>
+          <p style={{ margin: 0, opacity: 0.8 }}>
+            Кажется, приложение запущено в браузере. Чтобы войти, открой его через Telegram.
+          </p>
+          <a
+            className="dockCTA"
+            href={deepLink}
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-grid",
+              placeItems: "center",
+              textDecoration: "none",
+              width: "100%",
+              maxWidth: 360,
+              height: 52,
+              borderRadius: 16,
+              border: "1px solid color-mix(in srgb, var(--text) 12%, transparent)",
+              background: "color-mix(in srgb, var(--surface) 85%, transparent)"
+            }}
+          >
+            Открыть в Telegram
+          </a>
         </div>
       </div>
     );
@@ -570,72 +508,70 @@ export default function App() {
   return (
     <div className="app" data-scheme={scheme} style={cssVars}>
       <GlobalReset />
-      <div className="tgLayout">
-        {route.kind === "shell" ? (
-          <Shell
-            scheme={scheme}
-            user={user}
-            status={status}
-            games={games}
-            level={level}
-            section={section}
-            setSection={setSection}
-            onOpenGame={openGame}
-          />
-        ) : (
-          <GameCanvas>
-            {route.name === "mafia" && (
-              <Mafia
-                apiBase={API_BASE}
-                initData={effectiveInitData}
-                goBack={closeGame}
-                onProgress={bumpProgress}
-                setBackHandler={setBackHandler}  // <-- делегируем управление BackButton в игру
-                autoJoinCode={mafiaAutoJoin}     // <-- прокидываем код инвайта
-                onInviteConsumed={consumeInvite} // <-- одноразовый инвайт: после входа пометить и очистить URL
-              />
-            )}
-            {route.name === "auction" && (
-              <Auction
-                apiBase={API_BASE}
-                initData={effectiveInitData}
-                goBack={closeGame}
-                onProgress={bumpProgress}
-                setBackHandler={setBackHandler}
-                autoJoinCode={auctionAutoJoin}
-                onInviteConsumed={consumeInvite}
-              />
-            )}
-            {route.name === "crocodile" && (
-              <Crocodile goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
-            )}
-            {route.name === "associations" && (
-              <Associations goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
-            )}
-            {route.name === "quiz" && (
-              <Quiz goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
-            )}
-            {route.name === "questions" && (
-              <Questions goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
-            )}
-            {route.name === "truthordare" && (
-              <TruthOrDare goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
-            )}
-            {route.name === "compatibility" && (
-              <Compatibility goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
-            )}
-            {route.name === "choice" && (
-              <Choice goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
-            )}
-            {route.name === "knyaz" && (
-              <KnyazCourt goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
-            )}
-            {route.name === "sketch" && (
-              <SketchBattle goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
-            )}
-          </GameCanvas>
-        )}
-      </div>
+      {route.kind === "shell" ? (
+        <Shell
+          scheme={scheme}
+          user={user}
+          status={status}
+          games={games}
+          level={level}
+          section={section}
+          setSection={setSection}
+          onOpenGame={openGame}
+        />
+      ) : (
+        <GameCanvas>
+          {route.name === "mafia" && (
+            <Mafia
+              apiBase={API_BASE}
+              initData={effectiveInitData}
+              goBack={closeGame}
+              onProgress={bumpProgress}
+              setBackHandler={setBackHandler}  // <-- делегируем управление BackButton в игру
+              autoJoinCode={mafiaAutoJoin}     // <-- прокидываем код инвайта
+              onInviteConsumed={consumeInvite} // <-- одноразовый инвайт: после входа пометить и очистить URL
+            />
+          )}
+          {route.name === "auction" && (
+            <Auction
+              apiBase={API_BASE}
+              initData={effectiveInitData}
+              goBack={closeGame}
+              onProgress={bumpProgress}
+              setBackHandler={setBackHandler}
+              autoJoinCode={auctionAutoJoin}
+              onInviteConsumed={consumeInvite}
+            />
+          )}
+          {route.name === "crocodile" && (
+            <Crocodile goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
+          )}
+          {route.name === "associations" && (
+            <Associations goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
+          )}
+          {route.name === "quiz" && (
+            <Quiz goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
+          )}
+          {route.name === "questions" && (
+            <Questions goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
+          )}
+          {route.name === "truthordare" && (
+            <TruthOrDare goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
+          )}
+          {route.name === "compatibility" && (
+            <Compatibility goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
+          )}
+          {route.name === "choice" && (
+            <Choice goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
+          )}
+          {route.name === "knyaz" && (
+            <KnyazCourt goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
+          )}
+          {route.name === "sketch" && (
+            <SketchBattle goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
+          )}
+        </GameCanvas>
+      )}
     </div>
   );
 }
@@ -952,26 +888,7 @@ function GlobalReset() {
         __html: `
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
-:root {
-  color-scheme: light dark;
-  --pt-viewport-height: var(--tg-viewport-height, 100dvh);
-  --pt-viewport-stable-height: var(--tg-viewport-stable-height, 100dvh);
-
-  --pt-safe-area-inset-top: var(--tg-safe-area-inset-top, env(safe-area-inset-top, 0px));
-  --pt-safe-area-inset-right: var(--tg-safe-area-inset-right, env(safe-area-inset-right, 0px));
-  --pt-safe-area-inset-bottom: var(--tg-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
-  --pt-safe-area-inset-left: var(--tg-safe-area-inset-left, env(safe-area-inset-left, 0px));
-
-  --pt-content-safe-area-inset-top: var(--tg-content-safe-area-inset-top, var(--pt-safe-area-inset-top));
-  --pt-content-safe-area-inset-right: var(--tg-content-safe-area-inset-right, var(--pt-safe-area-inset-right));
-  --pt-content-safe-area-inset-bottom: var(--tg-content-safe-area-inset-bottom, var(--pt-safe-area-inset-bottom));
-  --pt-content-safe-area-inset-left: var(--tg-content-safe-area-inset-left, var(--pt-safe-area-inset-left));
-
-  --pt-layout-inset-top: var(--pt-content-safe-area-inset-top);
-  --pt-layout-inset-right: var(--pt-content-safe-area-inset-right);
-  --pt-layout-inset-bottom: var(--pt-content-safe-area-inset-bottom);
-  --pt-layout-inset-left: var(--pt-content-safe-area-inset-left);
-}
+:root { color-scheme: light dark; }
 body {
   margin: 0;
   background: var(--bg, #000);
@@ -985,15 +902,7 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 
 /* Общий контейнер */
-.app { min-height: var(--pt-viewport-height); width: 100%; position: relative; overflow: hidden; background: var(--bg); }
-
-/* Единый layout-контейнер: учитывает верхнюю панель Telegram и safe-area */
-.tgLayout {
-  min-height: var(--pt-viewport-height);
-  width: 100%;
-  box-sizing: border-box;
-  padding-top: var(--pt-layout-inset-top);
-}
+.app { min-height: 100dvh; width: 100%; position: relative; overflow: hidden; background: var(--bg); }
 
 /* ===== SHELL ONLY (всё, что ниже префиксировано .shell и не влияет на игры) ===== */
 .shell .backdrop { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
@@ -1026,8 +935,8 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 .shell .wrap {
   position: relative;
   padding-inline: clamp(10px, 4vw, 18px);
-  padding-top: 0;
-  padding-bottom: calc(max(clamp(82px, 12vh, 112px), var(--pt-layout-inset-bottom)) + 6px);
+  padding-top: clamp(10px, 2.2vh, 16px);
+  padding-bottom: calc(max(clamp(82px, 12vh, 112px), env(safe-area-inset-bottom)) + 6px);
   width: 100%;
   margin: 0 auto;
 }
@@ -1126,7 +1035,7 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 /* Bottom dock */
 .shell .bottom {
   position: fixed; left: 0; right: 0;
-  bottom: max(10px, var(--pt-layout-inset-bottom));
+  bottom: max(10px, env(safe-area-inset-bottom));
   padding-inline: clamp(8px, 3.6vw, 10px);
   display:grid; grid-template-columns: clamp(50px, 15vw, 60px) 1fr clamp(50px, 15vw, 60px);
   gap: clamp(8px, 2.6vw, 10px);
@@ -1152,12 +1061,9 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 
 /* ===== GAME CANVAS (изолированный слой) ===== */
 .gameCanvas {
-  position: fixed;
-  inset: var(--pt-layout-inset-top) var(--pt-layout-inset-right) var(--pt-layout-inset-bottom) var(--pt-layout-inset-left);
-  z-index: 1000;
+  position: fixed; inset: 0; z-index: 1000;
   background: var(--bg, #000);
   display: block;
-  transform: translateZ(0);
   overscroll-behavior: none;
   touch-action: manipulation;
 }
