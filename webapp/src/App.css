@@ -10,3 +10,52 @@ body { background: var(--bg, #0b0f16); color: var(--fg, #e8edf5); font-family: u
   --tg-accent: #7aa7ff;
 }
 .appWrap { min-height: 100%; }
+
+/* Утилита для простых полноэкранных экранов со Safe Area */
+.safe-screen {
+  min-height: 100dvh;
+  width: 100%;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  padding: calc(22px + var(--safe-top)) calc(18px + var(--safe-right)) calc(28px + var(--safe-bottom)) calc(18px + var(--safe-left));
+  background:
+    radial-gradient(120% 90% at 20% 0%, color-mix(in srgb, rgb(var(--accent-rgb, 122, 167, 255)) 18%, transparent) 0, transparent 55%),
+    radial-gradient(120% 90% at 80% 10%, color-mix(in srgb, rgb(var(--accent-rgb, 122, 167, 255)) 12%, transparent) 0, transparent 58%),
+    var(--bg, #0b0f16);
+  color: var(--text, #e8edf5);
+}
+
+.safe-screen__panel {
+  width: min(520px, 100%);
+  display: grid;
+  gap: 10px;
+  padding: clamp(16px, 4vw, 22px);
+  text-align: center;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface, rgba(255, 255, 255, 0.04)) 96%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text, #e8edf5) 12%, transparent);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.16);
+  backdrop-filter: blur(10px);
+}
+
+.safe-screen__badge {
+  font-size: 32px;
+  line-height: 1;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.18));
+  justify-self: center;
+}
+
+.safe-screen__title {
+  margin: 0;
+  font-weight: 900;
+  font-size: clamp(18px, 4vw, 22px);
+  letter-spacing: 0.2px;
+}
+
+.safe-screen__text {
+  margin: 0;
+  color: var(--hint, #a3b1c4);
+  font-size: 14px;
+  line-height: 1.4;
+}
