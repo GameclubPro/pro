@@ -24,8 +24,8 @@
   --radius-md: 14px;
   --radius-sm: 10px;
 
-  --safe-top: var(--tg-content-safe-area-inset-top, env(safe-area-inset-top, 0px));
-  --safe-bottom: var(--tg-content-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 
   --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.85);
   --shadow-hard: 0 26px 70px rgba(15, 23, 42, 0.95);

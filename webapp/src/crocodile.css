@@ -736,6 +736,8 @@
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
   overflow: auto;
   height: calc(var(--tg-vh) - var(--safe-top) - var(--safe-bottom) - 20px);
+  height: calc(var(--tg-vh) - var(--safe-top) - var(--safe-bottom) - 20px);
+  max-height: calc(var(--tg-vh) - var(--safe-top) - var(--safe-bottom) - 20px);
   max-height: calc(var(--tg-vh) - var(--safe-top) - var(--safe-bottom) - 20px);
   will-change: transform, opacity;
   transform: translateZ(0);
@@ -1043,6 +1045,8 @@
     width: calc(100vw - var(--safe-left) - var(--safe-right) - 16px);
     max-width: none;
     height: calc(var(--tg-vh) - var(--safe-top) - var(--safe-bottom) - 16px);
+    height: calc(var(--tg-vh) - var(--safe-top) - var(--safe-bottom) - 16px);
+    max-height: calc(var(--tg-vh) - var(--safe-top) - var(--safe-bottom) - 16px);
     max-height: calc(var(--tg-vh) - var(--safe-top) - var(--safe-bottom) - 16px);
     border-radius: 18px;
     padding: 14px 10px 16px 12px;
