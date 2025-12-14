@@ -67,8 +67,8 @@
 
   --mf-vh: 1dvh; --mf-vw: 1dvw;
 
-  --mf-safe-top: env(safe-area-inset-top, 0px);
-  --mf-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --mf-safe-top: var(--tg-content-safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --mf-safe-bottom: var(--tg-content-safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
 
   --mf-center-min: 64px;
   --mf-center-max: 520px;
@@ -1799,7 +1799,7 @@ html[data-theme="noir-blue"]{
 /* позиционирование именно этого крестика */
 .mf-menu-close {
   position: absolute;
-  top: max(8px, env(safe-area-inset-top));
+  top: max(8px, var(--tg-content-safe-area-inset-top, env(safe-area-inset-top, 0px)));
   right: max(10px, env(safe-area-inset-right));
 
   /* чуть приглушим цвет под хиро */
