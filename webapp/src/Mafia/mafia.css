@@ -1800,7 +1800,7 @@ html[data-theme="noir-blue"]{
 .mf-menu-close {
   position: absolute;
   top: max(8px, var(--tg-content-safe-area-inset-top, env(safe-area-inset-top, 0px)));
-  right: max(10px, env(safe-area-inset-right));
+  right: max(10px, var(--tg-content-safe-area-inset-right, env(safe-area-inset-right, 0px)));
 
   /* чуть приглушим цвет под хиро */
   background: color-mix(in srgb, var(--surface, rgba(0,0,0,0.4)) 90%, transparent);
