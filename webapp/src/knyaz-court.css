@@ -13,7 +13,7 @@
   --accent-gold: #d6b25e;
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
   /* Берём реальный safe-top, но жёстко ограничиваем, чтобы не раздувать шапку */
-  --kc-safe-top: max(env(safe-area-inset-top, 0px), min(var(--safe-top, 20px), 32px), 18px);
+  --kc-safe-top: max(env(safe-area-inset-top, 0px), min(var(--safe-top, 16px), 24px), 14px);
   --kc-safe-bottom: max(var(--safe-bottom, 12px), env(safe-area-inset-bottom, 0px), 12px);
   --kc-safe-left: max(var(--safe-left, 0px), env(safe-area-inset-left, 0px));
   --kc-safe-right: max(var(--safe-right, 0px), env(safe-area-inset-right, 0px));
@@ -42,7 +42,7 @@
   z-index: 1;
   max-width: 100%;
   margin: 0;
-  padding: calc(36px + var(--kc-safe-top)) calc(clamp(14px, 3vw, 24px) + var(--kc-safe-right))
+  padding: calc(16px + var(--kc-safe-top)) calc(clamp(14px, 3vw, 24px) + var(--kc-safe-right))
     calc(36px + var(--kc-safe-bottom)) calc(clamp(14px, 3vw, 24px) + var(--kc-safe-left));
 }
 
@@ -101,7 +101,7 @@
 
 .kc-meter-row {
   position: fixed;
-  top: calc(var(--kc-safe-top) + 8px);
+  top: calc(var(--kc-safe-top) + 4px);
   left: 0;
   right: 0;
   width: 100%;
