@@ -65,10 +65,10 @@
   --mf-glass-strong: rgba(16,18,22,.66);
   --mf-soft-shadow: 0 2px 14px rgba(0,0,0,.45);
 
-  --mf-vh: 1dvh; --mf-vw: 1dvw;
+  --mf-vh: var(--tg-vh, 100svh); --mf-vw: 1dvw;
 
-  --mf-safe-top: env(safe-area-inset-top, 0px);
-  --mf-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --mf-safe-top: max(var(--safe-top, 0px), env(safe-area-inset-top, 0px), 16px);
+  --mf-safe-bottom: max(var(--safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 12px);
 
   --mf-center-min: 64px;
   --mf-center-max: 520px;
