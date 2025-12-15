@@ -275,6 +275,31 @@ export default function App() {
     try { tg.setHeaderColor?.(theme.bg || "secondary_bg_color"); } catch {}
   }, [tg, theme.bg]);
 
+  // ---- Высота вьюпорта: нормализуем var(--tg-vh) для всех игр ----
+  useEffect(() => {
+    const root = document.documentElement;
+    if (!root) return;
+
+    const updateVh = () => {
+      const vv = window.visualViewport;
+      const base = tg?.viewportHeight || (vv ? vv.height : window.innerHeight);
+      const height = Math.max(320, Math.round(base || window.innerHeight || 0));
+      root.style.setProperty("--tg-vh", `${height}px`);
+    };
+
+    updateVh();
+    const handler = () => updateVh();
+    tg?.onEvent?.("viewportChanged", handler);
+    window.visualViewport?.addEventListener("resize", handler);
+    window.addEventListener("resize", handler);
+
+    return () => {
+      tg?.offEvent?.("viewportChanged", handler);
+      window.visualViewport?.removeEventListener("resize", handler);
+      window.removeEventListener("resize", handler);
+    };
+  }, [tg]);
+
   // ---- Telegram lifecycle ----
   useEffect(() => {
     if (!tg) return;
@@ -968,6 +993,7 @@ html, body, #root { height: 100%; }
   --safe-bottom: max(var(--safe-bottom-env), 12px);
   --safe-left: var(--safe-left-env);
   --safe-right: var(--safe-right-env);
+  --tg-vh: 100svh;
   --shell-pad-x: clamp(10px, 4vw, 18px);
   --shell-pad-y: clamp(10px, 2.2vh, 16px);
 }

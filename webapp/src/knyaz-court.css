@@ -12,6 +12,11 @@
   --accent-green: #7ea657;
   --accent-gold: #d6b25e;
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  --kc-safe-top: clamp(18px, var(--safe-top, 24px), 56px);
+  --kc-safe-bottom: max(var(--safe-bottom, 12px), env(safe-area-inset-bottom, 0px), 12px);
+  --kc-safe-left: max(var(--safe-left, 0px), env(safe-area-inset-left, 0px));
+  --kc-safe-right: max(var(--safe-right, 0px), env(safe-area-inset-right, 0px));
+  --kc-vh: var(--tg-vh, 100svh);
   position: relative;
   min-height: 100%;
   color: #f6f0e9;
@@ -36,8 +41,8 @@
   z-index: 1;
   max-width: 100%;
   margin: 0;
-  padding: calc(100px + var(--safe-top)) calc(clamp(14px, 3vw, 24px) + var(--safe-right)) calc(40px + var(--safe-bottom))
-    calc(clamp(14px, 3vw, 24px) + var(--safe-left));
+  padding: calc(72px + var(--kc-safe-top)) calc(clamp(14px, 3vw, 24px) + var(--kc-safe-right))
+    calc(36px + var(--kc-safe-bottom)) calc(clamp(14px, 3vw, 24px) + var(--kc-safe-left));
 }
 
 .kc-root h1,
@@ -95,7 +100,7 @@
 
 .kc-meter-row {
   position: fixed;
-  top: calc(var(--safe-top) + 14px);
+  top: calc(var(--kc-safe-top) + 8px);
   left: 0;
   right: 0;
   width: 100%;
@@ -104,7 +109,7 @@
   align-items: stretch;
   justify-content: center;
   gap: 8px;
-  padding: 8px calc(10px + var(--safe-right)) 8px calc(10px + var(--safe-left));
+  padding: 8px calc(10px + var(--kc-safe-right)) 8px calc(10px + var(--kc-safe-left));
   background: linear-gradient(145deg, rgba(12, 10, 9, 0.96), rgba(27, 21, 16, 0.92));
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0 0 12px 12px;
@@ -189,8 +194,8 @@
 
 .kc-council-pill {
   position: fixed;
-  top: calc(var(--safe-top) + 150px);
-  right: calc(12px + var(--safe-right));
+  top: calc(var(--kc-safe-top) + 120px);
+  right: calc(12px + var(--kc-safe-right));
   display: grid;
   place-items: center;
   width: 38px;
@@ -223,8 +228,8 @@
 
 .kc-council-panel {
   position: absolute;
-  right: calc(10px + var(--safe-right));
-  bottom: calc(10px + var(--safe-bottom));
+  right: calc(10px + var(--kc-safe-right));
+  bottom: calc(10px + var(--kc-safe-bottom));
   width: min(340px, calc(100% - 16px));
   background: linear-gradient(180deg, rgba(22, 18, 14, 0.92), rgba(15, 12, 11, 0.95));
   border: 1px solid rgba(255, 255, 255, 0.12);
