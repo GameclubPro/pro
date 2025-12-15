@@ -13,6 +13,8 @@ import SketchBattle from "./SketchBattle"; // «Скетч-баттл»
 import Auction from "./Auction.tsx"; // 💰 «Аукцион»
 import KnyazCourt from "./KnyazCourt.jsx"; // 🏰 «Княжий суд»
 
+// Touchpoint for safe-area tweaks; kept for future UI adjustments.
+
 /**
  * Play Team — Telegram WebApp
  * Режимы:
