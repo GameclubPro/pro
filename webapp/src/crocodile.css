@@ -17,7 +17,12 @@
 
 .croco {
   position: relative;
-  min-height: var(--tg-vh);
+  --croco-safe-top: max(var(--safe-top, 16px), env(safe-area-inset-top, 0px), 16px);
+  --croco-safe-bottom: max(var(--safe-bottom, 12px), env(safe-area-inset-bottom, 0px), 12px);
+  --croco-safe-left: max(var(--safe-left, 0px), env(safe-area-inset-left, 0px));
+  --croco-safe-right: max(var(--safe-right, 0px), env(safe-area-inset-right, 0px));
+  --croco-vh: var(--tg-vh, 100svh);
+  min-height: var(--croco-vh);
   color: var(--croco-fg);
   overflow: hidden;
   overscroll-behavior-y: contain;
@@ -90,10 +95,10 @@
   z-index: 1;
   max-width: 780px;
   margin: 0 auto;
-  padding: calc(24px + var(--safe-top)) calc(14px + var(--safe-left)) calc(32px + var(--safe-bottom)) calc(14px + var(--safe-right));
+  padding: calc(24px + var(--croco-safe-top)) calc(14px + var(--croco-safe-left)) calc(32px + var(--croco-safe-bottom)) calc(14px + var(--croco-safe-right));
   display: grid;
   gap: 14px;
-  min-height: calc(var(--tg-vh) - var(--safe-top) - var(--safe-bottom));
+  min-height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom));
   align-content: start;
 }
 
@@ -103,7 +108,7 @@
   z-index: 12;
   display: grid;
   place-items: center;
-  padding: calc(18px + var(--safe-top)) calc(16px + var(--safe-left)) calc(24px + var(--safe-bottom)) calc(16px + var(--safe-right));
+  padding: calc(18px + var(--croco-safe-top)) calc(16px + var(--croco-safe-left)) calc(24px + var(--croco-safe-bottom)) calc(16px + var(--croco-safe-right));
   background:
     radial-gradient(120% 80% at 18% 15%, rgba(34, 197, 94, 0.18), transparent 55%),
     radial-gradient(120% 80% at 82% 10%, rgba(14, 165, 233, 0.16), transparent 55%),
@@ -718,14 +723,14 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: calc(10px + var(--safe-top)) calc(10px + var(--safe-left)) calc(10px + var(--safe-bottom)) calc(10px + var(--safe-right));
+  padding: calc(10px + var(--croco-safe-top)) calc(10px + var(--croco-safe-left)) calc(10px + var(--croco-safe-bottom)) calc(10px + var(--croco-safe-right));
   z-index: 1200;
   overflow: hidden;
 }
 
 .croco-settings-window {
   position: relative;
-  width: calc(100vw - var(--safe-left) - var(--safe-right) - 20px);
+  width: calc(100vw - var(--croco-safe-left) - var(--croco-safe-right) - 20px);
   border-radius: 18px;
   padding: 16px;
   background:
@@ -735,10 +740,10 @@
   border: 1px solid var(--croco-border);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
   overflow: auto;
-  height: calc(var(--tg-vh) - var(--safe-top) - var(--safe-bottom) - 20px);
-  height: calc(var(--tg-vh) - var(--safe-top) - var(--safe-bottom) - 20px);
-  max-height: calc(var(--tg-vh) - var(--safe-top) - var(--safe-bottom) - 20px);
-  max-height: calc(var(--tg-vh) - var(--safe-top) - var(--safe-bottom) - 20px);
+  height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom) - 20px);
+  height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom) - 20px);
+  max-height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom) - 20px);
+  max-height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom) - 20px);
   will-change: transform, opacity;
   transform: translateZ(0);
   margin: 0 auto;
