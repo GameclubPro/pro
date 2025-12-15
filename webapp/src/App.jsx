@@ -223,6 +223,7 @@ export default function App() {
       return Number.isFinite(v) ? v : 0;
     };
 
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent || "");
     const updateInsets = () => {
       const vv = window.visualViewport;
       const envTop = readPx("--safe-top-env");
@@ -240,8 +241,12 @@ export default function App() {
           ? Math.max(0, tg.viewportHeight - tg.viewportStableHeight) / 2
           : 0;
       const tgBottom = tgTop;
+      const headerOverlayGuess = tg ? (isIOS ? 64 : 52) : 0;
+      const viewportDiff = tg?.viewportHeight && window.innerHeight
+        ? Math.max(0, window.innerHeight - tg.viewportHeight)
+        : 0;
 
-      root.style.setProperty("--safe-top", `${Math.max(16, envTop, vvTop, tgTop)}px`);
+      root.style.setProperty("--safe-top", `${Math.max(16, envTop, vvTop, tgTop, headerOverlayGuess, viewportDiff)}px`);
       root.style.setProperty("--safe-bottom", `${Math.max(12, envBottom, vvBottom, tgBottom)}px`);
       root.style.setProperty("--safe-left", `${Math.max(envLeft, vvLeft)}px`);
       root.style.setProperty("--safe-right", `${Math.max(envRight, vvRight)}px`);
