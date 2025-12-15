@@ -26,6 +26,7 @@
 
   --auction-safe-top: max(var(--safe-top, 16px), env(safe-area-inset-top, 0px), 16px);
   --auction-safe-bottom: max(var(--safe-bottom, 12px), env(safe-area-inset-bottom, 0px), 12px);
+  --auction-vh: var(--tg-vh, 100svh);
 
   --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.85);
   --shadow-hard: 0 26px 70px rgba(15, 23, 42, 0.95);
@@ -82,8 +83,7 @@ textarea {
   position: relative;
   max-width: 520px;
   margin: 0 auto;
-  min-height: 100vh;
-  min-height: 100dvh;
+  min-height: calc(var(--auction-vh) - var(--auction-safe-top) - var(--auction-safe-bottom));
   padding: calc(10px + var(--auction-safe-top)) 12px
     calc(12px + var(--auction-safe-bottom));
   display: flex;
