@@ -213,6 +213,63 @@ export default function App() {
     [theme, accentRGB]
   );
 
+  // ---- Safe-area: надёжное вычисление инсет-отступов для стоковых WebView ----
+  useEffect(() => {
+    const root = document.documentElement;
+    if (!root) return;
+
+    const readPx = (name) => {
+      const v = parseFloat(getComputedStyle(root).getPropertyValue(name));
+      return Number.isFinite(v) ? v : 0;
+    };
+
+    const updateInsets = () => {
+      const vv = window.visualViewport;
+      const envTop = readPx("--safe-top-env");
+      const envBottom = readPx("--safe-bottom-env");
+      const envLeft = readPx("--safe-left-env");
+      const envRight = readPx("--safe-right-env");
+
+      const vvTop = vv ? Math.max(vv.offsetTop, vv.pageTop || 0, 0) : 0;
+      const vvBottom = vv ? Math.max(0, window.innerHeight - (vv.height + vv.offsetTop)) : 0;
+      const vvLeft = vv ? Math.max(vv.offsetLeft || 0, 0) : 0;
+      const vvRight = vv ? Math.max(0, window.innerWidth - (vv.width + (vv.offsetLeft || 0))) : 0;
+
+      const tgTop =
+        tg?.viewportStableHeight && tg?.viewportHeight
+          ? Math.max(0, tg.viewportHeight - tg.viewportStableHeight) / 2
+          : 0;
+      const tgBottom = tgTop;
+
+      root.style.setProperty("--safe-top", `${Math.max(16, envTop, vvTop, tgTop)}px`);
+      root.style.setProperty("--safe-bottom", `${Math.max(12, envBottom, vvBottom, tgBottom)}px`);
+      root.style.setProperty("--safe-left", `${Math.max(envLeft, vvLeft)}px`);
+      root.style.setProperty("--safe-right", `${Math.max(envRight, vvRight)}px`);
+    };
+
+    updateInsets();
+    const handler = () => updateInsets();
+    tg?.onEvent?.("viewportChanged", handler);
+    window.visualViewport?.addEventListener("resize", handler);
+    window.visualViewport?.addEventListener("scroll", handler);
+    window.addEventListener("orientationchange", handler);
+    window.addEventListener("resize", handler);
+
+    return () => {
+      tg?.offEvent?.("viewportChanged", handler);
+      window.visualViewport?.removeEventListener("resize", handler);
+      window.visualViewport?.removeEventListener("scroll", handler);
+      window.removeEventListener("orientationchange", handler);
+      window.removeEventListener("resize", handler);
+    };
+  }, [tg]);
+
+  // ---- Системный статус-бар: красим под текущую тему ----
+  useEffect(() => {
+    if (!tg) return;
+    try { tg.setHeaderColor?.(theme.bg || "secondary_bg_color"); } catch {}
+  }, [tg, theme.bg]);
+
   // ---- Telegram lifecycle ----
   useEffect(() => {
     if (!tg) return;
@@ -898,10 +955,14 @@ function GlobalReset() {
 html, body, #root { height: 100%; }
 :root {
   color-scheme: light dark;
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-left: env(safe-area-inset-left, 0px);
-  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-top-env: env(safe-area-inset-top, 0px);
+  --safe-bottom-env: env(safe-area-inset-bottom, 0px);
+  --safe-left-env: env(safe-area-inset-left, 0px);
+  --safe-right-env: env(safe-area-inset-right, 0px);
+  --safe-top: max(var(--safe-top-env), 16px);
+  --safe-bottom: max(var(--safe-bottom-env), 12px);
+  --safe-left: var(--safe-left-env);
+  --safe-right: var(--safe-right-env);
   --shell-pad-x: clamp(10px, 4vw, 18px);
   --shell-pad-y: clamp(10px, 2.2vh, 16px);
 }
@@ -918,7 +979,7 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 
 /* Общий контейнер */
-.app { min-height: 100dvh; width: 100%; position: relative; overflow: hidden; background: var(--bg); }
+.app { min-height: 100dvh; min-height: 100svh; width: 100%; position: relative; overflow: hidden; background: var(--bg); }
 
 /* ===== SHELL ONLY (всё, что ниже префиксировано .shell и не влияет на игры) ===== */
 .shell .backdrop { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
