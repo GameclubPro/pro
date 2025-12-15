@@ -101,7 +101,7 @@
 
 .kc-meter-row {
   position: fixed;
-  top: calc(var(--kc-safe-top) + 4px);
+  bottom: calc(var(--kc-safe-bottom) + 8px);
   left: 0;
   right: 0;
   width: 100%;
@@ -113,7 +113,7 @@
   padding: 8px calc(10px + var(--kc-safe-right)) 8px calc(10px + var(--kc-safe-left));
   background: linear-gradient(145deg, rgba(12, 10, 9, 0.96), rgba(27, 21, 16, 0.92));
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0 0 12px 12px;
+  border-radius: 12px 12px 0 0;
   box-shadow: 0 18px 38px rgba(0, 0, 0, 0.32);
   backdrop-filter: blur(8px);
   flex-wrap: nowrap;
