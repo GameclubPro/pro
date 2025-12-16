@@ -12,10 +12,9 @@
   --accent-green: #7ea657;
   --accent-gold: #d6b25e;
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-  /* В fullscreen Telegram рисует свои overlay-кнопки поверх WebView.
-     Для этой игры держим контент ниже, чем общий минимум, чтобы заголовок не залезал под системные кнопки. */
-  --kc-ui-top-min: 104px;
-  --ui-top-extra: max(0px, calc(var(--kc-ui-top-min) - (var(--app-pad-y) + var(--safe-top))));
+  /* В fullscreen Telegram рисует свои overlay-кнопки (Back / ⋮ / свернуть) поверх WebView.
+     Используем content safe area (TG UI) + небольшой отступ и fallback-минимум. */
+  --ui-top-min: max(104px, calc(var(--tg-content-safe-area-inset-top, 0px) + 32px));
   --kc-vh: var(--tg-vh, 100svh);
   position: relative;
   min-height: var(--kc-vh);
