@@ -260,15 +260,38 @@ export default function App() {
       left: Math.max(0, Number(inset?.left) || 0),
     });
 
+    const readTelegramCssInsets = () => {
+      const cs = getComputedStyle(root);
+      const px = (name) => Math.max(0, parseFloat(cs.getPropertyValue(name)) || 0);
+      const safe = {
+        top: px("--tg-safe-area-inset-top"),
+        right: px("--tg-safe-area-inset-right"),
+        bottom: px("--tg-safe-area-inset-bottom"),
+        left: px("--tg-safe-area-inset-left"),
+      };
+      const content = {
+        top: px("--tg-content-safe-area-inset-top"),
+        right: px("--tg-content-safe-area-inset-right"),
+        bottom: px("--tg-content-safe-area-inset-bottom"),
+        left: px("--tg-content-safe-area-inset-left"),
+      };
+      return {
+        top: Math.max(safe.top, content.top),
+        right: Math.max(safe.right, content.right),
+        bottom: Math.max(safe.bottom, content.bottom),
+        left: Math.max(safe.left, content.left),
+      };
+    };
+
     const readTelegramInsets = () => {
       const safe = normalizeInsets(tg?.safeAreaInset);
       const content = normalizeInsets(tg?.contentSafeAreaInset);
-      const viewport = normalizeInsets(tg?.viewportSafeAreaInset);
+      const css = readTelegramCssInsets();
       return {
-        top: Math.max(safe.top, content.top, viewport.top),
-        right: Math.max(safe.right, content.right, viewport.right),
-        bottom: Math.max(safe.bottom, content.bottom, viewport.bottom),
-        left: Math.max(safe.left, content.left, viewport.left),
+        top: Math.max(safe.top, content.top, css.top),
+        right: Math.max(safe.right, content.right, css.right),
+        bottom: Math.max(safe.bottom, content.bottom, css.bottom),
+        left: Math.max(safe.left, content.left, css.left),
       };
     };
 
@@ -282,19 +305,8 @@ export default function App() {
       const vvLeft = vv ? Math.max(vv.offsetLeft || 0, 0) : 0;
       const vvRight = vv ? Math.max(0, window.innerWidth - (vv.width + (vv.offsetLeft || 0))) : 0;
 
-      const tgViewportInset =
-        tg?.viewportStableHeight && tg?.viewportHeight
-          ? Math.max(0, tg.viewportHeight - tg.viewportStableHeight)
-          : 0;
-      const headerOverlayGuess = tg && tgInsets.top === 0 ? (isIOS ? 64 : 52) : 0;
-      // В Telegram (особенно fullscreen) значение viewportHeight может отличаться от innerHeight.
-      // На практике эта дельта чаще всего проявляется как «нижняя системная полоса/кнопки».
-      const viewportDiff = tg?.viewportHeight && window.innerHeight
-        ? Math.max(0, window.innerHeight - tg.viewportHeight)
-        : 0;
-
-      const top = Math.max(16, env.top, vvTop, tgInsets.top, headerOverlayGuess);
-      const bottom = Math.max(12, env.bottom, vvBottom, tgInsets.bottom, tgViewportInset, viewportDiff);
+      const top = Math.max(16, env.top, vvTop, tgInsets.top);
+      const bottom = Math.max(12, env.bottom, vvBottom, tgInsets.bottom);
       const left = Math.max(env.left, vvLeft, tgInsets.left);
       const right = Math.max(env.right, vvRight, tgInsets.right);
 
@@ -314,6 +326,7 @@ export default function App() {
     tg?.onEvent?.("viewportChanged", handler);
     tg?.onEvent?.("safeAreaChanged", handler);
     tg?.onEvent?.("contentSafeAreaChanged", handler);
+    tg?.onEvent?.("fullscreenChanged", handler);
     window.visualViewport?.addEventListener("resize", handler);
     window.visualViewport?.addEventListener("scroll", handler);
     window.addEventListener("orientationchange", handler);
@@ -323,6 +336,7 @@ export default function App() {
       tg?.offEvent?.("viewportChanged", handler);
       tg?.offEvent?.("safeAreaChanged", handler);
       tg?.offEvent?.("contentSafeAreaChanged", handler);
+      tg?.offEvent?.("fullscreenChanged", handler);
       window.visualViewport?.removeEventListener("resize", handler);
       window.visualViewport?.removeEventListener("scroll", handler);
       window.removeEventListener("orientationchange", handler);
@@ -346,8 +360,16 @@ export default function App() {
       const vv = window.visualViewport;
       const base = tg?.viewportHeight || (vv ? vv.height : window.innerHeight);
       const stable = tg?.viewportStableHeight || base;
-      const heightStable = Math.max(320, Math.round(stable || base || window.innerHeight || 0));
-      const heightDynamic = Math.max(320, Math.round(base || window.innerHeight || 0));
+      // На некоторых девайсах высота бывает дробной → round() даёт +1px и появляется «лишний» скролл.
+      const inner = window.innerHeight || 0;
+      const stableRaw = stable || base || inner || 0;
+      const baseRaw = base || inner || 0;
+      // Если TG отдаёт высоту чуть больше реального viewport (1–2px) — появится лишний скролл.
+      // При большой разнице (например, открыта клавиатура) stableRaw намеренно больше — не трогаем.
+      const stableCapped = inner > 0 && stableRaw > inner && stableRaw - inner < 80 ? inner : stableRaw;
+      const baseCapped = inner > 0 && baseRaw > inner && baseRaw - inner < 80 ? inner : baseRaw;
+      const heightStable = Math.max(320, Math.floor(stableCapped || 0));
+      const heightDynamic = Math.max(320, Math.floor(baseCapped || 0));
       root.style.setProperty("--tg-vh", `${heightStable}px`);
       root.style.setProperty("--tg-vh-stable", `${heightStable}px`);
       root.style.setProperty("--tg-vh-dynamic", `${heightDynamic}px`);
@@ -629,7 +651,7 @@ export default function App() {
       : STARTAPP_PAYLOAD;
     const deepLink = `https://t.me/${BOT_USERNAME}?startapp=${encodeURIComponent(startPayload)}`;
     return (
-      <div className="app" data-scheme={scheme} style={cssVars}>
+      <div className="app" data-scheme={scheme} data-mode="shell" style={cssVars}>
         <GlobalReset />
         <div
           style={{
@@ -667,7 +689,7 @@ export default function App() {
 
   // ---- Render ----
   return (
-    <div className="app" data-scheme={scheme} style={cssVars}>
+    <div className="app" data-scheme={scheme} data-mode={route.kind} style={cssVars}>
       <GlobalReset />
       {route.kind === "shell" ? (
         <Shell
@@ -1062,13 +1084,21 @@ html, body, #root { height: 100%; }
   --tg-vh: 100svh;
   --app-pad-x: clamp(12px, 4vw, 20px);
   --app-pad-y: clamp(12px, 2.2vh, 18px);
-  --app-inset-top: calc(var(--app-pad-y) + var(--safe-top));
+  --ui-top-extra: 0px;
+  --ui-bottom-extra: 0px;
+  --app-inset-top: calc(var(--app-pad-y) + var(--safe-top) + var(--ui-top-extra));
   --app-inset-right: calc(var(--app-pad-x) + var(--safe-right));
-  --app-inset-bottom: calc(var(--app-pad-y) + var(--safe-bottom));
+  --app-inset-bottom: calc(var(--app-pad-y) + var(--safe-bottom) + var(--ui-bottom-extra));
   --app-inset-left: calc(var(--app-pad-x) + var(--safe-left));
   /* legacy alias: оставлено, чтобы не ломать старые стили */
   --shell-pad-x: var(--app-pad-x);
   --shell-pad-y: var(--app-pad-y);
+}
+
+/* В fullscreen-играх Telegram рисует свои overlay-кнопки поверх контента.
+   Даём минимальный общий отступ сверху, чтобы ни на одном девайсе они не наезжали. */
+.app[data-mode="game"] {
+  --ui-top-extra: clamp(0px, calc(64px - (var(--app-pad-y) + var(--safe-top))), 40px);
 }
 body {
   margin: 0;
@@ -1135,7 +1165,7 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
   padding-left: var(--app-inset-left);
   padding-right: var(--app-inset-right);
   padding-top: var(--app-inset-top);
-  padding-bottom: calc(max(clamp(82px, 12vh, 112px), var(--safe-bottom)) + 6px);
+  padding-bottom: calc(clamp(50px, 7.5vh, 56px) + clamp(12px, 2.2vh, 16px) + max(10px, var(--safe-bottom)));
   width: 100%;
   margin: 0 auto;
 }

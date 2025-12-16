@@ -12,11 +12,6 @@
   --accent-green: #7ea657;
   --accent-gold: #d6b25e;
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-  /* Берём реальный safe-top без жёстких ограничений, чтобы не перекрывать Telegram бар */
-  --kc-safe-top: max(env(safe-area-inset-top, 0px), var(--safe-top, 16px), 14px);
-  --kc-safe-bottom: max(var(--safe-bottom, 12px), env(safe-area-inset-bottom, 0px), 12px);
-  --kc-safe-left: max(var(--safe-left, 0px), env(safe-area-inset-left, 0px));
-  --kc-safe-right: max(var(--safe-right, 0px), env(safe-area-inset-right, 0px));
   --kc-vh: var(--tg-vh, 100svh);
   position: relative;
   min-height: var(--kc-vh);
@@ -46,7 +41,7 @@
 
 .kc-shell.pt-safe {
   /* Резерв под фиксированный нижний meter bar */
-  padding-bottom: calc(36px + var(--safe-bottom));
+  padding-bottom: calc(var(--app-inset-bottom) + 36px);
 }
 
 .kc-root h1,
@@ -104,7 +99,7 @@
 
 .kc-meter-row {
   position: fixed;
-  bottom: calc(var(--kc-safe-bottom) + 8px);
+  bottom: calc(var(--app-inset-bottom) + 8px);
   left: 0;
   right: 0;
   width: 100%;
@@ -198,8 +193,8 @@
 
 .kc-council-pill {
   position: fixed;
-  top: calc(var(--kc-safe-top) + 120px);
-  right: calc(12px + var(--kc-safe-right));
+  top: calc(var(--safe-top) + 120px);
+  right: var(--app-inset-right);
   display: grid;
   place-items: center;
   width: 38px;
@@ -232,9 +227,9 @@
 
 .kc-council-panel {
   position: absolute;
-  right: calc(10px + var(--kc-safe-right));
-  bottom: calc(10px + var(--kc-safe-bottom));
-  width: min(340px, calc(100% - 16px));
+  right: var(--app-inset-right);
+  bottom: var(--app-inset-bottom);
+  width: min(340px, calc(100% - (var(--app-inset-left) + var(--app-inset-right))));
   background: linear-gradient(180deg, rgba(22, 18, 14, 0.92), rgba(15, 12, 11, 0.95));
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 14px;
@@ -826,10 +821,6 @@
 }
 
 @media (max-width: 520px) {
-  .kc-shell {
-    padding-top: 94px;
-  }
-
   .kc-meter-row {
     gap: 6px;
     padding: 6px;
@@ -866,14 +857,8 @@
   }
 
   .kc-council-pill {
-    top: 80px;
-    right: 10px;
     width: 36px;
     height: 36px;
-  }
-
-  .kc-council-panel {
-    width: min(360px, calc(100% - 12px));
   }
 
   .kc-card {
