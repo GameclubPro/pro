@@ -78,10 +78,9 @@
   z-index: 1;
   max-width: 760px;
   margin: 0 auto;
-  padding: calc(24px + var(--quiz-safe-top)) calc(14px + var(--quiz-safe-left)) calc(32px + var(--quiz-safe-bottom)) calc(14px + var(--quiz-safe-right));
   display: grid;
   gap: 14px;
-  min-height: calc(var(--quiz-vh) - var(--quiz-safe-top) - var(--quiz-safe-bottom));
+  min-height: var(--quiz-vh);
   align-content: start;
 }
 
@@ -1897,9 +1896,6 @@
 }
 
 @media (max-width: 360px) {
-  .quiz-wrap {
-    padding-inline: calc(10px + var(--safe-left)) calc(10px + var(--safe-right));
-  }
   .chip,
   .ghost-btn {
     padding: 7px 9px;

@@ -656,7 +656,7 @@ export default function Quiz({ goBack, onProgress, setBackHandler }) {
         <span className="blob one" />
         <span className="blob two" />
       </div>
-      <div className="quiz-wrap">
+      <div className="quiz-wrap pt-safe">
         {visibleStage === "setup" && (
           <Setup
             settings={state.settings}

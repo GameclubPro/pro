@@ -1054,8 +1054,15 @@ html, body, #root { height: 100%; }
   --safe-left: var(--safe-left-env);
   --safe-right: var(--safe-right-env);
   --tg-vh: 100svh;
-  --shell-pad-x: clamp(10px, 4vw, 18px);
-  --shell-pad-y: clamp(10px, 2.2vh, 16px);
+  --app-pad-x: clamp(10px, 4vw, 18px);
+  --app-pad-y: clamp(10px, 2.2vh, 16px);
+  --app-inset-top: calc(var(--app-pad-y) + var(--safe-top));
+  --app-inset-right: calc(var(--app-pad-x) + var(--safe-right));
+  --app-inset-bottom: calc(var(--app-pad-y) + var(--safe-bottom));
+  --app-inset-left: calc(var(--app-pad-x) + var(--safe-left));
+  /* legacy alias: оставлено, чтобы не ломать старые стили */
+  --shell-pad-x: var(--app-pad-x);
+  --shell-pad-y: var(--app-pad-y);
 }
 body {
   margin: 0;
@@ -1068,6 +1075,23 @@ body {
 button { font: inherit; cursor: pointer; background: none; border: 0; color: inherit; }
 a { color: var(--link, #0a84ff); text-decoration: none; }
 @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* Safe-area утилиты (full-bleed фон + safe UI слой) */
+.pt-safe {
+  padding: var(--app-inset-top) var(--app-inset-right) var(--app-inset-bottom) var(--app-inset-left);
+  box-sizing: border-box;
+}
+.pt-safe-fixed {
+  position: fixed;
+  inset: 0;
+  padding: var(--app-inset-top) var(--app-inset-right) var(--app-inset-bottom) var(--app-inset-left);
+  box-sizing: border-box;
+}
+.pt-center {
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
 
 /* Общий контейнер */
 .app { min-height: var(--tg-vh, 100svh); width: 100%; position: relative; overflow: hidden; background: var(--bg); }
@@ -1102,9 +1126,9 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 
 .shell .wrap {
   position: relative;
-  padding-left: calc(var(--shell-pad-x) + var(--safe-left));
-  padding-right: calc(var(--shell-pad-x) + var(--safe-right));
-  padding-top: calc(var(--shell-pad-y) + var(--safe-top));
+  padding-left: var(--app-inset-left);
+  padding-right: var(--app-inset-right);
+  padding-top: var(--app-inset-top);
   padding-bottom: calc(max(clamp(82px, 12vh, 112px), var(--safe-bottom)) + 6px);
   width: 100%;
   margin: 0 auto;

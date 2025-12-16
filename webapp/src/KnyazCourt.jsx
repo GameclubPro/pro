@@ -393,7 +393,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
     return (
       <div className="kc-root">
         <Background />
-      <div className="kc-shell">
+      <div className="kc-shell pt-safe">
           {councilControls}
           <header className="kc-header">
             <div className="kc-header-mark">
@@ -427,7 +427,7 @@ export default function KnyazCourt({ goBack, onProgress, setBackHandler }) {
   return (
     <div className="kc-root">
       <Background />
-      <div className="kc-shell">
+      <div className="kc-shell pt-safe">
         {councilControls}
         <header className="kc-header">
           <div className="kc-header-mark">

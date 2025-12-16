@@ -19,7 +19,7 @@
   --kc-safe-right: max(var(--safe-right, 0px), env(safe-area-inset-right, 0px));
   --kc-vh: var(--tg-vh, 100svh);
   position: relative;
-  min-height: calc(var(--kc-vh) - var(--kc-safe-top) - var(--kc-safe-bottom));
+  min-height: var(--kc-vh);
   color: #f6f0e9;
   font-family: "Spectral", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   background: radial-gradient(1200px 900px at 20% 5%, rgba(208, 139, 55, 0.16), transparent),
@@ -42,8 +42,11 @@
   z-index: 1;
   max-width: 100%;
   margin: 0;
-  padding: calc(16px + var(--kc-safe-top)) calc(clamp(14px, 3vw, 24px) + var(--kc-safe-right))
-    calc(36px + var(--kc-safe-bottom)) calc(clamp(14px, 3vw, 24px) + var(--kc-safe-left));
+}
+
+.kc-shell.pt-safe {
+  /* Резерв под фиксированный нижний meter bar */
+  padding-bottom: calc(36px + var(--safe-bottom));
 }
 
 .kc-root h1,
@@ -110,7 +113,7 @@
   align-items: stretch;
   justify-content: center;
   gap: 8px;
-  padding: 8px calc(10px + var(--kc-safe-right)) 8px calc(10px + var(--kc-safe-left));
+  padding: 8px var(--app-inset-right) 8px var(--app-inset-left);
   background: linear-gradient(145deg, rgba(12, 10, 9, 0.96), rgba(27, 21, 16, 0.92));
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px 12px 0 0;

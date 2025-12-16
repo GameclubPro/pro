@@ -77,10 +77,9 @@
   z-index: 1;
   max-width: 780px;
   margin: 0 auto;
-  padding: calc(24px + var(--assoc-safe-top)) calc(14px + var(--assoc-safe-left)) calc(32px + var(--assoc-safe-bottom)) calc(14px + var(--assoc-safe-right));
   display: grid;
   gap: 14px;
-  min-height: calc(var(--assoc-vh) - var(--assoc-safe-top) - var(--assoc-safe-bottom));
+  min-height: var(--assoc-vh);
   align-content: start;
 }
 

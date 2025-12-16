@@ -2754,18 +2754,20 @@ export default function Auction({
 
   return (
     <div className={appClassName}>
-      {showLanding ? (
-        renderLanding()
-      ) : (
-        <div className="screen-wrapper">
-          {renderHeader()}
-          <main className="screen-main">
-            {renderLobbyContent()}
-            {renderGameContent()}
-            {renderResultsContent()}
-          </main>
-        </div>
-      )}
+      <div className="screen-wrapper pt-safe">
+        {showLanding ? (
+          renderLanding()
+        ) : (
+          <>
+            {renderHeader()}
+            <main className="screen-main">
+              {renderLobbyContent()}
+              {renderGameContent()}
+              {renderResultsContent()}
+            </main>
+          </>
+        )}
+      </div>
       {renderLootboxRevealModal()}
       {renderBasketModal()}
       {renderSettingsModal()}

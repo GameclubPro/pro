@@ -446,7 +446,7 @@ export default function Choice({ goBack, onProgress, setBackHandler }) {
         <div className="blob b" />
         <div className="grain" />
       </div>
-      <div className="choice-wrap">
+      <div className="choice-wrap pt-safe">
         {stage === "intro" ? (
           <Landing
             onStart={startGame}

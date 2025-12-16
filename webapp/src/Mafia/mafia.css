@@ -66,9 +66,10 @@
   --mf-soft-shadow: 0 2px 14px rgba(0,0,0,.45);
 
   --mf-vh: var(--tg-vh, 100svh); --mf-vw: 1dvw;
-  /* Держим честный safe-top под телеграм-шапку */
-  --mf-safe-top: max(env(safe-area-inset-top, 0px), var(--safe-top, 20px), 20px);
-  --mf-safe-bottom: max(var(--safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 12px);
+  --mf-pad-y: var(--app-pad-y, 12px);
+  /* Safe area + общий app padding (как на главной) */
+  --mf-safe-top: calc(max(env(safe-area-inset-top, 0px), var(--safe-top, 20px), 20px) + var(--mf-pad-y));
+  --mf-safe-bottom: calc(max(var(--safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 12px) + var(--mf-pad-y));
 
   --mf-center-min: 64px;
   --mf-center-max: 520px;
@@ -214,6 +215,8 @@ body.mf-lowend .mf-tex{ display:none !important; }
   display:flex; flex-direction:column; gap:14px;
   min-height: var(--mf-vh);
   padding-top: var(--mf-safe-top);
+  padding-left: var(--app-inset-left);
+  padding-right: var(--app-inset-right);
   padding-bottom: var(--mf-safe-bottom);
 }
 

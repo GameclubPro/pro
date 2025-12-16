@@ -622,7 +622,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
         <span className="blob one" />
         <span className="blob two" />
       </div>
-      <div className="croco-wrap">
+      <div className="croco-wrap pt-safe">
         {visibleStage === "setup" && (
           <Setup
             settings={state.settings}

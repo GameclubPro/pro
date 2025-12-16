@@ -1054,7 +1054,7 @@ export default function Associations({ goBack, onProgress, setBackHandler }) {
         <div className="blob one" />
         <div className="blob two" />
       </div>
-      <div className="croco-wrap">
+      <div className="croco-wrap pt-safe">
         {stage === "setup" && renderSetup()}
         {stage === "round" && renderRound()}
         {stage === "summary" && renderSummary()}

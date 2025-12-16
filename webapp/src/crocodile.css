@@ -95,10 +95,9 @@
   z-index: 1;
   max-width: 780px;
   margin: 0 auto;
-  padding: calc(24px + var(--croco-safe-top)) calc(14px + var(--croco-safe-left)) calc(32px + var(--croco-safe-bottom)) calc(14px + var(--croco-safe-right));
   display: grid;
   gap: 14px;
-  min-height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom));
+  min-height: var(--croco-vh);
   align-content: start;
 }
 
@@ -1874,9 +1873,5 @@
   }
   .option-btn {
     width: 100%;
-  }
-  .croco-wrap {
-    padding-left: 10px;
-    padding-right: 10px;
   }
 }
