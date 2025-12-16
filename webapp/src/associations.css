@@ -1086,7 +1086,7 @@
 
 .toast {
   position: fixed;
-  bottom: calc(12px + var(--safe-bottom));
+  bottom: calc(12px + var(--app-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   display: inline-flex;

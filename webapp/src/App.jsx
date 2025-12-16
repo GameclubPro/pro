@@ -1054,8 +1054,8 @@ html, body, #root { height: 100%; }
   --safe-left: var(--safe-left-env);
   --safe-right: var(--safe-right-env);
   --tg-vh: 100svh;
-  --app-pad-x: clamp(10px, 4vw, 18px);
-  --app-pad-y: clamp(10px, 2.2vh, 16px);
+  --app-pad-x: clamp(12px, 4vw, 20px);
+  --app-pad-y: clamp(12px, 2.2vh, 18px);
   --app-inset-top: calc(var(--app-pad-y) + var(--safe-top));
   --app-inset-right: calc(var(--app-pad-x) + var(--safe-right));
   --app-inset-bottom: calc(var(--app-pad-y) + var(--safe-bottom));

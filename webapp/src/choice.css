@@ -1319,7 +1319,7 @@
 
 .toast {
   position: fixed;
-  bottom: calc(16px + var(--choice-safe-bottom));
+  bottom: calc(16px + var(--app-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   padding: 10px 14px;
