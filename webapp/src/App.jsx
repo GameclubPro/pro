@@ -1084,6 +1084,8 @@ html, body, #root { height: 100%; }
   --tg-vh: 100svh;
   --app-pad-x: clamp(12px, 4vw, 20px);
   --app-pad-y: clamp(12px, 2.2vh, 18px);
+  --ui-top-min: 0px;
+  --ui-bottom-min: 0px;
   --ui-top-extra: 0px;
   --ui-bottom-extra: 0px;
   --app-inset-top: calc(var(--app-pad-y) + var(--safe-top) + var(--ui-top-extra));
@@ -1098,7 +1100,8 @@ html, body, #root { height: 100%; }
 /* В fullscreen-играх Telegram рисует свои overlay-кнопки поверх контента.
    Даём минимальный общий отступ сверху, чтобы ни на одном девайсе они не наезжали. */
 .app[data-mode="game"] {
-  --ui-top-extra: clamp(0px, calc(64px - (var(--app-pad-y) + var(--safe-top))), 40px);
+  --ui-top-min: 84px;
+  --ui-top-extra: max(0px, calc(var(--ui-top-min) - (var(--app-pad-y) + var(--safe-top))));
 }
 body {
   margin: 0;
