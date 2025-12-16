@@ -283,8 +283,12 @@ export default function App() {
     const updateVh = () => {
       const vv = window.visualViewport;
       const base = tg?.viewportHeight || (vv ? vv.height : window.innerHeight);
-      const height = Math.max(320, Math.round(base || window.innerHeight || 0));
-      root.style.setProperty("--tg-vh", `${height}px`);
+      const stable = tg?.viewportStableHeight || base;
+      const heightStable = Math.max(320, Math.round(stable || base || window.innerHeight || 0));
+      const heightDynamic = Math.max(320, Math.round(base || window.innerHeight || 0));
+      root.style.setProperty("--tg-vh", `${heightStable}px`);
+      root.style.setProperty("--tg-vh-stable", `${heightStable}px`);
+      root.style.setProperty("--tg-vh-dynamic", `${heightDynamic}px`);
     };
 
     updateVh();

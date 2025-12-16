@@ -66,8 +66,8 @@
   --mf-soft-shadow: 0 2px 14px rgba(0,0,0,.45);
 
   --mf-vh: var(--tg-vh, 100svh); --mf-vw: 1dvw;
-  /* Держим честный safe-top под телеграм-шапку, но без раздутия */
-  --mf-safe-top: max(env(safe-area-inset-top, 0px), min(var(--safe-top, 20px), 32px), 20px);
+  /* Держим честный safe-top под телеграм-шапку */
+  --mf-safe-top: max(env(safe-area-inset-top, 0px), var(--safe-top, 20px), 20px);
   --mf-safe-bottom: max(var(--safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 12px);
 
   --mf-center-min: 64px;

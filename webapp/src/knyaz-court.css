@@ -12,8 +12,8 @@
   --accent-green: #7ea657;
   --accent-gold: #d6b25e;
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-  /* Берём реальный safe-top, но жёстко ограничиваем, чтобы не раздувать шапку */
-  --kc-safe-top: max(env(safe-area-inset-top, 0px), min(var(--safe-top, 16px), 24px), 14px);
+  /* Берём реальный safe-top без жёстких ограничений, чтобы не перекрывать Telegram бар */
+  --kc-safe-top: max(env(safe-area-inset-top, 0px), var(--safe-top, 16px), 14px);
   --kc-safe-bottom: max(var(--safe-bottom, 12px), env(safe-area-inset-bottom, 0px), 12px);
   --kc-safe-left: max(var(--safe-left, 0px), env(safe-area-inset-left, 0px));
   --kc-safe-right: max(var(--safe-right, 0px), env(safe-area-inset-right, 0px));

@@ -2,7 +2,15 @@ import React from "react";
 
 export default function Compatibility() {
   return (
-    <div style={{ padding: 16, textAlign: "center" }}>
+    <div
+      style={{
+        padding: "calc(16px + var(--safe-top)) calc(16px + var(--safe-right)) calc(16px + var(--safe-bottom)) calc(16px + var(--safe-left))",
+        minHeight: "calc(var(--tg-vh, 100svh) - var(--safe-top, 0px) - var(--safe-bottom, 0px))",
+        display: "grid",
+        placeItems: "center",
+        textAlign: "center",
+      }}
+    >
       Игра «Совместимость» временно недоступна.
     </div>
   );
