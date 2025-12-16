@@ -218,38 +218,93 @@ export default function App() {
     const root = document.documentElement;
     if (!root) return;
 
-    const readPx = (name) => {
-      const v = parseFloat(getComputedStyle(root).getPropertyValue(name));
-      return Number.isFinite(v) ? v : 0;
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent || "");
+
+    // Важно: computedStyle для CSS custom properties не вычисляет env(...),
+    // поэтому читаем safe-area через "пробник" со стандартными свойствами.
+    const probe = document.createElement("div");
+    probe.setAttribute("data-safe-area-probe", "1");
+    probe.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      padding-top: constant(safe-area-inset-top);
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-right: constant(safe-area-inset-right);
+      padding-right: env(safe-area-inset-right, 0px);
+      padding-bottom: constant(safe-area-inset-bottom);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      padding-left: constant(safe-area-inset-left);
+      padding-left: env(safe-area-inset-left, 0px);
+      pointer-events: none;
+      visibility: hidden;
+      z-index: -1;
+    `;
+    (document.body || document.documentElement).appendChild(probe);
+
+    const readEnvInsets = () => {
+      const cs = getComputedStyle(probe);
+      const top = parseFloat(cs.paddingTop) || 0;
+      const right = parseFloat(cs.paddingRight) || 0;
+      const bottom = parseFloat(cs.paddingBottom) || 0;
+      const left = parseFloat(cs.paddingLeft) || 0;
+      return { top, right, bottom, left };
     };
 
-    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent || "");
+    const normalizeInsets = (inset) => ({
+      top: Math.max(0, Number(inset?.top) || 0),
+      right: Math.max(0, Number(inset?.right) || 0),
+      bottom: Math.max(0, Number(inset?.bottom) || 0),
+      left: Math.max(0, Number(inset?.left) || 0),
+    });
+
+    const readTelegramInsets = () => {
+      const safe = normalizeInsets(tg?.safeAreaInset);
+      const content = normalizeInsets(tg?.contentSafeAreaInset);
+      const viewport = normalizeInsets(tg?.viewportSafeAreaInset);
+      return {
+        top: Math.max(safe.top, content.top, viewport.top),
+        right: Math.max(safe.right, content.right, viewport.right),
+        bottom: Math.max(safe.bottom, content.bottom, viewport.bottom),
+        left: Math.max(safe.left, content.left, viewport.left),
+      };
+    };
+
     const updateInsets = () => {
       const vv = window.visualViewport;
-      const envTop = readPx("--safe-top-env");
-      const envBottom = readPx("--safe-bottom-env");
-      const envLeft = readPx("--safe-left-env");
-      const envRight = readPx("--safe-right-env");
+      const env = readEnvInsets();
+      const tgInsets = readTelegramInsets();
 
       const vvTop = vv ? Math.max(vv.offsetTop, vv.pageTop || 0, 0) : 0;
       const vvBottom = vv ? Math.max(0, window.innerHeight - (vv.height + vv.offsetTop)) : 0;
       const vvLeft = vv ? Math.max(vv.offsetLeft || 0, 0) : 0;
       const vvRight = vv ? Math.max(0, window.innerWidth - (vv.width + (vv.offsetLeft || 0))) : 0;
 
-      const tgTop =
+      const tgViewportInset =
         tg?.viewportStableHeight && tg?.viewportHeight
           ? Math.max(0, tg.viewportHeight - tg.viewportStableHeight) / 2
           : 0;
-      const tgBottom = tgTop;
-      const headerOverlayGuess = tg ? (isIOS ? 64 : 52) : 0;
+      const headerOverlayGuess = tg && tgInsets.top === 0 ? (isIOS ? 64 : 52) : 0;
       const viewportDiff = tg?.viewportHeight && window.innerHeight
         ? Math.max(0, window.innerHeight - tg.viewportHeight)
         : 0;
 
-      root.style.setProperty("--safe-top", `${Math.max(16, envTop, vvTop, tgTop, headerOverlayGuess, viewportDiff)}px`);
-      root.style.setProperty("--safe-bottom", `${Math.max(12, envBottom, vvBottom, tgBottom)}px`);
-      root.style.setProperty("--safe-left", `${Math.max(envLeft, vvLeft)}px`);
-      root.style.setProperty("--safe-right", `${Math.max(envRight, vvRight)}px`);
+      const top = Math.max(16, env.top, vvTop, tgInsets.top, tgViewportInset, headerOverlayGuess, viewportDiff);
+      const bottom = Math.max(12, env.bottom, vvBottom, tgInsets.bottom, tgViewportInset);
+      const left = Math.max(env.left, vvLeft, tgInsets.left);
+      const right = Math.max(env.right, vvRight, tgInsets.right);
+
+      root.style.setProperty("--safe-top-env", `${env.top}px`);
+      root.style.setProperty("--safe-bottom-env", `${env.bottom}px`);
+      root.style.setProperty("--safe-left-env", `${env.left}px`);
+      root.style.setProperty("--safe-right-env", `${env.right}px`);
+
+      root.style.setProperty("--safe-top", `${top}px`);
+      root.style.setProperty("--safe-bottom", `${bottom}px`);
+      root.style.setProperty("--safe-left", `${left}px`);
+      root.style.setProperty("--safe-right", `${right}px`);
     };
 
     updateInsets();
@@ -266,6 +321,7 @@ export default function App() {
       window.visualViewport?.removeEventListener("scroll", handler);
       window.removeEventListener("orientationchange", handler);
       window.removeEventListener("resize", handler);
+      probe.remove();
     };
   }, [tg]);
 
