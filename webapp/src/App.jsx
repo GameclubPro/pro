@@ -284,15 +284,17 @@ export default function App() {
 
       const tgViewportInset =
         tg?.viewportStableHeight && tg?.viewportHeight
-          ? Math.max(0, tg.viewportHeight - tg.viewportStableHeight) / 2
+          ? Math.max(0, tg.viewportHeight - tg.viewportStableHeight)
           : 0;
       const headerOverlayGuess = tg && tgInsets.top === 0 ? (isIOS ? 64 : 52) : 0;
+      // В Telegram (особенно fullscreen) значение viewportHeight может отличаться от innerHeight.
+      // На практике эта дельта чаще всего проявляется как «нижняя системная полоса/кнопки».
       const viewportDiff = tg?.viewportHeight && window.innerHeight
         ? Math.max(0, window.innerHeight - tg.viewportHeight)
         : 0;
 
-      const top = Math.max(16, env.top, vvTop, tgInsets.top, tgViewportInset, headerOverlayGuess, viewportDiff);
-      const bottom = Math.max(12, env.bottom, vvBottom, tgInsets.bottom, tgViewportInset);
+      const top = Math.max(16, env.top, vvTop, tgInsets.top, headerOverlayGuess);
+      const bottom = Math.max(12, env.bottom, vvBottom, tgInsets.bottom, tgViewportInset, viewportDiff);
       const left = Math.max(env.left, vvLeft, tgInsets.left);
       const right = Math.max(env.right, vvRight, tgInsets.right);
 
@@ -310,6 +312,8 @@ export default function App() {
     updateInsets();
     const handler = () => updateInsets();
     tg?.onEvent?.("viewportChanged", handler);
+    tg?.onEvent?.("safeAreaChanged", handler);
+    tg?.onEvent?.("contentSafeAreaChanged", handler);
     window.visualViewport?.addEventListener("resize", handler);
     window.visualViewport?.addEventListener("scroll", handler);
     window.addEventListener("orientationchange", handler);
@@ -317,6 +321,8 @@ export default function App() {
 
     return () => {
       tg?.offEvent?.("viewportChanged", handler);
+      tg?.offEvent?.("safeAreaChanged", handler);
+      tg?.offEvent?.("contentSafeAreaChanged", handler);
       window.visualViewport?.removeEventListener("resize", handler);
       window.visualViewport?.removeEventListener("scroll", handler);
       window.removeEventListener("orientationchange", handler);
