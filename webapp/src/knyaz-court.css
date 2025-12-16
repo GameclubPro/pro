@@ -14,7 +14,8 @@
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
   /* В fullscreen Telegram рисует свои overlay-кнопки (Back / ⋮ / свернуть) поверх WebView.
      Используем content safe area (TG UI) + небольшой отступ и fallback-минимум. */
-  --ui-top-min: max(104px, calc(var(--tg-content-safe-area-inset-top, 0px) + 32px));
+  --ui-top-min: max(132px, calc(var(--tg-content-safe-area-inset-top, 0px) + 48px));
+  --ui-top-extra: max(0px, calc(var(--ui-top-min) - (var(--app-pad-y) + var(--safe-top))));
   --kc-vh: var(--tg-vh, 100svh);
   position: relative;
   min-height: var(--kc-vh);
@@ -815,7 +816,8 @@
 @media (max-width: 720px) {
   .kc-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
+    text-align: center;
   }
 
   .kc-section-title {
