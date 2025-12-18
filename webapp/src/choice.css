@@ -81,6 +81,11 @@
   align-content: start;
 }
 
+.choice-wrap.pt-safe {
+  /* лёгкий отступ, чтобы шапка не прилипала к системным кнопкам */
+  padding-top: calc(var(--choice-safe-top) + 8px);
+}
+
 .choice-top {
   display: flex;
   align-items: center;

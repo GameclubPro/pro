@@ -97,6 +97,11 @@
   align-content: start;
 }
 
+.quiz-wrap.pt-safe {
+  /* лёгкий отступ, чтобы шапка не прилипала к системным кнопкам */
+  padding-top: calc(var(--quiz-safe-top) + 8px);
+}
+
 .quiz .switch-overlay {
   position: fixed;
   inset: 0;
