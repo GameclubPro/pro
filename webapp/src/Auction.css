@@ -163,6 +163,11 @@ textarea {
   z-index: 1;
 }
 
+.screen-wrapper.pt-safe {
+  /* лёгкий отступ, чтобы шапка не прилипала к системным кнопкам */
+  padding-top: calc(var(--auction-safe-top) + 8px);
+}
+
 .screen-main {
   flex: 1;
   display: flex;
