@@ -17,7 +17,8 @@
   --ui-top-min: max(112px, calc(var(--tg-content-safe-area-inset-top, 0px) + 32px));
   --ui-top-extra: max(0px, calc(var(--ui-top-min) - (var(--app-pad-y) + var(--safe-top))));
   --kc-vh: var(--tg-vh, 100svh);
-  --kc-safe-top: max(var(--app-inset-top), calc(var(--tg-content-safe-area-inset-top, 0px) + 12px));
+  --kc-safe-top-extra: 12px; /* небольшой люфт под системные кнопки */
+  --kc-safe-top: calc(max(var(--app-inset-top), calc(var(--tg-content-safe-area-inset-top, 0px) + 12px)) + var(--kc-safe-top-extra));
   --kc-safe-bottom: max(var(--app-inset-bottom), calc(var(--tg-content-safe-area-inset-bottom, 0px) + 12px));
   position: relative;
   min-height: var(--kc-vh);
