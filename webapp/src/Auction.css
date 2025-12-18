@@ -25,8 +25,20 @@
   --radius-sm: 10px;
 
   --auction-safe-top-extra: 12px;
-  --auction-safe-top: calc(max(var(--safe-top, 16px), env(safe-area-inset-top, 0px), 16px) + var(--auction-safe-top-extra));
-  --auction-safe-bottom: max(var(--safe-bottom, 12px), env(safe-area-inset-bottom, 0px), 12px);
+  --auction-safe-top: calc(
+    max(
+      var(--app-inset-top),
+      calc(var(--tg-content-safe-area-inset-top, 0px) + 16px),
+      calc(env(safe-area-inset-top, 0px) + 16px),
+      16px
+    ) + var(--auction-safe-top-extra)
+  );
+  --auction-safe-bottom: max(
+    var(--app-inset-bottom),
+    calc(var(--tg-content-safe-area-inset-bottom, 0px) + 12px),
+    calc(env(safe-area-inset-bottom, 0px) + 12px),
+    12px
+  );
   --auction-vh: var(--tg-vh, 100svh);
 
   --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.85);
