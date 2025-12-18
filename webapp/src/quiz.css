@@ -394,7 +394,7 @@
   pointer-events: none;
 }
 
-.quiz-settings.settings-overlay {
+.quiz-settings-overlay {
   position: fixed;
   inset: 0;
   background:
@@ -409,7 +409,7 @@
   z-index: 1200;
   overflow: hidden;
 }
-.quiz-settings-window.settings-window {
+.quiz-settings-window {
   position: relative;
   width: calc(100vw - var(--quiz-safe-left) - var(--quiz-safe-right));
   max-width: 600px;
@@ -810,10 +810,10 @@
 }
 
 @media (max-width: 768px) {
-  .quiz-settings.settings-overlay {
+  .quiz-settings-overlay {
     padding: calc(8px + var(--quiz-safe-top)) var(--quiz-safe-left) calc(8px + var(--quiz-safe-bottom)) var(--quiz-safe-right);
   }
-  .quiz-settings-window.settings-window {
+  .quiz-settings-window {
     width: calc(100vw - var(--quiz-safe-left) - var(--quiz-safe-right));
     max-width: 600px;
     height: calc(var(--quiz-vh) - var(--quiz-safe-top) - var(--quiz-safe-bottom));

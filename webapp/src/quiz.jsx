@@ -821,7 +821,7 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
     <AnimatePresence>
       {settingsOpen && (
         <motion.div
-          className="settings-overlay quiz-settings"
+          className="quiz-settings-overlay"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -829,7 +829,7 @@ function Setup({ settings, roster, onChangeSetting, onChangeRoster, onStart }) {
           onClick={() => setSettingsOpen(false)}
         >
           <motion.div
-            className="settings-window quiz-settings-window"
+            className="quiz-settings-window"
             initial={{ y: 30, opacity: 0, scale: 0.98 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 14, opacity: 0, scale: 0.98 }}
