@@ -424,7 +424,6 @@
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
   overflow-x: hidden;
   overflow-y: auto;
-  height: calc(var(--quiz-vh) - var(--quiz-safe-top) - var(--quiz-safe-bottom) - 20px);
   max-height: calc(var(--quiz-vh) - var(--quiz-safe-top) - var(--quiz-safe-bottom) - 20px);
   will-change: transform, opacity;
   transform: translateZ(0);
@@ -816,7 +815,6 @@
   .quiz-settings-window {
     width: min(600px, calc(100% - 10px));
     max-width: min(600px, calc(100% - 10px));
-    height: calc(var(--quiz-vh) - var(--quiz-safe-top) - var(--quiz-safe-bottom));
     max-height: calc(var(--quiz-vh) - var(--quiz-safe-top) - var(--quiz-safe-bottom));
     border-radius: 18px;
     padding: 14px 12px 16px;
