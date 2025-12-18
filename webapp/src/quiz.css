@@ -17,7 +17,8 @@
 
 .quiz {
   position: relative;
-  --quiz-safe-top: max(var(--safe-top, 16px), env(safe-area-inset-top, 0px), 16px);
+  --quiz-safe-top-extra: 12px;
+  --quiz-safe-top: calc(max(var(--safe-top, 16px), env(safe-area-inset-top, 0px), 16px) + var(--quiz-safe-top-extra));
   --quiz-safe-bottom: max(var(--safe-bottom, 12px), env(safe-area-inset-bottom, 0px), 12px);
   --quiz-safe-left: max(var(--safe-left, 0px), env(safe-area-inset-left, 0px));
   --quiz-safe-right: max(var(--safe-right, 0px), env(safe-area-inset-right, 0px));

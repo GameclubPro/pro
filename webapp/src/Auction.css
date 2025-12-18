@@ -24,7 +24,8 @@
   --radius-md: 14px;
   --radius-sm: 10px;
 
-  --auction-safe-top: max(var(--safe-top, 16px), env(safe-area-inset-top, 0px), 16px);
+  --auction-safe-top-extra: 12px;
+  --auction-safe-top: calc(max(var(--safe-top, 16px), env(safe-area-inset-top, 0px), 16px) + var(--auction-safe-top-extra));
   --auction-safe-bottom: max(var(--safe-bottom, 12px), env(safe-area-inset-bottom, 0px), 12px);
   --auction-vh: var(--tg-vh, 100svh);
 

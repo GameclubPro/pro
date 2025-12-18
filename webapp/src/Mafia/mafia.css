@@ -67,8 +67,9 @@
 
   --mf-vh: var(--tg-vh, 100svh); --mf-vw: 1dvw;
   --mf-pad-y: var(--app-pad-y, 12px);
+  --mf-safe-top-extra: 12px;
   /* Safe area + общий app padding (как на главной) */
-  --mf-safe-top: calc(max(env(safe-area-inset-top, 0px), var(--safe-top, 20px), 20px) + var(--mf-pad-y));
+  --mf-safe-top: calc(max(env(safe-area-inset-top, 0px), var(--safe-top, 20px), 20px) + var(--mf-pad-y) + var(--mf-safe-top-extra));
   --mf-safe-bottom: calc(max(var(--safe-bottom, 0px), env(safe-area-inset-bottom, 0px), 12px) + var(--mf-pad-y));
 
   --mf-center-min: 64px;
