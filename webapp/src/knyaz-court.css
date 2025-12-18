@@ -17,6 +17,8 @@
   --ui-top-min: max(160px, calc(var(--tg-content-safe-area-inset-top, 0px) + 72px));
   --ui-top-extra: max(0px, calc(var(--ui-top-min) - (var(--app-pad-y) + var(--safe-top))));
   --kc-vh: var(--tg-vh, 100svh);
+  --kc-safe-top: max(var(--app-inset-top), calc(var(--tg-content-safe-area-inset-top, 0px) + 72px));
+  --kc-safe-bottom: max(var(--app-inset-bottom), calc(var(--tg-content-safe-area-inset-bottom, 0px) + 12px));
   position: relative;
   min-height: var(--kc-vh);
   color: #f6f0e9;
@@ -45,7 +47,8 @@
 
 .kc-shell.pt-safe {
   /* Резерв под фиксированный нижний meter bar */
-  padding-bottom: calc(var(--app-inset-bottom) + 36px);
+  padding-top: var(--kc-safe-top);
+  padding-bottom: calc(var(--kc-safe-bottom) + 36px);
 }
 
 .kc-root h1,
@@ -103,7 +106,7 @@
 
 .kc-meter-row {
   position: fixed;
-  bottom: calc(var(--app-inset-bottom) + 8px);
+  bottom: calc(var(--kc-safe-bottom) + 8px);
   left: 0;
   right: 0;
   width: 100%;
@@ -197,7 +200,7 @@
 
 .kc-council-pill {
   position: fixed;
-  top: calc(var(--safe-top) + 120px);
+  top: calc(var(--kc-safe-top) + 16px);
   right: var(--app-inset-right);
   display: grid;
   place-items: center;
@@ -232,7 +235,7 @@
 .kc-council-panel {
   position: absolute;
   right: var(--app-inset-right);
-  bottom: var(--app-inset-bottom);
+  bottom: var(--kc-safe-bottom);
   width: min(340px, calc(100% - (var(--app-inset-left) + var(--app-inset-right))));
   background: linear-gradient(180deg, rgba(22, 18, 14, 0.92), rgba(15, 12, 11, 0.95));
   border: 1px solid rgba(255, 255, 255, 0.12);
