@@ -411,8 +411,8 @@
 }
 .quiz-settings-window {
   position: relative;
-  width: calc(100vw - var(--quiz-safe-left) - var(--quiz-safe-right));
-  max-width: 600px;
+  width: min(600px, calc(100% - 24px));
+  max-width: min(600px, calc(100% - 24px));
   border-radius: 18px;
   padding: 16px;
   background:
@@ -814,8 +814,8 @@
     padding: calc(8px + var(--quiz-safe-top)) var(--quiz-safe-left) calc(8px + var(--quiz-safe-bottom)) var(--quiz-safe-right);
   }
   .quiz-settings-window {
-    width: calc(100vw - var(--quiz-safe-left) - var(--quiz-safe-right));
-    max-width: 600px;
+    width: min(600px, calc(100% - 16px));
+    max-width: min(600px, calc(100% - 16px));
     height: calc(var(--quiz-vh) - var(--quiz-safe-top) - var(--quiz-safe-bottom));
     max-height: calc(var(--quiz-vh) - var(--quiz-safe-top) - var(--quiz-safe-bottom));
     border-radius: 18px;
