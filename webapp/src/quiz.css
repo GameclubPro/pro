@@ -411,7 +411,8 @@
 }
 .quiz-settings-window.settings-window {
   position: relative;
-  width: calc(100vw - var(--quiz-safe-left) - var(--quiz-safe-right));
+  width: min(540px, calc(100vw - var(--quiz-safe-left) - var(--quiz-safe-right) - 24px));
+  max-width: min(540px, calc(100vw - var(--quiz-safe-left) - var(--quiz-safe-right) - 24px));
   border-radius: 18px;
   padding: 16px;
   background:
@@ -813,8 +814,8 @@
     padding: calc(8px + var(--quiz-safe-top)) var(--quiz-safe-left) calc(8px + var(--quiz-safe-bottom)) var(--quiz-safe-right);
   }
   .quiz-settings-window.settings-window {
-    width: calc(100vw - var(--quiz-safe-left) - var(--quiz-safe-right));
-    max-width: none;
+    width: min(520px, calc(100vw - var(--quiz-safe-left) - var(--quiz-safe-right) - 16px));
+    max-width: min(520px, calc(100vw - var(--quiz-safe-left) - var(--quiz-safe-right) - 16px));
     height: calc(var(--quiz-vh) - var(--quiz-safe-top) - var(--quiz-safe-bottom));
     max-height: calc(var(--quiz-vh) - var(--quiz-safe-top) - var(--quiz-safe-bottom));
     border-radius: 18px;
