@@ -1155,7 +1155,7 @@ textarea {
   pointer-events: auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 10px;
   padding: 10px 12px;
   border-radius: var(--radius-lg);
@@ -1617,6 +1617,13 @@ textarea {
   overflow: hidden;
 }
 
+.bid-input-field {
+  grid-area: amount;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .bid-input-row:focus-within {
   border-color: rgba(56, 189, 248, 0.75);
   box-shadow:
@@ -1625,11 +1632,11 @@ textarea {
 }
 
 .text-input--split {
-  grid-area: amount;
+  width: 100%;
   min-height: 54px;
   border: 1px solid color-mix(in srgb, var(--accent-main) 35%, transparent);
   border-radius: var(--radius-md);
-  padding: 12px 16px;
+  padding: 12px 44px;
   background: linear-gradient(
     160deg,
     rgba(15, 23, 42, 0.98),
@@ -1640,7 +1647,8 @@ textarea {
     0 10px 22px rgba(2, 6, 23, 0.5);
   font-weight: 800;
   letter-spacing: 0.04em;
-  text-align: right;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .text-input--split:focus {
@@ -1655,7 +1663,16 @@ textarea {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 600;
-  text-align: left;
+  text-align: center;
+}
+
+.text-input__suffix {
+  position: absolute;
+  right: 16px;
+  font-size: 16px;
+  color: color-mix(in srgb, var(--text) 70%, var(--muted));
+  opacity: 0.75;
+  pointer-events: none;
 }
 
 .bid-submit-split {

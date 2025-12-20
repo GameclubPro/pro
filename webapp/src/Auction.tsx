@@ -297,6 +297,10 @@ export default function Auction({
     }
     return `База ${moneyFormatter.format(baseBid)}💰`;
   }, [baseBid, leadingBid?.amount, leadingPlayerName, moneyFormatter]);
+  const activeBidFloor = useMemo(
+    () => Math.max(baseBid, leadingBid?.amount ?? 0),
+    [baseBid, leadingBid?.amount]
+  );
 
   const formatPresetLabel = useCallback(
     (value: number) => {
@@ -321,6 +325,10 @@ export default function Auction({
       })),
     [busyBid, formatPresetLabel, isBiddingLocked, myBalance, setBidRelative]
   );
+
+  useEffect(() => {
+    setMyBid("");
+  }, [currentSlot?.index]);
 
   const countdownStepMs = useMemo(() => {
     const raw = Number(auctionState?.countdownStepMs);
@@ -1376,7 +1384,7 @@ export default function Auction({
     setMyBid((prev) => {
       const numericPrev = Number(String(prev).replace(/\s/g, "")) || 0;
       const baseline =
-        numericPrev > 0 ? numericPrev : baseBid > 0 ? baseBid : 0;
+        numericPrev > 0 ? numericPrev : activeBidFloor > 0 ? activeBidFloor : 0;
       const max = myBalance ?? initialBank;
       const next = delta === 0 ? baseline : baseline + delta;
       return String(clamp(next, 0, max));
@@ -1523,8 +1531,10 @@ export default function Auction({
       pushError("Ставка превышает ваш баланс");
       return;
     }
-    if (amount > 0 && baseBid > 0 && amount < baseBid) {
-      pushError(`Минимальная ставка ${moneyFormatter.format(baseBid)}💰`);
+    if (amount > 0 && activeBidFloor > 0 && amount < activeBidFloor) {
+      pushError(
+        `Минимальная ставка ${moneyFormatter.format(activeBidFloor)}💰`
+      );
       return;
     }
 
@@ -2260,9 +2270,6 @@ export default function Auction({
 
   const renderBidDock = () => {
     if (!showGame) return null;
-    const balanceLabel =
-      myBalance != null ? `${moneyFormatter.format(myBalance)}💰` : "--";
-
     return (
       <div
         className={["bid-dock", bidPanelOpen ? "bid-dock--open" : ""]
@@ -2270,10 +2277,6 @@ export default function Auction({
           .join(" ")}
       >
         <div className="bid-dock__bar">
-          <div className="bid-dock__info">
-            <span className="bid-dock__label">Баланс</span>
-            <span className="bid-dock__value">{balanceLabel}</span>
-          </div>
           <button
             type="button"
             className="btn bid-dock__cta"
@@ -2307,13 +2310,20 @@ export default function Auction({
               )}
 
               <div className="bid-input-row">
-                <input
-                  className="text-input text-input--split"
-                  inputMode="numeric"
-                  placeholder="Введите ставку"
-                  value={myBid}
-                  onChange={(e) => setMyBid(e.target.value.replace(/[^\d]/g, ""))}
-                />
+                <div className="bid-input-field">
+                  <input
+                    className="text-input text-input--split"
+                    inputMode="numeric"
+                    placeholder="Введите ставку"
+                    value={myBid}
+                    onChange={(e) =>
+                      setMyBid(e.target.value.replace(/[^\d]/g, ""))
+                    }
+                  />
+                  <span className="text-input__suffix" aria-hidden="true">
+                    💰
+                  </span>
+                </div>
                 <div className="quick-bids" aria-label="Быстрые ставки">
                   {quickBidButtons.map((btn) => (
                     <button
