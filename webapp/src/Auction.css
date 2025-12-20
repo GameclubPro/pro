@@ -1909,11 +1909,17 @@ textarea {
 
 .toast-stack {
   position: fixed;
-  top: calc(8px + var(--safe-top, env(safe-area-inset-top, 0px)));
+  top: calc(
+    8px + max(
+      env(safe-area-inset-top, 0px),
+      var(--safe-top-env, 0px),
+      var(--tg-content-safe-area-inset-top, 0px)
+    )
+  );
   left: 0;
   right: 0;
   bottom: auto;
-  z-index: 40;
+  z-index: 140;
   display: flex;
   flex-direction: column;
   align-items: center;

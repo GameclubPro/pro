@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Confetti from "react-canvas-confetti";
 import io from "socket.io-client";
 import regularLootboxImageUrl from "./assets/auction/RegularLootBox.png";
@@ -2955,7 +2956,7 @@ export default function Auction({
 
   const renderToastStack = () => {
     if (!toastStack.length) return null;
-    return (
+    const content = (
       <div className="toast-stack" role="status" aria-live="polite">
         <AnimatePresence initial={false}>
           {toastStack.map((item) => (
@@ -2986,6 +2987,9 @@ export default function Auction({
         </AnimatePresence>
       </div>
     );
+    const portalTarget =
+      typeof document !== "undefined" ? document.body : null;
+    return portalTarget ? createPortal(content, portalTarget) : content;
   };
 
   const appClassName = [
