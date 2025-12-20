@@ -45,13 +45,17 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     '📱 Прототип смартфона будущего',
   ];
 
-  const LOOTBOX_ITEMS = [
-    'Обычный лутбокс',
-    '🎁 Средний лутбокс',
-    '🎁 Большой лутбокс',
-    '🎁 Мистический лутбокс',
+  const LOOTBOX_RARITIES = [
+    { code: 'F', label: 'Обычный' },
+    { code: 'E', label: 'Необычный' },
+    { code: 'D', label: 'Редкий' },
+    { code: 'C', label: 'Эпический' },
+    { code: 'B', label: 'Легендарный' },
+    { code: 'A', label: 'Мифический' },
+    { code: 'S', label: 'Божественный' },
   ];
 
+  const REGULAR_LOOTBOX_RARITY = 'F';
   const REGULAR_LOOTBOX_NAME_HINT = 'Обычный лутбокс';
 
   const LOOTBOX_PRIZES = Object.freeze({
@@ -83,7 +87,24 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     return safe[randomInt(0, safe.length)];
   }
 
+  function normalizeLootboxRarity(value) {
+    const code = String(value || '').trim().toUpperCase();
+    const found = LOOTBOX_RARITIES.find((r) => r.code === code);
+    return found ? found.code : null;
+  }
+
+  function lootboxRarityLabel(code) {
+    const found = LOOTBOX_RARITIES.find((r) => r.code === code);
+    return found ? found.label : 'Обычный';
+  }
+
+  function pickLootboxRarity() {
+    return LOOTBOX_RARITIES[randomInt(0, LOOTBOX_RARITIES.length)];
+  }
+
   function isRegularLootbox(slot) {
+    const rarity = normalizeLootboxRarity(slot?.rarity);
+    if (rarity) return rarity === REGULAR_LOOTBOX_RARITY;
     const name = String(slot?.name || '');
     return name.includes(REGULAR_LOOTBOX_NAME_HINT);
   }
@@ -146,10 +167,12 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     for (let i = 0; i < max; i++) {
       const isLoot = Math.random() < 0.3;
       if (isLoot) {
+        const rarity = pickLootboxRarity();
         slots.push({
           index: i,
           type: 'lootbox',
-          name: LOOTBOX_ITEMS[randomInt(0, LOOTBOX_ITEMS.length)],
+          rarity: rarity.code,
+          name: `${rarity.label} лутбокс`,
           basePrice: randomInt(50_000, 200_001),
         });
       } else {
@@ -383,6 +406,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         index: s.index,
         type: s.type,
         name: s.name,
+        rarity: s.rarity || null,
         basePrice: s.basePrice,
       };
     }
@@ -424,6 +448,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         index: h.index,
         type: h.type,
         name: h.name,
+        rarity: h.rarity || null,
         winnerPlayerId: h.winnerPlayerId,
         winBid: h.winBid,
         effect: h.effect || null,
@@ -540,6 +565,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       index: slotIndex,
       type: slot.type,
       name: slot.name,
+      rarity: slot.rarity || null,
       winnerPlayerId: winnerId || null,
       winBid: maxBid,
       effect,
@@ -608,14 +634,25 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         phase: 'in_progress',
         rules,
         slots: Array.isArray(preset.slots) && preset.slots.length
-          ? preset.slots.map((s, i) => ({
-              index: i,
-              type: s.type === 'lootbox' ? 'lootbox' : 'lot',
-              name: String(s.name || `Лот ${i + 1}`),
-              basePrice: Number.isFinite(Number(s.basePrice))
-                ? Math.max(0, Math.floor(Number(s.basePrice)))
-                : randomInt(80_000, 350_001),
-            }))
+          ? preset.slots.map((s, i) => {
+              const type = s.type === 'lootbox' ? 'lootbox' : 'lot';
+              const rawName = String(s.name || '').trim();
+              const rarity = type === 'lootbox' ? normalizeLootboxRarity(s.rarity) : null;
+              const name =
+                rawName ||
+                (type === 'lootbox'
+                  ? `${lootboxRarityLabel(rarity || REGULAR_LOOTBOX_RARITY)} лутбокс`
+                  : `Лот ${i + 1}`);
+              return {
+                index: i,
+                type,
+                name,
+                rarity,
+                basePrice: Number.isFinite(Number(s.basePrice))
+                  ? Math.max(0, Math.floor(Number(s.basePrice)))
+                  : randomInt(80_000, 350_001),
+              };
+            })
           : createSlots(rules.maxSlots || DEFAULT_RULES.maxSlots),
         currentIndex: 0,
         slotsPlayed: 0,
@@ -753,6 +790,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
           index: i,
           type: s.type === 'lootbox' ? 'lootbox' : 'lot',
           name: String(s.name || `Lot ${i + 1}`),
+          rarity: s.rarity || null,
           basePrice: Number.isFinite(Number(s.basePrice))
             ? Math.max(0, Math.floor(Number(s.basePrice)))
             : undefined,
@@ -841,13 +879,24 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     const safeSlots = Array.isArray(payload.slots)
       ? payload.slots
           .slice(0, 60)
-          .map((s) => ({
-            type: s.type === 'lootbox' ? 'lootbox' : 'lot',
-            name: String(s.name || '').slice(0, 120) || 'Лот',
-            basePrice: Number.isFinite(Number(s.basePrice))
-              ? Math.max(0, Math.floor(Number(s.basePrice)))
-              : undefined,
-          }))
+          .map((s) => {
+            const type = s.type === 'lootbox' ? 'lootbox' : 'lot';
+            const rawName = String(s.name || '').slice(0, 120).trim();
+            const rarity = type === 'lootbox' ? normalizeLootboxRarity(s.rarity) : null;
+            const name =
+              rawName ||
+              (type === 'lootbox'
+                ? `${lootboxRarityLabel(rarity || REGULAR_LOOTBOX_RARITY)} лутбокс`
+                : 'Лот');
+            return {
+              type,
+              name,
+              rarity,
+              basePrice: Number.isFinite(Number(s.basePrice))
+                ? Math.max(0, Math.floor(Number(s.basePrice)))
+                : undefined,
+            };
+          })
       : [];
 
     presets.set(room.id, {

@@ -3,7 +3,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Confetti from "react-canvas-confetti";
 import io from "socket.io-client";
-import regularLootboxImageUrl from "./assets/auction/RegularLootBox.png";
+import lootboxFImageUrl from "./assets/auction/F1.png";
+import lootboxEImageUrl from "./assets/auction/E1.png";
+import lootboxDImageUrl from "./assets/auction/D1.png";
+import lootboxCImageUrl from "./assets/auction/C1.png";
+import lootboxBImageUrl from "./assets/auction/B1.png";
+import lootboxAImageUrl from "./assets/auction/A1.png";
+import lootboxSImageUrl from "./assets/auction/S1.png";
 import "./Auction.css";
 
 const INITIAL_BANK = 1_000_000;
@@ -17,7 +23,6 @@ const MAX_BUDGET = 5_000_000;
 const BUDGET_STEP = 50_000;
 const COUNTDOWN_STEP_MS = 4_000;
 const COUNTDOWN_START_FROM = 3;
-const REGULAR_LOOTBOX_NAME_HINT = "Обычный лутбокс";
 const LOOTBOX_FALLBACK_IMAGE_URL = "/lootbox.svg";
 const LOOTBOX_SHATTER_SIZE = 240;
 const LOOTBOX_SHATTER_MIN_PIECES = 20;
@@ -34,6 +39,27 @@ const PHASE_EMOJI: Record<string, string> = {
   finished: "🏁",
 };
 
+type LootboxRarityKey = "F" | "E" | "D" | "C" | "B" | "A" | "S";
+
+const LOOTBOX_RARITY_META: Record<LootboxRarityKey, { label: string; image: string }> = {
+  F: { label: "Обычный", image: lootboxFImageUrl },
+  E: { label: "Необычный", image: lootboxEImageUrl },
+  D: { label: "Редкий", image: lootboxDImageUrl },
+  C: { label: "Эпический", image: lootboxCImageUrl },
+  B: { label: "Легендарный", image: lootboxBImageUrl },
+  A: { label: "Мифический", image: lootboxAImageUrl },
+  S: { label: "Божественный", image: lootboxSImageUrl },
+};
+
+const LOOTBOX_RARITY_LABELS = (
+  Object.entries(LOOTBOX_RARITY_META) as [
+    LootboxRarityKey,
+    { label: string; image: string },
+  ][]
+)
+  .map(([key, value]) => ({ key, label: value.label.toLowerCase() }))
+  .sort((a, b) => b.label.length - a.label.length);
+
 function normalizeCode(value = "") {
   return value.toUpperCase().replace(CODE_ALPHABET_RE, "").slice(0, 6);
 }
@@ -48,6 +74,33 @@ function splitEmojiLabel(label: string) {
   const emoji = match?.[0] || "";
   const text = emoji ? raw.replace(emoji, "").trim() : raw;
   return { emoji, text, raw };
+}
+
+function normalizeLootboxRarity(value?: string | null): LootboxRarityKey | null {
+  const code = String(value || "").trim().toUpperCase();
+  const key = code as LootboxRarityKey;
+  return LOOTBOX_RARITY_META[key] ? key : null;
+}
+
+function inferLootboxRarityFromName(name: string): LootboxRarityKey | null {
+  const lower = String(name || "").toLowerCase();
+  for (const rarity of LOOTBOX_RARITY_LABELS) {
+    if (lower.includes(rarity.label)) return rarity.key;
+  }
+  return null;
+}
+
+function getLootboxRarity(slot: any): LootboxRarityKey | null {
+  if (!slot || slot.type !== "lootbox") return null;
+  return (
+    normalizeLootboxRarity(slot.rarity) ||
+    inferLootboxRarityFromName(String(slot.name || ""))
+  );
+}
+
+function getLootboxImageUrl(rarity: LootboxRarityKey | null) {
+  if (!rarity) return LOOTBOX_FALLBACK_IMAGE_URL;
+  return LOOTBOX_RARITY_META[rarity]?.image || LOOTBOX_FALLBACK_IMAGE_URL;
 }
 
 function hashStringToSeed(value = "") {
@@ -123,6 +176,7 @@ type LootboxRevealEvent = {
   id: string;
   slotIndex: number;
   slotName: string;
+  slotRarity?: LootboxRarityKey | null;
   winnerPlayerId: number;
   winBid: number;
   effect: LootboxEffect;
@@ -285,11 +339,16 @@ export default function Auction({
     return currentSlot?.type === "lootbox" ? "🎁" : "🏆";
   }, [currentSlot?.name, currentSlot?.type]);
 
-  const isRegularLootboxSlot = useMemo(() => {
-    if (currentSlot?.type !== "lootbox") return false;
-    const name = String(currentSlot?.name || "");
-    return name.includes(REGULAR_LOOTBOX_NAME_HINT);
-  }, [currentSlot?.name, currentSlot?.type]);
+  const currentSlotRarity = useMemo(
+    () => getLootboxRarity(currentSlot),
+    [currentSlot?.name, currentSlot?.rarity, currentSlot?.type]
+  );
+
+  const currentLootboxImageUrl = useMemo(
+    () => getLootboxImageUrl(currentSlotRarity),
+    [currentSlotRarity]
+  );
+
 
   const heroBidText = useMemo(() => {
     if (leadingBid?.amount != null) {
@@ -823,7 +882,8 @@ export default function Auction({
     const latest = safeHistory[len - 1];
     if (!latest || latest.type !== "lootbox") return;
     const slotName = String(latest.name || "");
-    if (!slotName.includes(REGULAR_LOOTBOX_NAME_HINT)) return;
+    const slotRarity = getLootboxRarity(latest);
+    if (slotRarity !== "F") return;
     const winnerPlayerId = latest.winnerPlayerId;
     const effect = latest.effect;
     if (winnerPlayerId == null || !effect) return;
@@ -832,6 +892,7 @@ export default function Auction({
       id: `${latest.index}-${winnerPlayerId}-${Date.now()}`,
       slotIndex: latest.index,
       slotName: slotName || "Лутбокс",
+      slotRarity,
       winnerPlayerId,
       winBid: Number(latest.winBid || 0) || 0,
       effect,
@@ -2126,10 +2187,10 @@ export default function Auction({
               )}
             </AnimatePresence>
             <div className="lot-hero__emoji" aria-hidden="true">
-              {isRegularLootboxSlot ? (
+              {currentSlot?.type === "lootbox" ? (
                 <img
                   className="lot-hero__emoji-img"
-                  src={regularLootboxImageUrl}
+                  src={currentLootboxImageUrl}
                   alt=""
                   draggable={false}
                 />
@@ -2641,10 +2702,9 @@ export default function Auction({
     const deltaAbs = Math.abs(Number(lootboxReveal.effect?.delta || 0));
     const deltaText = moneyFormatter.format(deltaAbs);
 
-    const isRegularLootbox = lootboxReveal.slotName.includes(REGULAR_LOOTBOX_NAME_HINT);
-    const lootboxImageUrl = isRegularLootbox
-      ? regularLootboxImageUrl
-      : LOOTBOX_FALLBACK_IMAGE_URL;
+    const revealRarity =
+      lootboxReveal.slotRarity ?? inferLootboxRarityFromName(lootboxReveal.slotName);
+    const lootboxImageUrl = getLootboxImageUrl(revealRarity || null);
 
     const toneClass =
       effectKind === "money"
