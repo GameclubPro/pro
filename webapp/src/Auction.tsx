@@ -2278,6 +2278,14 @@ export default function Auction({
           .filter(Boolean)
           .join(" ")}
       >
+        {bidPanelOpen && (
+          <button
+            type="button"
+            className="bid-dock__backdrop"
+            onClick={() => setBidPanelOpen(false)}
+            aria-label="Закрыть панель ставок"
+          />
+        )}
         <div className="bid-dock__bar">
           <button
             type="button"

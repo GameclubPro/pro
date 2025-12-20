@@ -1151,8 +1151,19 @@ textarea {
   pointer-events: none;
 }
 
+.bid-dock__backdrop {
+  position: fixed;
+  inset: 0;
+  border: none;
+  background: rgba(2, 6, 23, 0.22);
+  pointer-events: auto;
+  z-index: 0;
+}
+
 .bid-dock__bar {
   pointer-events: auto;
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1215,6 +1226,8 @@ textarea {
 
 .bid-dock__panel {
   pointer-events: auto;
+  position: relative;
+  z-index: 1;
   max-height: 60vh;
   overflow-y: auto;
   max-width: 520px;
