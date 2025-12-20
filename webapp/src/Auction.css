@@ -1272,11 +1272,14 @@ textarea {
 }
 
 .lot-hero__emoji-wrap {
+  --hero-ring-size: clamp(160px, 44vw, 200px);
+  --hero-image-size: calc(var(--hero-ring-size) - 24px);
+  --hero-emoji-size: calc(var(--hero-ring-size) - 88px);
   position: relative;
   display: grid;
   place-items: center;
   width: 100%;
-  min-height: 200px;
+  min-height: calc(var(--hero-ring-size) + 16px);
   isolation: isolate;
   overflow: hidden;
   border-radius: var(--radius-md);
@@ -1302,8 +1305,8 @@ textarea {
   position: absolute;
   inset: 50% auto auto 50%;
   transform: translate(-50%, -50%);
-  width: 180px;
-  height: 180px;
+  width: var(--hero-ring-size);
+  height: var(--hero-ring-size);
   border-radius: 50%;
   background: conic-gradient(
     rgba(248, 113, 113, 0.85) calc(var(--ring-progress, 0) * 1turn),
@@ -1369,7 +1372,11 @@ textarea {
 }
 
 .lot-hero__emoji {
-  font-size: 72px;
+  width: var(--hero-ring-size);
+  height: var(--hero-ring-size);
+  display: grid;
+  place-items: center;
+  font-size: var(--hero-emoji-size);
   line-height: 1;
   filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.4));
   position: relative;
@@ -1377,8 +1384,10 @@ textarea {
 }
 
 .lot-hero__emoji-img {
-  width: 170px;
-  height: 170px;
+  width: var(--hero-image-size);
+  height: var(--hero-image-size);
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
   display: block;
   user-select: none;
@@ -1998,19 +2007,6 @@ button:active:not(:disabled) {
     gap: 6px;
     align-items: center;
     justify-content: center;
-  }
-
-  .lot-hero__emoji {
-    font-size: 96px;
-  }
-
-  .lot-hero__ring {
-    width: 150px;
-    height: 150px;
-  }
-
-  .lot-hero__emoji-wrap {
-    min-height: 150px;
   }
 
   .bid-stats {
