@@ -1909,9 +1909,10 @@ textarea {
 
 .toast-stack {
   position: fixed;
-  top: calc(8px + var(--app-inset-top));
+  top: calc(8px + var(--safe-top, env(safe-area-inset-top, 0px)));
   left: 0;
   right: 0;
+  bottom: auto;
   z-index: 40;
   display: flex;
   flex-direction: column;
