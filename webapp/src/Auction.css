@@ -1610,10 +1610,10 @@ textarea {
 .bid-input-row {
   margin-top: 2px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(140px, 0.78fr);
+  grid-template-columns: 1fr;
   grid-template-areas:
-    "amount action"
-    "quick quick";
+    "amount"
+    "quick";
   gap: 0;
   align-items: stretch;
   border: 1px solid var(--border-subtle);
@@ -1634,7 +1634,6 @@ textarea {
   grid-area: amount;
   min-height: 52px;
   border: none;
-  border-right: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 0;
   padding: 12px 16px;
   background: rgba(255, 255, 255, 0.02);
@@ -1643,19 +1642,14 @@ textarea {
 
 .text-input--split:focus {
   box-shadow: none;
-  border-right-color: rgba(56, 189, 248, 0.6);
 }
 
 .bid-submit-split {
-  grid-area: action;
   position: relative;
   width: 100%;
   min-height: 52px;
-  border-radius: 0 var(--radius-md) var(--radius-md) 0;
-  border-left: 1px solid rgba(2, 6, 23, 0.35);
-  border-right: none;
-  border-top: none;
-  border-bottom: none;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.55);
   background: linear-gradient(135deg, #38bdf8, #22c55e);
   color: #04131b;
   font-weight: 900;

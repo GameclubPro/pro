@@ -1494,11 +1494,6 @@ export default function Auction({
     pushToast,
   ]);
 
-  function sendPass() {
-    setMyBid("");
-    sendBid(0);
-  }
-
   function sendBid(forcedAmount?: number | null) {
     if (!socket || !room || !selfInfo) return;
     if (!auctionState || auctionState.phase !== "in_progress") return;
@@ -2322,17 +2317,6 @@ export default function Auction({
                   value={myBid}
                   onChange={(e) => setMyBid(e.target.value.replace(/[^\d]/g, ""))}
                 />
-                <button
-                  type="button"
-                  className="btn bid-submit-split"
-                  onClick={() => sendBid()}
-                  disabled={busyBid || myBalance == null || isBiddingLocked}
-                >
-                  <span className="bid-submit-split__label">
-                    {busyBid ? "..." : "Ставка"}
-                  </span>
-                  <span className="bid-submit-split__glow" aria-hidden />
-                </button>
                 <div className="quick-bids" aria-label="Быстрые ставки">
                   {quickBidButtons.map((btn) => (
                     <button
@@ -2351,14 +2335,6 @@ export default function Auction({
               <div className="bid-actions bid-actions--secondary">
                 <button
                   type="button"
-                  className="btn bid-action bid-action--pass"
-                  onClick={sendPass}
-                  disabled={isBiddingLocked || busyBid}
-                >
-                  Пас
-                </button>
-                <button
-                  type="button"
                   className="btn bid-action bid-action--allin"
                   onClick={() => sendBid(myBalance || 0)}
                   disabled={
@@ -2369,6 +2345,17 @@ export default function Auction({
                   }
                 >
                   Вабанк
+                </button>
+                <button
+                  type="button"
+                  className="btn bid-submit-split"
+                  onClick={() => sendBid()}
+                  disabled={busyBid || myBalance == null || isBiddingLocked}
+                >
+                  <span className="bid-submit-split__label">
+                    {busyBid ? "..." : "Ставка"}
+                  </span>
+                  <span className="bid-submit-split__glow" aria-hidden />
                 </button>
               </div>
 
