@@ -160,6 +160,7 @@ export default function Auction({
   const [socket, setSocket] = useState<any>(null);
   const socketRef = useRef<any>(null);
   const [connecting, setConnecting] = useState(false);
+  const tg = typeof window !== "undefined" ? window?.Telegram?.WebApp : undefined;
 
   const [room, setRoom] = useState<any>(null);
   const [players, setPlayers] = useState<any[]>([]);
@@ -178,6 +179,7 @@ export default function Auction({
   const [busyBid, setBusyBid] = useState(false);
   const [myBid, setMyBid] = useState("");
   const [bidPanelOpen, setBidPanelOpen] = useState(false);
+  const [playersTab, setPlayersTab] = useState<"all" | "leaders" | "mine">("all");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSlots, setSettingsSlots] = useState<number>(30);
   const [settingsBudget, setSettingsBudget] = useState<number>(INITIAL_BANK);
@@ -201,6 +203,7 @@ export default function Auction({
   const lastSubscriptionSocketIdRef = useRef<string | null>(null);
   const progressSentRef = useRef(false);
   const lastBidAtRef = useRef(0);
+  const lastLeadingPlayerRef = useRef<number | null>(null);
   const lootboxHistoryLenRef = useRef<number | null>(null);
   const lootboxConfettiFiredRef = useRef<string | null>(null);
   const confettiRef = useRef<any>(null);
@@ -346,6 +349,37 @@ export default function Auction({
       ? Math.min(countdownStartFrom, countdownLeft)
       : null;
   const countdownStepSec = countdownStepMs / 1000;
+  const timeLeftMs = useMemo(() => {
+    if (paused) {
+      const ms = pauseLeftRef.current ?? (auctionState?.timeLeftMs ?? null);
+      return typeof ms === "number" && Number.isFinite(ms) ? Math.max(0, ms) : null;
+    }
+    if (deadlineAtRef.current != null) {
+      return Math.max(0, deadlineAtRef.current - nowTick);
+    }
+    const ms = auctionState?.timeLeftMs;
+    return typeof ms === "number" && Number.isFinite(ms) ? Math.max(0, ms) : null;
+  }, [auctionState?.timeLeftMs, nowTick, paused]);
+
+  const timeLeftLabel = useMemo(() => {
+    if (timeLeftMs == null) return "--:--";
+    const totalSec = Math.max(0, Math.ceil(timeLeftMs / 1000));
+    const minutes = Math.floor(totalSec / 60);
+    const seconds = totalSec % 60;
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  }, [timeLeftMs]);
+
+  const isUrgent = !paused && countdownLeft != null && countdownLeft <= 5;
+  const isCritical =
+    !paused &&
+    countdownLeft != null &&
+    countdownLeft <= Math.min(3, countdownStartFrom);
+  const urgencyRatio = useMemo(() => {
+    if (!isUrgent || countdownLeft == null) return 0;
+    const base = Math.max(1, countdownStartFrom);
+    const clamped = Math.min(countdownLeft, base);
+    return Math.min(1, Math.max(0, (base - clamped + 1) / base));
+  }, [isUrgent, countdownLeft, countdownStartFrom]);
   const slotMax = useMemo(() => {
     const raw =
       auctionState?.maxSlots ??
@@ -462,6 +496,33 @@ export default function Auction({
     });
     return map;
   }, [auctionState?.netWorths, safePlayers, balances, basketTotals]);
+
+  const leadersByBids = useMemo(() => {
+    const withBids = safePlayers.filter((p) => {
+      const bid = currentBids[p.id] ?? 0;
+      return typeof bid === "number" && bid > 0;
+    });
+    return withBids
+      .slice()
+      .sort((a, b) => (currentBids[b.id] ?? 0) - (currentBids[a.id] ?? 0));
+  }, [safePlayers, currentBids]);
+
+  const leadersList = useMemo(() => {
+    const base = leadersByBids.length
+      ? leadersByBids
+      : safePlayers.slice().sort((a, b) => (netWorths[b.id] ?? 0) - (netWorths[a.id] ?? 0));
+    return base.slice(0, Math.min(3, base.length));
+  }, [leadersByBids, safePlayers, netWorths]);
+
+  const filteredPlayers = useMemo(() => {
+    if (playersTab === "leaders") return leadersList;
+    if (playersTab === "mine") {
+      return myPlayerId != null
+        ? safePlayers.filter((p) => p.id === myPlayerId)
+        : EMPTY_ARRAY;
+    }
+    return safePlayers;
+  }, [leadersList, myPlayerId, playersTab, safePlayers]);
 
   const currentPlayer = useMemo(
     () => safePlayers.find((p) => p.id === myPlayerId) || null,
@@ -769,7 +830,8 @@ export default function Auction({
     if (lootboxConfettiFiredRef.current === lootboxReveal.id) return;
     lootboxConfettiFiredRef.current = lootboxReveal.id;
     fireLootboxConfetti(String(lootboxReveal.effect?.kind || ""));
-  }, [fireLootboxConfetti, lootboxReveal, lootboxStage]);
+    tg?.HapticFeedback?.notificationOccurred?.("success");
+  }, [fireLootboxConfetti, lootboxReveal, lootboxStage, tg]);
 
   // ---------- TOАSTS ----------
 
@@ -891,6 +953,13 @@ export default function Auction({
   }, [phase, leaveRoom, goBack]);
 
   useEffect(() => {
+    if (phase !== "in_progress") {
+      setPlayersTab("all");
+      setBidPanelOpen(false);
+    }
+  }, [phase]);
+
+  useEffect(() => {
     if (basketPlayerId != null && !safePlayers.some((p) => p.id === basketPlayerId)) {
       setBasketPlayerId(null);
     }
@@ -983,6 +1052,38 @@ export default function Auction({
     auctionState?.slotDeadlineAt,
     auctionState?.serverNowMs,
     paused,
+  ]);
+
+  useEffect(() => {
+    if (phase !== "in_progress") {
+      lastLeadingPlayerRef.current = null;
+      return;
+    }
+    const currentLeader = leadingBid?.playerId ?? null;
+    const lastLeader = lastLeadingPlayerRef.current;
+    if (
+      myPlayerId != null &&
+      lastLeader === myPlayerId &&
+      currentLeader != null &&
+      currentLeader !== myPlayerId
+    ) {
+      const needed =
+        leadingBid?.amount != null ? leadingBid.amount + 1 : null;
+      const label = needed
+        ? `Перебили — нужно ${moneyFormatter.format(needed)}$`
+        : "Перебили";
+      pushToast({ type: "error", text: label, duration: 2400 });
+      tg?.HapticFeedback?.notificationOccurred?.("warning");
+    }
+    lastLeadingPlayerRef.current = currentLeader;
+  }, [
+    leadingBid?.playerId,
+    leadingBid?.amount,
+    moneyFormatter,
+    myPlayerId,
+    phase,
+    pushToast,
+    tg,
   ]);
 
   // Создание socket.io
@@ -1451,8 +1552,10 @@ export default function Auction({
             wrong_game: "Это комната другого режима",
           };
           pushError(map[resp?.error] || "Не удалось принять ставку");
+          tg?.HapticFeedback?.notificationOccurred?.("error");
         } else {
           clearError();
+          tg?.HapticFeedback?.notificationOccurred?.("success");
         }
       }
     );
@@ -1876,6 +1979,29 @@ export default function Auction({
 
   const renderGameContent = () => {
     if (!showGame) return null;
+    const timeChipLabel = paused ? "Пауза" : timeLeftLabel;
+    const leaderChipLabel =
+      leadingBid?.amount != null
+        ? `${moneyFormatter.format(leadingBid.amount)}$`
+        : "Нет ставок";
+    const baseBidLabel = moneyFormatter.format(baseBid);
+    const emptyPlayersLabel =
+      playersTab === "leaders"
+        ? "Ставок пока нет."
+        : playersTab === "mine"
+        ? "Вы ещё не в комнате."
+        : "Никого нет, ждём подключения.";
+    const emojiWrapClassName = [
+      "lot-hero__emoji-wrap",
+      isUrgent ? "lot-hero__emoji-wrap--urgent" : "",
+      isCritical ? "lot-hero__emoji-wrap--critical" : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const ringStyle = {
+      ["--ring-progress" as any]: urgencyRatio,
+    };
+
     return (
       <div className="screen-body game-layout">
         <section className="lot-hero card card--lot" aria-label="Главный лот">
@@ -1895,7 +2021,51 @@ export default function Auction({
           <div className="lot-hero__name">
             {currentSlot?.name || "Нет названия"}
           </div>
-          <div className="lot-hero__emoji-wrap">
+          <div className="lot-hero__meta">
+            <span
+              className={[
+                "pill",
+                "pill--tiny",
+                "lot-hero__chip",
+                paused ? "lot-hero__chip--paused" : "",
+                isUrgent ? "lot-hero__chip--urgent" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <span className="lot-hero__chip-icon" aria-hidden="true">
+                ⏱
+              </span>
+              {timeChipLabel}
+            </span>
+            <span
+              className="pill pill--tiny lot-hero__chip"
+              title={leadingPlayerName ? `Лидер: ${leadingPlayerName}` : undefined}
+            >
+              <span className="lot-hero__chip-icon" aria-hidden="true">
+                🏁
+              </span>
+              {leaderChipLabel}
+            </span>
+            <span className="pill pill--tiny lot-hero__chip">
+              <span className="lot-hero__chip-icon" aria-hidden="true">
+                💵
+              </span>
+              База {baseBidLabel}$
+            </span>
+          </div>
+          <div className={emojiWrapClassName}>
+            <div
+              className={[
+                "lot-hero__ring",
+                isUrgent ? "lot-hero__ring--active" : "",
+                isCritical ? "lot-hero__ring--critical" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              style={ringStyle}
+              aria-hidden="true"
+            />
             <AnimatePresence initial={false} mode="popLayout">
               {heroCountdown != null && (
                 <motion.div
@@ -1953,106 +2123,6 @@ export default function Auction({
           </div>
         </section>
 
-        <AnimatePresence initial={false}>
-          {bidPanelOpen && (
-            <motion.section
-              className="card card--bid"
-              initial={{ opacity: 0, y: 14, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.98 }}
-              transition={{ duration: 0.24, ease: "easeOut" }}
-            >
-              <span className="label">Ставки</span>
-
-              {isBiddingLocked && (
-                <div className="callout">
-                  {paused
-                    ? "Game is paused - bids are temporarily locked."
-                    : "Bids are available only while the round is running."}
-                </div>
-              )}
-
-              <p className="bid-inline-hint">
-                Используйте быстрые кнопки или введите сумму вручную.
-              </p>
-
-              <div className="bid-input-row">
-                <input
-                  className="text-input text-input--split"
-                  inputMode="numeric"
-                  placeholder="Введите ставку"
-                  value={myBid}
-                  onChange={(e) => setMyBid(e.target.value.replace(/[^\d]/g, ""))}
-                />
-                <button
-                  type="button"
-                  className="btn bid-submit-split"
-                  onClick={() => sendBid()}
-                  disabled={busyBid || myBalance == null || isBiddingLocked}
-                >
-                  <span className="bid-submit-split__label">
-                    {busyBid ? "..." : "Ставка"}
-                  </span>
-                  <span className="bid-submit-split__glow" aria-hidden />
-                </button>
-                <div className="quick-bids" aria-label="Быстрые ставки">
-                  {quickBidButtons.map((btn) => (
-                    <button
-                      key={btn.key}
-                      type="button"
-                      className="quick-bid"
-                      onClick={() => btn.action()}
-                      disabled={btn.disabled}
-                    >
-                      <span className="quick-bid__label">{btn.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bid-actions bid-actions--secondary">
-                <button
-                  type="button"
-                  className="btn bid-action bid-action--pass"
-                  onClick={sendPass}
-                  disabled={isBiddingLocked || busyBid}
-                >
-                  Пас
-                </button>
-                <button
-                  type="button"
-                  className="btn bid-action bid-action--allin"
-                  onClick={() => sendBid(myBalance || 0)}
-                  disabled={
-                    isBiddingLocked || busyBid || myBalance == null || myBalance <= 0
-                  }
-                >
-                  Вабанк
-                </button>
-              </div>
-
-              {isOwner && (
-                <div className="owner-controls">
-                  <button
-                    type="button"
-                    className="pill pill--ghost"
-                    onClick={paused ? resumeAuction : pauseAuction}
-                  >
-                    {paused ? "Продолжить" : "Пауза"}
-                  </button>
-                  <button
-                    type="button"
-                    className="pill pill--ghost"
-                    onClick={forceNext}
-                  >
-                    Следующий лот
-                  </button>
-                </div>
-              )}
-            </motion.section>
-          )}
-        </AnimatePresence>
-
         <section className="card card--players-live">
           <div className="card-row card-row--tight">
             <div>
@@ -2060,14 +2130,63 @@ export default function Auction({
               <h3 className="title-small">Ставки и корзины</h3>
               <p className="muted">Тап по игроку — откроется его корзина</p>
             </div>
-            <span className="pill pill--tiny">{safePlayers.length} игроков</span>
+            <span className="pill pill--tiny">
+              {filteredPlayers.length} из {safePlayers.length}
+            </span>
+          </div>
+
+          <div className="players-tabs" role="tablist" aria-label="Фильтр игроков">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={playersTab === "all"}
+              className={[
+                "players-tab",
+                playersTab === "all" ? "is-active" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => setPlayersTab("all")}
+            >
+              Все
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={playersTab === "leaders"}
+              className={[
+                "players-tab",
+                playersTab === "leaders" ? "is-active" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => setPlayersTab("leaders")}
+            >
+              Лидеры
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={playersTab === "mine"}
+              className={[
+                "players-tab",
+                playersTab === "mine" ? "is-active" : "",
+                myPlayerId == null ? "is-disabled" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              onClick={() => setPlayersTab("mine")}
+              disabled={myPlayerId == null}
+            >
+              Моя корзина
+            </button>
           </div>
 
           <div className="lobby-players-list lobby-players-list--ingame">
-            {safePlayers.length === 0 && (
-              <div className="empty-note">Никого нет, ждём подключения.</div>
+            {filteredPlayers.length === 0 && (
+              <div className="empty-note">{emptyPlayersLabel}</div>
             )}
-            {safePlayers.map((p) => {
+            {filteredPlayers.map((p) => {
               const name = playerDisplayName(p);
               const avatar = p.user?.photo_url || p.user?.avatar || "";
               const balance = balances[p.id] ?? 0;
@@ -2139,6 +2258,141 @@ export default function Auction({
             </div>
           </section>
         )}
+      </div>
+    );
+  };
+
+  const renderBidDock = () => {
+    if (!showGame) return null;
+    const balanceLabel =
+      myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "--";
+
+    return (
+      <div
+        className={["bid-dock", bidPanelOpen ? "bid-dock--open" : ""]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        <div className="bid-dock__bar">
+          <div className="bid-dock__info">
+            <span className="bid-dock__label">Баланс</span>
+            <span className="bid-dock__value">{balanceLabel}</span>
+          </div>
+          <button
+            type="button"
+            className="btn bid-dock__cta"
+            onClick={() => setBidPanelOpen((prev) => !prev)}
+            aria-expanded={bidPanelOpen}
+          >
+            <span className="bid-dock__cta-icon" aria-hidden="true">
+              ⚡
+            </span>
+            {bidPanelOpen ? "Скрыть панель" : "Сделать ставку"}
+          </button>
+        </div>
+
+        <AnimatePresence initial={false}>
+          {bidPanelOpen && (
+            <motion.section
+              className="bid-dock__panel card card--bid"
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              transition={{ duration: 0.24, ease: "easeOut" }}
+            >
+              <span className="label">Ставки</span>
+
+              {isBiddingLocked && (
+                <div className="callout">
+                  {paused
+                    ? "Game is paused - bids are temporarily locked."
+                    : "Bids are available only while the round is running."}
+                </div>
+              )}
+
+              <p className="bid-inline-hint">
+                Используйте быстрые кнопки или введите сумму вручную.
+              </p>
+
+              <div className="bid-input-row">
+                <input
+                  className="text-input text-input--split"
+                  inputMode="numeric"
+                  placeholder="Введите ставку"
+                  value={myBid}
+                  onChange={(e) => setMyBid(e.target.value.replace(/[^\d]/g, ""))}
+                />
+                <button
+                  type="button"
+                  className="btn bid-submit-split"
+                  onClick={() => sendBid()}
+                  disabled={busyBid || myBalance == null || isBiddingLocked}
+                >
+                  <span className="bid-submit-split__label">
+                    {busyBid ? "..." : "Ставка"}
+                  </span>
+                  <span className="bid-submit-split__glow" aria-hidden />
+                </button>
+                <div className="quick-bids" aria-label="Быстрые ставки">
+                  {quickBidButtons.map((btn) => (
+                    <button
+                      key={btn.key}
+                      type="button"
+                      className="quick-bid"
+                      onClick={() => btn.action()}
+                      disabled={btn.disabled}
+                    >
+                      <span className="quick-bid__label">{btn.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bid-actions bid-actions--secondary">
+                <button
+                  type="button"
+                  className="btn bid-action bid-action--pass"
+                  onClick={sendPass}
+                  disabled={isBiddingLocked || busyBid}
+                >
+                  Пас
+                </button>
+                <button
+                  type="button"
+                  className="btn bid-action bid-action--allin"
+                  onClick={() => sendBid(myBalance || 0)}
+                  disabled={
+                    isBiddingLocked ||
+                    busyBid ||
+                    myBalance == null ||
+                    myBalance <= 0
+                  }
+                >
+                  Вабанк
+                </button>
+              </div>
+
+              {isOwner && (
+                <div className="owner-controls">
+                  <button
+                    type="button"
+                    className="pill pill--ghost"
+                    onClick={paused ? resumeAuction : pauseAuction}
+                  >
+                    {paused ? "Продолжить" : "Пауза"}
+                  </button>
+                  <button
+                    type="button"
+                    className="pill pill--ghost"
+                    onClick={forceNext}
+                  >
+                    Следующий лот
+                  </button>
+                </div>
+              )}
+            </motion.section>
+          )}
+        </AnimatePresence>
       </div>
     );
   };
@@ -2743,30 +2997,33 @@ export default function Auction({
     "auction-app",
     showLanding ? "auction-app--landing" : "",
     `auction-app--phase-${phase}`,
+    showGame ? "auction-app--with-bid-dock" : "",
+    showGame && bidPanelOpen ? "auction-app--bid-dock-open" : "",
   ]
     .filter(Boolean)
     .join(" ");
 
   return (
-    <div className={appClassName}>
-      <div className="screen-wrapper pt-safe">
-        {showLanding ? (
-          renderLanding()
-        ) : (
-          <>
-            {renderHeader()}
-            <main className="screen-main">
-              {renderLobbyContent()}
-              {renderGameContent()}
-              {renderResultsContent()}
-            </main>
-          </>
-        )}
-      </div>
-      {renderLootboxRevealModal()}
-      {renderBasketModal()}
-      {renderSettingsModal()}
-      {renderToastStack()}
+      <div className={appClassName}>
+        <div className="screen-wrapper pt-safe">
+          {showLanding ? (
+            renderLanding()
+          ) : (
+            <>
+              {renderHeader()}
+              <main className="screen-main">
+                {renderLobbyContent()}
+                {renderGameContent()}
+                {renderResultsContent()}
+              </main>
+            </>
+          )}
+        </div>
+        {renderBidDock()}
+        {renderLootboxRevealModal()}
+        {renderBasketModal()}
+        {renderSettingsModal()}
+        {renderToastStack()}
       <Confetti
         refConfetti={(instance) => {
           confettiRef.current = instance;

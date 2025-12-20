@@ -113,6 +113,14 @@ textarea {
   isolation: isolate;
 }
 
+.auction-app--with-bid-dock {
+  --bid-dock-collapsed: 76px;
+}
+
+.auction-app--with-bid-dock .screen-main {
+  padding-bottom: calc(var(--bid-dock-collapsed) + 12px);
+}
+
 .auction-app::before,
 .auction-app::after {
   content: "";
@@ -188,8 +196,8 @@ textarea {
   display: flex;
   flex-direction: column;
   margin-top: 4px;
-  overflow-y: auto;
   overflow-x: hidden;
+  overflow-y: visible;
   padding-bottom: 10px;
 }
 
@@ -928,7 +936,7 @@ textarea {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   padding-right: 2px;
-  overflow-y: auto;
+  overflow: visible;
 }
 .lobby-players-list--ingame {
   margin-top: 0;
@@ -1127,6 +1135,92 @@ textarea {
   max-width: 260px;
 }
 
+/* BID DOCK */
+
+.bid-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 80;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  padding: 0 var(--app-inset-right) calc(var(--auction-safe-bottom) + 8px)
+    var(--app-inset-left);
+  pointer-events: none;
+}
+
+.bid-dock__bar {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--accent-main) 35%, transparent);
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.96));
+  box-shadow: 0 16px 36px rgba(2, 6, 23, 0.7);
+  backdrop-filter: blur(16px);
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.bid-dock__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bid-dock__label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.bid-dock__value {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.bid-dock__cta {
+  width: auto;
+  min-height: 48px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #38bdf8, #22c55e);
+  color: #04131b;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  box-shadow: 0 14px 28px rgba(56, 189, 248, 0.35);
+  gap: 8px;
+}
+
+.bid-dock__cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.bid-dock__cta-icon {
+  font-size: 16px;
+}
+
+.bid-dock__panel {
+  pointer-events: auto;
+  max-height: 60vh;
+  overflow-y: auto;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
 /* GAME */
 
 .game-layout {
@@ -1148,6 +1242,35 @@ textarea {
   box-shadow: 0 18px 48px rgba(2, 6, 23, 0.7);
 }
 
+.lot-hero__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.lot-hero__chip {
+  border-color: color-mix(in srgb, var(--border-subtle) 80%, transparent);
+  background: rgba(15, 23, 42, 0.92);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.lot-hero__chip--urgent {
+  border-color: rgba(248, 113, 113, 0.7);
+  color: #fecaca;
+  box-shadow: 0 0 14px rgba(248, 113, 113, 0.25);
+}
+
+.lot-hero__chip--paused {
+  border-color: rgba(248, 113, 113, 0.6);
+  color: #fca5a5;
+}
+
+.lot-hero__chip-icon {
+  font-size: 12px;
+}
+
 .lot-hero__emoji-wrap {
   position: relative;
   display: grid;
@@ -1157,6 +1280,61 @@ textarea {
   isolation: isolate;
   overflow: hidden;
   border-radius: var(--radius-md);
+}
+
+.lot-hero__emoji-wrap--urgent {
+  background: radial-gradient(
+    circle at 50% 20%,
+    rgba(248, 113, 113, 0.12),
+    transparent 55%
+  );
+}
+
+.lot-hero__emoji-wrap--critical {
+  background: radial-gradient(
+    circle at 50% 20%,
+    rgba(251, 191, 36, 0.18),
+    transparent 55%
+  );
+}
+
+.lot-hero__ring {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: conic-gradient(
+    rgba(248, 113, 113, 0.85) calc(var(--ring-progress, 0) * 1turn),
+    rgba(148, 163, 184, 0.12) 0
+  );
+  -webkit-mask: radial-gradient(circle, transparent 60%, #000 62%);
+  mask: radial-gradient(circle, transparent 60%, #000 62%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.lot-hero__ring--active {
+  opacity: 1;
+  animation: ring-pulse 1.1s ease-in-out infinite;
+}
+
+.lot-hero__ring--critical {
+  animation-duration: 0.85s;
+}
+
+@keyframes ring-pulse {
+  0% {
+    box-shadow: 0 0 0 rgba(248, 113, 113, 0.2);
+  }
+  70% {
+    box-shadow: 0 0 24px rgba(248, 113, 113, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(248, 113, 113, 0.2);
+  }
 }
 
 .lot-hero__index {
@@ -1286,6 +1464,11 @@ textarea {
   mix-blend-mode: screen;
   letter-spacing: -8px;
   z-index: 2;
+}
+
+.lot-hero__emoji-wrap--critical .lot-hero__timer {
+  color: rgba(251, 191, 36, 0.95);
+  text-shadow: 0 14px 42px rgba(251, 191, 36, 0.45);
 }
 
 .lot-last {
@@ -1772,6 +1955,10 @@ button:active:not(:disabled) {
     gap: 10px;
   }
 
+  .bid-cta {
+    display: none;
+  }
+
   .lobby-players-list--ingame {
     grid-template-columns: 1fr;
   }
@@ -1799,6 +1986,11 @@ button:active:not(:disabled) {
     font-size: 96px;
   }
 
+  .lot-hero__ring {
+    width: 150px;
+    height: 150px;
+  }
+
   .lot-hero__emoji-wrap {
     min-height: 150px;
   }
@@ -1819,6 +2011,15 @@ button:active:not(:disabled) {
 
   .card {
     padding: 10px;
+  }
+
+  .bid-dock__bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bid-dock__cta {
+    width: 100%;
   }
 }
 
@@ -2170,6 +2371,44 @@ button:active:not(:disabled) {
 .card--players-live {
   display: grid;
   gap: 12px;
+}
+
+.players-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.players-tab {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(15, 23, 42, 0.92);
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.players-tab.is-active {
+  color: var(--text);
+  border-color: rgba(56, 189, 248, 0.6);
+  background: linear-gradient(
+    135deg,
+    rgba(56, 189, 248, 0.2),
+    rgba(15, 23, 42, 0.92)
+  );
+  box-shadow: 0 10px 24px rgba(56, 189, 248, 0.2);
+}
+
+.players-tab.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .live-players-grid {
