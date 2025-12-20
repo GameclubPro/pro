@@ -2957,14 +2957,14 @@ export default function Auction({
   const renderToastStack = () => {
     if (!toastStack.length) return null;
     const content = (
-      <div className="toast-stack" role="status" aria-live="polite">
+      <div className="auction-toast-stack" role="status" aria-live="polite">
         <AnimatePresence initial={false}>
           {toastStack.map((item) => (
             <motion.div
               key={item.id}
               className={[
-                "toast",
-                item.type === "error" ? "toast--error" : "",
+                "auction-toast",
+                item.type === "error" ? "auction-toast--error" : "",
               ]
                 .filter(Boolean)
                 .join(" ")}
@@ -2973,10 +2973,10 @@ export default function Auction({
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
             >
-              <span className="toast__text">{item.text}</span>
+              <span className="auction-toast__text">{item.text}</span>
               <button
                 type="button"
-                className="toast__close"
+                className="auction-toast__close"
                 onClick={() => dismissToast(item.id)}
                 aria-label="Закрыть уведомление"
               >

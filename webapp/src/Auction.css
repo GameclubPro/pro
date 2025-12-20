@@ -1907,7 +1907,7 @@ textarea {
 
 /* TOASTS */
 
-.toast-stack {
+.auction-toast-stack {
   position: fixed;
   top: calc(
     8px + max(
@@ -1929,7 +1929,7 @@ textarea {
   pointer-events: none;
 }
 
-.toast {
+.auction-toast {
   padding: 7px 10px 7px 14px;
   border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.8);
@@ -1944,7 +1944,7 @@ textarea {
   pointer-events: auto;
 }
 
-.toast--error {
+.auction-toast--error {
   background: linear-gradient(
     135deg,
     rgba(248, 113, 113, 0.96),
@@ -1953,12 +1953,12 @@ textarea {
   border-color: rgba(248, 250, 252, 0.9);
 }
 
-.toast__text {
+.auction-toast__text {
   white-space: normal;
   overflow-wrap: anywhere;
 }
 
-.toast__close {
+.auction-toast__close {
   border: none;
   background: transparent;
   color: inherit;
