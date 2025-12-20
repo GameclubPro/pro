@@ -292,10 +292,10 @@ export default function Auction({
   const heroBidText = useMemo(() => {
     if (leadingBid?.amount != null) {
       return leadingPlayerName
-        ? `${moneyFormatter.format(leadingBid.amount)}$ · ${leadingPlayerName}`
-        : `${moneyFormatter.format(leadingBid.amount)}$`;
+        ? `${moneyFormatter.format(leadingBid.amount)}💰 · ${leadingPlayerName}`
+        : `${moneyFormatter.format(leadingBid.amount)}💰`;
     }
-    return `База ${moneyFormatter.format(baseBid)}$`;
+    return `База ${moneyFormatter.format(baseBid)}💰`;
   }, [baseBid, leadingBid?.amount, leadingPlayerName, moneyFormatter]);
 
   const formatPresetLabel = useCallback(
@@ -315,7 +315,7 @@ export default function Auction({
     () =>
       BID_PRESETS.map((step, idx) => ({
         key: `${idx + 1}`,
-        label: `+${formatPresetLabel(step)}$`,
+        label: `+${formatPresetLabel(step)}💰`,
         action: () => setBidRelative(step),
         disabled: isBiddingLocked || busyBid || myBalance == null || myBalance <= 0,
       })),
@@ -1070,7 +1070,7 @@ export default function Auction({
       const needed =
         leadingBid?.amount != null ? leadingBid.amount + 1 : null;
       const label = needed
-        ? `Перебили — нужно ${moneyFormatter.format(needed)}$`
+        ? `Перебили — нужно ${moneyFormatter.format(needed)}💰`
         : "Перебили";
       pushToast({ type: "error", text: label, duration: 2400 });
       tg?.HapticFeedback?.notificationOccurred?.("warning");
@@ -1524,7 +1524,7 @@ export default function Auction({
       return;
     }
     if (amount > 0 && baseBid > 0 && amount < baseBid) {
-      pushError(`Минимальная ставка ${moneyFormatter.format(baseBid)}$`);
+      pushError(`Минимальная ставка ${moneyFormatter.format(baseBid)}💰`);
       return;
     }
 
@@ -1551,6 +1551,7 @@ export default function Auction({
         } else {
           clearError();
           tg?.HapticFeedback?.notificationOccurred?.("success");
+          setBidPanelOpen(false);
         }
       }
     );
@@ -1630,7 +1631,7 @@ export default function Auction({
             </span>
             <span className="pill pill--soft">
               <span>💰</span> стартовый банк{" "}
-              {moneyFormatter.format(initialBank)}$
+              {moneyFormatter.format(initialBank)}💰
             </span>
           </div>
         </div>
@@ -1872,7 +1873,7 @@ export default function Auction({
             <div className="lobby-stat">
               <span className="lobby-stat__label">Банк на игрока</span>
               <span className="lobby-stat__value">
-                {moneyFormatter.format(initialBank)}$
+                {moneyFormatter.format(initialBank)}💰
               </span>
             </div>
             <div className="lobby-stat">
@@ -1977,7 +1978,7 @@ export default function Auction({
     const timeChipLabel = paused ? "Пауза" : timeLeftLabel;
     const leaderChipLabel =
       leadingBid?.amount != null
-        ? `${moneyFormatter.format(leadingBid.amount)}$`
+        ? `${moneyFormatter.format(leadingBid.amount)}💰`
         : "Нет ставок";
     const baseBidLabel = moneyFormatter.format(baseBid);
     const emptyPlayersLabel =
@@ -2046,7 +2047,7 @@ export default function Auction({
               <span className="lot-hero__chip-icon" aria-hidden="true">
                 💵
               </span>
-              База {baseBidLabel}$
+              База {baseBidLabel}💰
             </span>
           </div>
           <div className={emojiWrapClassName}>
@@ -2214,12 +2215,12 @@ export default function Auction({
                     <div className="lobby-player__tags lobby-player__tags--auction">
                       <span className="auction-meta-tag">
                         <span className="auction-meta-tag__icon">💰</span>
-                        {moneyFormatter.format(balance)}$
+                        {moneyFormatter.format(balance)}💰
                       </span>
                       {bidValue && bidValue > 0 ? (
                         <span className="auction-meta-tag auction-meta-tag--bid">
                           <span className="auction-meta-tag__icon">⚡</span>
-                          {moneyFormatter.format(bidValue)}$
+                          {moneyFormatter.format(bidValue)}💰
                         </span>
                       ) : null}
                     </div>
@@ -2248,7 +2249,7 @@ export default function Auction({
                       )
                     )} • `
                   : ""}
-                {moneyFormatter.format(lastFinishedSlot.winBid || 0)}$
+                {moneyFormatter.format(lastFinishedSlot.winBid || 0)}💰
               </span>
             </div>
           </section>
@@ -2260,7 +2261,7 @@ export default function Auction({
   const renderBidDock = () => {
     if (!showGame) return null;
     const balanceLabel =
-      myBalance != null ? `${moneyFormatter.format(myBalance)}$` : "--";
+      myBalance != null ? `${moneyFormatter.format(myBalance)}💰` : "--";
 
     return (
       <div
@@ -2304,10 +2305,6 @@ export default function Auction({
                     : "Bids are available only while the round is running."}
                 </div>
               )}
-
-              <p className="bid-inline-hint">
-                Используйте быстрые кнопки или введите сумму вручную.
-              </p>
 
               <div className="bid-input-row">
                 <input
@@ -2430,11 +2427,11 @@ export default function Auction({
                     <div className="result-row__info">
                       <span className="result-row__name">{name}</span>
                       <span className="result-row__money">
-                        {moneyFormatter.format(netWorth)}$
+                        {moneyFormatter.format(netWorth)}💰
                       </span>
                       <span className="result-row__meta muted">
-                        Баланс {moneyFormatter.format(balance)}$ · Покупки{" "}
-                        {moneyFormatter.format(basketValue)}$
+                        Баланс {moneyFormatter.format(balance)}💰 · Покупки{" "}
+                        {moneyFormatter.format(basketValue)}💰
                       </span>
                     </div>
                   </div>
@@ -2492,9 +2489,9 @@ export default function Auction({
             <div className="basket-head__info">
               <div className="basket-head__name">{name}</div>
               <div className="basket-head__meta">
-                <span>Корзина: {moneyFormatter.format(basketValue)}$</span>
-                <span>Баланс: {moneyFormatter.format(balance)}$</span>
-                <span>Состояние: {moneyFormatter.format(worth)}$</span>
+                <span>Корзина: {moneyFormatter.format(basketValue)}💰</span>
+                <span>Баланс: {moneyFormatter.format(balance)}💰</span>
+                <span>Состояние: {moneyFormatter.format(worth)}💰</span>
               </div>
             </div>
             <button
@@ -2537,9 +2534,9 @@ export default function Auction({
                   : "";
               const effectText =
                 effectKind === "penalty"
-                  ? `Штраф ${moneyFormatter.format(Math.abs(effect?.delta || 0))}$${prizeLabel ? ` · ${prizeLabel}` : ""}`
+                  ? `Штраф ${moneyFormatter.format(Math.abs(effect?.delta || 0))}💰${prizeLabel ? ` · ${prizeLabel}` : ""}`
                   : effectKind === "money"
-                  ? `Бонус ${moneyFormatter.format(Math.abs(effect?.delta || 0))}$${prizeLabel ? ` · ${prizeLabel}` : ""}`
+                  ? `Бонус ${moneyFormatter.format(Math.abs(effect?.delta || 0))}💰${prizeLabel ? ` · ${prizeLabel}` : ""}`
                   : effectKind === "lot"
                   ? prizeLabel
                     ? `Приз: ${prizeLabel}`
@@ -2555,14 +2552,14 @@ export default function Auction({
                       {item.type === "lootbox" ? "Лутбокс" : "Лот"}
                     </span>
                     <span className="basket-item__price">
-                      {moneyFormatter.format(value)}$
+                      {moneyFormatter.format(value)}💰
                     </span>
                   </div>
                   <div className="basket-item__title">{item.name || "Без названия"}</div>
                   <div className="basket-item__meta">
-                    <span>Оплачено: {moneyFormatter.format(paid)}$</span>
+                    <span>Оплачено: {moneyFormatter.format(paid)}💰</span>
                     {base > 0 && (
-                      <span>Старт: {moneyFormatter.format(base)}$</span>
+                      <span>Старт: {moneyFormatter.format(base)}💰</span>
                     )}
                   </div>
                   {effect && (
@@ -2627,7 +2624,7 @@ export default function Auction({
     const prizeParsed = prizeFullNameRaw ? splitEmojiLabel(prizeFullNameRaw) : null;
     const prizeBasePrice = prizeObj?.basePrice;
     const prizeBasePriceText = Number.isFinite(Number(prizeBasePrice))
-      ? `${moneyFormatter.format(Number(prizeBasePrice))}$`
+      ? `${moneyFormatter.format(Number(prizeBasePrice))}💰`
       : "";
 
     const prizeEmoji =
@@ -2653,9 +2650,9 @@ export default function Auction({
 
     const prizeValue =
       effectKind === "money"
-        ? `+${deltaText}$`
+        ? `+${deltaText}💰`
         : effectKind === "penalty"
-        ? `-${deltaText}$`
+        ? `-${deltaText}💰`
         : effectKind === "lot"
         ? prizeBasePriceText || "Предмет"
         : "Ничего";
@@ -2684,7 +2681,7 @@ export default function Auction({
               <div className="lootbox-panel__label">Лутбокс</div>
               <h3 className="lootbox-panel__title">{lootboxReveal.slotName}</h3>
               <p className="lootbox-panel__subtitle">
-                Открывает: {winnerName} · Ставка {moneyFormatter.format(lootboxReveal.winBid)}$
+                Открывает: {winnerName} · Ставка {moneyFormatter.format(lootboxReveal.winBid)}💰
               </p>
             </div>
             <button
@@ -2891,7 +2888,7 @@ export default function Auction({
                 <div className="slider-field__top">
                   <span className="field-label">Бюджет игрока</span>
                   <span className="slider-field__value">
-                    {moneyFormatter.format(settingsBudget)}$
+                    {moneyFormatter.format(settingsBudget)}💰
                   </span>
                 </div>
                 <div className="slider-field__control">
@@ -2916,8 +2913,8 @@ export default function Auction({
                   />
                 </div>
                 <div className="slider-field__footer">
-                  <span>{moneyFormatter.format(MIN_BUDGET)}$</span>
-                  <span>{moneyFormatter.format(MAX_BUDGET)}$</span>
+                  <span>{moneyFormatter.format(MIN_BUDGET)}💰</span>
+                  <span>{moneyFormatter.format(MAX_BUDGET)}💰</span>
                 </div>
               </label>
             </div>
