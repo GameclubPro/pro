@@ -790,165 +790,6 @@ textarea {
   font-size: 13px;
 }
 
-/* TRADE HUD */
-
-.trade-hud {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  grid-column: 1 / -1;
-  margin-top: 2px;
-  padding: 10px 12px 8px;
-  padding-right: 56px;
-  border-radius: var(--radius-lg);
-  border: 1px solid color-mix(in srgb, var(--border-strong) 80%, transparent);
-  background:
-    linear-gradient(160deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.9)),
-    repeating-linear-gradient(
-      0deg,
-      var(--market-grid-soft) 0 1px,
-      transparent 1px 32px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      var(--market-grid-strong) 0 1px,
-      transparent 1px 32px
-    );
-  box-shadow: 0 16px 40px rgba(2, 6, 23, 0.7);
-  backdrop-filter: blur(18px);
-  overflow: hidden;
-}
-
-.trade-hud__cells {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.9fr) minmax(0, 1.2fr);
-  gap: 10px;
-  align-items: center;
-}
-
-.trade-hud__cell {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.trade-hud__label {
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.trade-hud__value {
-  font-size: 15px;
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.trade-hud__value--lead {
-  color: var(--accent-main);
-}
-
-.trade-hud__name {
-  font-weight: 600;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.trade-hud__lot-id {
-  color: var(--accent-gold);
-  margin-right: 6px;
-  letter-spacing: 0.08em;
-}
-
-.trade-hud__timer {
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: var(--accent-gold);
-}
-
-.trade-hud__timer.is-paused {
-  color: var(--accent-danger);
-}
-
-.trade-hud__sub {
-  font-size: 11px;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.trade-hud__meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 6px;
-  flex-wrap: wrap;
-}
-
-.trade-hud__code {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px dashed rgba(148, 163, 184, 0.6);
-  background: rgba(15, 23, 42, 0.9);
-  color: var(--text);
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.trade-hud__code-label {
-  font-size: 9px;
-  color: var(--muted);
-}
-
-.trade-hud__code-value {
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.trade-hud__players {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--muted);
-}
-
-.trade-hud__dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--accent-success);
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
-}
-
-.trade-hud__actions {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  gap: 6px;
-}
-
-.trade-hud__action {
-  width: 34px;
-  height: 34px;
-  font-size: 16px;
-}
-
 /* LOBBY */
 
 .lobby-layout {
@@ -1627,17 +1468,20 @@ textarea {
   position: relative;
   width: 100%;
   min-height: 52px;
-  border-radius: 0;
-  border-left: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  border-left: 1px solid rgba(2, 6, 23, 0.35);
   border-right: none;
   border-top: none;
   border-bottom: none;
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(94, 234, 212, 0.14));
-  color: #e0f2fe;
-  font-weight: 800;
-  letter-spacing: 0.16em;
+  background: linear-gradient(135deg, #38bdf8, #22c55e);
+  color: #04131b;
+  font-weight: 900;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 12px 26px rgba(56, 189, 248, 0.35);
   overflow: hidden;
   transition:
     transform var(--transition-fast),
@@ -1664,9 +1508,10 @@ textarea {
 
 .bid-submit-split:hover:not(:disabled) {
   transform: translateY(-1px);
-  filter: brightness(1.04);
-  border-color: rgba(56, 189, 248, 0.65);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 14px 30px rgba(56, 189, 248, 0.22);
+  filter: brightness(1.05) saturate(1.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 16px 32px rgba(56, 189, 248, 0.38);
 }
 
 .bid-submit-split:focus-visible {
@@ -1675,9 +1520,10 @@ textarea {
 }
 
 .bid-submit-split:disabled {
-  opacity: 0.6;
+  opacity: 0.65;
   cursor: not-allowed;
-  box-shadow: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  filter: grayscale(0.2);
   transform: none;
 }
 
@@ -1924,27 +1770,6 @@ button:active:not(:disabled) {
 
   .screen-wrapper {
     gap: 10px;
-  }
-
-  .trade-hud {
-    border-radius: 16px;
-  }
-
-  .trade-hud__cells {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .trade-hud__cell--lead {
-    grid-column: 1 / -1;
-  }
-
-  .trade-hud__timer {
-    font-size: 18px;
-  }
-
-  .trade-hud__actions {
-    top: 6px;
-    right: 6px;
   }
 
   .lobby-players-list--ingame {

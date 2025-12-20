@@ -245,11 +245,6 @@ export default function Auction({
     () => ensurePlainObject<Record<number, number>>(auctionState?.currentBids),
     [auctionState?.currentBids]
   );
-  const myRoundBid = useMemo(() => {
-    if (myPlayerId == null) return null;
-    const value = currentBids[myPlayerId];
-    return typeof value === "number" ? value : null;
-  }, [currentBids, myPlayerId]);
   const leadingBid = useMemo(() => {
     let topAmount: number | null = null;
     let topPlayerId: number | null = null;
@@ -299,26 +294,6 @@ export default function Auction({
     }
     return `База ${moneyFormatter.format(baseBid)}$`;
   }, [baseBid, leadingBid?.amount, leadingPlayerName, moneyFormatter]);
-
-  const timeLeftMs = useMemo(() => {
-    if (paused) {
-      const ms = pauseLeftRef.current ?? (auctionState?.timeLeftMs ?? null);
-      return typeof ms === "number" && Number.isFinite(ms) ? Math.max(0, ms) : null;
-    }
-    if (deadlineAtRef.current != null) {
-      return Math.max(0, deadlineAtRef.current - nowTick);
-    }
-    const ms = auctionState?.timeLeftMs;
-    return typeof ms === "number" && Number.isFinite(ms) ? Math.max(0, ms) : null;
-  }, [auctionState?.timeLeftMs, nowTick, paused]);
-
-  const timeLeftLabel = useMemo(() => {
-    if (timeLeftMs == null) return "--:--";
-    const totalSec = Math.max(0, Math.ceil(timeLeftMs / 1000));
-    const minutes = Math.floor(totalSec / 60);
-    const seconds = totalSec % 60;
-    return `${minutes}:${String(seconds).padStart(2, "0")}`;
-  }, [timeLeftMs]);
 
   const formatPresetLabel = useCallback(
     (value: number) => {
@@ -1901,97 +1876,8 @@ export default function Auction({
 
   const renderGameContent = () => {
     if (!showGame) return null;
-    const playersOnline = safePlayers.length || 0;
-    const playersLabel =
-      playersOnline === 1
-        ? "игрок"
-        : playersOnline >= 5 || playersOnline === 0
-        ? "игроков"
-        : "игрока";
-    const leadingAmountText =
-      leadingBid?.amount != null ? `${moneyFormatter.format(leadingBid.amount)}$` : "—";
-    const myBidText =
-      myRoundBid != null ? `${moneyFormatter.format(myRoundBid)}$` : "—";
-    const baseBidText = moneyFormatter.format(baseBid);
-
     return (
       <div className="screen-body game-layout">
-        <div className="trade-hud">
-          <div className="trade-hud__cells">
-            <div className="trade-hud__cell trade-hud__cell--lot">
-              <span className="trade-hud__label">Лот</span>
-              <div className="trade-hud__value">
-                <span className="trade-hud__lot-id">
-                  {slotIndex != null ? `#${slotIndex}` : "--"}
-                </span>
-                <span className="trade-hud__name">
-                  {currentSlot?.name || "Без названия"}
-                </span>
-              </div>
-              <span className="trade-hud__sub">База {baseBidText}$</span>
-            </div>
-
-            <div className="trade-hud__cell trade-hud__cell--timer">
-              <span className="trade-hud__label">Время</span>
-              <span
-                className={[
-                  "trade-hud__value",
-                  "trade-hud__timer",
-                  paused ? "is-paused" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              >
-                {paused ? "Пауза" : timeLeftLabel}
-              </span>
-              <span className="trade-hud__sub">
-                {myRoundBid != null ? `Моя ставка ${myBidText}` : "Моя ставка —"}
-              </span>
-            </div>
-
-            <div className="trade-hud__cell trade-hud__cell--lead">
-              <span className="trade-hud__label">Лидер</span>
-              <span className="trade-hud__value trade-hud__value--lead">
-                {leadingAmountText}
-              </span>
-              <span className="trade-hud__sub">
-                {leadingPlayerName || "Нет ставок"}
-              </span>
-            </div>
-          </div>
-
-          <div className="trade-hud__meta">
-            <button type="button" className="trade-hud__code" onClick={copyRoomCode}>
-              <span className="trade-hud__code-label">Код</span>
-              <span className="trade-hud__code-value">
-                {room?.code || "------"}
-              </span>
-            </button>
-            <span className="trade-hud__players">
-              <span className="trade-hud__dot" aria-hidden="true" />
-              {playersOnline} {playersLabel}
-            </span>
-          </div>
-
-          <div className="trade-hud__actions">
-            <button
-              type="button"
-              className="icon-btn icon-btn--ghost trade-hud__action"
-              aria-label="Поделиться"
-              onClick={shareRoomCode}
-            >
-              📨
-            </button>
-            <button
-              type="button"
-              className="icon-btn icon-btn--ghost trade-hud__action"
-              aria-label="Выйти"
-              onClick={handleExit}
-            >
-              ×
-            </button>
-          </div>
-        </div>
         <section className="lot-hero card card--lot" aria-label="Главный лот">
           <div className="lot-hero__index">
             <div className="lot-index__meta">
