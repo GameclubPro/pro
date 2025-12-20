@@ -198,6 +198,7 @@ export default function Auction({
 
   const deadlineAtRef = useRef<number | null>(null);
   const pauseLeftRef = useRef<number | null>(null);
+  const slotStartLeftMsRef = useRef<number | null>(null);
   const [nowTick, setNowTick] = useState(() => Date.now());
   const toastTimersRef = useRef<Map<string, any>>(new Map());
   const lastSubscribedCodeRef = useRef<string | null>(null);
@@ -378,8 +379,32 @@ export default function Auction({
     return `${minutes}:${String(seconds).padStart(2, "0")}`;
   }, [timeLeftMs]);
 
-  const urgencySteps = Math.max(5, countdownStartFrom);
-  const urgencyWindowMs = countdownStepMs * urgencySteps;
+  useEffect(() => {
+    if (phase !== "in_progress" || timeLeftMs == null) {
+      slotStartLeftMsRef.current = null;
+      return;
+    }
+    const prev = slotStartLeftMsRef.current;
+    if (prev == null || timeLeftMs > prev + 250) {
+      slotStartLeftMsRef.current = timeLeftMs;
+    }
+  }, [phase, timeLeftMs, currentSlot?.index]);
+
+  const slotDurationMs = useMemo(() => {
+    const raw = Number(auctionState?.rules?.timePerSlotSec);
+    if (Number.isFinite(raw) && raw > 0) return raw * 1000;
+    if (countdownStepMs > 0 && countdownStartFrom > 0) {
+      return countdownStepMs * countdownStartFrom;
+    }
+    return null;
+  }, [auctionState?.rules?.timePerSlotSec, countdownStepMs, countdownStartFrom]);
+  const ringProgress = useMemo(() => {
+    if (timeLeftMs == null) return 0;
+    const baseline = slotStartLeftMsRef.current || slotDurationMs;
+    if (!baseline || baseline <= 0) return 0;
+    return clamp(1 - timeLeftMs / baseline, 0, 1);
+  }, [slotDurationMs, timeLeftMs]);
+  const urgencyWindowMs = countdownStepMs * Math.max(5, countdownStartFrom);
   const criticalWindowMs =
     countdownStepMs * Math.max(1, Math.min(3, countdownStartFrom));
   const isUrgent =
@@ -392,10 +417,6 @@ export default function Auction({
     timeLeftMs != null &&
     criticalWindowMs > 0 &&
     timeLeftMs <= criticalWindowMs;
-  const urgencyRatio = useMemo(() => {
-    if (!isUrgent || timeLeftMs == null || urgencyWindowMs <= 0) return 0;
-    return clamp(1 - timeLeftMs / urgencyWindowMs, 0, 1);
-  }, [isUrgent, timeLeftMs, urgencyWindowMs]);
   const slotMax = useMemo(() => {
     const raw =
       auctionState?.maxSlots ??
@@ -1059,7 +1080,7 @@ export default function Auction({
     if (!deadlineAtRef.current || paused) return;
     const tick = () => setNowTick(Date.now());
     tick();
-    const timer = setInterval(tick, 200);
+    const timer = setInterval(tick, 120);
     return () => clearInterval(timer);
   }, [
     auctionState?.phase,
@@ -2014,7 +2035,7 @@ export default function Auction({
       .filter(Boolean)
       .join(" ");
     const ringStyle = {
-      ["--ring-progress" as any]: urgencyRatio,
+      ["--ring-progress" as any]: ringProgress,
     };
 
     return (

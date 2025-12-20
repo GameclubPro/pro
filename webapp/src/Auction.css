@@ -41,6 +41,12 @@
   color-scheme: dark;
 }
 
+@property --ring-progress {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
 /* RESET */
 
 *,
@@ -1315,6 +1321,8 @@ textarea {
 }
 
 .lot-hero__ring {
+  --ring-hue: calc(120deg - (120deg * var(--ring-progress)));
+  --ring-fill: hsl(var(--ring-hue), 80%, 48%);
   position: absolute;
   inset: 50% auto auto 50%;
   transform: translate(-50%, -50%);
@@ -1322,15 +1330,16 @@ textarea {
   height: var(--hero-ring-size);
   border-radius: 50%;
   background: conic-gradient(
-    #22c55e 0turn,
-    #f59e0b calc(var(--ring-progress, 0) * 0.5turn),
-    #ef4444 calc(var(--ring-progress, 0) * 1turn),
+    var(--ring-fill) 0turn,
+    var(--ring-fill) calc(var(--ring-progress, 0) * 1turn),
     rgba(148, 163, 184, 0.12) 0
   );
   -webkit-mask: radial-gradient(circle, transparent 60%, #000 62%);
   mask: radial-gradient(circle, transparent 60%, #000 62%);
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  opacity: 0.65;
+  transition:
+    opacity 0.2s ease,
+    --ring-progress 0.18s linear;
   pointer-events: none;
 }
 
