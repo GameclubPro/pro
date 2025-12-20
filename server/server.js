@@ -2221,6 +2221,7 @@ io.on('connection', (socket) => {
           not_enough_money: 'Недостаточно денег',
           paused: 'Аукцион на паузе',
           bid_below_base: 'Ставка ниже базовой',
+          bid_below_current: 'Ставка ниже текущей',
         };
         const text = map[res.error] || 'Не удалось принять ставку';
         socket.emit('toast', { type: 'error', text });

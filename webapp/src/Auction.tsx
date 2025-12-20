@@ -1531,7 +1531,7 @@ export default function Auction({
       pushError("Ставка превышает ваш баланс");
       return;
     }
-    if (amount > 0 && activeBidFloor > 0 && amount < activeBidFloor) {
+    if (activeBidFloor > 0 && amount < activeBidFloor) {
       pushError(
         `Минимальная ставка ${moneyFormatter.format(activeBidFloor)}💰`
       );
@@ -1554,6 +1554,7 @@ export default function Auction({
             not_enough_money: "Недостаточно денег",
             paused: "Пауза",
             bid_below_base: "Ставка ниже базовой",
+            bid_below_current: "Ставка ниже текущей",
             wrong_game: "Это комната другого режима",
           };
           pushError(map[resp?.error] || "Не удалось принять ставку");

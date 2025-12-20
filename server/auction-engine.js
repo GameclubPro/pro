@@ -692,6 +692,18 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         return { ok: false, error: 'bid_below_base' };
       }
 
+      let maxBid = 0;
+      for (const pid of state.activePlayerIds || []) {
+        const bid = Number(state.currentBids[pid] ?? 0);
+        if (Number.isFinite(bid) && bid > maxBid) {
+          maxBid = bid;
+        }
+      }
+      const minBid = Math.max(slot?.basePrice || 0, maxBid);
+      if (minBid > 0 && clean < minBid) {
+        return { ok: false, error: 'bid_below_current' };
+      }
+
       // сохраняем ставку
       state.currentBids[pid] = clean;
       if (!Array.isArray(state.bidFeed)) state.bidFeed = [];
