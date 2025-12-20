@@ -1322,7 +1322,9 @@ textarea {
   height: var(--hero-ring-size);
   border-radius: 50%;
   background: conic-gradient(
-    rgba(248, 113, 113, 0.85) calc(var(--ring-progress, 0) * 1turn),
+    #22c55e 0turn,
+    #f59e0b calc(var(--ring-progress, 0) * 0.5turn),
+    #ef4444 calc(var(--ring-progress, 0) * 1turn),
     rgba(148, 163, 184, 0.12) 0
   );
   -webkit-mask: radial-gradient(circle, transparent 60%, #000 62%);

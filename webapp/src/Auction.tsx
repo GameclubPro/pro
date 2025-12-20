@@ -378,17 +378,24 @@ export default function Auction({
     return `${minutes}:${String(seconds).padStart(2, "0")}`;
   }, [timeLeftMs]);
 
-  const isUrgent = !paused && countdownLeft != null && countdownLeft <= 5;
+  const urgencySteps = Math.max(5, countdownStartFrom);
+  const urgencyWindowMs = countdownStepMs * urgencySteps;
+  const criticalWindowMs =
+    countdownStepMs * Math.max(1, Math.min(3, countdownStartFrom));
+  const isUrgent =
+    !paused &&
+    timeLeftMs != null &&
+    urgencyWindowMs > 0 &&
+    timeLeftMs <= urgencyWindowMs;
   const isCritical =
     !paused &&
-    countdownLeft != null &&
-    countdownLeft <= Math.min(3, countdownStartFrom);
+    timeLeftMs != null &&
+    criticalWindowMs > 0 &&
+    timeLeftMs <= criticalWindowMs;
   const urgencyRatio = useMemo(() => {
-    if (!isUrgent || countdownLeft == null) return 0;
-    const base = Math.max(1, countdownStartFrom);
-    const clamped = Math.min(countdownLeft, base);
-    return Math.min(1, Math.max(0, (base - clamped + 1) / base));
-  }, [isUrgent, countdownLeft, countdownStartFrom]);
+    if (!isUrgent || timeLeftMs == null || urgencyWindowMs <= 0) return 0;
+    return clamp(1 - timeLeftMs / urgencyWindowMs, 0, 1);
+  }, [isUrgent, timeLeftMs, urgencyWindowMs]);
   const slotMax = useMemo(() => {
     const raw =
       auctionState?.maxSlots ??
