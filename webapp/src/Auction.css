@@ -24,22 +24,12 @@
   --radius-md: 14px;
   --radius-sm: 10px;
 
-  --auction-safe-top-extra: 12px;
-  --auction-safe-top: calc(
-    max(
-      var(--app-inset-top),
-      calc(var(--tg-content-safe-area-inset-top, 0px) + 16px),
-      calc(env(safe-area-inset-top, 0px) + 16px),
-      16px
-    ) + var(--auction-safe-top-extra)
-  );
-  --auction-safe-bottom: max(
-    var(--app-inset-bottom),
-    calc(var(--tg-content-safe-area-inset-bottom, 0px) + 12px),
-    calc(env(safe-area-inset-bottom, 0px) + 12px),
-    12px
-  );
+  --auction-safe-top-extra: 4px;
+  --auction-safe-top: calc(var(--app-inset-top) + var(--auction-safe-top-extra));
+  --auction-safe-bottom: var(--app-inset-bottom);
   --auction-vh: var(--tg-vh, 100svh);
+  --market-grid-strong: rgba(148, 163, 184, 0.06);
+  --market-grid-soft: rgba(148, 163, 184, 0.035);
 
   --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.85);
   --shadow-hard: 0 26px 70px rgba(15, 23, 42, 0.95);
@@ -95,6 +85,7 @@ textarea {
 .auction-app {
   position: relative;
   max-width: 520px;
+  width: 100%;
   margin: 0 auto;
   min-height: var(--auction-vh);
   padding: 0;
@@ -102,11 +93,22 @@ textarea {
   flex-direction: column;
   border-radius: 28px;
   background:
+    repeating-linear-gradient(
+      0deg,
+      var(--market-grid-soft) 0 1px,
+      transparent 1px 48px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      var(--market-grid-strong) 0 1px,
+      transparent 1px 48px
+    ),
     radial-gradient(130% 150% at -10% -10%, #0f172a 0, transparent 55%),
     radial-gradient(140% 160% at 110% -10%, #0b1120 0, transparent 60%),
     radial-gradient(130% 180% at 50% 120%, #020617 0, transparent 70%),
     linear-gradient(160deg, #020617 0%, #020617 40%, #020617 100%);
   box-shadow: var(--shadow-hard);
+  font-variant-numeric: tabular-nums;
   overflow: hidden;
   isolation: isolate;
 }
@@ -177,7 +179,8 @@ textarea {
 
 .screen-wrapper.pt-safe {
   /* лёгкий отступ, чтобы шапка не прилипала к системным кнопкам */
-  padding-top: calc(var(--auction-safe-top) + 8px);
+  padding-top: var(--auction-safe-top);
+  padding-bottom: calc(var(--auction-safe-bottom) + 10px);
 }
 
 .screen-main {
@@ -187,7 +190,7 @@ textarea {
   margin-top: 4px;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-bottom: 6px;
+  padding-bottom: 10px;
 }
 
 .screen-body {
@@ -787,6 +790,165 @@ textarea {
   font-size: 13px;
 }
 
+/* TRADE HUD */
+
+.trade-hud {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  grid-column: 1 / -1;
+  margin-top: 2px;
+  padding: 10px 12px 8px;
+  padding-right: 56px;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--border-strong) 80%, transparent);
+  background:
+    linear-gradient(160deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.9)),
+    repeating-linear-gradient(
+      0deg,
+      var(--market-grid-soft) 0 1px,
+      transparent 1px 32px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      var(--market-grid-strong) 0 1px,
+      transparent 1px 32px
+    );
+  box-shadow: 0 16px 40px rgba(2, 6, 23, 0.7);
+  backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+
+.trade-hud__cells {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.9fr) minmax(0, 1.2fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.trade-hud__cell {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.trade-hud__label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.trade-hud__value {
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trade-hud__value--lead {
+  color: var(--accent-main);
+}
+
+.trade-hud__name {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trade-hud__lot-id {
+  color: var(--accent-gold);
+  margin-right: 6px;
+  letter-spacing: 0.08em;
+}
+
+.trade-hud__timer {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--accent-gold);
+}
+
+.trade-hud__timer.is-paused {
+  color: var(--accent-danger);
+}
+
+.trade-hud__sub {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trade-hud__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.trade-hud__code {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px dashed rgba(148, 163, 184, 0.6);
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.trade-hud__code-label {
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.trade-hud__code-value {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.trade-hud__players {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.trade-hud__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--accent-success);
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
+}
+
+.trade-hud__actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+}
+
+.trade-hud__action {
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+}
+
 /* LOBBY */
 
 .lobby-layout {
@@ -972,6 +1134,7 @@ textarea {
   background: radial-gradient(circle at 100% 20%, rgba(56, 189, 248, 0.08), transparent 32%),
     linear-gradient(135deg, rgba(148, 163, 184, 0.08), rgba(15, 23, 42, 0.95));
   border: 1px solid color-mix(in srgb, var(--border-subtle) 70%, transparent);
+  border-left: 3px solid transparent;
   box-shadow:
     0 12px 32px rgba(2, 6, 23, 0.6),
     0 1px 0 rgba(255, 255, 255, 0.04) inset;
@@ -988,6 +1151,7 @@ textarea {
 
 .lobby-player--self {
   border-color: color-mix(in srgb, var(--accent-main) 70%, var(--border-subtle));
+  border-left-color: var(--accent-main);
   box-shadow:
     0 14px 32px rgba(56, 189, 248, 0.18),
     0 0 0 1px color-mix(in srgb, var(--accent-main) 35%, transparent);
@@ -995,6 +1159,7 @@ textarea {
 
 .lobby-player--ready {
   border-color: rgba(34, 197, 94, 0.75);
+  border-left-color: var(--accent-gold);
   background: linear-gradient(
     135deg,
     rgba(34, 197, 94, 0.16),
@@ -1130,6 +1295,18 @@ textarea {
   align-items: start;
 }
 
+.card--lot {
+  border-color: rgba(56, 189, 248, 0.35);
+  background:
+    radial-gradient(
+      circle at 10% 10%,
+      rgba(56, 189, 248, 0.18),
+      transparent 45%
+    ),
+    linear-gradient(160deg, rgba(15, 23, 42, 0.98), rgba(2, 6, 23, 0.96));
+  box-shadow: 0 18px 48px rgba(2, 6, 23, 0.7);
+}
+
 .lot-hero__emoji-wrap {
   position: relative;
   display: grid;
@@ -1160,10 +1337,15 @@ textarea {
   gap: 6px;
   padding: 6px 10px;
   border-radius: 12px;
-  border: 1px solid var(--border-subtle);
-  background: rgba(56, 189, 248, 0.12);
-  color: var(--accent-gold);
-  font-weight: 700;
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.2),
+    rgba(15, 23, 42, 0.9)
+  );
+  color: #bbf7d0;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   white-space: nowrap;
 }
 
@@ -1185,12 +1367,18 @@ textarea {
 }
 
 .lot-hero__bid {
-  font-size: 15px;
-  font-weight: 700;
-  padding: 8px 12px;
+  font-size: 17px;
+  font-weight: 800;
+  padding: 8px 14px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  letter-spacing: 0.02em;
+  background: linear-gradient(
+    135deg,
+    rgba(56, 189, 248, 0.18),
+    rgba(15, 23, 42, 0.94)
+  );
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  box-shadow: 0 10px 26px rgba(56, 189, 248, 0.2);
   backdrop-filter: blur(6px);
 }
 
@@ -1202,11 +1390,15 @@ textarea {
   position: relative;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--accent-main) 70%, rgba(255, 255, 255, 0.8));
-  background: linear-gradient(120deg, rgba(56, 189, 248, 0.12), rgba(168, 85, 247, 0.1)),
-    radial-gradient(circle at 20% 40%, rgba(56, 189, 248, 0.22), transparent 48%),
+  background: linear-gradient(
+      120deg,
+      rgba(56, 189, 248, 0.2),
+      rgba(34, 197, 94, 0.12)
+    ),
+    radial-gradient(circle at 20% 40%, rgba(56, 189, 248, 0.26), transparent 48%),
     rgba(15, 23, 42, 0.9);
   box-shadow:
-    0 16px 36px rgba(56, 189, 248, 0.22),
+    0 16px 36px rgba(56, 189, 248, 0.28),
     0 0 0 1px rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(6px);
 }
@@ -1225,7 +1417,7 @@ textarea {
   position: relative;
   z-index: 1;
   font-size: 16px;
-  background: linear-gradient(135deg, #67e8f9, #a855f7);
+  background: linear-gradient(135deg, #67e8f9, #fbbf24);
   -webkit-background-clip: text;
   color: transparent;
   filter: drop-shadow(0 6px 12px rgba(56, 189, 248, 0.4));
@@ -1289,6 +1481,9 @@ textarea {
 .card--bid {
   gap: 12px;
   overflow: hidden;
+  border-color: rgba(56, 189, 248, 0.35);
+  background: linear-gradient(160deg, rgba(10, 14, 26, 0.98), rgba(15, 23, 42, 0.94));
+  box-shadow: 0 18px 44px rgba(2, 6, 23, 0.75);
 }
 
 .bid-stats {
@@ -1719,6 +1914,43 @@ button:active:not(:disabled) {
 }
 
 /* RESPONSIVE */
+
+@media (max-width: 720px) {
+  .auction-app {
+    max-width: 100%;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .screen-wrapper {
+    gap: 10px;
+  }
+
+  .trade-hud {
+    border-radius: 16px;
+  }
+
+  .trade-hud__cells {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .trade-hud__cell--lead {
+    grid-column: 1 / -1;
+  }
+
+  .trade-hud__timer {
+    font-size: 18px;
+  }
+
+  .trade-hud__actions {
+    top: 6px;
+    right: 6px;
+  }
+
+  .lobby-players-list--ingame {
+    grid-template-columns: 1fr;
+  }
+}
 
 @media (max-width: 540px) {
   .card--lot {
