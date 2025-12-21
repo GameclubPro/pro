@@ -25,13 +25,9 @@ const COUNTDOWN_STEP_MS = 4_000;
 const COUNTDOWN_START_FROM = 3;
 const LOOTBOX_FALLBACK_IMAGE_URL = "/lootbox.svg";
 const LOOTBOX_SHATTER_SIZE = 240;
-const LOOTBOX_SHATTER_MIN_PIECES = 52;
-const LOOTBOX_SHATTER_MAX_PIECES = 84;
+const LOOTBOX_SHATTER_MIN_PIECES = 36;
+const LOOTBOX_SHATTER_MAX_PIECES = 58;
 const LOOTBOX_REVEAL_TOTAL_MS = 6_200;
-const LOOTBOX_SPARKS_MIN = 18;
-const LOOTBOX_SPARKS_MAX = 30;
-const LOOTBOX_SPARK_DISTANCE_MIN = 140;
-const LOOTBOX_SPARK_DISTANCE_MAX = 230;
 const PHASE_LABEL: Record<string, string> = {
   lobby: "Лобби",
   in_progress: "Торги",
@@ -200,18 +196,6 @@ type LootboxShatterPiece = {
   delay: number;
 };
 
-type LootboxSpark = {
-  key: string;
-  dx: number;
-  dy: number;
-  size: number;
-  thickness: number;
-  delay: number;
-  duration: number;
-  rotate: number;
-  color: string;
-};
-
 export default function Auction({
   apiBase,
   initData,
@@ -233,6 +217,9 @@ export default function Auction({
   const socketRef = useRef<any>(null);
   const [connecting, setConnecting] = useState(false);
   const tg = typeof window !== "undefined" ? window?.Telegram?.WebApp : undefined;
+  const isMiniApp = Boolean(tg);
+  const shatterSize = isMiniApp ? 210 : LOOTBOX_SHATTER_SIZE;
+  const shatterDuration = isMiniApp ? 0.9 : 1.15;
 
   const [room, setRoom] = useState<any>(null);
   const [players, setPlayers] = useState<any[]>([]);
@@ -716,23 +703,26 @@ export default function Auction({
 
   const closeLootboxReveal = useCallback(() => setLootboxReveal(null), []);
 
-  const fireLootboxConfetti = useCallback((kind: string) => {
-    if (!confettiRef.current) return;
-    if (kind !== "money" && kind !== "lot") return;
-    confettiRef.current({
-      particleCount: 260,
-      spread: 110,
-      startVelocity: 48,
-      decay: 0.88,
-      scalar: 1.05,
-      ticks: 220,
-      origin: { y: 0.32 },
-      colors:
-        kind === "lot"
-          ? ["#fbbf24", "#38bdf8", "#a855f7", "#f97316", "#fde047"]
-          : ["#22c55e", "#38bdf8", "#a855f7", "#fbbf24", "#34d399"],
-    });
-  }, []);
+  const fireLootboxConfetti = useCallback(
+    (kind: string) => {
+      if (!confettiRef.current) return;
+      if (kind !== "money" && kind !== "lot") return;
+      confettiRef.current({
+        particleCount: isMiniApp ? 140 : 260,
+        spread: isMiniApp ? 90 : 110,
+        startVelocity: isMiniApp ? 36 : 48,
+        decay: isMiniApp ? 0.9 : 0.88,
+        scalar: isMiniApp ? 0.95 : 1.05,
+        ticks: isMiniApp ? 160 : 220,
+        origin: { y: 0.32 },
+        colors:
+          kind === "lot"
+            ? ["#fbbf24", "#38bdf8", "#a855f7", "#f97316", "#fde047"]
+            : ["#22c55e", "#38bdf8", "#a855f7", "#fbbf24", "#34d399"],
+      });
+    },
+    [isMiniApp]
+  );
 
   const lootboxShatterPieces = useMemo((): LootboxShatterPiece[] => {
     if (!lootboxReveal?.id) return [];
@@ -740,7 +730,7 @@ export default function Auction({
     const seed = hashStringToSeed(lootboxReveal.id);
     const rnd = mulberry32(seed);
 
-    const size = LOOTBOX_SHATTER_SIZE;
+    const size = shatterSize;
     const midX = size / 2;
     const midY = size / 2;
 
@@ -773,13 +763,12 @@ export default function Auction({
 
     type Rect = { x: number; y: number; w: number; h: number };
 
+    const minPieces = isMiniApp ? 24 : LOOTBOX_SHATTER_MIN_PIECES;
+    const maxPieces = isMiniApp ? 40 : LOOTBOX_SHATTER_MAX_PIECES;
     const targetPieces =
-      LOOTBOX_SHATTER_MIN_PIECES +
-      Math.floor(
-        rnd() * (LOOTBOX_SHATTER_MAX_PIECES - LOOTBOX_SHATTER_MIN_PIECES + 1)
-      );
+      minPieces + Math.floor(rnd() * (maxPieces - minPieces + 1));
 
-    const minDim = Math.max(10, Math.floor(size / 20));
+    const minDim = Math.max(isMiniApp ? 14 : 11, Math.floor(size / (isMiniApp ? 16 : 20)));
     const rects: Rect[] = [{ x: 0, y: 0, w: size, h: size }];
 
     let guard = 0;
@@ -865,11 +854,13 @@ export default function Auction({
       const unitX = dirX / len;
       const unitY = dirY / len;
 
-      const magnitude = 160 + rnd() * 320;
-      const jitterX = (rnd() - 0.5) * 180;
-      const jitterY = (rnd() - 0.5) * 160 - 24;
+      const magnitude = (isMiniApp ? 130 : 170) + rnd() * (isMiniApp ? 210 : 320);
+      const jitterX = (rnd() - 0.5) * (isMiniApp ? 120 : 180);
+      const jitterY = (rnd() - 0.5) * (isMiniApp ? 110 : 160) - (isMiniApp ? 18 : 24);
       const dx = unitX * magnitude + jitterX;
       const dy = unitY * magnitude + jitterY;
+
+      const clipPath = isMiniApp ? "" : randomShardClipPath();
 
       return {
         key: `${i}-${left}-${top}`,
@@ -877,59 +868,14 @@ export default function Auction({
         top,
         width,
         height,
-        clipPath: randomShardClipPath(),
+        clipPath,
         dx,
         dy,
-        rotate: (rnd() - 0.5) * 520,
-        delay: rnd() * 0.22,
+        rotate: (rnd() - 0.5) * (isMiniApp ? 380 : 520),
+        delay: rnd() * (isMiniApp ? 0.18 : 0.22),
       };
     });
-  }, [lootboxReveal?.id]);
-
-  const lootboxBurstSparks = useMemo((): LootboxSpark[] => {
-    if (!lootboxReveal?.id) return [];
-
-    const seed = hashStringToSeed(`${lootboxReveal.id}-sparks`);
-    const rnd = mulberry32(seed);
-    const colors = [
-      "#fff2b5",
-      "#ffd166",
-      "#ff9f1c",
-      "#f97316",
-      "#f472b6",
-      "#a855f7",
-      "#38bdf8",
-    ];
-
-    const count =
-      LOOTBOX_SPARKS_MIN +
-      Math.floor(rnd() * (LOOTBOX_SPARKS_MAX - LOOTBOX_SPARKS_MIN + 1));
-
-    return Array.from({ length: count }).map((_, i) => {
-      const angle = rnd() * Math.PI * 2;
-      const distance =
-        LOOTBOX_SPARK_DISTANCE_MIN +
-        rnd() * (LOOTBOX_SPARK_DISTANCE_MAX - LOOTBOX_SPARK_DISTANCE_MIN);
-      const dx = Math.cos(angle) * distance;
-      const dy = Math.sin(angle) * distance;
-      const size = 12 + rnd() * 26;
-      const thickness = 2 + rnd() * 2.4;
-      const rotate = (angle * 180) / Math.PI + (rnd() - 0.5) * 26;
-      const color = colors[Math.floor(rnd() * colors.length)];
-
-      return {
-        key: `${i}-${Math.round(distance)}`,
-        dx,
-        dy,
-        size,
-        thickness,
-        delay: rnd() * 0.16,
-        duration: 0.5 + rnd() * 0.55,
-        rotate,
-        color,
-      };
-    });
-  }, [lootboxReveal?.id]);
+  }, [isMiniApp, lootboxReveal?.id, shatterSize]);
 
   useEffect(() => {
     const len = safeHistory.length;
@@ -2891,12 +2837,13 @@ export default function Auction({
                 className={[
                   "lootbox-shatter",
                   shatterShaking ? "lootbox-shatter--shaking" : "",
+                  isMiniApp ? "lootbox-shatter--lite" : "",
                 ]
                   .filter(Boolean)
                   .join(" ")}
                 style={{
-                  width: LOOTBOX_SHATTER_SIZE,
-                  height: LOOTBOX_SHATTER_SIZE,
+                  width: shatterSize,
+                  height: shatterSize,
                 }}
               >
                 <AnimatePresence initial={false}>
@@ -2925,10 +2872,10 @@ export default function Auction({
                         top: piece.top,
                         width: piece.width,
                         height: piece.height,
-                        clipPath: piece.clipPath,
-                        WebkitClipPath: piece.clipPath,
+                        clipPath: piece.clipPath || undefined,
+                        WebkitClipPath: piece.clipPath || undefined,
                         backgroundImage: `url(${lootboxImageUrl})`,
-                        backgroundSize: `${LOOTBOX_SHATTER_SIZE}px ${LOOTBOX_SHATTER_SIZE}px`,
+                        backgroundSize: `${shatterSize}px ${shatterSize}px`,
                         backgroundPosition: `${-piece.left}px ${-piece.top}px`,
                       }}
                       initial={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
@@ -2939,107 +2886,12 @@ export default function Auction({
                         opacity: 1,
                       }}
                       transition={{
-                        duration: 1.15,
+                        duration: shatterDuration,
                         delay: piece.delay,
                         ease: "easeOut",
                       }}
                     />
                   ))}
-                <AnimatePresence initial={false}>
-                  {lootboxStage === "explode" && [
-                    <motion.div
-                      key="burst-flash"
-                      className="lootbox-burst lootbox-burst--flash"
-                      initial={{ opacity: 0, scale: 0.55 }}
-                      animate={{ opacity: [0, 1, 0], scale: [0.55, 1.08, 1.18] }}
-                      exit={{ opacity: 0 }}
-                      transition={{
-                        duration: 0.65,
-                        times: [0, 0.22, 1],
-                        ease: "easeOut",
-                      }}
-                    />,
-                    <motion.div
-                      key="burst-core"
-                      className="lootbox-burst lootbox-burst--core"
-                      initial={{ opacity: 0, scale: 0.6 }}
-                      animate={{ opacity: [0, 1, 0], scale: [0.6, 1.2, 1.45] }}
-                      exit={{ opacity: 0 }}
-                      transition={{
-                        duration: 1.1,
-                        times: [0, 0.18, 1],
-                        ease: "easeOut",
-                      }}
-                    />,
-                    <motion.div
-                      key="burst-ring"
-                      className="lootbox-burst lootbox-burst--ring"
-                      initial={{ opacity: 0, scale: 0.35, rotate: 0 }}
-                      animate={{
-                        opacity: [0, 0.85, 0],
-                        scale: [0.35, 1.15, 1.7],
-                        rotate: [0, 120],
-                      }}
-                      exit={{ opacity: 0 }}
-                      transition={{
-                        duration: 1.35,
-                        times: [0, 0.2, 1],
-                        ease: "easeOut",
-                      }}
-                    />,
-                    <motion.div
-                      key="shockwave-inner"
-                      className="lootbox-shockwave lootbox-shockwave--inner"
-                      initial={{ opacity: 0, scale: 0.35 }}
-                      animate={{ opacity: [0, 0.9, 0], scale: [0.35, 1.15, 1.55] }}
-                      exit={{ opacity: 0 }}
-                      transition={{
-                        duration: 0.85,
-                        times: [0, 0.2, 1],
-                        ease: "easeOut",
-                      }}
-                    />,
-                    <motion.div
-                      key="shockwave-outer"
-                      className="lootbox-shockwave lootbox-shockwave--outer"
-                      initial={{ opacity: 0, scale: 0.4 }}
-                      animate={{ opacity: [0, 0.75, 0], scale: [0.4, 1.35, 2.05] }}
-                      exit={{ opacity: 0 }}
-                      transition={{
-                        duration: 1.05,
-                        delay: 0.04,
-                        times: [0, 0.2, 1],
-                        ease: "easeOut",
-                      }}
-                    />,
-                    ...lootboxBurstSparks.map((spark) => (
-                      <motion.div
-                        key={`spark-${spark.key}`}
-                        className="lootbox-spark"
-                        style={{
-                          width: spark.size,
-                          height: spark.thickness,
-                          color: spark.color,
-                          rotate: spark.rotate,
-                        }}
-                        initial={{ opacity: 0, x: 0, y: 0, scaleX: 0.4, scaleY: 0.8 }}
-                        animate={{
-                          opacity: [0, 1, 0],
-                          x: spark.dx,
-                          y: spark.dy,
-                          scaleX: [0.4, 1, 0.7],
-                          scaleY: [0.8, 1, 0.6],
-                        }}
-                        exit={{ opacity: 0 }}
-                        transition={{
-                          duration: spark.duration,
-                          delay: spark.delay,
-                          ease: "easeOut",
-                        }}
-                      />
-                    )),
-                  ]}
-                </AnimatePresence>
                 <AnimatePresence initial={false}>
                   {showDrop && (
                     <motion.div
