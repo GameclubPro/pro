@@ -2251,10 +2251,16 @@ io.on('connection', (socket) => {
   });
 
   // Настройки аукциона (только владелец, только в лобби)
-  socket.on('auction:configure', async ({ code, rules, slots }, cb) => {
+  socket.on('auction:configure', async ({ code, rules, slots, lotCategories, lotCategoryIds, lotCategorySlugs }, cb) => {
     try {
       if (!code) return ackErr(cb, 'room_not_found', { errorText: 'Комната не найдена' });
-      const res = await auction.configure(code, user.id, { rules, slots });
+      const res = await auction.configure(code, user.id, {
+        rules,
+        slots,
+        lotCategories,
+        lotCategoryIds,
+        lotCategorySlugs,
+      });
       if (!res.ok) {
         const map = {
           room_not_found: 'Комната не найдена',

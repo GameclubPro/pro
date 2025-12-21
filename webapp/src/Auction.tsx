@@ -354,6 +354,11 @@ export default function Auction({
     () => getLootboxImageUrl(currentSlotRarity),
     [currentSlotRarity]
   );
+  const currentLotImageUrl = useMemo(() => {
+    if (currentSlot?.type !== "lot") return null;
+    const raw = String(currentSlot?.imageUrl || "").trim();
+    return raw || null;
+  }, [currentSlot?.imageUrl, currentSlot?.type]);
 
 
   const heroBidText = useMemo(() => {
@@ -2233,6 +2238,13 @@ export default function Auction({
                 <img
                   className="lot-hero__emoji-img"
                   src={currentLootboxImageUrl}
+                  alt=""
+                  draggable={false}
+                />
+              ) : currentLotImageUrl ? (
+                <img
+                  className="lot-hero__emoji-img"
+                  src={currentLotImageUrl}
                   alt=""
                   draggable={false}
                 />

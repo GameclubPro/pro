@@ -35,7 +35,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     timePerSlotSec: COUNTDOWN_START_FROM * (COUNTDOWN_STEP_MS / 1000), // full window before auto-close
   });
 
-  const LOT_ITEMS = [
+  const FALLBACK_LOT_ITEMS = [
     '🏠 Вилла у моря',
     '🚗 Спортивный суперкар',
     '💎 Алмазное кольцо',
@@ -45,6 +45,13 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     '🎸 Гитара рок-звезды',
     '📱 Прототип смартфона будущего',
   ];
+  const FALLBACK_LOT_CATALOG = FALLBACK_LOT_ITEMS.map((name) => ({
+    id: null,
+    name,
+    basePrice: null,
+    imageUrl: null,
+    categoryId: null,
+  }));
 
   const LOOTBOX_RARITIES = [
     { code: 'F', label: 'Обычный' },
@@ -122,24 +129,96 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     };
   }
 
+  function normalizeLotRecord(raw) {
+    const name = String(raw?.name || '').trim();
+    if (!name) return null;
+    const basePrice = Number.isFinite(Number(raw?.basePrice))
+      ? Math.max(0, Math.floor(Number(raw.basePrice)))
+      : null;
+    const imageUrlRaw = raw?.imageUrl != null ? String(raw.imageUrl).trim() : '';
+    const imageUrl = imageUrlRaw ? imageUrlRaw.slice(0, 500) : null;
+    const categoryId = Number.isFinite(Number(raw?.categoryId))
+      ? Number(raw.categoryId)
+      : null;
+    const lotId = Number.isFinite(Number(raw?.id ?? raw?.lotId))
+      ? Number(raw.id ?? raw.lotId)
+      : null;
+    return { id: lotId, name, basePrice, imageUrl, categoryId };
+  }
+
+  function pickRandomLotFromCatalog(lotCatalog) {
+    const list = Array.isArray(lotCatalog) ? lotCatalog.filter(Boolean) : [];
+    if (!list.length) return null;
+    return list[randomInt(0, list.length)];
+  }
+
+  async function loadLotCatalog(preset = {}) {
+    if (!prisma?.auctionLot?.findMany) return FALLBACK_LOT_CATALOG;
+
+    const rawSlugs = Array.isArray(preset.lotCategorySlugs)
+      ? preset.lotCategorySlugs
+      : Array.isArray(preset.lotCategories)
+        ? preset.lotCategories
+        : [];
+    const categorySlugs = rawSlugs
+      .map((s) => String(s || '').trim().toLowerCase())
+      .filter(Boolean)
+      .slice(0, 40);
+
+    const rawIds = Array.isArray(preset.lotCategoryIds)
+      ? preset.lotCategoryIds
+      : [];
+    const categoryIds = rawIds
+      .map((v) => Number(v))
+      .filter((v) => Number.isFinite(v) && v > 0)
+      .slice(0, 40);
+
+    const where = { active: true };
+    if (categoryIds.length) {
+      where.categoryId = { in: categoryIds };
+    } else if (categorySlugs.length) {
+      where.category = { slug: { in: categorySlugs } };
+    }
+
+    try {
+      const rows = await prisma.auctionLot.findMany({
+        where,
+        select: {
+          id: true,
+          name: true,
+          basePrice: true,
+          imageUrl: true,
+          categoryId: true,
+        },
+      });
+      const normalized = rows.map(normalizeLotRecord).filter(Boolean);
+      return normalized.length ? normalized : FALLBACK_LOT_CATALOG;
+    } catch {
+      return FALLBACK_LOT_CATALOG;
+    }
+  }
+
   function pickRegularLootboxPrizeLot(state) {
     const sourceSlots = Array.isArray(state?.slots) ? state.slots : [];
-    const lotSlots = sourceSlots.filter((s) => s && s.type === 'lot' && s.name);
-
-    const picked = lotSlots.length
-      ? lotSlots[randomInt(0, lotSlots.length)]
-      : {
-          name: LOT_ITEMS[randomInt(0, LOT_ITEMS.length)],
-          basePrice: randomInt(80_000, 350_001),
-        };
-
-    const basePrice = Number.isFinite(Number(picked.basePrice))
+    const slotLots = sourceSlots.filter((s) => s && s.type === 'lot' && s.name);
+    const pickedSlot = slotLots.length
+      ? slotLots[randomInt(0, slotLots.length)]
+      : null;
+    const picked =
+      normalizeLotRecord(pickedSlot) ||
+      pickRandomLotFromCatalog(state?.lotCatalog) ||
+      pickRandomLotFromCatalog(FALLBACK_LOT_CATALOG);
+    const safeName = picked?.name || FALLBACK_LOT_ITEMS[randomInt(0, FALLBACK_LOT_ITEMS.length)];
+    const basePrice = Number.isFinite(Number(picked?.basePrice))
       ? Math.max(0, Math.floor(Number(picked.basePrice)))
       : randomInt(80_000, 350_001);
 
     return {
-      ...parseEmojiAndName(picked.name),
+      ...parseEmojiAndName(safeName),
       basePrice,
+      imageUrl: picked?.imageUrl || null,
+      lotId: picked?.id ?? null,
+      categoryId: picked?.categoryId ?? null,
     };
   }
 
@@ -165,8 +244,11 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     });
   }
 
-  function createSlots(max = DEFAULT_RULES.maxSlots) {
+  function createSlots(max = DEFAULT_RULES.maxSlots, lotCatalog = []) {
     const slots = [];
+    const safeCatalog =
+      Array.isArray(lotCatalog) && lotCatalog.length ? lotCatalog : FALLBACK_LOT_CATALOG;
+
     for (let i = 0; i < max; i++) {
       const isLoot = Math.random() < 0.3;
       if (isLoot) {
@@ -179,11 +261,20 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
           basePrice: randomInt(50_000, 200_001),
         });
       } else {
+        const picked = pickRandomLotFromCatalog(safeCatalog);
+        const name = picked?.name || `Лот ${i + 1}`;
+        const basePrice = Number.isFinite(Number(picked?.basePrice))
+          ? Math.max(0, Math.floor(Number(picked.basePrice)))
+          : randomInt(80_000, 350_001);
+
         slots.push({
           index: i,
           type: 'lot',
-          name: LOT_ITEMS[randomInt(0, LOT_ITEMS.length)],
-          basePrice: randomInt(80_000, 350_001),
+          name,
+          basePrice,
+          imageUrl: picked?.imageUrl || null,
+          lotId: picked?.id ?? null,
+          categoryId: picked?.categoryId ?? null,
         });
       }
     }
@@ -488,6 +579,9 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         name: s.name,
         rarity: s.rarity || null,
         basePrice: s.basePrice,
+        imageUrl: s.imageUrl || null,
+        lotId: s.lotId ?? null,
+        categoryId: s.categoryId ?? null,
       };
     }
 
@@ -499,6 +593,9 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         type: it.type,
         name: it.name,
         basePrice: it.basePrice,
+        imageUrl: it.imageUrl || null,
+        lotId: it.lotId ?? null,
+        categoryId: it.categoryId ?? null,
         paid: it.paid,
         value: it.value,
         effect: it.effect || null,
@@ -530,6 +627,9 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         type: h.type,
         name: h.name,
         rarity: h.rarity || null,
+        imageUrl: h.imageUrl || null,
+        lotId: h.lotId ?? null,
+        categoryId: h.categoryId ?? null,
         winnerPlayerId: h.winnerPlayerId,
         winBid: h.winBid,
         effect: h.effect || null,
@@ -610,15 +710,24 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       let basketItemType = slot.type;
       let basketItemName = slot.name;
       let basketItemBasePrice = base;
+      let basketItemImageUrl = slot.imageUrl || null;
+      let basketItemLotId = slot.lotId ?? null;
+      let basketItemCategoryId = slot.categoryId ?? null;
 
       // для лутбокса учитываем рандомный эффект (может быть штрафом)
       if (slot.type === 'lootbox') {
         if (effect && effect.kind === 'lot' && effect.prize) {
           const prizeBase = Number(effect.prize.basePrice);
           const prizeName = String(effect.prize.fullName || effect.prize.name || '').trim();
+          const prizeImageUrl = effect.prize.imageUrl || null;
+          const prizeLotId = effect.prize.lotId ?? null;
+          const prizeCategoryId = effect.prize.categoryId ?? null;
           basketItemType = 'lot';
           basketItemName = prizeName || slot.name;
           basketItemBasePrice = Number.isFinite(prizeBase) ? prizeBase : base;
+          basketItemImageUrl = prizeImageUrl;
+          basketItemLotId = prizeLotId;
+          basketItemCategoryId = prizeCategoryId;
           value = basketItemBasePrice;
         } else {
           const delta = (effect && typeof effect.delta === 'number')
@@ -634,6 +743,9 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         type: basketItemType,
         name: basketItemName,
         basePrice: basketItemBasePrice,
+        imageUrl: basketItemImageUrl,
+        lotId: basketItemLotId,
+        categoryId: basketItemCategoryId,
         paid: maxBid,
         value,
         effect: effect || null,
@@ -647,6 +759,9 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       type: slot.type,
       name: slot.name,
       rarity: slot.rarity || null,
+      imageUrl: slot.imageUrl || null,
+      lotId: slot.lotId ?? null,
+      categoryId: slot.categoryId ?? null,
       winnerPlayerId: winnerId || null,
       winBid: maxBid,
       effect,
@@ -709,6 +824,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         ...DEFAULT_RULES,
         ...(preset.rules || {}),
       };
+      const lotCatalog = await loadLotCatalog(preset);
 
       const balances = {};
       const activeIds = [];
@@ -732,6 +848,18 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
                 (type === 'lootbox'
                   ? `${lootboxRarityLabel(rarity || REGULAR_LOOTBOX_RARITY)} лутбокс`
                   : `Лот ${i + 1}`);
+              const imageUrl =
+                type === 'lot' && s.imageUrl != null
+                  ? String(s.imageUrl).trim().slice(0, 500)
+                  : null;
+              const lotId =
+                type === 'lot' && Number.isFinite(Number(s.lotId))
+                  ? Number(s.lotId)
+                  : null;
+              const categoryId =
+                type === 'lot' && Number.isFinite(Number(s.categoryId))
+                  ? Number(s.categoryId)
+                  : null;
               return {
                 index: i,
                 type,
@@ -740,9 +868,12 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
                 basePrice: Number.isFinite(Number(s.basePrice))
                   ? Math.max(0, Math.floor(Number(s.basePrice)))
                   : randomInt(80_000, 350_001),
+                imageUrl,
+                lotId,
+                categoryId,
               };
             })
-          : createSlots(rules.maxSlots || DEFAULT_RULES.maxSlots),
+          : createSlots(rules.maxSlots || DEFAULT_RULES.maxSlots, lotCatalog),
         currentIndex: 0,
         slotsPlayed: 0,
         balances,
@@ -757,6 +888,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         slotDeadlineAtMs: null,
         bidFeed: [],
         slotPhase: 'bidding',
+        lotCatalog,
       };
 
       states.set(room.id, state);
@@ -887,12 +1019,18 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
           basePrice: Number.isFinite(Number(s.basePrice))
             ? Math.max(0, Math.floor(Number(s.basePrice)))
             : undefined,
+          imageUrl: s.imageUrl || null,
+          lotId: s.lotId ?? null,
+          categoryId: s.categoryId ?? null,
         }))
       : Array.from({ length: slotCount }, (_v, i) => ({
           index: i,
           type: 'lot',
           name: `Lot ${i + 1}`,
           basePrice: undefined,
+          imageUrl: null,
+          lotId: null,
+          categoryId: null,
         }));
 
     return {
@@ -984,6 +1122,18 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
               (type === 'lootbox'
                 ? `${lootboxRarityLabel(rarity || REGULAR_LOOTBOX_RARITY)} лутбокс`
                 : 'Лот');
+            const imageUrl =
+              type === 'lot' && s.imageUrl != null
+                ? String(s.imageUrl).trim().slice(0, 500)
+                : null;
+            const lotId =
+              type === 'lot' && Number.isFinite(Number(s.lotId))
+                ? Number(s.lotId)
+                : null;
+            const categoryId =
+              type === 'lot' && Number.isFinite(Number(s.categoryId))
+                ? Number(s.categoryId)
+                : null;
             return {
               type,
               name,
@@ -991,13 +1141,36 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
               basePrice: Number.isFinite(Number(s.basePrice))
                 ? Math.max(0, Math.floor(Number(s.basePrice)))
                 : undefined,
+              imageUrl,
+              lotId,
+              categoryId,
             };
           })
       : [];
 
+    const rawCategorySlugs = Array.isArray(payload.lotCategories)
+      ? payload.lotCategories
+      : Array.isArray(payload.lotCategorySlugs)
+        ? payload.lotCategorySlugs
+        : [];
+    const lotCategorySlugs = rawCategorySlugs
+      .map((value) => String(value || '').trim().toLowerCase())
+      .filter(Boolean)
+      .slice(0, 40);
+
+    const rawCategoryIds = Array.isArray(payload.lotCategoryIds)
+      ? payload.lotCategoryIds
+      : [];
+    const lotCategoryIds = rawCategoryIds
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value) && value > 0)
+      .slice(0, 40);
+
     presets.set(room.id, {
       rules: safeRules,
       slots: safeSlots,
+      lotCategorySlugs,
+      lotCategoryIds,
     });
 
     return { ok: true };
