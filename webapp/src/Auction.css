@@ -1291,9 +1291,9 @@ textarea {
 }
 
 .lot-hero__emoji-wrap {
-  --hero-ring-size: clamp(192px, 52.8vw, 240px);
-  --hero-image-size: calc(var(--hero-ring-size) - 29px);
-  --hero-emoji-size: calc(var(--hero-ring-size) - 106px);
+  --hero-ring-size: clamp(211px, 58.1vw, 264px);
+  --hero-image-size: calc(var(--hero-ring-size) - 32px);
+  --hero-emoji-size: calc(var(--hero-ring-size) - 117px);
   position: relative;
   display: grid;
   place-items: center;
@@ -1486,7 +1486,7 @@ textarea {
   inset: 0;
   display: grid;
   place-items: center;
-  font-size: 158px;
+  font-size: 174px;
   font-weight: 800;
   color: rgba(255, 255, 255, 0.82);
   text-shadow: 0 18px 52px rgba(0, 0, 0, 0.55);
