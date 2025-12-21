@@ -19,6 +19,13 @@ const LOTS = [
     basePrice: 120000,
     nominalPrice: 180000,
   },
+  {
+    slug: 'audi-q3',
+    name: 'Audi Q3',
+    imageUrl: 'https://s3.regru.cloud/box/auction/auto/audiQ3.png',
+    basePrice: 120000,
+    nominalPrice: 180000,
+  },
 ];
 
 const prisma = new PrismaClient();
