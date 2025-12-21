@@ -2795,8 +2795,8 @@ button:active:not(:disabled) {
 }
 
 .lootbox-drop__image {
-  width: min(120px, 36vw);
-  height: min(120px, 36vw);
+  width: min(150px, 44vw);
+  height: min(150px, 44vw);
   object-fit: contain;
   display: block;
   filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.45));
