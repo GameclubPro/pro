@@ -2751,15 +2751,57 @@ button:active:not(:disabled) {
 
 .lootbox-burst {
   position: absolute;
-  inset: -34px;
+  inset: -52px;
+  border-radius: 999px;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+}
+
+.lootbox-burst--flash {
+  inset: -120px;
   background: radial-gradient(
-    circle at 50% 40%,
-    rgba(251, 191, 36, 0.52),
-    rgba(168, 85, 247, 0.22),
+    circle at 50% 45%,
+    rgba(255, 255, 255, 0.95),
+    rgba(255, 255, 255, 0.38),
+    transparent 65%
+  );
+  filter: blur(8px);
+}
+
+.lootbox-burst--core {
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(255, 221, 106, 0.95),
+    rgba(255, 145, 56, 0.6),
+    rgba(168, 85, 247, 0.38),
     transparent 70%
   );
-  mix-blend-mode: screen;
-  filter: blur(2px);
+  filter: blur(1px) saturate(1.15);
+  box-shadow: 0 0 42px rgba(255, 197, 92, 0.7);
+}
+
+.lootbox-burst--ring {
+  inset: -82px;
+  background:
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 58%,
+      rgba(255, 214, 102, 0.9) 62%,
+      transparent 69%
+    ),
+    conic-gradient(
+      from 0deg,
+      rgba(255, 247, 213, 0.0),
+      rgba(255, 214, 102, 0.65),
+      rgba(255, 247, 213, 0.0) 30%,
+      rgba(168, 85, 247, 0.35),
+      rgba(255, 247, 213, 0.0) 70%
+    );
+  filter: blur(0.5px);
+  box-shadow:
+    0 0 34px rgba(255, 214, 102, 0.65),
+    0 0 70px rgba(168, 85, 247, 0.4);
   pointer-events: none;
 }
 

@@ -2220,6 +2220,7 @@ io.on('connection', (socket) => {
           bad_amount: 'Неверная сумма ставки',
           not_enough_money: 'Недостаточно денег',
           paused: 'Аукцион на паузе',
+          reveal: 'Открывается лутбокс — ставки скоро продолжатся',
           bid_below_base: 'Ставка ниже базовой',
           bid_below_current: 'Ставка ниже текущей',
         };
@@ -2339,6 +2340,7 @@ io.on('connection', (socket) => {
           room_not_found: 'Комната не найдена',
           forbidden_not_owner: 'Только владелец может переключать лоты',
           not_running: 'Аукцион ещё не запущен',
+          reveal: 'Идёт открытие лутбокса',
         };
         const text = map[res.error] || 'Не удалось перейти к следующему лоту';
         socket.emit('toast', { type: 'error', text });

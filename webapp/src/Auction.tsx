@@ -25,8 +25,9 @@ const COUNTDOWN_STEP_MS = 4_000;
 const COUNTDOWN_START_FROM = 3;
 const LOOTBOX_FALLBACK_IMAGE_URL = "/lootbox.svg";
 const LOOTBOX_SHATTER_SIZE = 240;
-const LOOTBOX_SHATTER_MIN_PIECES = 20;
-const LOOTBOX_SHATTER_MAX_PIECES = 30;
+const LOOTBOX_SHATTER_MIN_PIECES = 44;
+const LOOTBOX_SHATTER_MAX_PIECES = 70;
+const LOOTBOX_REVEAL_TOTAL_MS = 6_200;
 const PHASE_LABEL: Record<string, string> = {
   lobby: "Лобби",
   in_progress: "Торги",
@@ -272,8 +273,10 @@ export default function Auction({
 
   const phase: "lobby" | "in_progress" | "finished" | string =
     auctionState?.phase || "lobby";
+  const slotPhase = String(auctionState?.slotPhase || "bidding");
+  const isRevealPhase = slotPhase === "reveal";
   const paused = !!auctionState?.paused;
-  const isBiddingLocked = paused || phase !== "in_progress";
+  const isBiddingLocked = paused || phase !== "in_progress" || isRevealPhase;
   const myPlayerId = selfInfo?.roomPlayerId ?? null;
 
   const balances = useMemo(
@@ -351,13 +354,14 @@ export default function Auction({
 
 
   const heroBidText = useMemo(() => {
+    if (isRevealPhase) return "Открывается лутбокс";
     if (leadingBid?.amount != null) {
       return leadingPlayerName
         ? `${moneyFormatter.format(leadingBid.amount)}💰 · ${leadingPlayerName}`
         : `${moneyFormatter.format(leadingBid.amount)}💰`;
     }
     return `База ${moneyFormatter.format(baseBid)}💰`;
-  }, [baseBid, leadingBid?.amount, leadingPlayerName, moneyFormatter]);
+  }, [baseBid, isRevealPhase, leadingBid?.amount, leadingPlayerName, moneyFormatter]);
   const activeBidFloor = useMemo(
     () => Math.max(baseBid, leadingBid?.amount ?? 0),
     [baseBid, leadingBid?.amount]
@@ -700,13 +704,17 @@ export default function Auction({
     if (!confettiRef.current) return;
     if (kind !== "money" && kind !== "lot") return;
     confettiRef.current({
-      particleCount: 180,
-      spread: 75,
+      particleCount: 260,
+      spread: 110,
+      startVelocity: 48,
+      decay: 0.88,
+      scalar: 1.05,
+      ticks: 220,
       origin: { y: 0.32 },
       colors:
         kind === "lot"
-          ? ["#fbbf24", "#38bdf8", "#a855f7", "#f59e0b"]
-          : ["#22c55e", "#38bdf8", "#a855f7", "#fbbf24"],
+          ? ["#fbbf24", "#38bdf8", "#a855f7", "#f97316", "#fde047"]
+          : ["#22c55e", "#38bdf8", "#a855f7", "#fbbf24", "#34d399"],
     });
   }, []);
 
@@ -755,11 +763,11 @@ export default function Auction({
         rnd() * (LOOTBOX_SHATTER_MAX_PIECES - LOOTBOX_SHATTER_MIN_PIECES + 1)
       );
 
-    const minDim = Math.max(20, Math.floor(size / 10));
+    const minDim = Math.max(12, Math.floor(size / 18));
     const rects: Rect[] = [{ x: 0, y: 0, w: size, h: size }];
 
     let guard = 0;
-    while (rects.length < targetPieces && guard++ < 600) {
+    while (rects.length < targetPieces && guard++ < 1000) {
       const candidates = rects
         .map((r, idx) => ({
           r,
@@ -841,9 +849,9 @@ export default function Auction({
       const unitX = dirX / len;
       const unitY = dirY / len;
 
-      const magnitude = 110 + rnd() * 210;
-      const jitterX = (rnd() - 0.5) * 110;
-      const jitterY = (rnd() - 0.5) * 88 - 18;
+      const magnitude = 160 + rnd() * 320;
+      const jitterX = (rnd() - 0.5) * 180;
+      const jitterY = (rnd() - 0.5) * 160 - 24;
       const dx = unitX * magnitude + jitterX;
       const dy = unitY * magnitude + jitterY;
 
@@ -909,9 +917,12 @@ export default function Auction({
     lootboxConfettiFiredRef.current = null;
 
     const shakeTimer = setTimeout(() => setLootboxStage("shake"), 200);
-    const explodeTimer = setTimeout(() => setLootboxStage("explode"), 1500);
-    const revealTimer = setTimeout(() => setLootboxStage("reveal"), 3250);
-    const closeTimer = setTimeout(() => setLootboxReveal(null), 6700);
+    const explodeTimer = setTimeout(() => setLootboxStage("explode"), 1400);
+    const revealTimer = setTimeout(() => setLootboxStage("reveal"), 2700);
+    const closeTimer = setTimeout(
+      () => setLootboxReveal(null),
+      LOOTBOX_REVEAL_TOTAL_MS
+    );
 
     return () => {
       clearTimeout(shakeTimer);
@@ -923,7 +934,7 @@ export default function Auction({
 
   useEffect(() => {
     if (!lootboxReveal) return;
-    if (lootboxStage !== "reveal") return;
+    if (lootboxStage !== "explode" && lootboxStage !== "reveal") return;
     if (lootboxConfettiFiredRef.current === lootboxReveal.id) return;
     lootboxConfettiFiredRef.current = lootboxReveal.id;
     fireLootboxConfetti(String(lootboxReveal.effect?.kind || ""));
@@ -1595,7 +1606,11 @@ export default function Auction({
     if (!socket || !room || !selfInfo) return;
     if (!auctionState || auctionState.phase !== "in_progress") return;
     if (paused) {
-      pushToast({ type: "info", text: "Game is paused" });
+      pushToast({ type: "info", text: "Аукцион на паузе" });
+      return;
+    }
+    if (isRevealPhase) {
+      pushToast({ type: "info", text: "Открывается лутбокс" });
       return;
     }
 
@@ -1641,7 +1656,8 @@ export default function Auction({
             not_participant: "Вы не участвуете",
             bad_amount: "Неверная сумма",
             not_enough_money: "Недостаточно денег",
-            paused: "Пауза",
+            paused: "Аукцион на паузе",
+            reveal: "Открывается лутбокс — ставки скоро продолжатся",
             bid_below_base: "Ставка ниже базовой",
             bid_below_current: "Ставка ниже текущей",
             wrong_game: "Это комната другого режима",
@@ -2075,7 +2091,11 @@ export default function Auction({
 
   const renderGameContent = () => {
     if (!showGame) return null;
-    const timeChipLabel = paused ? "Пауза" : timeLeftLabel;
+    const timeChipLabel = paused
+      ? "Пауза"
+      : isRevealPhase
+      ? "Открытие"
+      : timeLeftLabel;
     const leaderChipLabel =
       leadingBid?.amount != null
         ? `${moneyFormatter.format(leadingBid.amount)}💰`
@@ -2402,8 +2422,10 @@ export default function Auction({
               {isBiddingLocked && (
                 <div className="callout">
                   {paused
-                    ? "Game is paused - bids are temporarily locked."
-                    : "Bids are available only while the round is running."}
+                    ? "Аукцион на паузе — ставки временно закрыты."
+                    : isRevealPhase
+                    ? "Идёт открытие лутбокса — ставки скоро продолжатся."
+                    : "Ставки доступны только во время раунда."}
                 </div>
               )}
 
@@ -2763,10 +2785,11 @@ export default function Auction({
         : effectKind === "lot"
         ? prizeBasePriceText || "Предмет"
         : "Ничего";
-    const shatterExploded = lootboxStage === "explode" || lootboxStage === "reveal";
+    const shatterExploded = lootboxStage === "explode";
     const shatterShaking = lootboxStage === "shake";
     const showIntact = lootboxStage === "intro" || lootboxStage === "shake";
-    const showPieces = lootboxStage === "explode" || lootboxStage === "reveal";
+    const showPieces = lootboxStage === "explode";
+    const showDrop = lootboxStage === "explode" || lootboxStage === "reveal";
 
     return (
       <div
@@ -2852,32 +2875,61 @@ export default function Auction({
                         x: shatterExploded ? piece.dx : 0,
                         y: shatterExploded ? piece.dy : 0,
                         rotate: shatterExploded ? piece.rotate : 0,
-                        opacity: shatterExploded ? 0 : 1,
+                        opacity: 1,
                       }}
                       transition={{
-                        duration: 1.25,
+                        duration: 1.15,
                         delay: piece.delay,
                         ease: "easeOut",
                       }}
                     />
                   ))}
                 <AnimatePresence initial={false}>
-                  {lootboxStage === "explode" && (
+                  {lootboxStage === "explode" && [
                     <motion.div
-                      className="lootbox-burst"
-                      initial={{ opacity: 0, scale: 0.7 }}
-                      animate={{ opacity: [0, 1, 0], scale: [0.7, 1.08, 1.25] }}
+                      key="burst-flash"
+                      className="lootbox-burst lootbox-burst--flash"
+                      initial={{ opacity: 0, scale: 0.55 }}
+                      animate={{ opacity: [0, 1, 0], scale: [0.55, 1.08, 1.18] }}
                       exit={{ opacity: 0 }}
                       transition={{
-                        duration: 1.2,
+                        duration: 0.65,
+                        times: [0, 0.22, 1],
+                        ease: "easeOut",
+                      }}
+                    />,
+                    <motion.div
+                      key="burst-core"
+                      className="lootbox-burst lootbox-burst--core"
+                      initial={{ opacity: 0, scale: 0.6 }}
+                      animate={{ opacity: [0, 1, 0], scale: [0.6, 1.2, 1.45] }}
+                      exit={{ opacity: 0 }}
+                      transition={{
+                        duration: 1.1,
                         times: [0, 0.18, 1],
                         ease: "easeOut",
                       }}
-                    />
-                  )}
+                    />,
+                    <motion.div
+                      key="burst-ring"
+                      className="lootbox-burst lootbox-burst--ring"
+                      initial={{ opacity: 0, scale: 0.35, rotate: 0 }}
+                      animate={{
+                        opacity: [0, 0.85, 0],
+                        scale: [0.35, 1.15, 1.7],
+                        rotate: [0, 120],
+                      }}
+                      exit={{ opacity: 0 }}
+                      transition={{
+                        duration: 1.35,
+                        times: [0, 0.2, 1],
+                        ease: "easeOut",
+                      }}
+                    />,
+                  ]}
                 </AnimatePresence>
                 <AnimatePresence initial={false}>
-                  {lootboxStage === "reveal" && (
+                  {showDrop && (
                     <motion.div
                       key={lootboxReveal.id}
                       className="lootbox-drop"
