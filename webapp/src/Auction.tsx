@@ -883,7 +883,6 @@ export default function Auction({
     if (!latest || latest.type !== "lootbox") return;
     const slotName = String(latest.name || "");
     const slotRarity = getLootboxRarity(latest);
-    if (slotRarity !== "F") return;
     const winnerPlayerId = latest.winnerPlayerId;
     const effect = latest.effect;
     if (winnerPlayerId == null || !effect) return;
