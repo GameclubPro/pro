@@ -25,9 +25,13 @@ const COUNTDOWN_STEP_MS = 4_000;
 const COUNTDOWN_START_FROM = 3;
 const LOOTBOX_FALLBACK_IMAGE_URL = "/lootbox.svg";
 const LOOTBOX_SHATTER_SIZE = 240;
-const LOOTBOX_SHATTER_MIN_PIECES = 44;
-const LOOTBOX_SHATTER_MAX_PIECES = 70;
+const LOOTBOX_SHATTER_MIN_PIECES = 52;
+const LOOTBOX_SHATTER_MAX_PIECES = 84;
 const LOOTBOX_REVEAL_TOTAL_MS = 6_200;
+const LOOTBOX_SPARKS_MIN = 18;
+const LOOTBOX_SPARKS_MAX = 30;
+const LOOTBOX_SPARK_DISTANCE_MIN = 140;
+const LOOTBOX_SPARK_DISTANCE_MAX = 230;
 const PHASE_LABEL: Record<string, string> = {
   lobby: "Лобби",
   in_progress: "Торги",
@@ -194,6 +198,18 @@ type LootboxShatterPiece = {
   dy: number;
   rotate: number;
   delay: number;
+};
+
+type LootboxSpark = {
+  key: string;
+  dx: number;
+  dy: number;
+  size: number;
+  thickness: number;
+  delay: number;
+  duration: number;
+  rotate: number;
+  color: string;
 };
 
 export default function Auction({
@@ -763,7 +779,7 @@ export default function Auction({
         rnd() * (LOOTBOX_SHATTER_MAX_PIECES - LOOTBOX_SHATTER_MIN_PIECES + 1)
       );
 
-    const minDim = Math.max(12, Math.floor(size / 18));
+    const minDim = Math.max(10, Math.floor(size / 20));
     const rects: Rect[] = [{ x: 0, y: 0, w: size, h: size }];
 
     let guard = 0;
@@ -866,6 +882,51 @@ export default function Auction({
         dy,
         rotate: (rnd() - 0.5) * 520,
         delay: rnd() * 0.22,
+      };
+    });
+  }, [lootboxReveal?.id]);
+
+  const lootboxBurstSparks = useMemo((): LootboxSpark[] => {
+    if (!lootboxReveal?.id) return [];
+
+    const seed = hashStringToSeed(`${lootboxReveal.id}-sparks`);
+    const rnd = mulberry32(seed);
+    const colors = [
+      "#fff2b5",
+      "#ffd166",
+      "#ff9f1c",
+      "#f97316",
+      "#f472b6",
+      "#a855f7",
+      "#38bdf8",
+    ];
+
+    const count =
+      LOOTBOX_SPARKS_MIN +
+      Math.floor(rnd() * (LOOTBOX_SPARKS_MAX - LOOTBOX_SPARKS_MIN + 1));
+
+    return Array.from({ length: count }).map((_, i) => {
+      const angle = rnd() * Math.PI * 2;
+      const distance =
+        LOOTBOX_SPARK_DISTANCE_MIN +
+        rnd() * (LOOTBOX_SPARK_DISTANCE_MAX - LOOTBOX_SPARK_DISTANCE_MIN);
+      const dx = Math.cos(angle) * distance;
+      const dy = Math.sin(angle) * distance;
+      const size = 12 + rnd() * 26;
+      const thickness = 2 + rnd() * 2.4;
+      const rotate = (angle * 180) / Math.PI + (rnd() - 0.5) * 26;
+      const color = colors[Math.floor(rnd() * colors.length)];
+
+      return {
+        key: `${i}-${Math.round(distance)}`,
+        dx,
+        dy,
+        size,
+        thickness,
+        delay: rnd() * 0.16,
+        duration: 0.5 + rnd() * 0.55,
+        rotate,
+        color,
       };
     });
   }, [lootboxReveal?.id]);
@@ -2926,6 +2987,57 @@ export default function Auction({
                         ease: "easeOut",
                       }}
                     />,
+                    <motion.div
+                      key="shockwave-inner"
+                      className="lootbox-shockwave lootbox-shockwave--inner"
+                      initial={{ opacity: 0, scale: 0.35 }}
+                      animate={{ opacity: [0, 0.9, 0], scale: [0.35, 1.15, 1.55] }}
+                      exit={{ opacity: 0 }}
+                      transition={{
+                        duration: 0.85,
+                        times: [0, 0.2, 1],
+                        ease: "easeOut",
+                      }}
+                    />,
+                    <motion.div
+                      key="shockwave-outer"
+                      className="lootbox-shockwave lootbox-shockwave--outer"
+                      initial={{ opacity: 0, scale: 0.4 }}
+                      animate={{ opacity: [0, 0.75, 0], scale: [0.4, 1.35, 2.05] }}
+                      exit={{ opacity: 0 }}
+                      transition={{
+                        duration: 1.05,
+                        delay: 0.04,
+                        times: [0, 0.2, 1],
+                        ease: "easeOut",
+                      }}
+                    />,
+                    ...lootboxBurstSparks.map((spark) => (
+                      <motion.div
+                        key={`spark-${spark.key}`}
+                        className="lootbox-spark"
+                        style={{
+                          width: spark.size,
+                          height: spark.thickness,
+                          color: spark.color,
+                          rotate: spark.rotate,
+                        }}
+                        initial={{ opacity: 0, x: 0, y: 0, scaleX: 0.4, scaleY: 0.8 }}
+                        animate={{
+                          opacity: [0, 1, 0],
+                          x: spark.dx,
+                          y: spark.dy,
+                          scaleX: [0.4, 1, 0.7],
+                          scaleY: [0.8, 1, 0.6],
+                        }}
+                        exit={{ opacity: 0 }}
+                        transition={{
+                          duration: spark.duration,
+                          delay: spark.delay,
+                          ease: "easeOut",
+                        }}
+                      />
+                    )),
                   ]}
                 </AnimatePresence>
                 <AnimatePresence initial={false}>

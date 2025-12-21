@@ -2805,6 +2805,43 @@ button:active:not(:disabled) {
   pointer-events: none;
 }
 
+.lootbox-shockwave {
+  position: absolute;
+  inset: -40px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 238, 175, 0.7);
+  mix-blend-mode: screen;
+  filter: blur(0.4px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.lootbox-shockwave--inner {
+  border-color: rgba(255, 246, 214, 0.9);
+  box-shadow: 0 0 26px rgba(255, 214, 102, 0.65);
+}
+
+.lootbox-shockwave--outer {
+  border-color: rgba(168, 85, 247, 0.6);
+  box-shadow:
+    0 0 34px rgba(168, 85, 247, 0.5),
+    0 0 80px rgba(255, 214, 102, 0.35);
+}
+
+.lootbox-spark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 0 8px currentColor);
+  pointer-events: none;
+  will-change: transform, opacity;
+  z-index: 2;
+}
+
 .lootbox-drop {
   position: absolute;
   inset: 0;
