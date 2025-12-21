@@ -250,11 +250,14 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     const basePrice = Number.isFinite(Number(picked?.basePrice))
       ? Math.max(0, Math.floor(Number(picked.basePrice)))
       : randomInt(80_000, 350_001);
+    const nominalPrice = Number.isFinite(Number(picked?.nominalPrice))
+      ? Math.max(0, Math.floor(Number(picked.nominalPrice)))
+      : null;
 
     return {
       ...parseEmojiAndName(safeName),
       basePrice,
-      nominalPrice: null,
+      nominalPrice,
       imageUrl: picked?.imageUrl || null,
       lotId: picked?.id ?? null,
       categoryId: picked?.categoryId ?? null,
@@ -766,13 +769,16 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         if (effect && effect.kind === 'lot' && effect.prize) {
           const prizeBase = Number(effect.prize.basePrice);
           const prizeName = String(effect.prize.fullName || effect.prize.name || '').trim();
+          const prizeNominal = Number(effect.prize.nominalPrice);
           const prizeImageUrl = effect.prize.imageUrl || null;
           const prizeLotId = effect.prize.lotId ?? null;
           const prizeCategoryId = effect.prize.categoryId ?? null;
           basketItemType = 'lot';
           basketItemName = prizeName || slot.name;
           basketItemBasePrice = Number.isFinite(prizeBase) ? prizeBase : base;
-          basketItemNominalPrice = null;
+          basketItemNominalPrice = Number.isFinite(prizeNominal)
+            ? Math.max(0, Math.floor(prizeNominal))
+            : null;
           basketItemImageUrl = prizeImageUrl;
           basketItemLotId = prizeLotId;
           basketItemCategoryId = prizeCategoryId;

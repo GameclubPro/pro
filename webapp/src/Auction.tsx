@@ -170,7 +170,14 @@ function playerDisplayName(player: any) {
 type LootboxEffect = {
   kind: "money" | "penalty" | "empty" | string;
   delta?: number;
-  prize?: { emoji?: string; name?: string; fullName?: string; basePrice?: number } | null;
+  prize?: {
+    emoji?: string;
+    name?: string;
+    fullName?: string;
+    basePrice?: number;
+    nominalPrice?: number;
+    imageUrl?: string;
+  } | null;
 };
 
 type LootboxRevealEvent = {
@@ -2681,7 +2688,6 @@ export default function Auction({
               const value = Number(item.value ?? (paid || base)) || 0;
               const effect = item.effect;
               const effectKind = String(effect?.kind || "");
-              const isLootboxPrize = item.type === "lot" && effectKind === "lot";
               const prizeName =
                 effect?.prize && typeof effect.prize === "object"
                   ? String(effect.prize.name || "").trim()
@@ -2728,7 +2734,7 @@ export default function Auction({
                     {base > 0 && (
                       <span>Старт: {moneyFormatter.format(base)}💰</span>
                     )}
-                    {item.type === "lot" && nominal > 0 && !isLootboxPrize && (
+                    {item.type === "lot" && nominal > 0 && (
                       <span>Номинал: {moneyFormatter.format(nominal)}💰</span>
                     )}
                   </div>
@@ -2792,9 +2798,14 @@ export default function Auction({
     const prizeFullNameRaw = prizeObj ? String(prizeObj.fullName || "").trim() : "";
     const prizeParsed = prizeFullNameRaw ? splitEmojiLabel(prizeFullNameRaw) : null;
     const prizeBasePrice = prizeObj?.basePrice;
+    const prizeNominalPrice = prizeObj?.nominalPrice;
     const prizeBasePriceText = Number.isFinite(Number(prizeBasePrice))
       ? `${moneyFormatter.format(Number(prizeBasePrice))}💰`
       : "";
+    const prizeNominalPriceText = Number.isFinite(Number(prizeNominalPrice))
+      ? `${moneyFormatter.format(Number(prizeNominalPrice))}💰`
+      : "";
+    const prizeImageUrl = prizeObj ? String(prizeObj.imageUrl || "").trim() : "";
 
     const prizeEmoji =
       prizeEmojiRaw ||
@@ -2806,6 +2817,7 @@ export default function Auction({
         : effectKind === "lot"
         ? "🎁"
         : "🕸️");
+    const showPrizeImage = effectKind === "lot" && Boolean(prizeImageUrl);
     const prizeName =
       prizeNameRaw ||
       prizeParsed?.text ||
@@ -2823,7 +2835,7 @@ export default function Auction({
         : effectKind === "penalty"
         ? `-${deltaText}💰`
         : effectKind === "lot"
-        ? prizeBasePriceText || "Предмет"
+        ? prizeNominalPriceText || prizeBasePriceText || "Предмет"
         : "Ничего";
     const shatterExploded = lootboxStage === "explode" || lootboxStage === "reveal";
     const shatterShaking = lootboxStage === "shake";
@@ -2958,7 +2970,16 @@ export default function Auction({
                         animate={{ opacity: 1, scale: [0.3, 1.16, 1] }}
                         transition={{ duration: 0.62, ease: "easeOut" }}
                       >
-                        {prizeEmoji}
+                        {showPrizeImage ? (
+                          <img
+                            className="lootbox-drop__image"
+                            src={prizeImageUrl}
+                            alt=""
+                            draggable={false}
+                          />
+                        ) : (
+                          prizeEmoji
+                        )}
                       </motion.div>
                       <motion.div
                         className="lootbox-drop__price"

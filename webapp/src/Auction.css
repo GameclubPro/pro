@@ -2794,6 +2794,14 @@ button:active:not(:disabled) {
   filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.45));
 }
 
+.lootbox-drop__image {
+  width: min(120px, 36vw);
+  height: min(120px, 36vw);
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.45));
+}
+
 .lootbox-drop__name {
   position: relative;
   z-index: 1;
