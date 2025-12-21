@@ -2751,6 +2751,7 @@ button:active:not(:disabled) {
   pointer-events: none;
   transform: translateZ(0);
   backface-visibility: hidden;
+  transform-origin: center;
 }
 
 .lootbox-drop {

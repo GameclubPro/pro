@@ -25,8 +25,8 @@ const COUNTDOWN_STEP_MS = 4_000;
 const COUNTDOWN_START_FROM = 3;
 const LOOTBOX_FALLBACK_IMAGE_URL = "/lootbox.svg";
 const LOOTBOX_SHATTER_SIZE = 240;
-const LOOTBOX_SHATTER_MIN_PIECES = 36;
-const LOOTBOX_SHATTER_MAX_PIECES = 58;
+const LOOTBOX_SHATTER_MIN_PIECES = 32;
+const LOOTBOX_SHATTER_MAX_PIECES = 52;
 const LOOTBOX_REVEAL_TOTAL_MS = 6_200;
 const PHASE_LABEL: Record<string, string> = {
   lobby: "Лобби",
@@ -219,7 +219,7 @@ export default function Auction({
   const tg = typeof window !== "undefined" ? window?.Telegram?.WebApp : undefined;
   const isMiniApp = Boolean(tg);
   const shatterSize = isMiniApp ? 210 : LOOTBOX_SHATTER_SIZE;
-  const shatterDuration = isMiniApp ? 0.9 : 1.15;
+  const shatterDuration = isMiniApp ? 0.95 : 1.2;
 
   const [room, setRoom] = useState<any>(null);
   const [players, setPlayers] = useState<any[]>([]);
@@ -763,12 +763,25 @@ export default function Auction({
 
     type Rect = { x: number; y: number; w: number; h: number };
 
-    const minPieces = isMiniApp ? 24 : LOOTBOX_SHATTER_MIN_PIECES;
-    const maxPieces = isMiniApp ? 40 : LOOTBOX_SHATTER_MAX_PIECES;
+    const minPieces = isMiniApp ? 18 : LOOTBOX_SHATTER_MIN_PIECES;
+    const maxPieces = isMiniApp ? 30 : LOOTBOX_SHATTER_MAX_PIECES;
     const targetPieces =
       minPieces + Math.floor(rnd() * (maxPieces - minPieces + 1));
 
-    const minDim = Math.max(isMiniApp ? 14 : 11, Math.floor(size / (isMiniApp ? 16 : 20)));
+    const minDim = Math.max(
+      isMiniApp ? 16 : 12,
+      Math.floor(size / (isMiniApp ? 14 : 18))
+    );
+    const viewW =
+      typeof window !== "undefined" && window.innerWidth
+        ? window.innerWidth
+        : 900;
+    const viewH =
+      typeof window !== "undefined" && window.innerHeight
+        ? window.innerHeight
+        : 900;
+    const viewDiag = Math.hypot(viewW, viewH);
+    const baseDistance = Math.max(viewDiag, size * 4);
     const rects: Rect[] = [{ x: 0, y: 0, w: size, h: size }];
 
     let guard = 0;
@@ -854,11 +867,14 @@ export default function Auction({
       const unitX = dirX / len;
       const unitY = dirY / len;
 
-      const magnitude = (isMiniApp ? 130 : 170) + rnd() * (isMiniApp ? 210 : 320);
-      const jitterX = (rnd() - 0.5) * (isMiniApp ? 120 : 180);
-      const jitterY = (rnd() - 0.5) * (isMiniApp ? 110 : 160) - (isMiniApp ? 18 : 24);
-      const dx = unitX * magnitude + jitterX;
-      const dy = unitY * magnitude + jitterY;
+      const distance =
+        baseDistance *
+        (isMiniApp ? 0.85 + rnd() * 0.2 : 0.95 + rnd() * 0.25);
+
+      const jitterX = (rnd() - 0.5) * (isMiniApp ? 90 : 140);
+      const jitterY = (rnd() - 0.5) * (isMiniApp ? 80 : 120) - (isMiniApp ? 12 : 18);
+      const dx = unitX * distance + jitterX;
+      const dy = unitY * distance + jitterY;
 
       const clipPath = isMiniApp ? "" : randomShardClipPath();
 
@@ -2792,10 +2808,10 @@ export default function Auction({
         : effectKind === "lot"
         ? prizeBasePriceText || "Предмет"
         : "Ничего";
-    const shatterExploded = lootboxStage === "explode";
+    const shatterExploded = lootboxStage === "explode" || lootboxStage === "reveal";
     const shatterShaking = lootboxStage === "shake";
     const showIntact = lootboxStage === "intro" || lootboxStage === "shake";
-    const showPieces = lootboxStage === "explode";
+    const showPieces = lootboxStage === "explode" || lootboxStage === "reveal";
     const showDrop = lootboxStage === "explode" || lootboxStage === "reveal";
 
     return (
@@ -2878,12 +2894,13 @@ export default function Auction({
                         backgroundSize: `${shatterSize}px ${shatterSize}px`,
                         backgroundPosition: `${-piece.left}px ${-piece.top}px`,
                       }}
-                      initial={{ x: 0, y: 0, rotate: 0, opacity: 1 }}
+                      initial={{ x: 0, y: 0, rotate: 0, opacity: 1, scale: 1 }}
                       animate={{
                         x: shatterExploded ? piece.dx : 0,
                         y: shatterExploded ? piece.dy : 0,
                         rotate: shatterExploded ? piece.rotate : 0,
                         opacity: 1,
+                        scale: shatterExploded ? 1.02 : 1,
                       }}
                       transition={{
                         duration: shatterDuration,
