@@ -229,15 +229,18 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
   }
 
   function pickRegularLootboxPrizeLot(state) {
-    const sourceSlots = Array.isArray(state?.slots) ? state.slots : [];
-    const slotLots = sourceSlots.filter((s) => s && s.type === 'lot' && s.name);
-    const pickedSlot = slotLots.length
-      ? slotLots[randomInt(0, slotLots.length)]
-      : null;
-    const picked =
-      normalizeLotRecord(pickedSlot) ||
-      pickRandomLotFromCatalog(state?.lotCatalog) ||
-      pickRandomLotFromCatalog(FALLBACK_LOT_CATALOG);
+    const catalogPick = pickRandomLotFromCatalog(state?.lotCatalog);
+    let picked = catalogPick;
+    if (!picked) {
+      const sourceSlots = Array.isArray(state?.slots) ? state.slots : [];
+      const slotLots = sourceSlots.filter((s) => s && s.type === 'lot' && s.name);
+      const pickedSlot = slotLots.length
+        ? slotLots[randomInt(0, slotLots.length)]
+        : null;
+      picked =
+        normalizeLotRecord(pickedSlot) ||
+        pickRandomLotFromCatalog(FALLBACK_LOT_CATALOG);
+    }
     const fallbackEntry = FALLBACK_LOT_ITEMS[randomInt(0, FALLBACK_LOT_ITEMS.length)];
     const fallbackName =
       typeof fallbackEntry === 'string'
