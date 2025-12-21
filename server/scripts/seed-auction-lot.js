@@ -4,11 +4,22 @@ const { PrismaClient } = require('@prisma/client');
 
 const CATEGORY_SLUG = 'auto';
 const CATEGORY_NAME = '\u0410\u0432\u0442\u043E';
-const LOT_SLUG = 'vaz-2107';
-const LOT_NAME = '\u0412\u0410\u0417-2107';
-const LOT_IMAGE_URL = 'https://s3.regru.cloud/box/auction/auto/VAZ2107.png';
-const LOT_BASE_PRICE = 120000;
-const LOT_NOMINAL_PRICE = 180000;
+const LOTS = [
+  {
+    slug: 'vaz-2107',
+    name: '\u0412\u0410\u0417-2107',
+    imageUrl: 'https://s3.regru.cloud/box/auction/auto/VAZ2107.png',
+    basePrice: 120000,
+    nominalPrice: 180000,
+  },
+  {
+    slug: 'lada-niva',
+    name: '\u041B\u0430\u0434\u0430 \u041D\u0438\u0432\u0430',
+    imageUrl: 'https://s3.regru.cloud/box/auction/auto/LadaNiva.png',
+    basePrice: 120000,
+    nominalPrice: 180000,
+  },
+];
 
 const prisma = new PrismaClient();
 
@@ -19,30 +30,32 @@ async function main() {
     create: { slug: CATEGORY_SLUG, name: CATEGORY_NAME },
   });
 
-  const lotPayload = {
-    name: LOT_NAME,
-    slug: LOT_SLUG,
-    categoryId: category.id,
-    imageUrl: LOT_IMAGE_URL,
-    basePrice: LOT_BASE_PRICE,
-    nominalPrice: LOT_NOMINAL_PRICE,
-    active: true,
-  };
-
-  await prisma.auctionLot.upsert({
-    where: { slug: LOT_SLUG },
-    update: {
-      name: LOT_NAME,
+  for (const lot of LOTS) {
+    const lotPayload = {
+      name: lot.name,
+      slug: lot.slug,
       categoryId: category.id,
-      imageUrl: LOT_IMAGE_URL,
-      basePrice: LOT_BASE_PRICE,
-      nominalPrice: LOT_NOMINAL_PRICE,
+      imageUrl: lot.imageUrl,
+      basePrice: lot.basePrice,
+      nominalPrice: lot.nominalPrice,
       active: true,
-    },
-    create: lotPayload,
-  });
+    };
 
-  console.log('Auction lot upserted:', LOT_NAME);
+    await prisma.auctionLot.upsert({
+      where: { slug: lot.slug },
+      update: {
+        name: lot.name,
+        categoryId: category.id,
+        imageUrl: lot.imageUrl,
+        basePrice: lot.basePrice,
+        nominalPrice: lot.nominalPrice,
+        active: true,
+      },
+      create: lotPayload,
+    });
+
+    console.log('Auction lot upserted:', lot.name);
+  }
 }
 
 main()
