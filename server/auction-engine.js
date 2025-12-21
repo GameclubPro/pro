@@ -36,6 +36,12 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
   });
 
   const FALLBACK_LOT_ITEMS = [
+    {
+      name: '🚗 ВАЗ-2107',
+      imageUrl: 'https://s3.regru.cloud/box/auction/auto/VAZ2107.png',
+      basePrice: 120_000,
+      nominalPrice: 180_000,
+    },
     '🏠 Вилла у моря',
     '🚗 Спортивный суперкар',
     '💎 Алмазное кольцо',
@@ -45,13 +51,33 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     '🎸 Гитара рок-звезды',
     '📱 Прототип смартфона будущего',
   ];
-  const FALLBACK_LOT_CATALOG = FALLBACK_LOT_ITEMS.map((name) => ({
-    id: null,
-    name,
-    basePrice: null,
-    imageUrl: null,
-    categoryId: null,
-  }));
+  const FALLBACK_LOT_CATALOG = FALLBACK_LOT_ITEMS.map((entry) => {
+    const isString = typeof entry === 'string';
+    const name = isString ? entry : String(entry?.name || '').trim();
+    const basePrice = isString
+      ? null
+      : Number.isFinite(Number(entry?.basePrice))
+        ? Math.max(0, Math.floor(Number(entry.basePrice)))
+        : null;
+    const nominalPrice = isString
+      ? null
+      : Number.isFinite(Number(entry?.nominalPrice))
+        ? Math.max(0, Math.floor(Number(entry.nominalPrice)))
+        : null;
+    const imageUrl = isString
+      ? null
+      : entry?.imageUrl
+        ? String(entry.imageUrl).trim()
+        : null;
+    return {
+      id: null,
+      name: name || 'Приз',
+      basePrice,
+      nominalPrice,
+      imageUrl,
+      categoryId: null,
+    };
+  });
 
   const LOOTBOX_RARITIES = [
     { code: 'F', label: 'Обычный' },
@@ -135,6 +161,9 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     const basePrice = Number.isFinite(Number(raw?.basePrice))
       ? Math.max(0, Math.floor(Number(raw.basePrice)))
       : null;
+    const nominalPrice = Number.isFinite(Number(raw?.nominalPrice))
+      ? Math.max(0, Math.floor(Number(raw.nominalPrice)))
+      : null;
     const imageUrlRaw = raw?.imageUrl != null ? String(raw.imageUrl).trim() : '';
     const imageUrl = imageUrlRaw ? imageUrlRaw.slice(0, 500) : null;
     const categoryId = Number.isFinite(Number(raw?.categoryId))
@@ -143,7 +172,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     const lotId = Number.isFinite(Number(raw?.id ?? raw?.lotId))
       ? Number(raw.id ?? raw.lotId)
       : null;
-    return { id: lotId, name, basePrice, imageUrl, categoryId };
+    return { id: lotId, name, basePrice, nominalPrice, imageUrl, categoryId };
   }
 
   function pickRandomLotFromCatalog(lotCatalog) {
@@ -187,6 +216,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
           id: true,
           name: true,
           basePrice: true,
+          nominalPrice: true,
           imageUrl: true,
           categoryId: true,
         },
@@ -208,7 +238,12 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       normalizeLotRecord(pickedSlot) ||
       pickRandomLotFromCatalog(state?.lotCatalog) ||
       pickRandomLotFromCatalog(FALLBACK_LOT_CATALOG);
-    const safeName = picked?.name || FALLBACK_LOT_ITEMS[randomInt(0, FALLBACK_LOT_ITEMS.length)];
+    const fallbackEntry = FALLBACK_LOT_ITEMS[randomInt(0, FALLBACK_LOT_ITEMS.length)];
+    const fallbackName =
+      typeof fallbackEntry === 'string'
+        ? fallbackEntry
+        : String(fallbackEntry?.name || '').trim();
+    const safeName = picked?.name || fallbackName || 'Лот';
     const basePrice = Number.isFinite(Number(picked?.basePrice))
       ? Math.max(0, Math.floor(Number(picked.basePrice)))
       : randomInt(80_000, 350_001);
@@ -216,6 +251,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     return {
       ...parseEmojiAndName(safeName),
       basePrice,
+      nominalPrice: null,
       imageUrl: picked?.imageUrl || null,
       lotId: picked?.id ?? null,
       categoryId: picked?.categoryId ?? null,
@@ -266,12 +302,16 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         const basePrice = Number.isFinite(Number(picked?.basePrice))
           ? Math.max(0, Math.floor(Number(picked.basePrice)))
           : randomInt(80_000, 350_001);
+        const nominalPrice = Number.isFinite(Number(picked?.nominalPrice))
+          ? Math.max(0, Math.floor(Number(picked.nominalPrice)))
+          : null;
 
         slots.push({
           index: i,
           type: 'lot',
           name,
           basePrice,
+          nominalPrice,
           imageUrl: picked?.imageUrl || null,
           lotId: picked?.id ?? null,
           categoryId: picked?.categoryId ?? null,
@@ -579,6 +619,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         name: s.name,
         rarity: s.rarity || null,
         basePrice: s.basePrice,
+        nominalPrice: s.nominalPrice ?? null,
         imageUrl: s.imageUrl || null,
         lotId: s.lotId ?? null,
         categoryId: s.categoryId ?? null,
@@ -593,6 +634,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         type: it.type,
         name: it.name,
         basePrice: it.basePrice,
+        nominalPrice: it.nominalPrice ?? null,
         imageUrl: it.imageUrl || null,
         lotId: it.lotId ?? null,
         categoryId: it.categoryId ?? null,
@@ -627,6 +669,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         type: h.type,
         name: h.name,
         rarity: h.rarity || null,
+        nominalPrice: h.nominalPrice ?? null,
         imageUrl: h.imageUrl || null,
         lotId: h.lotId ?? null,
         categoryId: h.categoryId ?? null,
@@ -710,6 +753,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       let basketItemType = slot.type;
       let basketItemName = slot.name;
       let basketItemBasePrice = base;
+      let basketItemNominalPrice = slot.nominalPrice ?? null;
       let basketItemImageUrl = slot.imageUrl || null;
       let basketItemLotId = slot.lotId ?? null;
       let basketItemCategoryId = slot.categoryId ?? null;
@@ -725,6 +769,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
           basketItemType = 'lot';
           basketItemName = prizeName || slot.name;
           basketItemBasePrice = Number.isFinite(prizeBase) ? prizeBase : base;
+          basketItemNominalPrice = null;
           basketItemImageUrl = prizeImageUrl;
           basketItemLotId = prizeLotId;
           basketItemCategoryId = prizeCategoryId;
@@ -743,6 +788,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         type: basketItemType,
         name: basketItemName,
         basePrice: basketItemBasePrice,
+        nominalPrice: basketItemNominalPrice,
         imageUrl: basketItemImageUrl,
         lotId: basketItemLotId,
         categoryId: basketItemCategoryId,
@@ -759,6 +805,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       type: slot.type,
       name: slot.name,
       rarity: slot.rarity || null,
+      nominalPrice: slot.nominalPrice ?? null,
       imageUrl: slot.imageUrl || null,
       lotId: slot.lotId ?? null,
       categoryId: slot.categoryId ?? null,
@@ -852,6 +899,10 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
                 type === 'lot' && s.imageUrl != null
                   ? String(s.imageUrl).trim().slice(0, 500)
                   : null;
+              const nominalPrice =
+                type === 'lot' && Number.isFinite(Number(s.nominalPrice))
+                  ? Math.max(0, Math.floor(Number(s.nominalPrice)))
+                  : null;
               const lotId =
                 type === 'lot' && Number.isFinite(Number(s.lotId))
                   ? Number(s.lotId)
@@ -868,6 +919,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
                 basePrice: Number.isFinite(Number(s.basePrice))
                   ? Math.max(0, Math.floor(Number(s.basePrice)))
                   : randomInt(80_000, 350_001),
+                nominalPrice,
                 imageUrl,
                 lotId,
                 categoryId,
@@ -1019,6 +1071,9 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
           basePrice: Number.isFinite(Number(s.basePrice))
             ? Math.max(0, Math.floor(Number(s.basePrice)))
             : undefined,
+          nominalPrice: Number.isFinite(Number(s.nominalPrice))
+            ? Math.max(0, Math.floor(Number(s.nominalPrice)))
+            : null,
           imageUrl: s.imageUrl || null,
           lotId: s.lotId ?? null,
           categoryId: s.categoryId ?? null,
@@ -1028,6 +1083,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
           type: 'lot',
           name: `Lot ${i + 1}`,
           basePrice: undefined,
+          nominalPrice: null,
           imageUrl: null,
           lotId: null,
           categoryId: null,
@@ -1126,6 +1182,10 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
               type === 'lot' && s.imageUrl != null
                 ? String(s.imageUrl).trim().slice(0, 500)
                 : null;
+            const nominalPrice =
+              type === 'lot' && Number.isFinite(Number(s.nominalPrice))
+                ? Math.max(0, Math.floor(Number(s.nominalPrice)))
+                : null;
             const lotId =
               type === 'lot' && Number.isFinite(Number(s.lotId))
                 ? Number(s.lotId)
@@ -1141,6 +1201,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
               basePrice: Number.isFinite(Number(s.basePrice))
                 ? Math.max(0, Math.floor(Number(s.basePrice)))
                 : undefined,
+              nominalPrice,
               imageUrl,
               lotId,
               categoryId,

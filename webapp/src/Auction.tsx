@@ -2677,9 +2677,11 @@ export default function Auction({
               const key = `${item.index ?? idx}-${item.name ?? idx}`;
               const paid = Number(item.paid ?? 0) || 0;
               const base = Number(item.basePrice ?? 0) || 0;
+              const nominal = Number(item.nominalPrice ?? 0) || 0;
               const value = Number(item.value ?? (paid || base)) || 0;
               const effect = item.effect;
               const effectKind = String(effect?.kind || "");
+              const isLootboxPrize = item.type === "lot" && effectKind === "lot";
               const prizeName =
                 effect?.prize && typeof effect.prize === "object"
                   ? String(effect.prize.name || "").trim()
@@ -2725,6 +2727,9 @@ export default function Auction({
                     <span>Оплачено: {moneyFormatter.format(paid)}💰</span>
                     {base > 0 && (
                       <span>Старт: {moneyFormatter.format(base)}💰</span>
+                    )}
+                    {item.type === "lot" && nominal > 0 && !isLootboxPrize && (
+                      <span>Номинал: {moneyFormatter.format(nominal)}💰</span>
                     )}
                   </div>
                   {effect && (

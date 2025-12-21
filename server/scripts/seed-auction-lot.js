@@ -8,6 +8,7 @@ const LOT_SLUG = 'vaz-2107';
 const LOT_NAME = '\u0412\u0410\u0417-2107';
 const LOT_IMAGE_URL = 'https://s3.regru.cloud/box/auction/auto/VAZ2107.png';
 const LOT_BASE_PRICE = 120000;
+const LOT_NOMINAL_PRICE = 180000;
 
 const prisma = new PrismaClient();
 
@@ -24,6 +25,7 @@ async function main() {
     categoryId: category.id,
     imageUrl: LOT_IMAGE_URL,
     basePrice: LOT_BASE_PRICE,
+    nominalPrice: LOT_NOMINAL_PRICE,
     active: true,
   };
 
@@ -34,6 +36,7 @@ async function main() {
       categoryId: category.id,
       imageUrl: LOT_IMAGE_URL,
       basePrice: LOT_BASE_PRICE,
+      nominalPrice: LOT_NOMINAL_PRICE,
       active: true,
     },
     create: lotPayload,
