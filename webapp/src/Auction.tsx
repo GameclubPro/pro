@@ -11,9 +11,7 @@ import lootboxCImageUrl from "./assets/auction/C1.png";
 import lootboxBImageUrl from "./assets/auction/B1.png";
 import lootboxAImageUrl from "./assets/auction/A1.png";
 import lootboxSImageUrl from "./assets/auction/S1.png";
-import moneyCoinUrl from "./assets/auction/money-coin.svg";
-import moneyBillUrl from "./assets/auction/money-bill.svg";
-import moneyStackUrl from "./assets/auction/money-stack.svg";
+import moneyCoinUrl from "./assets/auction/coin.png";
 import moneyBagUrl from "./assets/auction/bag.png";
 import "./Auction.css";
 
@@ -66,7 +64,7 @@ const LOOTBOX_RARITY_LABELS = (
   .map(([key, value]) => ({ key, label: value.label.toLowerCase() }))
   .sort((a, b) => b.label.length - a.label.length);
 
-const LANDING_MONEY_ICONS = [moneyCoinUrl, moneyBillUrl, moneyStackUrl] as const;
+const LANDING_MONEY_ICONS = [moneyCoinUrl] as const;
 
 const LANDING_COINS = [
   { left: "4%", size: 30, duration: "9.8s", delay: "-1.2s", drift: "18px", opacity: 0.95 },
