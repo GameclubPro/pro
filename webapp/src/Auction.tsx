@@ -256,6 +256,7 @@ export default function Auction({
   const [lootboxStage, setLootboxStage] = useState<
     "intro" | "shake" | "explode" | "reveal"
   >("intro");
+  const [currentLotImageReady, setCurrentLotImageReady] = useState(false);
   const lastSyncedSettingsRef = useRef({
     slots: settingsSlots,
     budget: settingsBudget,
@@ -274,6 +275,7 @@ export default function Auction({
   const lootboxHistoryLenRef = useRef<number | null>(null);
   const lootboxConfettiFiredRef = useRef<string | null>(null);
   const confettiRef = useRef<any>(null);
+  const preloadedImageUrlsRef = useRef<Set<string>>(new Set());
 
   const moneyFormatter = useMemo(() => new Intl.NumberFormat("ru-RU"), []);
   const sanitizedAutoCode = useMemo(
@@ -367,6 +369,52 @@ export default function Auction({
     return raw || null;
   }, [currentSlot?.imageUrl, currentSlot?.type]);
 
+  useEffect(() => {
+    if (phase !== "lobby") return;
+    const slots = Array.isArray(auctionState?.slots) ? auctionState.slots : [];
+    const firstSlot = slots.find(
+      (slot: any) => slot?.type === "lot" && slot?.imageUrl
+    );
+    const raw = firstSlot?.imageUrl != null ? String(firstSlot.imageUrl).trim() : "";
+    if (!raw || preloadedImageUrlsRef.current.has(raw)) return;
+    const img = new Image();
+    img.onload = () => {
+      preloadedImageUrlsRef.current.add(raw);
+    };
+    img.src = raw;
+  }, [auctionState?.slots, phase]);
+
+  useEffect(() => {
+    let isActive = true;
+    if (!currentLotImageUrl) {
+      setCurrentLotImageReady(false);
+      return;
+    }
+    if (preloadedImageUrlsRef.current.has(currentLotImageUrl)) {
+      setCurrentLotImageReady(true);
+      return;
+    }
+    setCurrentLotImageReady(false);
+    const img = new Image();
+    img.onload = () => {
+      if (!isActive) return;
+      preloadedImageUrlsRef.current.add(currentLotImageUrl);
+      setCurrentLotImageReady(true);
+    };
+    img.onerror = () => {
+      if (!isActive) return;
+      setCurrentLotImageReady(false);
+    };
+    img.src = currentLotImageUrl;
+    return () => {
+      isActive = false;
+    };
+  }, [currentLotImageUrl]);
+
+  const showLotImage =
+    !!currentLotImageUrl &&
+    (currentLotImageReady ||
+      preloadedImageUrlsRef.current.has(currentLotImageUrl));
 
   const heroBidText = useMemo(() => {
     if (isRevealPhase) return "Открывается лутбокс";
@@ -2248,7 +2296,7 @@ export default function Auction({
                   alt=""
                   draggable={false}
                 />
-              ) : currentLotImageUrl ? (
+              ) : showLotImage ? (
                 <img
                   className="lot-hero__emoji-img"
                   src={currentLotImageUrl}
