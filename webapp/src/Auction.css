@@ -624,6 +624,7 @@ textarea {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 1;
   border-radius: inherit;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
@@ -642,6 +643,87 @@ textarea {
     );
   mix-blend-mode: soft-light;
   pointer-events: none;
+}
+
+.landing-card__coins {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.landing-card > :not(.landing-card__coins) {
+  position: relative;
+  z-index: 2;
+}
+
+.landing-coin {
+  --coin-size: 14px;
+  --coin-left: 50%;
+  --coin-duration: 8s;
+  --coin-delay: 0s;
+  --coin-drift: 0px;
+  --coin-opacity: 0.8;
+  position: absolute;
+  top: -20%;
+  left: var(--coin-left);
+  width: var(--coin-size);
+  height: var(--coin-size);
+  border-radius: 999px;
+  background:
+    radial-gradient(
+      circle at 30% 30%,
+      rgba(255, 255, 255, 0.92),
+      rgba(255, 255, 255, 0) 45%
+    ),
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(253, 230, 138, 0.95),
+      rgba(245, 158, 11, 0.92) 60%,
+      rgba(180, 83, 9, 0.9) 100%
+    );
+  box-shadow:
+    0 6px 14px rgba(15, 23, 42, 0.45),
+    0 0 12px rgba(245, 158, 11, 0.25);
+  opacity: var(--coin-opacity);
+  transform: translate3d(0, -140%, 0) rotate(0deg);
+  animation: landing-coin-fall var(--coin-duration) linear infinite;
+  animation-delay: var(--coin-delay);
+}
+
+.landing-coin::after {
+  content: "";
+  position: absolute;
+  inset: 18%;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  opacity: 0.7;
+}
+
+@keyframes landing-coin-fall {
+  0% {
+    transform: translate3d(0, -140%, 0) rotate(0deg);
+    opacity: 0;
+  }
+  12% {
+    opacity: var(--coin-opacity);
+  }
+  72% {
+    opacity: var(--coin-opacity);
+  }
+  100% {
+    transform: translate3d(var(--coin-drift), 140%, 0) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-coin {
+    animation: none;
+    opacity: 0.25;
+    transform: translate3d(0, 10%, 0);
+  }
 }
 
 .landing-card__head {

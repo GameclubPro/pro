@@ -62,6 +62,21 @@ const LOOTBOX_RARITY_LABELS = (
   .map(([key, value]) => ({ key, label: value.label.toLowerCase() }))
   .sort((a, b) => b.label.length - a.label.length);
 
+const LANDING_COINS = [
+  { left: "6%", size: 18, duration: "9.2s", delay: "-1.4s", drift: "14px", opacity: 0.85 },
+  { left: "14%", size: 12, duration: "6.8s", delay: "-3.3s", drift: "-10px", opacity: 0.62 },
+  { left: "24%", size: 10, duration: "7.6s", delay: "-5.2s", drift: "12px", opacity: 0.58 },
+  { left: "33%", size: 16, duration: "9.8s", delay: "-2.6s", drift: "-16px", opacity: 0.78 },
+  { left: "42%", size: 14, duration: "6.4s", delay: "-4.2s", drift: "8px", opacity: 0.68 },
+  { left: "52%", size: 20, duration: "10.4s", delay: "-7.6s", drift: "-18px", opacity: 0.86 },
+  { left: "61%", size: 11, duration: "7.1s", delay: "-1.8s", drift: "10px", opacity: 0.55 },
+  { left: "70%", size: 15, duration: "8.6s", delay: "-6.1s", drift: "-12px", opacity: 0.74 },
+  { left: "79%", size: 13, duration: "7.9s", delay: "-3.7s", drift: "6px", opacity: 0.64 },
+  { left: "88%", size: 9, duration: "6.2s", delay: "-2.2s", drift: "-8px", opacity: 0.5 },
+  { left: "20%", size: 17, duration: "8.3s", delay: "-8.5s", drift: "18px", opacity: 0.7 },
+  { left: "66%", size: 16, duration: "8.9s", delay: "-5.4s", drift: "4px", opacity: 0.76 },
+] as const;
+
 function normalizeCode(value = "") {
   return value.toUpperCase().replace(CODE_ALPHABET_RE, "").slice(0, 6);
 }
@@ -2052,6 +2067,24 @@ export default function Auction({
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.35 }}
       >
+        {landingMode === "create" && (
+          <div className="landing-card__coins" aria-hidden="true">
+            {LANDING_COINS.map((coin, index) => (
+              <span
+                key={`landing-coin-${index}`}
+                className="landing-coin"
+                style={{
+                  ["--coin-left" as string]: coin.left,
+                  ["--coin-size" as string]: `${coin.size}px`,
+                  ["--coin-duration" as string]: coin.duration,
+                  ["--coin-delay" as string]: coin.delay,
+                  ["--coin-drift" as string]: coin.drift,
+                  ["--coin-opacity" as string]: String(coin.opacity),
+                }}
+              />
+            ))}
+          </div>
+        )}
         <div className="landing-card__head">
           <div className="landing-logo">
             <span className="landing-logo__primary">АУКЦИОН</span>
