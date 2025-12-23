@@ -258,6 +258,7 @@ export default function Auction({
     "intro" | "shake" | "explode" | "reveal"
   >("intro");
   const [currentLotImageReady, setCurrentLotImageReady] = useState(false);
+  const [landingMode, setLandingMode] = useState<"join" | "create">("join");
   const lastSyncedSettingsRef = useRef({
     slots: settingsSlots,
     budget: settingsBudget,
@@ -1944,65 +1945,88 @@ export default function Auction({
       >
         <div className="landing-card__head">
           <div className="landing-logo">
-            <span className="landing-logo__primary">NEON</span>
-            <span className="landing-logo__secondary">AUCTION</span>
+            <span className="landing-logo__primary">AUCTION</span>
+            <span className="landing-logo__secondary">HALL</span>
           </div>
-          <p className="landing-tagline">
-            Молниеносные торги для вашей команды прямо в Telegram.
-          </p>
-          <div className="landing-chips">
-            <span className="pill pill--soft">
-              <span>👥</span> до 16 игроков
-            </span>
-            <span className="pill pill--soft">
-              <span>⚡</span> быстрые раунды
-            </span>
-            <span className="pill pill--soft">
-              <span>💰</span> стартовый банк{" "}
-              {moneyFormatter.format(initialBank)}💰
-            </span>
-          </div>
+          <div className="landing-title">Торговый зал</div>
         </div>
 
-        <div className="landing-form">
-          <label className="field">
-            <span className="field-label">Код комнаты</span>
-            <input
-              className="text-input text-input--large"
-              type="text"
-              inputMode="text"
-              autoComplete="off"
-              maxLength={6}
-              placeholder="Например, 3F9K2B"
-              value={codeInput}
-              onChange={(e) => setCodeInput(normalizeCode(e.target.value))}
-            />
-          </label>
-
-          {error && <div className="field-error">{error}</div>}
-
+        <div className="landing-tabs" role="tablist" aria-label="Действия">
           <button
             type="button"
-            className="btn btn--primary"
-            onClick={() => joinRoom()}
-            disabled={joining || !codeInput}
+            role="tab"
+            aria-selected={landingMode === "join"}
+            className={[
+              "landing-tab",
+              landingMode === "join" ? "is-active" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            onClick={() => setLandingMode("join")}
+            disabled={joining || creating}
           >
-            {joining ? "Подключаем..." : "Войти по коду"}
+            Войти
           </button>
-
           <button
             type="button"
-            className="btn btn--ghost"
-            onClick={createRoom}
-            disabled={creating}
+            role="tab"
+            aria-selected={landingMode === "create"}
+            className={[
+              "landing-tab",
+              landingMode === "create" ? "is-active" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            onClick={() => setLandingMode("create")}
+            disabled={joining || creating}
           >
-            {creating ? "Создаём комнату..." : "Создать новую комнату"}
+            Создать
           </button>
-
-          {showConnecting && (
-            <div className="landing-connect">Подключаемся к серверу...</div>
-          )}
         </div>
+
+        {landingMode === "join" ? (
+          <div className="landing-form">
+            <label className="field">
+              <span className="field-label">Код комнаты</span>
+              <input
+                className="text-input text-input--large"
+                type="text"
+                inputMode="text"
+                autoComplete="off"
+                maxLength={6}
+                value={codeInput}
+                onChange={(e) => setCodeInput(normalizeCode(e.target.value))}
+              />
+            </label>
+
+            {error && <div className="field-error">{error}</div>}
+
+            <button
+              type="button"
+              className="btn btn--primary landing-cta"
+              onClick={() => joinRoom()}
+              disabled={joining || !codeInput}
+            >
+              {joining ? "Входим..." : "Войти в комнату"}
+            </button>
+          </div>
+        ) : (
+          <div className="landing-form">
+            {error && <div className="field-error">{error}</div>}
+            <button
+              type="button"
+              className="btn btn--primary landing-cta"
+              onClick={createRoom}
+              disabled={creating}
+            >
+              {creating ? "Создаём..." : "Создать аукцион"}
+            </button>
+          </div>
+        )}
+
+        {showConnecting && (
+          <div className="landing-connect">Подключаемся к серверу...</div>
+        )}
       </motion.div>
     </div>
   );
