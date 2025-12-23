@@ -502,6 +502,11 @@ textarea {
   color: var(--muted);
 }
 
+.field--ghost {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .field-error {
   font-size: 13px;
   color: var(--accent-danger);

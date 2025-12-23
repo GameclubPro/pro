@@ -1945,8 +1945,8 @@ export default function Auction({
       >
         <div className="landing-card__head">
           <div className="landing-logo">
-            <span className="landing-logo__primary">AUCTION</span>
-            <span className="landing-logo__secondary">HALL</span>
+            <span className="landing-logo__primary">АУКЦИОН</span>
+            <span className="landing-logo__secondary">ЗАЛ</span>
           </div>
           <div className="landing-title">Торговый зал</div>
         </div>
@@ -1984,45 +1984,51 @@ export default function Auction({
           </button>
         </div>
 
-        {landingMode === "join" ? (
-          <div className="landing-form">
-            <label className="field">
-              <span className="field-label">Код комнаты</span>
-              <input
-                className="text-input text-input--large"
-                type="text"
-                inputMode="text"
-                autoComplete="off"
-                maxLength={6}
-                value={codeInput}
-                onChange={(e) => setCodeInput(normalizeCode(e.target.value))}
-              />
-            </label>
+        <div className="landing-form">
+          <label
+            className={[
+              "field",
+              landingMode === "create" ? "field--ghost" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            aria-hidden={landingMode === "create"}
+          >
+            <span className="field-label">Код комнаты</span>
+            <input
+              className="text-input text-input--large"
+              type="text"
+              inputMode="text"
+              autoComplete="off"
+              maxLength={6}
+              value={codeInput}
+              onChange={(e) => setCodeInput(normalizeCode(e.target.value))}
+              disabled={landingMode === "create"}
+              tabIndex={landingMode === "create" ? -1 : 0}
+            />
+          </label>
 
-            {error && <div className="field-error">{error}</div>}
+          {error && <div className="field-error">{error}</div>}
 
-            <button
-              type="button"
-              className="btn btn--primary landing-cta"
-              onClick={() => joinRoom()}
-              disabled={joining || !codeInput}
-            >
-              {joining ? "Входим..." : "Войти в комнату"}
-            </button>
-          </div>
-        ) : (
-          <div className="landing-form">
-            {error && <div className="field-error">{error}</div>}
-            <button
-              type="button"
-              className="btn btn--primary landing-cta"
-              onClick={createRoom}
-              disabled={creating}
-            >
-              {creating ? "Создаём..." : "Создать аукцион"}
-            </button>
-          </div>
-        )}
+          <button
+            type="button"
+            className="btn btn--primary landing-cta"
+            onClick={landingMode === "join" ? () => joinRoom() : createRoom}
+            disabled={
+              landingMode === "join"
+                ? joining || !codeInput
+                : creating
+            }
+          >
+            {landingMode === "join"
+              ? joining
+                ? "Входим..."
+                : "Войти в комнату"
+              : creating
+              ? "Создаём..."
+              : "Создать аукцион"}
+          </button>
+        </div>
 
         {showConnecting && (
           <div className="landing-connect">Подключаемся к серверу...</div>
