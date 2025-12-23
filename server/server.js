@@ -993,6 +993,10 @@ const io = new SocketIOServer(server, {
   pingInterval: 25_000,
   pingTimeout: 60_000,
   perMessageDeflate: false,
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    skipMiddlewares: true,
+  },
   // Доп. фильтр по Origin для WebSocket-рукопожатия
   allowRequest: (req, callback) => {
     const origin = req.headers.origin;
@@ -1031,6 +1035,8 @@ const auction = createAuctionEngine({
   prisma,
   withRoomLock,   // тот же лок, что у мафии
   isLockError,    // та же проверка lock-ошибок
+  redis,
+  redisPrefix: REDIS_PREFIX,
   // любое изменение состояния аукциона (в том числе по таймеру)
   // пушим всем игрокам комнаты
   onState: (publicState) => {
@@ -1464,9 +1470,9 @@ app.post('/api/rooms/:code/leave', async (req, res) => {
         if (roomRow.game === RoomGame.AUCTION) {
           try {
             if (result.deletedRoom) {
-              auction.clearRoomStateById(roomRow.id);
+              await auction.clearRoomStateById(roomRow.id);
             } else if (result.leftPlayerId) {
-              auction.removePlayerFromAuction(roomRow.id, result.leftPlayerId);
+              await auction.removePlayerFromAuction(roomRow.id, result.leftPlayerId);
             }
 
             const st = await auction.getState(code);
@@ -2144,9 +2150,9 @@ io.on('connection', (socket) => {
       if (room.game === RoomGame.AUCTION) {
         try {
           if (deletedRoom) {
-            auction.clearRoomStateById(room.id);
+            await auction.clearRoomStateById(room.id);
           } else if (leftPlayerId != null) {
-            auction.removePlayerFromAuction(room.id, leftPlayerId);
+            await auction.removePlayerFromAuction(room.id, leftPlayerId);
             const st = await auction.getState(code);
             if (st) {
               io.to(`room:${code}`).emit('auction:state', st);
@@ -2246,6 +2252,37 @@ io.on('connection', (socket) => {
       return ackOk(cb, { hasState: !!st });
     } catch (e) {
       console.error('auction:sync error', e);
+      return ackErr(cb, 'failed');
+    }
+  });
+
+  // Резюмирование состояния аукциона (для реконнекта и CSR fallback)
+  socket.on('auction:resume', async ({ code, lastVersion, game }, cb) => {
+    try {
+      if (!code) return ackErr(cb, 'room_not_found');
+      const expectedGame = game ? normalizeGame(game, null) : RoomGame.AUCTION;
+      const room = await readRoomWithPlayersByCode(code, { game: expectedGame || undefined });
+      if (!room) return ackErr(cb, 'room_not_found');
+      if (expectedGame && room.game !== expectedGame) return ackErr(cb, 'wrong_game');
+
+      const me = await prisma.roomPlayer.findFirst({ where: { roomId: room.id, userId: user.id } });
+      if (!me) return ackErr(cb, 'forbidden_not_member');
+
+      try { socket.join(`room:${code}`); } catch {}
+      try { socket.join(`player:${me.id}`); } catch {}
+      userRooms.add(`room:${code}`);
+      socket.data.playerIds.add(me.id);
+
+      const payload = await auction.getResumePayload(code, lastVersion);
+      if (!payload?.state) return ackErr(cb, 'room_not_found');
+      return ackOk(cb, {
+        state: payload.state,
+        deltaStates: payload.deltaStates || [],
+        hasDelta: payload.hasDelta || false,
+        stateVersion: payload.state?.stateVersion ?? null,
+      });
+    } catch (e) {
+      console.error('auction:resume error', e);
       return ackErr(cb, 'failed');
     }
   });
@@ -2415,7 +2452,7 @@ async function cleanupRooms() {
         await prisma.$transaction(async (tx) => {
           await hardDeleteRoom(tx, r.id);
         });
-        try { auction.clearRoomStateById?.(r.id); } catch {}
+        try { await auction.clearRoomStateById?.(r.id); } catch {}
         console.log(`🧹 cleanupRooms: удалена комната ${r.code} (нет сокетов > ${noSocketMinutes}м, status=${r.status})`);
       } catch (e) {
         console.warn('cleanupRooms: hard delete failed:', e?.message || e);

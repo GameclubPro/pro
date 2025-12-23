@@ -14,8 +14,10 @@ const LOOTBOX_REVEAL_MS = 6_200;
  * @param withRoomLock (roomId, fn) => any
  * @param isLockError (err) => boolean
  * @param onState (publicState) => void  // опционально: удобно для пуш-нотификаций в сокетах
+ * @param redis
+ * @param redisPrefix
  */
-function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}) {
+function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis, redisPrefix } = {}) {
   if (!prisma) {
     throw new Error('createAuctionEngine: prisma is required');
   }
@@ -29,11 +31,19 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     ? isLockError
     : () => false;
 
+  const redisClient = redis && typeof redis.get === 'function' ? redis : null;
+  const redisKeyPrefix = String(redisPrefix || 'tg-app').replace(/:+$/, '');
+
   const DEFAULT_RULES = Object.freeze({
     initialBalance: 1_000_000,
     maxSlots: 30,
     timePerSlotSec: COUNTDOWN_START_FROM * (COUNTDOWN_STEP_MS / 1000), // full window before auto-close
   });
+
+  const EVENT_LOG_LIMIT = 80;
+  const stateKey = (roomId) => `${redisKeyPrefix}:auction:state:${roomId}`;
+  const presetKey = (roomId) => `${redisKeyPrefix}:auction:preset:${roomId}`;
+  const eventsKey = (roomId) => `${redisKeyPrefix}:auction:events:${roomId}`;
 
   const FALLBACK_LOT_ITEMS = [
     {
@@ -273,6 +283,179 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
   // roomId -> preset { rules?, slots? }
   const presets = new Map();
 
+  function normalizeStateVersion(state) {
+    if (!state || typeof state !== 'object') return 0;
+    const raw = Number(state.stateVersion);
+    const safe = Number.isFinite(raw) && raw >= 0 ? raw : 0;
+    state.stateVersion = safe;
+    return safe;
+  }
+
+  function bumpStateVersion(state) {
+    const next = normalizeStateVersion(state) + 1;
+    state.stateVersion = next;
+    state.updatedAtMs = Date.now();
+    return next;
+  }
+
+  function normalizePreset(preset) {
+    if (!preset || typeof preset !== 'object') return null;
+    const versionRaw = Number(preset.version);
+    preset.version = Number.isFinite(versionRaw) && versionRaw >= 0 ? versionRaw : 0;
+    if (!preset.rules || typeof preset.rules !== 'object') preset.rules = {};
+    if (!Array.isArray(preset.slots)) preset.slots = [];
+    if (!Array.isArray(preset.lotCategorySlugs)) preset.lotCategorySlugs = [];
+    if (!Array.isArray(preset.lotCategoryIds)) preset.lotCategoryIds = [];
+    return preset;
+  }
+
+  function normalizeState(state) {
+    if (!state || typeof state !== 'object') return null;
+    normalizeStateVersion(state);
+    if (!Array.isArray(state.activePlayerIds)) state.activePlayerIds = [];
+    if (!Array.isArray(state.slots)) state.slots = [];
+    if (!Array.isArray(state.history)) state.history = [];
+    if (!Array.isArray(state.bidFeed)) state.bidFeed = [];
+    if (!state.balances || typeof state.balances !== 'object') state.balances = {};
+    if (!state.currentBids || typeof state.currentBids !== 'object') state.currentBids = {};
+    if (!state.baskets || typeof state.baskets !== 'object') state.baskets = {};
+    if (!state.basketTotals || typeof state.basketTotals !== 'object') state.basketTotals = {};
+    if (!state.rules || typeof state.rules !== 'object') state.rules = {};
+    if (!state.slotPhase || typeof state.slotPhase !== 'string') state.slotPhase = 'bidding';
+    if (!Number.isFinite(Number(state.revealEndsAtMs))) state.revealEndsAtMs = null;
+    return state;
+  }
+
+  async function loadPresetFromRedis(roomId) {
+    if (!redisClient) return null;
+    try {
+      const raw = await redisClient.get(presetKey(roomId));
+      if (!raw) return null;
+      return normalizePreset(JSON.parse(raw));
+    } catch {
+      return null;
+    }
+  }
+
+  async function persistPreset(roomId, preset) {
+    if (!redisClient || !preset) return;
+    try {
+      await redisClient.set(presetKey(roomId), JSON.stringify(preset));
+    } catch {}
+  }
+
+  async function ensurePreset(roomId) {
+    const cached = presets.get(roomId) || null;
+    if (redisClient) {
+      const loaded = await loadPresetFromRedis(roomId);
+      if (loaded) {
+        presets.set(roomId, loaded);
+        return loaded;
+      }
+    }
+    return cached;
+  }
+
+  async function loadStateFromRedis(roomId) {
+    if (!redisClient) return null;
+    try {
+      const raw = await redisClient.get(stateKey(roomId));
+      if (!raw) return null;
+      return normalizeState(JSON.parse(raw));
+    } catch {
+      return null;
+    }
+  }
+
+  async function persistStateUpdate(state, publicState) {
+    if (!redisClient || !state || !state.roomId) return;
+    const statePayload = JSON.stringify(state);
+    const eventPayload = publicState
+      ? JSON.stringify({ version: publicState.stateVersion, state: publicState })
+      : null;
+    try {
+      if (typeof redisClient.multi === 'function') {
+        const pipeline = redisClient.multi();
+        pipeline.set(stateKey(state.roomId), statePayload);
+        if (eventPayload) {
+          pipeline.rpush(eventsKey(state.roomId), eventPayload);
+          pipeline.ltrim(eventsKey(state.roomId), -EVENT_LOG_LIMIT, -1);
+        }
+        await pipeline.exec();
+      } else {
+        await redisClient.set(stateKey(state.roomId), statePayload);
+        if (eventPayload) {
+          await redisClient.rpush(eventsKey(state.roomId), eventPayload);
+          await redisClient.ltrim(eventsKey(state.roomId), -EVENT_LOG_LIMIT, -1);
+        }
+      }
+    } catch {}
+  }
+
+  async function loadDeltaStates(roomId, sinceVersion) {
+    if (!redisClient) return { ok: false, events: [] };
+    const since = Number(sinceVersion);
+    if (!Number.isFinite(since)) return { ok: false, events: [] };
+    try {
+      const raw = await redisClient.lrange(eventsKey(roomId), 0, -1);
+      if (!Array.isArray(raw) || raw.length === 0) return { ok: false, events: [] };
+      const parsed = raw
+        .map((item) => {
+          try {
+            const payload = JSON.parse(item);
+            const version = Number(payload?.version);
+            if (!Number.isFinite(version)) return null;
+            return { version, state: payload?.state || null };
+          } catch {
+            return null;
+          }
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.version - b.version);
+      if (!parsed.length) return { ok: false, events: [] };
+      const firstVersion = parsed[0].version;
+      if (since < firstVersion - 1) {
+        return { ok: false, events: [] };
+      }
+      const events = parsed
+        .filter((entry) => entry.version > since && entry.state)
+        .map((entry) => entry.state);
+      return { ok: true, events };
+    } catch {
+      return { ok: false, events: [] };
+    }
+  }
+
+  async function ensureState(roomId, { recover = true } = {}) {
+    let state = states.get(roomId) || null;
+    let loaded = false;
+    if (redisClient) {
+      const stored = await loadStateFromRedis(roomId);
+      if (stored) {
+        const cachedVersion = state ? normalizeStateVersion(state) : -1;
+        const storedVersion = normalizeStateVersion(stored);
+        if (!state || storedVersion > cachedVersion) {
+          state = stored;
+          states.set(roomId, stored);
+          loaded = true;
+        }
+      }
+    }
+    if (state) normalizeState(state);
+    if (state && loaded && recover) {
+      recoverTimers(state);
+    }
+    return state;
+  }
+
+  async function commitStateUpdate(state, room, { emit = true } = {}) {
+    bumpStateVersion(state);
+    const publicState = buildPublicState(state, room);
+    await persistStateUpdate(state, publicState);
+    if (emit && onState && publicState) onState(publicState);
+    return publicState;
+  }
+
   async function getRoomWithPlayers(code) {
     if (!code) return null;
     return prisma.room.findFirst({
@@ -442,11 +625,12 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     try {
       await lock(roomId, async () => {
         clearRevealTimer(roomId);
-        const state = states.get(roomId);
+        const state = await ensureState(roomId, { recover: false });
         if (!state || state.phase !== 'in_progress') return;
         if ((state.slotPhase || 'bidding') !== 'reveal') return;
 
         state.slotPhase = 'bidding';
+        state.revealEndsAtMs = null;
         ensureConsistentPhase(state);
         if (state.phase === 'in_progress' && !state.paused) {
           scheduleTimer(state);
@@ -462,8 +646,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
           },
         });
         if (!room || room.game !== RoomGame.AUCTION) return;
-        const publicState = buildPublicState(state, room);
-        if (onState && publicState) onState(publicState);
+        await commitStateUpdate(state, room);
       });
     } catch (e) {
       if (isLockErr(e)) return;
@@ -475,6 +658,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     if (state.phase !== 'in_progress') return;
     state.slotPhase = 'reveal';
     state.slotDeadlineAtMs = null;
+    state.revealEndsAtMs = Date.now() + LOOTBOX_REVEAL_MS;
     clearTimer(state.roomId);
     clearRevealTimer(state.roomId);
 
@@ -489,6 +673,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     clearTimer(state.roomId);
     if (state.phase !== 'in_progress') {
       state.slotDeadlineAtMs = null;
+      state.revealEndsAtMs = null;
       return;
     }
     if ((state.slotPhase || 'bidding') !== 'bidding') {
@@ -504,6 +689,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       return;
     }
     const durationMs = COUNTDOWN_START_FROM * COUNTDOWN_STEP_MS;
+    state.revealEndsAtMs = null;
     state.slotDeadlineAtMs = Date.now() + durationMs;
     const handle = setTimeout(() => {
       // безопасно завершаем слот по таймеру
@@ -530,10 +716,50 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     }
   }
 
+  function recoverTimers(state) {
+    if (!state || !state.roomId) return;
+    clearTimer(state.roomId);
+    clearRevealTimer(state.roomId);
+    if (state.phase !== 'in_progress') return;
+    if (state.paused) return;
+    if (!state.activePlayerIds || state.activePlayerIds.length === 0) return;
+
+    if ((state.slotPhase || 'bidding') === 'reveal') {
+      const endsAt = Number(state.revealEndsAtMs);
+      if (!Number.isFinite(endsAt)) return;
+      const left = endsAt - Date.now();
+      if (left <= 0) {
+        setTimeout(() => {
+          advanceAfterReveal(state.roomId).catch(() => {});
+        }, 0);
+        return;
+      }
+      const handle = setTimeout(() => {
+        advanceAfterReveal(state.roomId).catch(() => {});
+      }, left + 25);
+      revealTimers.set(state.roomId, handle);
+      return;
+    }
+
+    const deadline = Number(state.slotDeadlineAtMs);
+    if (!Number.isFinite(deadline)) return;
+    const left = deadline - Date.now();
+    if (left <= 0) {
+      setTimeout(() => {
+        finalizeByTimer(state.roomId).catch(() => {});
+      }, 0);
+      return;
+    }
+    const handle = setTimeout(() => {
+      finalizeByTimer(state.roomId).catch(() => {});
+    }, left + 25);
+    timers.set(state.roomId, handle);
+  }
+
   async function finalizeByTimer(roomId) {
     try {
       await lock(roomId, async () => {
-        const state = states.get(roomId);
+        const state = await ensureState(roomId, { recover: false });
         if (!state || state.phase !== 'in_progress') return;
         const room = await prisma.room.findUnique({
           where: { id: roomId },
@@ -545,8 +771,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         // финалим слот на основании имеющихся ставок (кто не поставил — считается пас)
         resolveSlotNow(state, room);
         scheduleAfterResolve(state);
-        const publicState = buildPublicState(state, room);
-        if (onState && publicState) onState(publicState);
+        await commitStateUpdate(state, room);
       });
     } catch (e) {
       if (isLockErr(e)) return;
@@ -654,6 +879,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       code: state.code,
       phase: state.phase,
       paused: !!state.paused,
+      stateVersion: normalizeStateVersion(state),
       slotPhase: state.slotPhase || 'bidding',
       rules: {
         timePerSlotSec: state.rules?.timePerSlotSec || DEFAULT_RULES.timePerSlotSec,
@@ -721,10 +947,10 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
   }
 
   function resolveSlotNow(state, room) {
-    if (state.phase !== 'in_progress') return buildPublicState(state, room);
+    if (state.phase !== 'in_progress') return state;
     if (state.currentIndex < 0 || state.currentIndex >= state.slots.length) {
       ensureConsistentPhase(state);
-      return buildPublicState(state, room);
+      return state;
     }
 
     const slotIndex = state.currentIndex;
@@ -839,15 +1065,17 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       state.phase = 'finished';
       state.winners = computeWinners(state);
       state.slotPhase = 'bidding';
+      state.revealEndsAtMs = null;
       clearRevealTimer(state.roomId);
     } else if (slot.type === 'lootbox' && effect) {
       startRevealPhase(state);
     } else {
       state.slotPhase = 'bidding';
+      state.revealEndsAtMs = null;
       clearRevealTimer(state.roomId);
     }
 
-    return buildPublicState(state, room);
+    return state;
   }
 
   async function start(code, starterUserId) {
@@ -861,10 +1089,11 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
 
       const roomPlayers = roomPlayersList(room);
 
-      const existing = states.get(room.id);
+      const existing = await ensureState(room.id, { recover: false });
       if (existing && existing.phase === 'in_progress') {
         return { ok: false, error: 'already_started' };
       }
+      const baseVersion = existing ? normalizeStateVersion(existing) : 0;
 
       // участники — все «готовые» + владелец
       const participants = roomPlayers.filter(
@@ -875,7 +1104,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         return { ok: false, error: 'need_ready_players' };
       }
 
-      const preset = presets.get(room.id) || {};
+      const preset = (await ensurePreset(room.id)) || {};
       const rules = {
         ...DEFAULT_RULES,
         ...(preset.rules || {}),
@@ -947,9 +1176,11 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         paused: false,
         pauseLeftMs: null,
         slotDeadlineAtMs: null,
+        revealEndsAtMs: null,
         bidFeed: [],
         slotPhase: 'bidding',
         lotCatalog,
+        stateVersion: baseVersion,
       };
 
       states.set(room.id, state);
@@ -957,12 +1188,8 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       // таймер на первый слот (если включён)
       scheduleTimer(state);
 
-      const pub = buildPublicState(state, room);
-      if (onState) onState(pub);
-      return {
-        ok: true,
-        state: pub,
-      };
+      const pub = await commitStateUpdate(state, room);
+      return { ok: true, state: pub };
     };
 
     try {
@@ -980,7 +1207,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     if (!room) return { ok: false, error: 'room_not_found' };
 
     const exec = async () => {
-      const state = states.get(room.id);
+      const state = await ensureState(room.id, { recover: false });
       if (!state || state.phase !== 'in_progress') {
         return { ok: false, error: 'not_running' };
       }
@@ -1041,8 +1268,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         clearTimer(state.roomId);
       }
 
-      const publicState = buildPublicState(state, room);
-      if (onState && publicState) onState(publicState);
+      const publicState = await commitStateUpdate(state, room);
       return { ok: true, state: publicState };
     };
 
@@ -1059,11 +1285,11 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
   async function getState(code) {
     const room = await getRoomWithPlayers(code);
     if (!room) return null;
-    const state = states.get(room.id);
+    const state = await ensureState(room.id);
     if (state) return buildPublicState(state, room);
 
     // Lobby-only snapshot so players see current presets before the game starts
-    const preset = presets.get(room.id) || {};
+    const preset = (await ensurePreset(room.id)) || {};
     const rules = {
       ...DEFAULT_RULES,
       ...(preset.rules || {}),
@@ -1101,6 +1327,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     return {
       code: room.code,
       phase: 'lobby',
+      stateVersion: Number(preset.version) || 0,
       rules,
       slots,
       totalSlots: slotCount,
@@ -1113,18 +1340,47 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     };
   }
 
-  function clearRoomStateById(roomId) {
+  async function getResumePayload(code, lastVersion) {
+    const room = await getRoomWithPlayers(code);
+    if (!room) return null;
+    const state = await ensureState(room.id);
+    if (!state) {
+      const lobbyState = await getState(code);
+      return {
+        state: lobbyState,
+        deltaStates: [],
+        hasDelta: false,
+      };
+    }
+    const publicState = buildPublicState(state, room);
+    const delta = await loadDeltaStates(room.id, lastVersion);
+    return {
+      state: publicState,
+      deltaStates: delta.ok ? delta.events : [],
+      hasDelta: delta.ok,
+    };
+  }
+
+  async function clearRoomStateById(roomId) {
     states.delete(roomId);
     clearTimer(roomId);
     clearRevealTimer(roomId);
+    if (!redisClient) return;
+    try {
+      await redisClient.del(
+        stateKey(roomId),
+        eventsKey(roomId),
+        presetKey(roomId)
+      );
+    } catch {}
   }
 
   /**
    * Доп. хелпер: вызывать при выходе игрока из комнаты,
    * чтобы он не блокировал раунд ставками.
    */
-  function removePlayerFromAuction(roomId, roomPlayerId) {
-    const state = states.get(roomId);
+  async function removePlayerFromAuction(roomId, roomPlayerId) {
+    const state = await ensureState(roomId, { recover: false });
     if (!state) return;
     const pid = Number(roomPlayerId);
     state.activePlayerIds = state.activePlayerIds.filter((id) => id !== pid);
@@ -1149,6 +1405,9 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         clearRevealTimer(roomId);
       }
     }
+    const room = await getRoomWithPlayers(state.code);
+    if (!room) return;
+    await commitStateUpdate(state, room, { emit: false });
   }
 
   async function configure(code, userId, payload = {}) {
@@ -1156,7 +1415,8 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     if (!room) return { ok: false, error: 'room_not_found' };
     if (room.ownerId !== userId) return { ok: false, error: 'forbidden_not_owner' };
     // запрещаем менять настройки «на лету»
-    if (states.get(room.id)?.phase === 'in_progress') {
+    const runningState = await ensureState(room.id, { recover: false });
+    if (runningState?.phase === 'in_progress') {
       return { ok: false, error: 'forbidden_running' };
     }
 
@@ -1236,12 +1496,17 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       .filter((value) => Number.isFinite(value) && value > 0)
       .slice(0, 40);
 
-    presets.set(room.id, {
+    const prevPreset = await ensurePreset(room.id);
+    const nextVersion = (Number(prevPreset?.version) || 0) + 1;
+    const nextPreset = {
       rules: safeRules,
       slots: safeSlots,
       lotCategorySlugs,
       lotCategoryIds,
-    });
+      version: nextVersion,
+    };
+    presets.set(room.id, nextPreset);
+    await persistPreset(room.id, nextPreset);
 
     return { ok: true };
   }
@@ -1252,7 +1517,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     if (room.ownerId !== userId) return { ok: false, error: 'forbidden_not_owner' };
 
     return lock(room.id, async () => {
-      const state = states.get(room.id);
+      const state = await ensureState(room.id, { recover: false });
       if (!state || state.phase !== 'in_progress') {
         return { ok: false, error: 'not_running' };
       }
@@ -1266,8 +1531,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         : null;
       clearTimer(state.roomId);
 
-      const pub = buildPublicState(state, room);
-      if (onState) onState(pub);
+      const pub = await commitStateUpdate(state, room);
       return { ok: true, state: pub };
     });
   }
@@ -1278,7 +1542,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     if (room.ownerId !== userId) return { ok: false, error: 'forbidden_not_owner' };
 
     return lock(room.id, async () => {
-      const state = states.get(room.id);
+      const state = await ensureState(room.id, { recover: false });
       if (!state || state.phase !== 'in_progress') {
         return { ok: false, error: 'not_running' };
       }
@@ -1290,8 +1554,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       if ((state.slotPhase || 'bidding') !== 'bidding') {
         state.pauseLeftMs = null;
         state.slotDeadlineAtMs = null;
-        const pub = buildPublicState(state, room);
-        if (onState) onState(pub);
+        const pub = await commitStateUpdate(state, room);
         return { ok: true, state: pub };
       }
       if (state.pauseLeftMs != null) {
@@ -1306,8 +1569,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
         scheduleTimer(state);
       }
 
-      const pub = buildPublicState(state, room);
-      if (onState) onState(pub);
+      const pub = await commitStateUpdate(state, room);
       return { ok: true, state: pub };
     });
   }
@@ -1318,7 +1580,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     if (room.ownerId !== userId) return { ok: false, error: 'forbidden_not_owner' };
 
     return lock(room.id, async () => {
-      const state = states.get(room.id);
+      const state = await ensureState(room.id, { recover: false });
       if (!state || state.phase !== 'in_progress') {
         return { ok: false, error: 'not_running' };
       }
@@ -1329,8 +1591,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
       resolveSlotNow(state, room);
       scheduleAfterResolve(state);
 
-      const publicState = buildPublicState(state, room);
-      if (onState) onState(publicState);
+      const publicState = await commitStateUpdate(state, room);
       return { ok: true, state: publicState };
     });
   }
@@ -1339,6 +1600,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState } = {}
     start,
     bid,
     getState,
+    getResumePayload,
     clearRoomStateById,
     removePlayerFromAuction,
     configure,

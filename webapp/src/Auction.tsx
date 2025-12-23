@@ -275,6 +275,7 @@ export default function Auction({
   const lootboxHistoryLenRef = useRef<number | null>(null);
   const lootboxConfettiFiredRef = useRef<string | null>(null);
   const confettiRef = useRef<any>(null);
+  const lastStateVersionRef = useRef<number | null>(null);
   const preloadedImageUrlsRef = useRef<Set<string>>(new Set());
 
   const moneyFormatter = useMemo(() => new Intl.NumberFormat("ru-RU"), []);
@@ -1070,12 +1071,65 @@ export default function Auction({
 
   // ---------- SOCKET SUBSCRIBE ----------
 
+  const applyAuctionState = useCallback((state: any) => {
+    if (!state) return;
+    const nextVersion = Number(state.stateVersion);
+    if (Number.isFinite(nextVersion)) {
+      const prevVersion = lastStateVersionRef.current;
+      if (prevVersion != null && nextVersion <= prevVersion) return;
+      lastStateVersionRef.current = nextVersion;
+    }
+    setAuctionState(state);
+  }, []);
+
+  const resumeAuctionState = useCallback(
+    (rawCode: string) => {
+      const sock = socketRef.current;
+      const code = normalizeCode(rawCode);
+      if (!code || !sock) return;
+      const lastVersion = lastStateVersionRef.current;
+      sock.emit(
+        "auction:resume",
+        { code, lastVersion, game: AUCTION_GAME },
+        (resp: any) => {
+          if (!resp || !resp.ok) {
+            sock.emit("auction:sync", { code, game: AUCTION_GAME });
+            return;
+          }
+          const deltaStates = Array.isArray(resp.deltaStates)
+            ? resp.deltaStates
+            : [];
+          if (deltaStates.length) {
+            let latest: any = null;
+            let latestVersion = -Infinity;
+            deltaStates.forEach((item) => {
+              const ver = Number(item?.stateVersion);
+              if (Number.isFinite(ver)) {
+                if (ver > latestVersion) {
+                  latestVersion = ver;
+                  latest = item;
+                }
+              } else if (!latest) {
+                latest = item;
+              }
+            });
+            if (latest) applyAuctionState(latest);
+            return;
+          }
+          if (resp.state) applyAuctionState(resp.state);
+        }
+      );
+    },
+    [applyAuctionState]
+  );
+
   const subscribeToRoom = useCallback(
-    (rawCode: string, options: { force?: boolean } = {}) => {
+    (rawCode: string, options: { force?: boolean; resume?: boolean } = {}) => {
       const sock = socketRef.current;
       const code = normalizeCode(rawCode);
       if (!code || !sock) return;
       const force = options.force ?? false;
+      const resume = options.resume ?? true;
       const socketId = sock.id ?? null;
       const alreadySame =
         lastSubscribedCodeRef.current === code &&
@@ -1086,12 +1140,16 @@ export default function Auction({
 
       lastSubscribedCodeRef.current = code;
       sock.emit("room:subscribe", { code, game: AUCTION_GAME });
-      sock.emit("auction:sync", { code, game: AUCTION_GAME });
+      if (resume) {
+        resumeAuctionState(code);
+      } else {
+        sock.emit("auction:sync", { code, game: AUCTION_GAME });
+      }
       if (socketId) {
         lastSubscriptionSocketIdRef.current = socketId;
       }
     },
-    []
+    [resumeAuctionState]
   );
 
   // ---------- EXIT / BACK ----------
@@ -1123,6 +1181,7 @@ export default function Auction({
     setSelfInfo(null);
     setViewerIsOwner(false);
     setAuctionState(null);
+    lastStateVersionRef.current = null;
     lastSubscribedCodeRef.current = null;
     lastSubscriptionSocketIdRef.current = null;
     progressSentRef.current = false;
@@ -1155,6 +1214,10 @@ export default function Auction({
       setBasketPlayerId(null);
     }
   }, [basketPlayerId, safePlayers]);
+
+  useEffect(() => {
+    lastStateVersionRef.current = null;
+  }, [room?.code]);
 
   // ---------- EFFECTS ----------
 
@@ -1281,8 +1344,16 @@ export default function Auction({
   useEffect(() => {
     if (!apiBase) return;
     const instance = io(apiBase, {
-      transports: ["websocket"],
+      path: "/socket.io",
+      transports: ["websocket", "polling"],
       auth: { initData: initData || "" },
+      withCredentials: false,
+      forceNew: true,
+      reconnection: true,
+      reconnectionAttempts: 20,
+      reconnectionDelay: 700,
+      reconnectionDelayMax: 3500,
+      timeout: 8000,
     });
 
     socketRef.current = instance;
@@ -1293,7 +1364,8 @@ export default function Auction({
       setConnecting(false);
       const code = lastSubscribedCodeRef.current;
       if (code) {
-        subscribeToRoom(code, { force: true });
+        const recovered = Boolean((instance as any).recovered);
+        subscribeToRoom(code, { force: true, resume: !recovered });
       }
     });
 
@@ -1304,9 +1376,19 @@ export default function Auction({
 
     instance.on("connect_error", (err: any) => {
       setConnecting(false);
-      pushError(
-        `Не удалось подключиться: ${err?.message || "ошибка соединения"}`
+      const message = String(err?.message || "");
+      const authMatch = message.match(
+        /(initData_required|bad_signature|stale_init_data)/i
       );
+      if (authMatch?.[1]) {
+        const key = authMatch[1].toLowerCase();
+        pushError(
+          SERVER_ERROR_MESSAGES[key] ||
+            "Сессия Telegram устарела. Открой игру заново из Telegram."
+        );
+        return;
+      }
+      pushError(`Не удалось подключиться: ${err?.message || "ошибка соединения"}`);
     });
 
     instance.on("toast", (payload: any) => {
@@ -1335,7 +1417,7 @@ export default function Auction({
 
     instance.on("auction:state", (state: any) => {
       if (!state) return;
-      setAuctionState(state);
+      applyAuctionState(state);
       clearError();
     });
 
@@ -1354,7 +1436,7 @@ export default function Auction({
         // ignore
       }
     };
-  }, [apiBase, initData, pushError, pushToast, clearError, subscribeToRoom]);
+  }, [apiBase, initData, pushError, pushToast, clearError, subscribeToRoom, applyAuctionState]);
 
   // Подписка по коду комнаты
   useEffect(() => {
