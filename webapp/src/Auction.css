@@ -855,6 +855,15 @@ textarea {
   color: rgba(226, 232, 240, 0.72);
 }
 
+.landing-title--highlight {
+  color: rgba(251, 191, 36, 0.92);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-shadow:
+    0 8px 16px rgba(245, 158, 11, 0.32),
+    0 0 12px rgba(251, 191, 36, 0.22);
+}
+
 .landing-tabs {
   display: flex;
   align-items: center;

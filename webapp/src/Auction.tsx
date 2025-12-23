@@ -67,20 +67,20 @@ const LOOTBOX_RARITY_LABELS = (
 const LANDING_MONEY_ICONS = [moneyCoinUrl] as const;
 
 const LANDING_COINS = [
-  { left: "4%", size: 30, duration: "9.8s", delay: "-1.2s", drift: "18px", opacity: 0.95 },
-  { left: "11%", size: 22, duration: "7.4s", delay: "-3.1s", drift: "-12px", opacity: 0.78 },
-  { left: "19%", size: 20, duration: "8.2s", delay: "-5.4s", drift: "14px", opacity: 0.7 },
-  { left: "28%", size: 28, duration: "10.1s", delay: "-2.8s", drift: "-20px", opacity: 0.9 },
-  { left: "36%", size: 26, duration: "7.2s", delay: "-4.6s", drift: "10px", opacity: 0.82 },
-  { left: "45%", size: 32, duration: "10.8s", delay: "-7.9s", drift: "-22px", opacity: 0.96 },
-  { left: "54%", size: 21, duration: "7.6s", delay: "-1.6s", drift: "12px", opacity: 0.72 },
-  { left: "62%", size: 27, duration: "9.1s", delay: "-6.2s", drift: "-14px", opacity: 0.86 },
-  { left: "70%", size: 24, duration: "8.4s", delay: "-3.5s", drift: "8px", opacity: 0.77 },
-  { left: "78%", size: 19, duration: "6.8s", delay: "-2.3s", drift: "-10px", opacity: 0.66 },
-  { left: "86%", size: 29, duration: "9.4s", delay: "-8.1s", drift: "20px", opacity: 0.9 },
-  { left: "94%", size: 22, duration: "8.8s", delay: "-5.6s", drift: "-6px", opacity: 0.74 },
-  { left: "24%", size: 31, duration: "8.6s", delay: "-9.2s", drift: "16px", opacity: 0.88 },
-  { left: "66%", size: 26, duration: "9.3s", delay: "-5.2s", drift: "6px", opacity: 0.82 },
+  { left: "4%", size: 34, duration: "9.8s", delay: "-1.2s", drift: "18px", opacity: 0.95 },
+  { left: "11%", size: 26, duration: "7.4s", delay: "-3.1s", drift: "-12px", opacity: 0.78 },
+  { left: "19%", size: 24, duration: "8.2s", delay: "-5.4s", drift: "14px", opacity: 0.7 },
+  { left: "28%", size: 32, duration: "10.1s", delay: "-2.8s", drift: "-20px", opacity: 0.9 },
+  { left: "36%", size: 30, duration: "7.2s", delay: "-4.6s", drift: "10px", opacity: 0.82 },
+  { left: "45%", size: 36, duration: "10.8s", delay: "-7.9s", drift: "-22px", opacity: 0.96 },
+  { left: "54%", size: 25, duration: "7.6s", delay: "-1.6s", drift: "12px", opacity: 0.72 },
+  { left: "62%", size: 31, duration: "9.1s", delay: "-6.2s", drift: "-14px", opacity: 0.86 },
+  { left: "70%", size: 28, duration: "8.4s", delay: "-3.5s", drift: "8px", opacity: 0.77 },
+  { left: "78%", size: 23, duration: "6.8s", delay: "-2.3s", drift: "-10px", opacity: 0.66 },
+  { left: "86%", size: 33, duration: "9.4s", delay: "-8.1s", drift: "20px", opacity: 0.9 },
+  { left: "94%", size: 26, duration: "8.8s", delay: "-5.6s", drift: "-6px", opacity: 0.74 },
+  { left: "24%", size: 35, duration: "8.6s", delay: "-9.2s", drift: "16px", opacity: 0.88 },
+  { left: "66%", size: 30, duration: "9.3s", delay: "-5.2s", drift: "6px", opacity: 0.82 },
 ] as const;
 
 function normalizeCode(value = "") {
@@ -2078,7 +2078,9 @@ export default function Auction({
             <span className="landing-logo__primary">АУКЦИОН</span>
             <span className="landing-logo__secondary">ПОЧУВСТВУЙ</span>
           </div>
-          <div className="landing-title">СЕБЯ БОГАТЫМ</div>
+          <div className="landing-title landing-title--highlight">
+            СЕБЯ НЕПРИЛИЧНО БОГАТЫМ
+          </div>
         </div>
 
         <div className="landing-tabs" role="tablist" aria-label="Действия">
