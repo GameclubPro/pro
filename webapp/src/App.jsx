@@ -12,6 +12,7 @@ import Choice from "./choice"; // «Выбор»
 import SketchBattle from "./SketchBattle"; // «Скетч-баттл»
 import Auction from "./Auction.tsx"; // 💰 «Аукцион»
 import KnyazCourt from "./KnyazCourt.jsx"; // 🏰 «Княжий суд»
+import { ensureAuctionSocket } from "./auction-socket";
 
 // Touchpoint for safe-area tweaks; kept for future UI adjustments.
 
@@ -600,6 +601,11 @@ export default function App() {
   const effectiveInitData = resolvedInitData || tg?.initData || initFromUrl || "";
   const mafiaAutoJoin = inviteGame === GAME_AUCTION ? null : inviteCode;
   const auctionAutoJoin = inviteGame === GAME_AUCTION ? inviteCode : null;
+
+  useEffect(() => {
+    if (!isProbablyTelegram || !effectiveInitData) return;
+    ensureAuctionSocket({ apiBase: API_BASE, initData: effectiveInitData });
+  }, [isProbablyTelegram, effectiveInitData]);
 
   /* ---------- ФОЛБЭК: если уже добавили в комнату через /start, а WebApp открыт без ?join/ start_param ---------- */
   useEffect(() => {

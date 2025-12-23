@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Confetti from "react-canvas-confetti";
-import io from "socket.io-client";
+import { ensureAuctionSocket } from "./auction-socket";
 import lootboxFImageUrl from "./assets/auction/F1.png";
 import lootboxEImageUrl from "./assets/auction/E1.png";
 import lootboxDImageUrl from "./assets/auction/D1.png";
@@ -223,6 +223,7 @@ export default function Auction({
   const [socket, setSocket] = useState<any>(null);
   const socketRef = useRef<any>(null);
   const [connecting, setConnecting] = useState(false);
+  const [showConnecting, setShowConnecting] = useState(false);
   const tg = typeof window !== "undefined" ? window?.Telegram?.WebApp : undefined;
   const isMiniApp = Boolean(tg);
   const shatterSize = isMiniApp ? 210 : LOOTBOX_SHATTER_SIZE;
@@ -276,6 +277,7 @@ export default function Auction({
   const lootboxConfettiFiredRef = useRef<string | null>(null);
   const confettiRef = useRef<any>(null);
   const lastStateVersionRef = useRef<number | null>(null);
+  const connectingTimerRef = useRef<any>(null);
   const preloadedImageUrlsRef = useRef<Set<string>>(new Set());
 
   const moneyFormatter = useMemo(() => new Intl.NumberFormat("ru-RU"), []);
@@ -1216,6 +1218,28 @@ export default function Auction({
   }, [basketPlayerId, safePlayers]);
 
   useEffect(() => {
+    if (connecting) {
+      if (connectingTimerRef.current) {
+        clearTimeout(connectingTimerRef.current);
+      }
+      connectingTimerRef.current = setTimeout(() => {
+        setShowConnecting(true);
+      }, 400);
+      return () => {
+        if (connectingTimerRef.current) {
+          clearTimeout(connectingTimerRef.current);
+          connectingTimerRef.current = null;
+        }
+      };
+    }
+    if (connectingTimerRef.current) {
+      clearTimeout(connectingTimerRef.current);
+      connectingTimerRef.current = null;
+    }
+    setShowConnecting(false);
+  }, [connecting]);
+
+  useEffect(() => {
     lastStateVersionRef.current = null;
   }, [room?.code]);
 
@@ -1343,38 +1367,28 @@ export default function Auction({
   // Создание socket.io
   useEffect(() => {
     if (!apiBase) return;
-    const instance = io(apiBase, {
-      path: "/socket.io",
-      transports: ["websocket", "polling"],
-      auth: { initData: initData || "" },
-      withCredentials: false,
-      forceNew: true,
-      reconnection: true,
-      reconnectionAttempts: 20,
-      reconnectionDelay: 700,
-      reconnectionDelayMax: 3500,
-      timeout: 8000,
-    });
+    const instance = ensureAuctionSocket({ apiBase, initData });
+    if (!instance) return;
 
     socketRef.current = instance;
     setSocket(instance);
-    setConnecting(true);
+    setConnecting(!instance.connected);
 
-    instance.on("connect", () => {
+    const handleConnect = () => {
       setConnecting(false);
       const code = lastSubscribedCodeRef.current;
       if (code) {
         const recovered = Boolean((instance as any).recovered);
         subscribeToRoom(code, { force: true, resume: !recovered });
       }
-    });
+    };
 
-    instance.on("disconnect", () => {
+    const handleDisconnect = () => {
       setConnecting(true);
       lastSubscriptionSocketIdRef.current = null;
-    });
+    };
 
-    instance.on("connect_error", (err: any) => {
+    const handleConnectError = (err: any) => {
       setConnecting(false);
       const message = String(err?.message || "");
       const authMatch = message.match(
@@ -1389,18 +1403,18 @@ export default function Auction({
         return;
       }
       pushError(`Не удалось подключиться: ${err?.message || "ошибка соединения"}`);
-    });
+    };
 
-    instance.on("toast", (payload: any) => {
+    const handleToast = (payload: any) => {
       if (!payload?.text) return;
       if (payload.type === "error") {
         pushError(payload.text);
         return;
       }
       pushToast(payload);
-    });
+    };
 
-    instance.on("room:state", (payload: any) => {
+    const handleRoomState = (payload: any) => {
       if (!payload) return;
       setRoom(payload.room || null);
       setPlayers(payload.players || []);
@@ -1408,30 +1422,39 @@ export default function Auction({
         setViewerIsOwner(payload.viewerIsOwner);
       }
       clearError();
-    });
+    };
 
-    instance.on("private:self", (payload: any) => {
+    const handlePrivateSelf = (payload: any) => {
       if (!payload) return;
       setSelfInfo(payload);
-    });
+    };
 
-    instance.on("auction:state", (state: any) => {
+    const handleAuctionState = (state: any) => {
       if (!state) return;
       applyAuctionState(state);
       clearError();
-    });
+    };
+
+    instance.on("connect", handleConnect);
+    instance.on("disconnect", handleDisconnect);
+    instance.on("connect_error", handleConnectError);
+    instance.on("toast", handleToast);
+    instance.on("room:state", handleRoomState);
+    instance.on("private:self", handlePrivateSelf);
+    instance.on("auction:state", handleAuctionState);
 
     return () => {
-      socketRef.current = null;
+      if (socketRef.current === instance) {
+        socketRef.current = null;
+      }
       try {
-        instance.off("toast");
-        instance.off("room:state");
-        instance.off("private:self");
-        instance.off("auction:state");
-        instance.off("connect");
-        instance.off("disconnect");
-        instance.off("connect_error");
-        instance.disconnect();
+        instance.off("connect", handleConnect);
+        instance.off("disconnect", handleDisconnect);
+        instance.off("connect_error", handleConnectError);
+        instance.off("toast", handleToast);
+        instance.off("room:state", handleRoomState);
+        instance.off("private:self", handlePrivateSelf);
+        instance.off("auction:state", handleAuctionState);
       } catch {
         // ignore
       }
@@ -1443,6 +1466,30 @@ export default function Auction({
     if (!room?.code) return;
     subscribeToRoom(room.code);
   }, [room?.code, subscribeToRoom]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const resume = () => {
+      const code = room?.code || lastSubscribedCodeRef.current;
+      if (!code) return;
+      resumeAuctionState(code);
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      resume();
+    };
+    const handleFocus = () => resume();
+    const handleOnline = () => resume();
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("online", handleOnline);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, [room?.code, resumeAuctionState]);
 
   // Обработчик системной "назад"
   useEffect(() => {
@@ -1952,7 +1999,7 @@ export default function Auction({
             {creating ? "Создаём комнату..." : "Создать новую комнату"}
           </button>
 
-          {connecting && (
+          {showConnecting && (
             <div className="landing-connect">Подключаемся к серверу...</div>
           )}
         </div>

@@ -1363,6 +1363,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
 
   async function clearRoomStateById(roomId) {
     states.delete(roomId);
+    presets.delete(roomId);
     clearTimer(roomId);
     clearRevealTimer(roomId);
     if (!redisClient) return;
