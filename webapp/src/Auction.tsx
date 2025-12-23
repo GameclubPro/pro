@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Confetti from "react-canvas-confetti";
 import { ensureAuctionSocket } from "./auction-socket";
+import { getSessionToken, setSessionToken } from "./session-token";
 import lootboxFImageUrl from "./assets/auction/F1.png";
 import lootboxEImageUrl from "./assets/auction/E1.png";
 import lootboxDImageUrl from "./assets/auction/D1.png";
@@ -148,6 +149,7 @@ const SERVER_ERROR_MESSAGES: Record<string, string> = {
   game_in_progress: "Игра уже идёт",
   wrong_game: "Эта ссылка для другой игры",
 };
+const AUTH_ERROR_RE = /(initData_required|bad_signature|stale_init_data)/i;
 
 function mapServerError(code: string | undefined, status: number, fallback: string) {
   if (status === 429) return "Слишком много попыток. Попробуйте чуть позже.";
@@ -222,6 +224,9 @@ export default function Auction({
 }) {
   const [socket, setSocket] = useState<any>(null);
   const socketRef = useRef<any>(null);
+  const tokenRefreshRef = useRef<Promise<string | null> | null>(null);
+  const authRetryAtRef = useRef(0);
+  const lastAuthTokenAttemptRef = useRef("");
   const [connecting, setConnecting] = useState(false);
   const [showConnecting, setShowConnecting] = useState(false);
   const tg = typeof window !== "undefined" ? window?.Telegram?.WebApp : undefined;
@@ -1072,6 +1077,95 @@ export default function Auction({
 
   const clearError = useCallback(() => setError(""), []);
 
+  const updateSocketAuth = useCallback(
+    (token?: string | null) => {
+      const sock = socketRef.current;
+      if (!sock) return;
+      const nextAuth = { ...(sock.auth || {}) };
+      if (initData != null) nextAuth.initData = initData || "";
+      if (token) nextAuth.token = token;
+      sock.auth = nextAuth;
+    },
+    [initData]
+  );
+
+  const refreshSessionToken = useCallback(async () => {
+    if (!apiBase || !initData) return null;
+    if (tokenRefreshRef.current) return tokenRefreshRef.current;
+    const task = (async () => {
+      try {
+        const resp = await fetch(`${apiBase}/auth/verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ initData }),
+        });
+        if (!resp.ok) return null;
+        const data = await resp.json().catch(() => ({}));
+        if (data?.token) {
+          setSessionToken(data.token);
+          updateSocketAuth(data.token);
+          return data.token;
+        }
+      } catch {
+        // ignore
+      }
+      return null;
+    })();
+    tokenRefreshRef.current = task;
+    try {
+      return await task;
+    } finally {
+      tokenRefreshRef.current = null;
+    }
+  }, [apiBase, initData, updateSocketAuth]);
+
+  const recoverSocketAuth = useCallback(async () => {
+    const now = Date.now();
+    if (now - authRetryAtRef.current < 2500) return true;
+    authRetryAtRef.current = now;
+
+    const sock = socketRef.current;
+    if (!sock) return false;
+
+    const storedToken = getSessionToken();
+    if (storedToken && lastAuthTokenAttemptRef.current !== storedToken) {
+      lastAuthTokenAttemptRef.current = storedToken;
+      updateSocketAuth(storedToken);
+      try {
+        sock.connect();
+      } catch {
+        // ignore
+      }
+      return true;
+    }
+
+    const refreshed = initData ? await refreshSessionToken() : null;
+    if (refreshed) {
+      lastAuthTokenAttemptRef.current = refreshed;
+      updateSocketAuth(refreshed);
+      try {
+        sock.connect();
+      } catch {
+        // ignore
+      }
+      return true;
+    }
+    return false;
+  }, [initData, refreshSessionToken, updateSocketAuth]);
+
+  const buildAuthHeaders = useCallback(() => {
+    const token = getSessionToken();
+    return {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(initData ? { "X-Telegram-Init-Data": initData } : {}),
+    } as Record<string, string>;
+  }, [initData]);
+
+  useEffect(() => {
+    if (!apiBase || !initData) return;
+    refreshSessionToken();
+  }, [apiBase, initData, refreshSessionToken]);
+
   // ---------- SOCKET SUBSCRIBE ----------
 
   const applyAuctionState = useCallback((state: any) => {
@@ -1165,7 +1259,7 @@ export default function Auction({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Telegram-Init-Data": initData || "",
+          ...buildAuthHeaders(),
         },
         body: JSON.stringify({ game: AUCTION_GAME }),
       }).catch(() => {});
@@ -1188,7 +1282,7 @@ export default function Auction({
     lastSubscribedCodeRef.current = null;
     lastSubscriptionSocketIdRef.current = null;
     progressSentRef.current = false;
-  }, [apiBase, initData, room?.code, socket]);
+  }, [apiBase, room?.code, socket, buildAuthHeaders]);
 
   const handleExit = useCallback(async () => {
     if (phase === "in_progress") {
@@ -1368,7 +1462,11 @@ export default function Auction({
   // Создание socket.io
   useEffect(() => {
     if (!apiBase) return;
-    const instance = ensureAuctionSocket({ apiBase, initData });
+    const instance = ensureAuctionSocket({
+      apiBase,
+      initData,
+      token: getSessionToken(),
+    });
     if (!instance) return;
 
     socketRef.current = instance;
@@ -1377,6 +1475,7 @@ export default function Auction({
 
     const handleConnect = () => {
       setConnecting(false);
+      lastAuthTokenAttemptRef.current = "";
       const code = lastSubscribedCodeRef.current;
       if (code) {
         const recovered = Boolean((instance as any).recovered);
@@ -1392,15 +1491,16 @@ export default function Auction({
     const handleConnectError = (err: any) => {
       setConnecting(false);
       const message = String(err?.message || "");
-      const authMatch = message.match(
-        /(initData_required|bad_signature|stale_init_data)/i
-      );
+      const authMatch = message.match(AUTH_ERROR_RE);
       if (authMatch?.[1]) {
         const key = authMatch[1].toLowerCase();
-        pushError(
-          SERVER_ERROR_MESSAGES[key] ||
-            "Сессия Telegram устарела. Открой игру заново из Telegram."
-        );
+        recoverSocketAuth().then((recovered) => {
+          if (recovered) return;
+          pushError(
+            SERVER_ERROR_MESSAGES[key] ||
+              "Сессия Telegram устарела. Открой игру заново из Telegram."
+          );
+        });
         return;
       }
       pushError(`Не удалось подключиться: ${err?.message || "ошибка соединения"}`);
@@ -1460,7 +1560,16 @@ export default function Auction({
         // ignore
       }
     };
-  }, [apiBase, initData, pushError, pushToast, clearError, subscribeToRoom, applyAuctionState]);
+  }, [
+    apiBase,
+    initData,
+    pushError,
+    pushToast,
+    clearError,
+    subscribeToRoom,
+    applyAuctionState,
+    recoverSocketAuth,
+  ]);
 
   // Подписка по коду комнаты
   useEffect(() => {
@@ -1554,7 +1663,7 @@ export default function Auction({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Telegram-Init-Data": initData,
+          ...buildAuthHeaders(),
         },
         body: JSON.stringify({ game: AUCTION_GAME }),
       });
@@ -1597,7 +1706,7 @@ export default function Auction({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Telegram-Init-Data": initData,
+          ...buildAuthHeaders(),
         },
         body: JSON.stringify({ game: AUCTION_GAME }),
       });

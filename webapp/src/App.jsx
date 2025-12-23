@@ -13,6 +13,7 @@ import SketchBattle from "./SketchBattle"; // «Скетч-баттл»
 import Auction from "./Auction.tsx"; // 💰 «Аукцион»
 import KnyazCourt from "./KnyazCourt.jsx"; // 🏰 «Княжий суд»
 import { ensureAuctionSocket } from "./auction-socket";
+import { getSessionToken, setSessionToken } from "./session-token";
 
 // Touchpoint for safe-area tweaks; kept for future UI adjustments.
 
@@ -472,9 +473,9 @@ export default function App() {
   /* ---------- Верификация на сервере после появления initData ---------- */
   useEffect(() => {
     if (!resolvedInitData) return;
-    // Если уже есть user из initDataUnsafe — серверная верификация не обязательна,
-    // но пусть заполнит user, если раньше не успели
-    if (user?.id) return;
+    const needUser = !user?.id;
+    const needToken = !getSessionToken();
+    if (!needUser && !needToken) return;
 
     fetch(`${API_BASE}/auth/verify`, {
       method: "POST",
@@ -483,7 +484,8 @@ export default function App() {
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (data?.ok && data.user) {
+        if (data?.token) setSessionToken(data.token);
+        if (needUser && data?.ok && data.user) {
           // ✅ сервер возвращает snake_case (parseUser из initData)
           setUser({
             id: data.user.id,
@@ -604,7 +606,11 @@ export default function App() {
 
   useEffect(() => {
     if (!isProbablyTelegram || !effectiveInitData) return;
-    ensureAuctionSocket({ apiBase: API_BASE, initData: effectiveInitData });
+    ensureAuctionSocket({
+      apiBase: API_BASE,
+      initData: effectiveInitData,
+      token: getSessionToken(),
+    });
   }, [isProbablyTelegram, effectiveInitData]);
 
   /* ---------- ФОЛБЭК: если уже добавили в комнату через /start, а WebApp открыт без ?join/ start_param ---------- */
@@ -626,9 +632,14 @@ export default function App() {
     let aborted = false;
     (async () => {
       try {
+        const token = getSessionToken();
         const resp = await fetch(`${API_BASE}/api/self/active-room`, {
           method: "GET",
-          headers: { "Accept": "application/json", "X-Telegram-Init-Data": id },
+          headers: {
+            Accept: "application/json",
+            "X-Telegram-Init-Data": id,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
         });
         if (!resp.ok) return;
         const data = await resp.json();

@@ -1,9 +1,10 @@
 import io from "socket.io-client";
+import { getSessionToken } from "./session-token";
 
 let socketInstance = null;
 let socketApiBase = null;
 
-export function ensureAuctionSocket({ apiBase, initData } = {}) {
+export function ensureAuctionSocket({ apiBase, initData, token } = {}) {
   if (!apiBase) return null;
   const shouldRecreate = !socketInstance || socketApiBase !== apiBase;
   if (shouldRecreate) {
@@ -16,10 +17,11 @@ export function ensureAuctionSocket({ apiBase, initData } = {}) {
       }
     }
     socketApiBase = apiBase;
+    const authToken = token || getSessionToken() || "";
     socketInstance = io(apiBase, {
       path: "/socket.io",
       transports: ["websocket", "polling"],
-      auth: { initData: initData || "" },
+      auth: { initData: initData || "", token: authToken },
       withCredentials: false,
       forceNew: true,
       reconnection: true,
@@ -29,7 +31,12 @@ export function ensureAuctionSocket({ apiBase, initData } = {}) {
       timeout: 8000,
     });
   } else if (socketInstance && initData != null) {
-    socketInstance.auth = { ...(socketInstance.auth || {}), initData: initData || "" };
+    const authToken = token || getSessionToken() || "";
+    socketInstance.auth = {
+      ...(socketInstance.auth || {}),
+      initData: initData || "",
+      token: authToken,
+    };
   }
   return socketInstance;
 }
