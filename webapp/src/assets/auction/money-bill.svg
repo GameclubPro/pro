@@ -1,0 +1,19 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bill-fill" x1="18" y1="34" x2="110" y2="94" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#a7f3d0" />
+      <stop offset="0.55" stop-color="#34d399" />
+      <stop offset="1" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="bill-edge" x1="18" y1="34" x2="110" y2="94" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ecfdf5" />
+      <stop offset="1" stop-color="#047857" />
+    </linearGradient>
+  </defs>
+  <rect x="18" y="34" width="92" height="60" rx="12" fill="url(#bill-fill)" stroke="url(#bill-edge)" stroke-width="4" />
+  <rect x="28" y="44" width="72" height="40" rx="10" fill="#0f766e" opacity="0.25" />
+  <circle cx="64" cy="64" r="16" fill="#ecfdf5" opacity="0.35" />
+  <circle cx="64" cy="64" r="10" fill="#ecfdf5" opacity="0.6" />
+  <path d="M34 56H50" stroke="#ecfdf5" stroke-width="4" stroke-linecap="round" opacity="0.6" />
+  <path d="M78 72H94" stroke="#ecfdf5" stroke-width="4" stroke-linecap="round" opacity="0.6" />
+</svg>

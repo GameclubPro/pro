@@ -676,19 +676,10 @@ textarea {
   left: var(--coin-left);
   width: var(--coin-size);
   height: var(--coin-size);
-  border-radius: 999px;
-  background:
-    radial-gradient(
-      circle at 30% 30%,
-      rgba(255, 255, 255, 0.92),
-      rgba(255, 255, 255, 0) 45%
-    ),
-    radial-gradient(
-      circle at 50% 50%,
-      rgba(253, 230, 138, 0.95),
-      rgba(245, 158, 11, 0.92) 60%,
-      rgba(180, 83, 9, 0.9) 100%
-    );
+  border-radius: 12px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
   box-shadow:
     0 8px 18px rgba(15, 23, 42, 0.45),
     0 0 16px rgba(245, 158, 11, 0.38);
@@ -697,15 +688,6 @@ textarea {
   transform: translate3d(0, -12vh, 0) rotate(0deg);
   animation: landing-coin-fall var(--coin-duration) linear infinite;
   animation-delay: var(--coin-delay);
-}
-
-.landing-coin::after {
-  content: "";
-  position: absolute;
-  inset: 18%;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  opacity: 0.7;
 }
 
 @keyframes landing-coin-fall {
