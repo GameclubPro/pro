@@ -14,6 +14,7 @@ import lootboxSImageUrl from "./assets/auction/S1.png";
 import moneyCoinUrl from "./assets/auction/money-coin.svg";
 import moneyBillUrl from "./assets/auction/money-bill.svg";
 import moneyStackUrl from "./assets/auction/money-stack.svg";
+import moneyBagUrl from "./assets/auction/bag.png";
 import "./Auction.css";
 
 const INITIAL_BANK = 1_000_000;
@@ -2191,6 +2192,16 @@ export default function Auction({
     </div>
   );
 
+  const renderLandingBag = () => (
+    <img
+      className="landing-bag"
+      src={moneyBagUrl}
+      alt=""
+      aria-hidden="true"
+      decoding="async"
+    />
+  );
+
   const renderHeader = () => {
     if (!room) return null;
     if (phase === "in_progress") return null; // скрываем header во время игры
@@ -3531,6 +3542,7 @@ export default function Auction({
 
   return (
     <div className={appClassName}>
+      {showLanding ? renderLandingBag() : null}
       {showLanding ? renderLandingCoins() : null}
       <div className="screen-wrapper pt-safe">
         {showLanding ? (
