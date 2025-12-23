@@ -24,7 +24,7 @@
   --radius-md: 14px;
   --radius-sm: 10px;
 
-  --auction-safe-top-extra: 4px;
+  --auction-safe-top-extra: 12px;
   --auction-safe-top-min: clamp(64px, 8vh, 96px);
   --auction-safe-top: max(
     calc(var(--app-inset-top) + var(--auction-safe-top-extra)),
