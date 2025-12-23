@@ -63,18 +63,20 @@ const LOOTBOX_RARITY_LABELS = (
   .sort((a, b) => b.label.length - a.label.length);
 
 const LANDING_COINS = [
-  { left: "6%", size: 18, duration: "9.2s", delay: "-1.4s", drift: "14px", opacity: 0.85 },
-  { left: "14%", size: 12, duration: "6.8s", delay: "-3.3s", drift: "-10px", opacity: 0.62 },
-  { left: "24%", size: 10, duration: "7.6s", delay: "-5.2s", drift: "12px", opacity: 0.58 },
-  { left: "33%", size: 16, duration: "9.8s", delay: "-2.6s", drift: "-16px", opacity: 0.78 },
-  { left: "42%", size: 14, duration: "6.4s", delay: "-4.2s", drift: "8px", opacity: 0.68 },
-  { left: "52%", size: 20, duration: "10.4s", delay: "-7.6s", drift: "-18px", opacity: 0.86 },
-  { left: "61%", size: 11, duration: "7.1s", delay: "-1.8s", drift: "10px", opacity: 0.55 },
-  { left: "70%", size: 15, duration: "8.6s", delay: "-6.1s", drift: "-12px", opacity: 0.74 },
-  { left: "79%", size: 13, duration: "7.9s", delay: "-3.7s", drift: "6px", opacity: 0.64 },
-  { left: "88%", size: 9, duration: "6.2s", delay: "-2.2s", drift: "-8px", opacity: 0.5 },
-  { left: "20%", size: 17, duration: "8.3s", delay: "-8.5s", drift: "18px", opacity: 0.7 },
-  { left: "66%", size: 16, duration: "8.9s", delay: "-5.4s", drift: "4px", opacity: 0.76 },
+  { left: "4%", size: 22, duration: "9.8s", delay: "-1.2s", drift: "18px", opacity: 0.95 },
+  { left: "11%", size: 16, duration: "7.4s", delay: "-3.1s", drift: "-12px", opacity: 0.78 },
+  { left: "19%", size: 14, duration: "8.2s", delay: "-5.4s", drift: "14px", opacity: 0.7 },
+  { left: "28%", size: 20, duration: "10.1s", delay: "-2.8s", drift: "-20px", opacity: 0.9 },
+  { left: "36%", size: 18, duration: "7.2s", delay: "-4.6s", drift: "10px", opacity: 0.82 },
+  { left: "45%", size: 24, duration: "10.8s", delay: "-7.9s", drift: "-22px", opacity: 0.96 },
+  { left: "54%", size: 15, duration: "7.6s", delay: "-1.6s", drift: "12px", opacity: 0.72 },
+  { left: "62%", size: 19, duration: "9.1s", delay: "-6.2s", drift: "-14px", opacity: 0.86 },
+  { left: "70%", size: 17, duration: "8.4s", delay: "-3.5s", drift: "8px", opacity: 0.77 },
+  { left: "78%", size: 13, duration: "6.8s", delay: "-2.3s", drift: "-10px", opacity: 0.66 },
+  { left: "86%", size: 21, duration: "9.4s", delay: "-8.1s", drift: "20px", opacity: 0.9 },
+  { left: "94%", size: 16, duration: "8.8s", delay: "-5.6s", drift: "-6px", opacity: 0.74 },
+  { left: "24%", size: 23, duration: "8.6s", delay: "-9.2s", drift: "16px", opacity: 0.88 },
+  { left: "66%", size: 18, duration: "9.3s", delay: "-5.2s", drift: "6px", opacity: 0.82 },
 ] as const;
 
 function normalizeCode(value = "") {
@@ -2061,22 +2063,6 @@ export default function Auction({
 
   const renderLanding = () => (
     <div className="screen screen--landing">
-      <div className="landing-coin-field" aria-hidden="true">
-        {LANDING_COINS.map((coin, index) => (
-          <span
-            key={`landing-coin-${index}`}
-            className="landing-coin"
-            style={{
-              ["--coin-left" as string]: coin.left,
-              ["--coin-size" as string]: `${coin.size}px`,
-              ["--coin-duration" as string]: coin.duration,
-              ["--coin-delay" as string]: coin.delay,
-              ["--coin-drift" as string]: coin.drift,
-              ["--coin-opacity" as string]: String(coin.opacity),
-            }}
-          />
-        ))}
-      </div>
       <motion.div
         className="landing-card"
         initial={{ opacity: 0, y: 24, scale: 0.96 }}
@@ -2174,6 +2160,25 @@ export default function Auction({
           <div className="landing-connect">Подключаемся к серверу...</div>
         )}
       </motion.div>
+    </div>
+  );
+
+  const renderLandingCoins = () => (
+    <div className="landing-coin-field" aria-hidden="true">
+      {LANDING_COINS.map((coin, index) => (
+        <span
+          key={`landing-coin-${index}`}
+          className="landing-coin"
+          style={{
+            ["--coin-left" as string]: coin.left,
+            ["--coin-size" as string]: `${coin.size}px`,
+            ["--coin-duration" as string]: coin.duration,
+            ["--coin-delay" as string]: coin.delay,
+            ["--coin-drift" as string]: coin.drift,
+            ["--coin-opacity" as string]: String(coin.opacity),
+          }}
+        />
+      ))}
     </div>
   );
 
@@ -3516,26 +3521,27 @@ export default function Auction({
     .join(" ");
 
   return (
-      <div className={appClassName}>
-        <div className="screen-wrapper pt-safe">
-          {showLanding ? (
-            renderLanding()
-          ) : (
-            <>
-              {renderHeader()}
-              <main className="screen-main">
-                {renderLobbyContent()}
-                {renderGameContent()}
-                {renderResultsContent()}
-              </main>
-            </>
-          )}
-        </div>
-        {renderBidDock()}
-        {renderLootboxRevealModal()}
-        {renderBasketModal()}
-        {renderSettingsModal()}
-        {renderToastStack()}
+    <div className={appClassName}>
+      {showLanding ? renderLandingCoins() : null}
+      <div className="screen-wrapper pt-safe">
+        {showLanding ? (
+          renderLanding()
+        ) : (
+          <>
+            {renderHeader()}
+            <main className="screen-main">
+              {renderLobbyContent()}
+              {renderGameContent()}
+              {renderResultsContent()}
+            </main>
+          </>
+        )}
+      </div>
+      {renderBidDock()}
+      {renderLootboxRevealModal()}
+      {renderBasketModal()}
+      {renderSettingsModal()}
+      {renderToastStack()}
       <Confetti
         refConfetti={(instance) => {
           confettiRef.current = instance;

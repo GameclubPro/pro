@@ -188,7 +188,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  z-index: 1;
+  z-index: 2;
 }
 
 .screen-wrapper.pt-safe {
@@ -596,7 +596,7 @@ textarea {
 .landing-card {
   --hall-gold: rgba(245, 158, 11, 0.9);
   --hall-gold-soft: rgba(251, 191, 36, 0.38);
-  --hall-dark: rgba(2, 6, 23, 0.98);
+  --hall-dark: rgba(2, 6, 23, 0.9);
   position: relative;
   z-index: 1;
   width: 100%;
@@ -605,15 +605,15 @@ textarea {
   background:
     radial-gradient(
       140% 200% at 0% -10%,
-      rgba(245, 158, 11, 0.24),
+      rgba(245, 158, 11, 0.28),
       transparent 58%
     ),
     radial-gradient(
       160% 260% at 100% -30%,
-      rgba(251, 191, 36, 0.22),
+      rgba(251, 191, 36, 0.24),
       transparent 62%
     ),
-    linear-gradient(160deg, rgba(15, 23, 42, 0.97), rgba(2, 6, 23, 0.98));
+    linear-gradient(160deg, rgba(15, 23, 42, 0.88), rgba(2, 6, 23, 0.9));
   border: 1px solid rgba(234, 179, 8, 0.5);
   box-shadow: 0 26px 60px rgba(2, 6, 23, 0.9);
   display: flex;
@@ -621,6 +621,8 @@ textarea {
   gap: 16px;
   overflow: hidden;
   isolation: isolate;
+  backdrop-filter: blur(14px) saturate(125%);
+  -webkit-backdrop-filter: blur(14px) saturate(125%);
 }
 
 .landing-card::before {
@@ -653,7 +655,7 @@ textarea {
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
 }
 
 .landing-card > * {
@@ -687,8 +689,9 @@ textarea {
       rgba(180, 83, 9, 0.9) 100%
     );
   box-shadow:
-    0 6px 14px rgba(15, 23, 42, 0.45),
-    0 0 12px rgba(245, 158, 11, 0.25);
+    0 8px 18px rgba(15, 23, 42, 0.45),
+    0 0 16px rgba(245, 158, 11, 0.38);
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.35));
   opacity: var(--coin-opacity);
   transform: translate3d(0, -140%, 0) rotate(0deg);
   animation: landing-coin-fall var(--coin-duration) linear infinite;
@@ -724,8 +727,9 @@ textarea {
 @media (prefers-reduced-motion: reduce) {
   .landing-coin {
     animation: none;
-    opacity: 0.25;
-    transform: translate3d(0, 10%, 0);
+    opacity: 0.35;
+    top: 4%;
+    transform: translate3d(0, 0, 0);
   }
 }
 
