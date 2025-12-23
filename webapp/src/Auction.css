@@ -25,7 +25,11 @@
   --radius-sm: 10px;
 
   --auction-safe-top-extra: 4px;
-  --auction-safe-top: calc(var(--app-inset-top) + var(--auction-safe-top-extra));
+  --auction-safe-top-min: clamp(104px, 12vh, 140px);
+  --auction-safe-top: max(
+    calc(var(--app-inset-top) + var(--auction-safe-top-extra)),
+    var(--auction-safe-top-min)
+  );
   --auction-safe-bottom: var(--app-inset-bottom);
   --auction-vh: var(--tg-vh, 100svh);
   --market-grid-strong: rgba(148, 163, 184, 0.06);
