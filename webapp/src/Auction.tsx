@@ -2061,28 +2061,28 @@ export default function Auction({
 
   const renderLanding = () => (
     <div className="screen screen--landing">
+      <div className="landing-coin-field" aria-hidden="true">
+        {LANDING_COINS.map((coin, index) => (
+          <span
+            key={`landing-coin-${index}`}
+            className="landing-coin"
+            style={{
+              ["--coin-left" as string]: coin.left,
+              ["--coin-size" as string]: `${coin.size}px`,
+              ["--coin-duration" as string]: coin.duration,
+              ["--coin-delay" as string]: coin.delay,
+              ["--coin-drift" as string]: coin.drift,
+              ["--coin-opacity" as string]: String(coin.opacity),
+            }}
+          />
+        ))}
+      </div>
       <motion.div
         className="landing-card"
         initial={{ opacity: 0, y: 24, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.35 }}
       >
-        <div className="landing-card__coins" aria-hidden="true">
-          {LANDING_COINS.map((coin, index) => (
-            <span
-              key={`landing-coin-${index}`}
-              className="landing-coin"
-              style={{
-                ["--coin-left" as string]: coin.left,
-                ["--coin-size" as string]: `${coin.size}px`,
-                ["--coin-duration" as string]: coin.duration,
-                ["--coin-delay" as string]: coin.delay,
-                ["--coin-drift" as string]: coin.drift,
-                ["--coin-opacity" as string]: String(coin.opacity),
-              }}
-            />
-          ))}
-        </div>
         <div className="landing-card__head">
           <div className="landing-logo">
             <span className="landing-logo__primary">АУКЦИОН</span>

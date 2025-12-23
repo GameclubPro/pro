@@ -224,6 +224,8 @@ textarea {
 .screen--landing {
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
 }
 
 /* TYPOGRAPHY & UTILITIES */
@@ -596,6 +598,7 @@ textarea {
   --hall-gold-soft: rgba(251, 191, 36, 0.38);
   --hall-dark: rgba(2, 6, 23, 0.98);
   position: relative;
+  z-index: 1;
   width: 100%;
   border-radius: var(--radius-xl);
   padding: 22px 20px 18px;
@@ -645,7 +648,7 @@ textarea {
   pointer-events: none;
 }
 
-.landing-card__coins {
+.landing-coin-field {
   position: absolute;
   inset: 0;
   overflow: hidden;
@@ -653,7 +656,7 @@ textarea {
   z-index: 0;
 }
 
-.landing-card > :not(.landing-card__coins) {
+.landing-card > * {
   position: relative;
   z-index: 2;
 }
