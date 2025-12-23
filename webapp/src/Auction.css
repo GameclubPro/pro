@@ -1065,43 +1065,106 @@ textarea {
 }
 
 .card--lobby-top {
-  padding-bottom: 12px;
+  padding: 14px 14px 16px;
+  border-color: color-mix(in srgb, var(--accent-main) 35%, var(--border-subtle));
+  background:
+    radial-gradient(
+      140% 160% at 0% 0%,
+      rgba(56, 189, 248, 0.22),
+      transparent 55%
+    ),
+    radial-gradient(
+      160% 160% at 100% 0%,
+      rgba(168, 85, 247, 0.18),
+      transparent 60%
+    ),
+    linear-gradient(160deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.92));
+  box-shadow:
+    0 18px 40px rgba(2, 6, 23, 0.75),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+}
+
+.card-row--lobby-top {
+  align-items: flex-start;
 }
 
 .lobby-header-main {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  min-width: 0;
 }
 
 .lobby-header-main__row {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
 }
 
 .lobby-header-main__players {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 .lobby-header-main__code {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 4px 9px;
-  border-radius: 999px;
-  border: 1px solid var(--border-subtle);
-  background: rgba(15, 23, 42, 0.9);
-  letter-spacing: 0.16em;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--accent-main) 40%, var(--border-subtle));
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(15, 23, 42, 0.95));
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.lobby-header-main__code:hover {
+  border-color: color-mix(in srgb, var(--accent-main) 65%, var(--border-subtle));
+  box-shadow: 0 12px 30px rgba(56, 189, 248, 0.18);
+  transform: translateY(-1px);
+}
+
+.lobby-header-main__code:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.lobby-header-main__code:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent-main) 70%, transparent);
+  outline-offset: 2px;
+}
+
+.lobby-header-main__code-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
+  color: var(--muted);
+}
+
+.lobby-header-main__code-value {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--text);
+  white-space: nowrap;
 }
 
 .lobby-header-progress {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .lobby-header-progress__top {
@@ -1118,8 +1181,32 @@ textarea {
 }
 
 .lobby-header-progress__value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
   font-size: 11px;
   font-weight: 600;
+}
+
+.lobby-header-progress__percent {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+}
+
+.lobby-header-progress .progress {
+  height: 8px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.lobby-header-progress .progress--inline {
+  height: 8px;
+}
+
+.lobby-header-progress .progress__fill {
+  box-shadow: 0 0 18px rgba(56, 189, 248, 0.45);
 }
 
 .progress {
@@ -1152,35 +1239,45 @@ textarea {
 
 .lobby-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 8px;
-  margin-top: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .lobby-stat {
-  padding: 8px 9px;
+  padding: 10px 12px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
-  background: var(--card-soft);
+  border: 1px solid color-mix(in srgb, var(--accent-main) 18%, var(--border-subtle));
+  background:
+    linear-gradient(140deg, rgba(15, 23, 42, 0.94), rgba(15, 23, 42, 0.85));
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.6);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .lobby-stat__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
 
-.lobby-stat__value {
+.lobby-stat__icon {
   font-size: 14px;
-  font-weight: 700;
+  opacity: 0.85;
+}
+
+.lobby-stat__value {
+  font-size: 15px;
+  font-weight: 800;
 }
 
 .lobby-hint {
-  margin-top: 6px;
+  margin-top: 0;
   font-size: 12px;
   color: var(--muted);
 }
@@ -1274,6 +1371,9 @@ textarea {
     rgba(34, 197, 94, 0.16),
     rgba(15, 23, 42, 0.96)
   );
+  box-shadow:
+    0 12px 28px rgba(34, 197, 94, 0.16),
+    0 0 0 1px rgba(34, 197, 94, 0.12);
 }
 
 .lobby-player--host {
@@ -1325,7 +1425,36 @@ textarea {
 }
 
 .lobby-player__tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 11px;
+  color: var(--muted);
+}
+
+.lobby-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: rgba(15, 23, 42, 0.7);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.lobby-status--ready {
+  border-color: rgba(34, 197, 94, 0.75);
+  color: #d1fae5;
+  background: rgba(34, 197, 94, 0.12);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
+}
+
+.lobby-status--waiting {
+  border-color: rgba(148, 163, 184, 0.45);
   color: var(--muted);
 }
 
@@ -1382,17 +1511,29 @@ textarea {
 /* BOTTOM BAR */
 
 .bottom-bar {
-  margin-top: 4px;
-  padding: 8px 9px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
-  background: rgba(15, 23, 42, 0.98);
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--accent-main) 28%, var(--border-subtle));
+  background:
+    linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.98));
+  box-shadow:
+    0 16px 36px rgba(2, 6, 23, 0.7),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
   display: flex;
   justify-content: center;
 }
 
 .bottom-bar__primary {
   max-width: 260px;
+}
+
+@media (max-width: 420px) {
+  .lobby-players-list,
+  .lobby-players-list--ingame {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* BID DOCK */

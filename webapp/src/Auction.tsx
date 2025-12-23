@@ -2349,7 +2349,7 @@ export default function Auction({
     return (
       <div className="screen-body lobby-layout">
         <section className="card card--lobby-top">
-          <div className="card-row">
+          <div className="card-row card-row--lobby-top">
             <div className="lobby-header-main">
               <span className="label">Комната</span>
               <div className="lobby-header-main__row">
@@ -2357,10 +2357,19 @@ export default function Auction({
                   {totalPlayers} игрок
                   {totalPlayers === 1 ? "" : "ов"}
                 </span>
-                <span className="lobby-header-main__code">
+              </div>
+              <button
+                type="button"
+                className="lobby-header-main__code"
+                onClick={copyRoomCode}
+                title="Скопировать код комнаты"
+                aria-label="Скопировать код комнаты"
+              >
+                <span className="lobby-header-main__code-label">Код комнаты</span>
+                <span className="lobby-header-main__code-value">
                   #{room?.code || "------"}
                 </span>
-              </div>
+              </button>
               <div className="lobby-header-progress">
                 <div className="lobby-header-progress__top">
                   <span className="lobby-header-progress__label">
@@ -2368,6 +2377,9 @@ export default function Auction({
                   </span>
                   <span className="lobby-header-progress__value">
                     {readyCount}/{readyTarget}
+                    <span className="lobby-header-progress__percent">
+                      {readyPercent}%
+                    </span>
                   </span>
                 </div>
                 <div className="progress progress--inline">
@@ -2394,20 +2406,26 @@ export default function Auction({
 
           <div className="lobby-stats">
             <div className="lobby-stat">
-              <span className="lobby-stat__label">Банк на игрока</span>
+              <span className="lobby-stat__label">
+                <span className="lobby-stat__icon" aria-hidden="true">💰</span>
+                Банк на игрока
+              </span>
               <span className="lobby-stat__value">
                 {moneyFormatter.format(initialBank)}💰
               </span>
             </div>
             <div className="lobby-stat">
-              <span className="lobby-stat__label">Лотов</span>
+              <span className="lobby-stat__label">
+                <span className="lobby-stat__icon" aria-hidden="true">📦</span>
+                Лотов
+              </span>
               <span className="lobby-stat__value">
                 {slotsDisplay}
               </span>
             </div>
           </div>
 
-          <p className="lobby-hint">
+          <p className="callout lobby-hint">
             {isOwner
               ? canStart
                 ? "All set — you can start even solo."
@@ -2454,7 +2472,16 @@ export default function Auction({
                   <div className="lobby-player__body">
                     <div className="lobby-player__name">{name}</div>
                     <div className="lobby-player__tags">
-                      {p.ready ? "Готов" : "Ожидание"}
+                      <span
+                        className={[
+                          "lobby-status",
+                          p.ready ? "lobby-status--ready" : "lobby-status--waiting",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                      >
+                        {p.ready ? "Готов" : "Ожидание"}
+                      </span>
                     </div>
                   </div>
                   <div className="lobby-player__status">
