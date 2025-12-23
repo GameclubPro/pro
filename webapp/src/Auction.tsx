@@ -2076,9 +2076,9 @@ export default function Auction({
         <div className="landing-card__head">
           <div className="landing-logo">
             <span className="landing-logo__primary">АУКЦИОН</span>
-            <span className="landing-logo__secondary">ЗАЛ</span>
+            <span className="landing-logo__secondary">ПОЧУВСТВУЙ</span>
           </div>
-          <div className="landing-title">Торговый зал</div>
+          <div className="landing-title">СЕБЯ БОГАТЫМ</div>
         </div>
 
         <div className="landing-tabs" role="tablist" aria-label="Действия">
