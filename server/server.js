@@ -2257,7 +2257,7 @@ io.on('connection', (socket) => {
   });
 
   // Резюмирование состояния аукциона (для реконнекта и CSR fallback)
-  socket.on('auction:resume', async ({ code, lastVersion, game }, cb) => {
+  socket.on('auction:resume_state', async ({ code, lastVersion, game }, cb) => {
     try {
       if (!code) return ackErr(cb, 'room_not_found');
       const expectedGame = game ? normalizeGame(game, null) : RoomGame.AUCTION;
@@ -2282,7 +2282,7 @@ io.on('connection', (socket) => {
         stateVersion: payload.state?.stateVersion ?? null,
       });
     } catch (e) {
-      console.error('auction:resume error', e);
+      console.error('auction:resume_state error', e);
       return ackErr(cb, 'failed');
     }
   });

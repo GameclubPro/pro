@@ -1091,7 +1091,7 @@ export default function Auction({
       if (!code || !sock) return;
       const lastVersion = lastStateVersionRef.current;
       sock.emit(
-        "auction:resume",
+        "auction:resume_state",
         { code, lastVersion, game: AUCTION_GAME },
         (resp: any) => {
           if (!resp || !resp.ok) {
