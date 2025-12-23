@@ -31,18 +31,6 @@ const LOOTBOX_SHATTER_SIZE = 240;
 const LOOTBOX_SHATTER_MIN_PIECES = 32;
 const LOOTBOX_SHATTER_MAX_PIECES = 52;
 const LOOTBOX_REVEAL_TOTAL_MS = 6_200;
-const PHASE_LABEL: Record<string, string> = {
-  lobby: "Лобби",
-  in_progress: "Торги",
-  finished: "Итоги",
-};
-
-const PHASE_EMOJI: Record<string, string> = {
-  lobby: "👥",
-  in_progress: "⚔️",
-  finished: "🏁",
-};
-
 type LootboxRarityKey = "F" | "E" | "D" | "C" | "B" | "A" | "S";
 
 const LOOTBOX_RARITY_META: Record<LootboxRarityKey, { label: string; image: string }> = {
@@ -2033,36 +2021,6 @@ export default function Auction({
     }
   }
 
-  async function shareRoomCode() {
-    if (!room?.code) return;
-    const base =
-      typeof window !== "undefined"
-        ? window.location?.origin || ""
-        : "";
-    const shareUrl = base
-      ? `${base.replace(/\/+$/, "")}/?join=${encodeURIComponent(
-          room.code
-        )}&game=auction`
-      : "";
-
-    try {
-      if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share({
-          text: `Код комнаты: ${room.code}`,
-          url: shareUrl || undefined,
-        });
-      } else if (
-        typeof navigator !== "undefined" &&
-        navigator.clipboard?.writeText
-      ) {
-        await navigator.clipboard.writeText(shareUrl || room.code);
-      }
-      pushToast({ type: "info", text: "Ссылка скопирована" });
-    } catch {
-      pushToast({ type: "error", text: "Не удалось поделиться" });
-    }
-  }
-
   // ---------- RENDER ----------
 
   const renderLanding = () => (
@@ -2202,68 +2160,6 @@ export default function Auction({
     />
   );
 
-  const renderHeader = () => {
-    if (!room) return null;
-    if (phase === "in_progress") return null; // скрываем header во время игры
-
-    const phaseLabel = PHASE_LABEL[phase] || "Аукцион";
-    const phaseEmoji = PHASE_EMOJI[phase] || "🎮";
-    const playersOnline = safePlayers.length || 0;
-    const playersLabel =
-      playersOnline === 1
-        ? "игрок"
-        : playersOnline >= 5 || playersOnline === 0
-        ? "игроков"
-        : "игрока";
-
-    return (
-      <header className="app-header">
-        <button
-          type="button"
-          className="icon-btn icon-btn--ghost"
-          aria-label="Поделиться"
-          onClick={shareRoomCode}
-        >
-          📨
-        </button>
-        <div className="app-header__center">
-          <div className="app-header__eyebrow">
-            <span className="chip chip--phase">
-              <span className="chip__icon" aria-hidden="true">
-                {phaseEmoji}
-              </span>
-              {phaseLabel}
-            </span>
-            <span className="app-header__meta">
-              <span className="app-header__pulse" aria-hidden="true" />
-              {playersOnline} {playersLabel}
-            </span>
-          </div>
-          <div className="app-header__code-row">
-            <button
-              type="button"
-              className="app-header__code"
-              onClick={copyRoomCode}
-            >
-              <span className="app-header__code-label">Код</span>
-              <span className="app-header__code-value">
-                {room.code || "------"}
-              </span>
-            </button>
-          </div>
-        </div>
-        <button
-          type="button"
-          className="icon-btn icon-btn--ghost app-header__close"
-          aria-label="Выйти"
-          onClick={handleExit}
-        >
-          ×
-        </button>
-      </header>
-    );
-  };
-
   const renderLobbyContent = () => {
     if (!showLobby) return null;
 
@@ -2351,7 +2247,6 @@ export default function Auction({
         <section className="card card--lobby-top">
           <div className="card-row card-row--lobby-top">
             <div className="lobby-header-main">
-              <span className="label">Комната</span>
               <div className="lobby-header-main__row">
                 <span className="lobby-header-main__players">
                   {totalPlayers} игрок
@@ -2365,7 +2260,7 @@ export default function Auction({
                 title="Скопировать код комнаты"
                 aria-label="Скопировать код комнаты"
               >
-                <span className="lobby-header-main__code-label">Код комнаты</span>
+                <span className="lobby-header-main__code-label">Код</span>
                 <span className="lobby-header-main__code-value">
                   #{room?.code || "------"}
                 </span>
@@ -2425,26 +2320,11 @@ export default function Auction({
             </div>
           </div>
 
-          <p className="callout lobby-hint">
-            {isOwner
-              ? canStart
-                ? "All set — you can start even solo."
-                : "Waiting for players to press ready."
-              : myReady
-              ? "You are ready, waiting for others."
-              : "Press Ready to join from the start."}
-          </p>
         </section>
 
         <section className="card card--lobby-players">
           <div className="card-row card-row--tight">
-            <div>
-              <span className="label">Игроки</span>
-              <h3 className="title-small">Состав лобби</h3>
-            </div>
-            <span className="pill pill--tiny">
-              {readyCount}/{readyTarget} готовы
-            </span>
+            <h3 className="title-small">Игроки</h3>
           </div>
           <div className="lobby-players-list">
             {sortedPlayers.map((p) => {
@@ -2480,18 +2360,9 @@ export default function Auction({
                           .filter(Boolean)
                           .join(" ")}
                       >
-                        {p.ready ? "Готов" : "Ожидание"}
+                        {p.ready ? "Готов" : "Ждет"}
                       </span>
                     </div>
-                  </div>
-                  <div className="lobby-player__status">
-                    <span
-                      className={
-                        p.ready
-                          ? "status-dot status-dot--ok"
-                          : "status-dot"
-                      }
-                    />
                   </div>
                   {isHost && (
                     <span
@@ -3576,7 +3447,6 @@ export default function Auction({
           renderLanding()
         ) : (
           <>
-            {renderHeader()}
             <main className="screen-main">
               {renderLobbyContent()}
               {renderGameContent()}
