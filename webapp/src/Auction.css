@@ -670,8 +670,9 @@ textarea {
   --coin-delay: 0s;
   --coin-drift: 0px;
   --coin-opacity: 0.8;
+  --coin-fall: calc(var(--auction-vh, 100svh) + 160px);
   position: absolute;
-  top: -20%;
+  top: -18%;
   left: var(--coin-left);
   width: var(--coin-size);
   height: var(--coin-size);
@@ -693,7 +694,7 @@ textarea {
     0 0 16px rgba(245, 158, 11, 0.38);
   filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.35));
   opacity: var(--coin-opacity);
-  transform: translate3d(0, -140%, 0) rotate(0deg);
+  transform: translate3d(0, -12vh, 0) rotate(0deg);
   animation: landing-coin-fall var(--coin-duration) linear infinite;
   animation-delay: var(--coin-delay);
 }
@@ -709,7 +710,7 @@ textarea {
 
 @keyframes landing-coin-fall {
   0% {
-    transform: translate3d(0, -140%, 0) rotate(0deg);
+    transform: translate3d(0, -12vh, 0) rotate(0deg);
     opacity: 0;
   }
   12% {
@@ -719,7 +720,7 @@ textarea {
     opacity: var(--coin-opacity);
   }
   100% {
-    transform: translate3d(var(--coin-drift), 140%, 0) rotate(360deg);
+    transform: translate3d(var(--coin-drift), var(--coin-fall), 0) rotate(360deg);
     opacity: 0;
   }
 }
