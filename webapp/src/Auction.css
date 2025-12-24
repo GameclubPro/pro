@@ -101,6 +101,7 @@ textarea {
   padding: 0;
   display: flex;
   flex-direction: column;
+  --auction-ios-top-extra: 0px;
   --landing-bag-height: min(260px, 50vw);
   --landing-coin-impact: calc(var(--auction-vh, 100svh) - var(--landing-bag-height));
   border-radius: 28px;
@@ -199,7 +200,7 @@ textarea {
 
 .screen-wrapper.pt-safe {
   /* лёгкий отступ, чтобы шапка не прилипала к системным кнопкам */
-  padding-top: var(--auction-safe-top);
+  padding-top: calc(var(--auction-safe-top) + var(--auction-ios-top-extra, 0px));
   padding-bottom: calc(var(--auction-safe-bottom) + 10px);
 }
 
@@ -1042,7 +1043,7 @@ textarea {
     var(--tg-safe-top)
   );
   --tg-header-center: calc((var(--tg-safe-top) + var(--tg-content-top)) / 2);
-  top: max(24px, var(--tg-header-center));
+  top: calc(max(24px, var(--tg-header-center)) - var(--auction-ios-top-extra, 0px));
   left: 50%;
   transform: translate(-50%, -50%);
   width: 100%;
@@ -1057,6 +1058,12 @@ textarea {
   max-width: min(340px, calc(100% - 32px));
   box-shadow: 0 12px 30px rgba(56, 189, 248, 0.24);
   pointer-events: auto;
+}
+
+@supports (-webkit-touch-callout: none) {
+  .auction-app {
+    --auction-ios-top-extra: 16px;
+  }
 }
 
 .lobby-header-progress {
