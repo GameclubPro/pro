@@ -2245,27 +2245,8 @@ export default function Auction({
     return (
       <div className="screen-body lobby-layout">
         <section className="card card--lobby-top">
-          <div className="card-row card-row--tight lobby-header-row">
-            <span className="lobby-header-main__players">
-              {totalPlayers} игрок
-              {totalPlayers === 1 ? "" : "ов"}
-            </span>
-            <div className="lobby-header-progress">
-              <div className="lobby-header-progress__top">
-                <span className="lobby-header-progress__label">
-                  Готовность
-                </span>
-              </div>
-              <div className="progress progress--inline">
-                <div
-                  className="progress__fill"
-                  style={{
-                    width: `${Math.max(6, readyPercent)}%`,
-                  }}
-                />
-              </div>
-            </div>
-            {isOwner && (
+          {isOwner && (
+            <div className="card-row card-row--tight lobby-header-actions">
               <button
                 type="button"
                 className="icon-btn icon-btn--ghost lobby-settings"
@@ -2274,8 +2255,8 @@ export default function Auction({
               >
                 ⚙️
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="lobby-stats">
             <div className="lobby-stat">
@@ -2301,8 +2282,28 @@ export default function Auction({
         </section>
 
         <section className="card card--lobby-players">
-          <div className="card-row card-row--tight">
-            <h3 className="title-small">Игроки</h3>
+          <div className="card-row card-row--tight lobby-players-head">
+            <h3 className="title-small lobby-players-title">
+              <span>Игроки</span>
+              <span className="lobby-players-title__count">
+                {readyCount}/{readyTarget}
+              </span>
+            </h3>
+            <div className="lobby-header-progress">
+              <div className="lobby-header-progress__top">
+                <span className="lobby-header-progress__label">
+                  Готовность
+                </span>
+              </div>
+              <div className="progress progress--inline">
+                <div
+                  className="progress__fill"
+                  style={{
+                    width: `${Math.max(6, readyPercent)}%`,
+                  }}
+                />
+              </div>
+            </div>
           </div>
           <div className="lobby-players-list">
             {sortedPlayers.map((p) => {

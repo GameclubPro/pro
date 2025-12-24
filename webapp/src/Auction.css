@@ -956,17 +956,27 @@ textarea {
   overflow: hidden;
 }
 
-.lobby-header-row {
-  display: grid;
-  grid-template-columns: auto minmax(140px, 1fr) auto;
+.lobby-header-actions {
+  justify-content: flex-end;
   align-items: center;
-  gap: 12px;
 }
 
-.lobby-header-main__players {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+.lobby-players-head {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.lobby-players-title {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.lobby-players-title__count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.08em;
 }
 
 .lobby-header-main__code {
@@ -1050,10 +1060,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-top: 0;
-  width: 100%;
-  max-width: 240px;
-  justify-self: end;
+  width: clamp(140px, 35vw, 240px);
   align-items: flex-end;
 }
 
