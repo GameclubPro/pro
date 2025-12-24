@@ -383,13 +383,6 @@ export default function Auction({
     currentSlot && typeof currentSlot.index === "number"
       ? currentSlot.index + 1
       : null;
-  const lotEmoji = useMemo(() => {
-    const name = currentSlot?.name || "";
-    const match = name.match(/([\u{1F300}-\u{1FAFF}])/u);
-    if (match?.[0]) return match[0];
-    return currentSlot?.type === "lootbox" ? "🎁" : "🏆";
-  }, [currentSlot?.name, currentSlot?.type]);
-
   const currentSlotRarity = useMemo(
     () => getLootboxRarity(currentSlot),
     [currentSlot?.name, currentSlot?.rarity, currentSlot?.type]
@@ -2477,7 +2470,7 @@ export default function Auction({
                   draggable={false}
                 />
               ) : (
-                lotEmoji
+                <div className="lot-hero__placeholder" aria-hidden="true" />
               )}
             </div>
           </div>
