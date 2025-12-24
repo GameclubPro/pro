@@ -6,6 +6,7 @@ const { RoomGame } = require('@prisma/client');
 const COUNTDOWN_START_FROM = 3;
 const COUNTDOWN_STEP_MS = 4_000;
 const LOOTBOX_REVEAL_MS = 6_200;
+const LOT_POST_WIN_DELAY_MS = 2_000;
 
 /**
  * createAuctionEngine
@@ -280,6 +281,8 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
   const timers = new Map();
   // roomId -> lootbox reveal timer handle
   const revealTimers = new Map();
+  // roomId -> post-win cooldown timer handle
+  const cooldownTimers = new Map();
   // roomId -> preset { rules?, slots? }
   const presets = new Map();
 
@@ -323,6 +326,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
     if (!state.rules || typeof state.rules !== 'object') state.rules = {};
     if (!state.slotPhase || typeof state.slotPhase !== 'string') state.slotPhase = 'bidding';
     if (!Number.isFinite(Number(state.revealEndsAtMs))) state.revealEndsAtMs = null;
+    if (!Number.isFinite(Number(state.cooldownEndsAtMs))) state.cooldownEndsAtMs = null;
     return state;
   }
 
@@ -621,6 +625,14 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
     }
   }
 
+  function clearCooldownTimer(roomId) {
+    const t = cooldownTimers.get(roomId);
+    if (t) {
+      try { clearTimeout(t); } catch {}
+      cooldownTimers.delete(roomId);
+    }
+  }
+
   async function advanceAfterReveal(roomId) {
     try {
       await lock(roomId, async () => {
@@ -632,6 +644,44 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
         state.slotPhase = 'bidding';
         state.revealEndsAtMs = null;
         ensureConsistentPhase(state);
+        if (state.phase === 'in_progress' && !state.paused) {
+          scheduleTimer(state);
+        } else {
+          clearTimer(state.roomId);
+          state.slotDeadlineAtMs = null;
+        }
+
+        const room = await prisma.room.findUnique({
+          where: { id: roomId },
+          include: {
+            players: { include: { user: true }, orderBy: { joinedAt: 'asc' } },
+          },
+        });
+        if (!room || room.game !== RoomGame.AUCTION) return;
+        await commitStateUpdate(state, room);
+      });
+    } catch (e) {
+      if (isLockErr(e)) return;
+      throw e;
+    }
+  }
+
+  async function advanceAfterCooldown(roomId) {
+    try {
+      await lock(roomId, async () => {
+        clearCooldownTimer(roomId);
+        const state = await ensureState(roomId, { recover: false });
+        if (!state || state.phase !== 'in_progress') return;
+        if ((state.slotPhase || 'bidding') !== 'cooldown') return;
+
+        state.cooldownEndsAtMs = null;
+        state.slotDeadlineAtMs = null;
+        state.slotPhase = 'bidding';
+        state.currentIndex += 1;
+        state.currentBids = {};
+        state.bidFeed = [];
+        ensureConsistentPhase(state);
+
         if (state.phase === 'in_progress' && !state.paused) {
           scheduleTimer(state);
         } else {
@@ -671,6 +721,8 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
 
   function scheduleTimer(state) {
     clearTimer(state.roomId);
+    clearCooldownTimer(state.roomId);
+    state.cooldownEndsAtMs = null;
     if (state.phase !== 'in_progress') {
       state.slotDeadlineAtMs = null;
       state.revealEndsAtMs = null;
@@ -698,13 +750,55 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
     timers.set(state.roomId, handle);
   }
 
+  function scheduleCooldown(state) {
+    clearCooldownTimer(state.roomId);
+    if (state.phase !== 'in_progress') {
+      state.cooldownEndsAtMs = null;
+      state.slotDeadlineAtMs = null;
+      return;
+    }
+    if ((state.slotPhase || 'bidding') !== 'cooldown') return;
+    if (state.paused) {
+      state.slotDeadlineAtMs = null;
+      return;
+    }
+    let endsAt = Number(state.cooldownEndsAtMs);
+    if (!Number.isFinite(endsAt) || endsAt <= Date.now()) {
+      endsAt = Date.now() + LOT_POST_WIN_DELAY_MS;
+      state.cooldownEndsAtMs = endsAt;
+    }
+    const left = Math.max(0, endsAt - Date.now());
+    state.slotDeadlineAtMs = endsAt;
+    if (left <= 0) {
+      setTimeout(() => {
+        advanceAfterCooldown(state.roomId).catch(() => {});
+      }, 0);
+      return;
+    }
+    const handle = setTimeout(() => {
+      advanceAfterCooldown(state.roomId).catch(() => {});
+    }, left + 25);
+    cooldownTimers.set(state.roomId, handle);
+  }
+
   function scheduleAfterResolve(state) {
     if (state.phase !== 'in_progress') {
       clearTimer(state.roomId);
       clearRevealTimer(state.roomId);
+      clearCooldownTimer(state.roomId);
       return;
     }
     if ((state.slotPhase || 'bidding') === 'reveal') {
+      return;
+    }
+    if ((state.slotPhase || 'bidding') === 'cooldown') {
+      clearRevealTimer(state.roomId);
+      if (!state.paused) {
+        scheduleCooldown(state);
+      } else {
+        state.slotDeadlineAtMs = null;
+        clearCooldownTimer(state.roomId);
+      }
       return;
     }
     clearRevealTimer(state.roomId);
@@ -720,6 +814,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
     if (!state || !state.roomId) return;
     clearTimer(state.roomId);
     clearRevealTimer(state.roomId);
+    clearCooldownTimer(state.roomId);
     if (state.phase !== 'in_progress') return;
     if (state.paused) return;
     if (!state.activePlayerIds || state.activePlayerIds.length === 0) return;
@@ -738,6 +833,23 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
         advanceAfterReveal(state.roomId).catch(() => {});
       }, left + 25);
       revealTimers.set(state.roomId, handle);
+      return;
+    }
+
+    if ((state.slotPhase || 'bidding') === 'cooldown') {
+      const endsAt = Number(state.cooldownEndsAtMs ?? state.slotDeadlineAtMs);
+      if (!Number.isFinite(endsAt)) return;
+      const left = endsAt - Date.now();
+      if (left <= 0) {
+        setTimeout(() => {
+          advanceAfterCooldown(state.roomId).catch(() => {});
+        }, 0);
+        return;
+      }
+      const handle = setTimeout(() => {
+        advanceAfterCooldown(state.roomId).catch(() => {});
+      }, left + 25);
+      cooldownTimers.set(state.roomId, handle);
       return;
     }
 
@@ -955,6 +1067,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
 
     const slotIndex = state.currentIndex;
     const slot = state.slots[slotIndex];
+    clearCooldownTimer(state.roomId);
 
     // на всякий случай
     if (!state.baskets) state.baskets = {};
@@ -1050,10 +1163,11 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
     });
 
     state.slotsPlayed += 1;
-    state.currentIndex += 1;
     state.currentBids = {};
     state.slotDeadlineAtMs = null;
     state.bidFeed = [];
+    state.revealEndsAtMs = null;
+    state.cooldownEndsAtMs = null;
 
     const everyoneBroke = state.activePlayerIds.every(
       (pid) => (state.balances[pid] || 0) <= 0
@@ -1061,17 +1175,25 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
     const finishedBySlots = state.slotsPlayed >= state.slots.length;
 
     const canContinue = !(everyoneBroke || finishedBySlots);
+    const shouldCooldown =
+      canContinue && slot.type === 'lot' && winnerId && maxBid > 0;
     if (!canContinue) {
       state.phase = 'finished';
       state.winners = computeWinners(state);
       state.slotPhase = 'bidding';
-      state.revealEndsAtMs = null;
       clearRevealTimer(state.roomId);
+      clearCooldownTimer(state.roomId);
     } else if (slot.type === 'lootbox' && effect) {
+      state.currentIndex += 1;
       startRevealPhase(state);
+    } else if (shouldCooldown) {
+      state.slotPhase = 'cooldown';
+      state.cooldownEndsAtMs = Date.now() + LOT_POST_WIN_DELAY_MS;
+      state.slotDeadlineAtMs = state.cooldownEndsAtMs;
+      clearRevealTimer(state.roomId);
     } else {
+      state.currentIndex += 1;
       state.slotPhase = 'bidding';
-      state.revealEndsAtMs = null;
       clearRevealTimer(state.roomId);
     }
 
@@ -1177,6 +1299,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
         pauseLeftMs: null,
         slotDeadlineAtMs: null,
         revealEndsAtMs: null,
+        cooldownEndsAtMs: null,
         bidFeed: [],
         slotPhase: 'bidding',
         lotCatalog,
@@ -1531,6 +1654,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
         ? Math.max(0, state.slotDeadlineAtMs - Date.now())
         : null;
       clearTimer(state.roomId);
+      clearCooldownTimer(state.roomId);
 
       const pub = await commitStateUpdate(state, room);
       return { ok: true, state: pub };
@@ -1552,7 +1676,21 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
       }
 
       state.paused = false;
-      if ((state.slotPhase || 'bidding') !== 'bidding') {
+      const slotPhase = state.slotPhase || 'bidding';
+      if (slotPhase === 'cooldown') {
+        const rawLeft = Number(state.cooldownEndsAtMs);
+        const left = state.pauseLeftMs != null
+          ? Math.max(0, state.pauseLeftMs)
+          : Number.isFinite(rawLeft)
+            ? Math.max(0, rawLeft - Date.now())
+            : LOT_POST_WIN_DELAY_MS;
+        state.pauseLeftMs = null;
+        state.cooldownEndsAtMs = Date.now() + Math.max(0, left);
+        scheduleCooldown(state);
+        const pub = await commitStateUpdate(state, room);
+        return { ok: true, state: pub };
+      }
+      if (slotPhase !== 'bidding') {
         state.pauseLeftMs = null;
         state.slotDeadlineAtMs = null;
         const pub = await commitStateUpdate(state, room);
