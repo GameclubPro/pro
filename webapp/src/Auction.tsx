@@ -2512,17 +2512,6 @@ export default function Auction({
         </section>
 
         <section className="card card--players-live">
-          <div className="card-row">
-            <div>
-              <span className="label">Игроки</span>
-              <h3 className="title-small">Ставки и корзины</h3>
-              <p className="muted">Тап по игроку — откроется его корзина</p>
-            </div>
-            <span className="pill pill--tiny">
-              {filteredPlayers.length} из {safePlayers.length}
-            </span>
-          </div>
-
           <div className="players-tabs" role="tablist" aria-label="Фильтр игроков">
             <button
               type="button"
