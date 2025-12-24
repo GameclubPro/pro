@@ -31,7 +31,25 @@ const LOOTBOX_SHATTER_SIZE = 240;
 const LOOTBOX_SHATTER_MIN_PIECES = 32;
 const LOOTBOX_SHATTER_MAX_PIECES = 52;
 const LOOTBOX_REVEAL_TOTAL_MS = 6_200;
+const CURRENCY_SYMBOL = "₽";
 type LootboxRarityKey = "F" | "E" | "D" | "C" | "B" | "A" | "S";
+
+const Currency = ({
+  tone = "gold",
+  className = "",
+  ariaHidden,
+}: {
+  tone?: "gold" | "green";
+  className?: string;
+  ariaHidden?: boolean;
+}) => (
+  <span
+    className={["currency", `currency--${tone}`, className].filter(Boolean).join(" ")}
+    aria-hidden={ariaHidden || undefined}
+  >
+    {CURRENCY_SYMBOL}
+  </span>
+);
 
 const LOOTBOX_RARITY_META: Record<LootboxRarityKey, { label: string; image: string }> = {
   F: { label: "Обычный", image: lootboxFImageUrl },
@@ -437,11 +455,20 @@ export default function Auction({
   const heroBidText = useMemo(() => {
     if (isRevealPhase) return "Открывается лутбокс";
     if (leadingBid?.amount != null) {
-      return leadingPlayerName
-        ? `${moneyFormatter.format(leadingBid.amount)}💰 · ${leadingPlayerName}`
-        : `${moneyFormatter.format(leadingBid.amount)}💰`;
+      return (
+        <>
+          {moneyFormatter.format(leadingBid.amount)}
+          <Currency />
+          {leadingPlayerName ? ` · ${leadingPlayerName}` : ""}
+        </>
+      );
     }
-    return `База ${moneyFormatter.format(baseBid)}💰`;
+    return (
+      <>
+        База {moneyFormatter.format(baseBid)}
+        <Currency />
+      </>
+    );
   }, [baseBid, isRevealPhase, leadingBid?.amount, leadingPlayerName, moneyFormatter]);
   const activeBidFloor = useMemo(
     () => Math.max(baseBid, leadingBid?.amount ?? 0),
@@ -465,7 +492,7 @@ export default function Auction({
     () =>
       BID_PRESETS.map((step, idx) => ({
         key: `${idx + 1}`,
-        label: `+${formatPresetLabel(step)}💰`,
+        label: formatPresetLabel(step),
         action: () => setBidRelative(step),
         disabled: isBiddingLocked || busyBid || myBalance == null || myBalance <= 0,
       })),
@@ -1452,7 +1479,7 @@ export default function Auction({
       const needed =
         leadingBid?.amount != null ? leadingBid.amount + 1 : null;
       const label = needed
-        ? `Перебили — нужно ${moneyFormatter.format(needed)}💰`
+        ? `Перебили — нужно ${moneyFormatter.format(needed)}${CURRENCY_SYMBOL}`
         : "Перебили";
       pushToast({ type: "error", text: label, duration: 2400 });
       tg?.HapticFeedback?.notificationOccurred?.("warning");
@@ -1968,7 +1995,7 @@ export default function Auction({
     }
     if (activeBidFloor > 0 && amount < activeBidFloor) {
       pushError(
-        `Минимальная ставка ${moneyFormatter.format(activeBidFloor)}💰`
+        `Минимальная ставка ${moneyFormatter.format(activeBidFloor)}${CURRENCY_SYMBOL}`
       );
       return;
     }
@@ -2281,11 +2308,17 @@ export default function Auction({
           <div className="lobby-stats">
             <div className="lobby-stat">
               <span className="lobby-stat__label">
-                <span className="lobby-stat__icon" aria-hidden="true">💰</span>
+                <span
+                  className="lobby-stat__icon currency currency--gold"
+                  aria-hidden="true"
+                >
+                  ₽
+                </span>
                 Банк на игрока
               </span>
               <span className="lobby-stat__value">
-                {moneyFormatter.format(initialBank)}💰
+                {moneyFormatter.format(initialBank)}
+                <Currency />
               </span>
             </div>
             <div className="lobby-stat">
@@ -2362,9 +2395,14 @@ export default function Auction({
       ? "Открытие"
       : timeLeftLabel;
     const leaderChipLabel =
-      leadingBid?.amount != null
-        ? `${moneyFormatter.format(leadingBid.amount)}💰`
-        : "Нет ставок";
+      leadingBid?.amount != null ? (
+        <>
+          {moneyFormatter.format(leadingBid.amount)}
+          <Currency />
+        </>
+      ) : (
+        "Нет ставок"
+      );
     const baseBidLabel = moneyFormatter.format(baseBid);
     const emptyPlayersLabel =
       playersTab === "leaders"
@@ -2396,7 +2434,8 @@ export default function Auction({
               </span>
             </div>
             <span className="lot-index__balance" aria-label="Баланс">
-              💲 {myBalance != null ? moneyFormatter.format(myBalance) : "-"}
+              <Currency tone="green" ariaHidden />
+              {myBalance != null ? moneyFormatter.format(myBalance) : "-"}
             </span>
           </div>
           <div className="lot-hero__name">
@@ -2429,10 +2468,14 @@ export default function Auction({
               {leaderChipLabel}
             </span>
             <span className="pill pill--tiny lot-hero__chip">
-              <span className="lot-hero__chip-icon" aria-hidden="true">
-                💵
+              <span
+                className="lot-hero__chip-icon currency currency--gold"
+                aria-hidden="true"
+              >
+                ₽
               </span>
-              База {baseBidLabel}💰
+              База {baseBidLabel}
+              <Currency />
             </span>
           </div>
           <div className={emojiWrapClassName}>
@@ -2616,7 +2659,8 @@ export default function Auction({
                       )
                     )} • `
                   : ""}
-                {moneyFormatter.format(lastFinishedSlot.winBid || 0)}💰
+                {moneyFormatter.format(lastFinishedSlot.winBid || 0)}
+                <Currency />
               </span>
             </div>
           </section>
@@ -2687,8 +2731,11 @@ export default function Auction({
                       setMyBid(e.target.value.replace(/[^\d]/g, ""))
                     }
                   />
-                  <span className="text-input__suffix" aria-hidden="true">
-                    💰
+                  <span
+                    className="text-input__suffix currency currency--gold"
+                    aria-hidden="true"
+                  >
+                    ₽
                   </span>
                 </div>
                 <div className="quick-bids" aria-label="Быстрые ставки">
@@ -2700,7 +2747,10 @@ export default function Auction({
                       onClick={() => btn.action()}
                       disabled={btn.disabled}
                     >
-                      <span className="quick-bid__label">{btn.label}</span>
+                      <span className="quick-bid__label">
+                        +{btn.label}
+                        <Currency className="quick-bid__currency" />
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -2804,11 +2854,13 @@ export default function Auction({
                     <div className="result-row__info">
                       <span className="result-row__name">{name}</span>
                       <span className="result-row__money">
-                        {moneyFormatter.format(netWorth)}💰
+                        {moneyFormatter.format(netWorth)}
+                        <Currency />
                       </span>
                       <span className="result-row__meta muted">
-                        Баланс {moneyFormatter.format(balance)}💰 · Покупки{" "}
-                        {moneyFormatter.format(basketValue)}💰
+                        Баланс {moneyFormatter.format(balance)}
+                        <Currency /> · Покупки {moneyFormatter.format(basketValue)}
+                        <Currency />
                       </span>
                     </div>
                   </div>
@@ -2866,9 +2918,18 @@ export default function Auction({
             <div className="basket-head__info">
               <div className="basket-head__name">{name}</div>
               <div className="basket-head__meta">
-                <span>Корзина: {moneyFormatter.format(basketValue)}💰</span>
-                <span>Баланс: {moneyFormatter.format(balance)}💰</span>
-                <span>Состояние: {moneyFormatter.format(worth)}💰</span>
+                <span>
+                  Корзина: {moneyFormatter.format(basketValue)}
+                  <Currency />
+                </span>
+                <span>
+                  Баланс: {moneyFormatter.format(balance)}
+                  <Currency />
+                </span>
+                <span>
+                  Состояние: {moneyFormatter.format(worth)}
+                  <Currency />
+                </span>
               </div>
             </div>
             <button
@@ -2971,24 +3032,32 @@ export default function Auction({
     const prizeParsed = prizeFullNameRaw ? splitEmojiLabel(prizeFullNameRaw) : null;
     const prizeBasePrice = prizeObj?.basePrice;
     const prizeNominalPrice = prizeObj?.nominalPrice;
-    const prizeBasePriceText = Number.isFinite(Number(prizeBasePrice))
-      ? `${moneyFormatter.format(Number(prizeBasePrice))}💰`
-      : "";
-    const prizeNominalPriceText = Number.isFinite(Number(prizeNominalPrice))
-      ? `${moneyFormatter.format(Number(prizeNominalPrice))}💰`
-      : "";
+    const prizeBasePriceNode = Number.isFinite(Number(prizeBasePrice)) ? (
+      <>
+        {moneyFormatter.format(Number(prizeBasePrice))}
+        <Currency />
+      </>
+    ) : null;
+    const prizeNominalPriceNode = Number.isFinite(Number(prizeNominalPrice)) ? (
+      <>
+        {moneyFormatter.format(Number(prizeNominalPrice))}
+        <Currency />
+      </>
+    ) : null;
     const prizeImageUrl = prizeObj ? String(prizeObj.imageUrl || "").trim() : "";
 
     const prizeEmoji =
       prizeEmojiRaw ||
       prizeParsed?.emoji ||
-      (effectKind === "money"
-        ? "💰"
-        : effectKind === "penalty"
-        ? "💣"
-        : effectKind === "lot"
-        ? "🎁"
-        : "🕸️");
+      (effectKind === "money" ? (
+        <Currency ariaHidden />
+      ) : effectKind === "penalty" ? (
+        "💣"
+      ) : effectKind === "lot" ? (
+        "🎁"
+      ) : (
+        "🕸️"
+      ));
     const showPrizeImage = effectKind === "lot" && Boolean(prizeImageUrl);
     const prizeName =
       prizeNameRaw ||
@@ -3002,13 +3071,21 @@ export default function Auction({
         : "Ничего");
 
     const prizeValue =
-      effectKind === "money"
-        ? `+${deltaText}💰`
-        : effectKind === "penalty"
-        ? `-${deltaText}💰`
-        : effectKind === "lot"
-        ? prizeNominalPriceText || prizeBasePriceText || "Предмет"
-        : "Ничего";
+      effectKind === "money" ? (
+        <>
+          +{deltaText}
+          <Currency tone="green" />
+        </>
+      ) : effectKind === "penalty" ? (
+        <>
+          -{deltaText}
+          <Currency />
+        </>
+      ) : effectKind === "lot" ? (
+        prizeNominalPriceNode || prizeBasePriceNode || "Предмет"
+      ) : (
+        "Ничего"
+      );
     const shatterExploded = lootboxStage === "explode" || lootboxStage === "reveal";
     const shatterShaking = lootboxStage === "shake";
     const showIntact = lootboxStage === "intro" || lootboxStage === "shake";
@@ -3035,7 +3112,8 @@ export default function Auction({
               <div className="lootbox-panel__label">Лутбокс</div>
               <h3 className="lootbox-panel__title">{lootboxReveal.slotName}</h3>
               <p className="lootbox-panel__subtitle">
-                Открывает: {winnerName} · Ставка {moneyFormatter.format(lootboxReveal.winBid)}💰
+                Открывает: {winnerName} · Ставка {moneyFormatter.format(lootboxReveal.winBid)}
+                <Currency />
               </p>
             </div>
             <button
@@ -3238,7 +3316,8 @@ export default function Auction({
                 <div className="slider-field__top">
                   <span className="field-label">Бюджет игрока</span>
                   <span className="slider-field__value">
-                    {moneyFormatter.format(settingsBudget)}💰
+                    {moneyFormatter.format(settingsBudget)}
+                    <Currency />
                   </span>
                 </div>
                 <div className="slider-field__control">
@@ -3263,8 +3342,14 @@ export default function Auction({
                   />
                 </div>
                 <div className="slider-field__footer">
-                  <span>{moneyFormatter.format(MIN_BUDGET)}💰</span>
-                  <span>{moneyFormatter.format(MAX_BUDGET)}💰</span>
+                  <span>
+                    {moneyFormatter.format(MIN_BUDGET)}
+                    <Currency />
+                  </span>
+                  <span>
+                    {moneyFormatter.format(MAX_BUDGET)}
+                    <Currency />
+                  </span>
                 </div>
               </label>
             </div>

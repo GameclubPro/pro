@@ -266,6 +266,21 @@ textarea {
   color: var(--muted);
 }
 
+.currency {
+  display: inline-flex;
+  align-items: baseline;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.currency--gold {
+  color: var(--accent-gold);
+}
+
+.currency--green {
+  color: var(--accent-success);
+}
+
 /* BUTTONS & CHIPS & PILLS */
 
 .btn {
@@ -1902,6 +1917,11 @@ textarea {
   pointer-events: none;
 }
 
+.text-input__suffix.currency {
+  color: var(--accent-gold);
+  opacity: 1;
+}
+
 .bid-submit-split {
   position: relative;
   width: 100%;
@@ -1986,6 +2006,16 @@ textarea {
   text-align: center;
   transition: transform var(--transition-fast), border-color var(--transition-fast),
     box-shadow var(--transition-fast), background var(--transition-fast);
+}
+
+.quick-bid__label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.quick-bid__currency {
+  font-size: 12px;
 }
 
 .quick-bid:hover:not(:disabled) {
