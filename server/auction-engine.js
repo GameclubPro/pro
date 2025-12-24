@@ -1338,7 +1338,10 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
         return { ok: false, error: 'paused' };
       }
       if ((state.slotPhase || 'bidding') !== 'bidding') {
-        return { ok: false, error: 'reveal' };
+        return {
+          ok: false,
+          error: state.slotPhase === 'cooldown' ? 'cooldown' : 'reveal',
+        };
       }
 
       const player = roomPlayersList(room).find((p) => p.userId === userId);
@@ -1489,6 +1492,7 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
     presets.delete(roomId);
     clearTimer(roomId);
     clearRevealTimer(roomId);
+    clearCooldownTimer(roomId);
     if (!redisClient) return;
     try {
       await redisClient.del(
@@ -1522,11 +1526,13 @@ function createAuctionEngine({ prisma, withRoomLock, isLockError, onState, redis
       state.slotDeadlineAtMs = null;
       clearTimer(roomId);
       clearRevealTimer(roomId);
+      clearCooldownTimer(roomId);
     } else {
       ensureConsistentPhase(state);
       if (state.phase !== 'in_progress') {
         clearTimer(roomId);
         clearRevealTimer(roomId);
+        clearCooldownTimer(roomId);
       }
     }
     const room = await getRoomWithPlayers(state.code);

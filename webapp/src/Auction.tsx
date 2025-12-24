@@ -31,7 +31,7 @@ const LOOTBOX_SHATTER_SIZE = 240;
 const LOOTBOX_SHATTER_MIN_PIECES = 32;
 const LOOTBOX_SHATTER_MAX_PIECES = 52;
 const LOOTBOX_REVEAL_TOTAL_MS = 6_200;
-const LOT_WIN_ANIM_MS = 1_500;
+const LOT_WIN_ANIM_MS = 2_000;
 const CURRENCY_SYMBOL = "₽";
 type LootboxRarityKey = "F" | "E" | "D" | "C" | "B" | "A" | "S";
 
@@ -341,8 +341,10 @@ export default function Auction({
     auctionState?.phase || "lobby";
   const slotPhase = String(auctionState?.slotPhase || "bidding");
   const isRevealPhase = slotPhase === "reveal";
+  const isCooldownPhase = slotPhase === "cooldown";
   const paused = !!auctionState?.paused;
-  const isBiddingLocked = paused || phase !== "in_progress" || isRevealPhase;
+  const isBiddingLocked =
+    paused || phase !== "in_progress" || isRevealPhase || isCooldownPhase;
   const myPlayerId = selfInfo?.roomPlayerId ?? null;
 
   const balances = useMemo(
@@ -464,6 +466,7 @@ export default function Auction({
       preloadedImageUrlsRef.current.has(currentLotImageUrl));
 
   const heroBidText = useMemo(() => {
+    if (isCooldownPhase) return "Лот продан — отправляем";
     if (isRevealPhase) return "Открывается лутбокс";
     if (leadingBid?.amount != null) {
       return (
@@ -480,7 +483,14 @@ export default function Auction({
         <Currency />
       </>
     );
-  }, [baseBid, isRevealPhase, leadingBid?.amount, leadingPlayerName, moneyFormatter]);
+  }, [
+    baseBid,
+    isCooldownPhase,
+    isRevealPhase,
+    leadingBid?.amount,
+    leadingPlayerName,
+    moneyFormatter,
+  ]);
   const activeBidFloor = useMemo(
     () => Math.max(baseBid, leadingBid?.amount ?? 0),
     [baseBid, leadingBid?.amount]
@@ -514,6 +524,12 @@ export default function Auction({
     setMyBid("");
   }, [currentSlot?.index]);
 
+  useEffect(() => {
+    if (isCooldownPhase) {
+      setBidPanelOpen(false);
+    }
+  }, [isCooldownPhase]);
+
   const countdownStepMs = useMemo(() => {
     const raw = Number(auctionState?.countdownStepMs);
     return Number.isFinite(raw) && raw > 0 ? raw : COUNTDOWN_STEP_MS;
@@ -537,7 +553,11 @@ export default function Auction({
   }, [auctionState?.timeLeftMs, countdownStepMs, nowTick, paused]);
 
   const heroCountdown =
-    !paused && countdownLeft != null && countdownLeft >= 0
+    !paused &&
+    !isRevealPhase &&
+    !isCooldownPhase &&
+    countdownLeft != null &&
+    countdownLeft >= 0
       ? Math.min(countdownStartFrom, countdownLeft)
       : null;
   const countdownStepSec = countdownStepMs / 1000;
@@ -2067,6 +2087,10 @@ export default function Auction({
       pushToast({ type: "info", text: "Аукцион на паузе" });
       return;
     }
+    if (isCooldownPhase) {
+      pushToast({ type: "info", text: "Лот уже продан — ждём передачу" });
+      return;
+    }
     if (isRevealPhase) {
       pushToast({ type: "info", text: "Открывается лутбокс" });
       return;
@@ -2116,6 +2140,7 @@ export default function Auction({
             not_enough_money: "Недостаточно денег",
             paused: "Аукцион на паузе",
             reveal: "Открывается лутбокс — ставки скоро продолжатся",
+            cooldown: "Лот уже продан — ждём передачу",
             bid_below_base: "Ставка ниже базовой",
             bid_below_current: "Ставка ниже текущей",
             wrong_game: "Это комната другого режима",
@@ -2765,6 +2790,8 @@ export default function Auction({
                     ? "Аукцион на паузе — ставки временно закрыты."
                     : isRevealPhase
                     ? "Идёт открытие лутбокса — ставки скоро продолжатся."
+                    : isCooldownPhase
+                    ? "Лот продан — отправляем победителю."
                     : "Ставки доступны только во время раунда."}
                 </div>
               )}
