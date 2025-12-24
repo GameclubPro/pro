@@ -2245,26 +2245,6 @@ export default function Auction({
     return (
       <div className="screen-body lobby-layout">
         <section className="card card--lobby-players">
-          <div className="lobby-stats">
-            <div className="lobby-stat">
-              <span className="lobby-stat__label">
-                <span className="lobby-stat__icon" aria-hidden="true">💰</span>
-                Банк на игрока
-              </span>
-              <span className="lobby-stat__value">
-                {moneyFormatter.format(initialBank)}💰
-              </span>
-            </div>
-            <div className="lobby-stat">
-              <span className="lobby-stat__label">
-                <span className="lobby-stat__icon" aria-hidden="true">📦</span>
-                Лотов
-              </span>
-              <span className="lobby-stat__value">
-                {slotsDisplay}
-              </span>
-            </div>
-          </div>
           <div className="card-row card-row--tight lobby-players-head">
             <h3 className="title-small lobby-players-title">
               <span>Игроки</span>
@@ -2297,6 +2277,26 @@ export default function Auction({
                 ⚙️
               </button>
             )}
+          </div>
+          <div className="lobby-stats">
+            <div className="lobby-stat">
+              <span className="lobby-stat__label">
+                <span className="lobby-stat__icon" aria-hidden="true">💰</span>
+                Банк на игрока
+              </span>
+              <span className="lobby-stat__value">
+                {moneyFormatter.format(initialBank)}💰
+              </span>
+            </div>
+            <div className="lobby-stat">
+              <span className="lobby-stat__label">
+                <span className="lobby-stat__icon" aria-hidden="true">📦</span>
+                Лотов
+              </span>
+              <span className="lobby-stat__value">
+                {slotsDisplay}
+              </span>
+            </div>
           </div>
           <div className="lobby-players-list">
             {sortedPlayers.map((p) => {
