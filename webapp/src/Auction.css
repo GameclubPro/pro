@@ -1062,7 +1062,7 @@ textarea {
 
 @supports (-webkit-touch-callout: none) {
   .auction-app {
-    --auction-ios-top-extra: 16px;
+    --auction-ios-top-extra: 10px;
   }
 }
 
