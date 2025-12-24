@@ -1493,17 +1493,27 @@ textarea {
   position: fixed;
   top: 0;
   left: 0;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.lot-fly--image {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.lot-fly--placeholder {
   border-radius: 22px;
   border: 1px solid rgba(148, 163, 184, 0.35);
   background: rgba(15, 23, 42, 0.92);
-  display: grid;
-  place-items: center;
   overflow: hidden;
   box-shadow:
     0 18px 40px rgba(2, 6, 23, 0.65),
     inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-  transform-origin: center;
-  will-change: transform;
 }
 
 .lot-fly__img {
@@ -1515,6 +1525,7 @@ textarea {
   pointer-events: none;
   position: relative;
   z-index: 1;
+  filter: drop-shadow(0 12px 26px rgba(2, 6, 23, 0.55));
 }
 
 .lot-fly__placeholder {
@@ -1536,6 +1547,10 @@ textarea {
   opacity: 0.6;
   pointer-events: none;
   z-index: 0;
+}
+
+.lot-fly--image .lot-fly__glow {
+  opacity: 0.35;
 }
 
 /* GAME */

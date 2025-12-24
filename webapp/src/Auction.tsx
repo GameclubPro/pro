@@ -1052,30 +1052,35 @@ export default function Auction({
 
     const run = () => {
       const heroEl = lotHeroRef.current;
+      const heroImg = heroEl?.querySelector(
+        ".lot-hero__emoji-img"
+      ) as HTMLImageElement | null;
       const targetEl = document.querySelector(
         `.lobby-players-list--ingame [data-player-id="${winnerPlayerId}"]`
       ) as HTMLElement | null;
       if (!heroEl || !targetEl) return;
 
-      const fromRect = heroEl.getBoundingClientRect();
+      const fromRect =
+        heroImg?.getBoundingClientRect() ?? heroEl.getBoundingClientRect();
       const toRect = targetEl.getBoundingClientRect();
       if (!fromRect.width || !fromRect.height || !toRect.width || !toRect.height) {
         return;
       }
 
-      const baseSize = Math.min(fromRect.width, fromRect.height);
-      const size = clamp(baseSize * 0.7, 120, 220);
+      const size = Math.min(fromRect.width, fromRect.height);
       const fromX = fromRect.left + (fromRect.width - size) / 2;
       const fromY = fromRect.top + (fromRect.height - size) / 2;
       const toX = toRect.left + (toRect.width - size) / 2;
       const toY = toRect.top + (toRect.height - size) / 2;
 
+      const rawHeroImage = heroImg?.currentSrc || heroImg?.src || "";
       const rawImage =
-        typeof slot?.imageUrl === "string"
+        rawHeroImage ||
+        (typeof slot?.imageUrl === "string"
           ? slot.imageUrl.trim()
           : typeof slot?.prize?.imageUrl === "string"
           ? slot.prize.imageUrl.trim()
-          : "";
+          : "");
       const imageUrl = rawImage || null;
       const name = String(slot?.name || "Лот");
       const jump = Math.max(18, Math.round(size * 0.14));
@@ -3477,7 +3482,12 @@ export default function Auction({
           {lotFlights.map((item) => (
             <motion.div
               key={item.id}
-              className="lot-fly"
+              className={[
+                "lot-fly",
+                item.imageUrl ? "lot-fly--image" : "lot-fly--placeholder",
+              ]
+                .filter(Boolean)
+                .join(" ")}
               style={{ width: item.size, height: item.size }}
               initial={{ x: item.fromX, y: item.fromY, scale: 1, opacity: 1, rotate: 0 }}
               animate={{
