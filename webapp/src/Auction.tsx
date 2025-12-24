@@ -2389,21 +2389,6 @@ export default function Auction({
 
   const renderGameContent = () => {
     if (!showGame) return null;
-    const timeChipLabel = paused
-      ? "Пауза"
-      : isRevealPhase
-      ? "Открытие"
-      : timeLeftLabel;
-    const leaderChipLabel =
-      leadingBid?.amount != null ? (
-        <>
-          {moneyFormatter.format(leadingBid.amount)}
-          <Currency />
-        </>
-      ) : (
-        "Нет ставок"
-      );
-    const baseBidLabel = moneyFormatter.format(baseBid);
     const emptyPlayersLabel =
       playersTab === "leaders"
         ? "Ставок пока нет."
@@ -2440,43 +2425,6 @@ export default function Auction({
           </div>
           <div className="lot-hero__name">
             {currentSlot?.name || "Нет названия"}
-          </div>
-          <div className="lot-hero__meta">
-            <span
-              className={[
-                "pill",
-                "pill--tiny",
-                "lot-hero__chip",
-                paused ? "lot-hero__chip--paused" : "",
-                isUrgent ? "lot-hero__chip--urgent" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              <span className="lot-hero__chip-icon" aria-hidden="true">
-                ⏱
-              </span>
-              {timeChipLabel}
-            </span>
-            <span
-              className="pill pill--tiny lot-hero__chip"
-              title={leadingPlayerName ? `Лидер: ${leadingPlayerName}` : undefined}
-            >
-              <span className="lot-hero__chip-icon" aria-hidden="true">
-                🏁
-              </span>
-              {leaderChipLabel}
-            </span>
-            <span className="pill pill--tiny lot-hero__chip">
-              <span
-                className="lot-hero__chip-icon currency currency--gold"
-                aria-hidden="true"
-              >
-                ₽
-              </span>
-              База {baseBidLabel}
-              <Currency />
-            </span>
           </div>
           <div className={emojiWrapClassName}>
             <div
