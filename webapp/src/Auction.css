@@ -102,7 +102,7 @@ textarea {
   display: flex;
   flex-direction: column;
   --auction-ios-top-extra: 0px;
-  --auction-code-nudge: 6px;
+  --auction-code-nudge: 10px;
   --landing-bag-height: min(260px, 50vw);
   --landing-coin-impact: calc(var(--auction-vh, 100svh) - var(--landing-bag-height));
   border-radius: 28px;
