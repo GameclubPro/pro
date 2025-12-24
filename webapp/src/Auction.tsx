@@ -2713,14 +2713,10 @@ export default function Auction({
                 </button>
                 <button
                   type="button"
-                  className="btn bid-submit-split"
-                  onClick={() => sendBid()}
-                  disabled={busyBid || myBalance == null || isBiddingLocked}
+                  className="btn bid-action bid-action--pass"
+                  onClick={() => setBidPanelOpen(false)}
                 >
-                  <span className="bid-submit-split__label">
-                    {busyBid ? "..." : "Ставка"}
-                  </span>
-                  <span className="bid-submit-split__glow" aria-hidden />
+                  Пас
                 </button>
               </div>
 
@@ -2742,6 +2738,20 @@ export default function Auction({
                   </button>
                 </div>
               )}
+
+              <div className="bid-actions bid-actions--primary">
+                <button
+                  type="button"
+                  className="btn bid-submit-split"
+                  onClick={() => sendBid()}
+                  disabled={busyBid || myBalance == null || isBiddingLocked}
+                >
+                  <span className="bid-submit-split__label">
+                    {busyBid ? "..." : "Ставка"}
+                  </span>
+                  <span className="bid-submit-split__glow" aria-hidden />
+                </button>
+              </div>
             </motion.section>
           )}
         </AnimatePresence>

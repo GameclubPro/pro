@@ -1367,8 +1367,7 @@ textarea {
   display: flex;
   flex-direction: column-reverse;
   gap: 8px;
-  padding: 0 var(--app-inset-right) calc(var(--auction-safe-bottom) + 8px)
-    var(--app-inset-left);
+  padding: 0 0 calc(var(--auction-safe-bottom) + 8px) 0;
   pointer-events: none;
 }
 
@@ -1445,14 +1444,40 @@ textarea {
   font-size: 16px;
 }
 
-.bid-dock__panel {
+.bid-dock__panel.card--bid {
   pointer-events: auto;
   position: relative;
   z-index: 1;
   max-height: 60vh;
   overflow-y: auto;
-  max-width: 520px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 20px 16px 18px;
+  border-radius: 24px 24px 0 0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  background:
+    radial-gradient(120% 140% at 50% 0%, rgba(56, 189, 248, 0.18), transparent 60%),
+    linear-gradient(160deg, rgba(8, 12, 26, 0.98), rgba(15, 23, 42, 0.96));
+  box-shadow:
+    0 -20px 46px rgba(2, 6, 23, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.bid-dock__panel::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.55);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+  pointer-events: none;
 }
 
 /* GAME */
@@ -2089,7 +2114,7 @@ textarea {
 
 .bid-actions--primary {
   grid-template-columns: 1fr;
-  margin-top: 6px;
+  margin-top: 12px;
 }
 
 .bid-actions--secondary {
@@ -2111,6 +2136,18 @@ textarea {
   border: 1px solid rgba(74, 222, 128, 0.7);
   box-shadow: 0 12px 30px rgba(34, 197, 94, 0.25);
   color: #bbf7d0;
+}
+
+.bid-action--pass {
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.16), rgba(15, 23, 42, 0.94));
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.35);
+  color: #e2e8f0;
+}
+
+.bid-action--pass:hover:not(:disabled) {
+  border-color: rgba(148, 163, 184, 0.7);
+  box-shadow: 0 14px 34px rgba(148, 163, 184, 0.2);
 }
 .owner-controls {
   margin-top: 4px;
