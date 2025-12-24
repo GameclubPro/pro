@@ -304,6 +304,7 @@ export default function Auction({
     "intro" | "shake" | "explode" | "reveal"
   >("intro");
   const [lotFlights, setLotFlights] = useState<LotFlight[]>([]);
+  const [lotHeroFlying, setLotHeroFlying] = useState(false);
   const [currentLotImageReady, setCurrentLotImageReady] = useState(false);
   const [landingMode, setLandingMode] = useState<"join" | "create">("join");
   const lastSyncedSettingsRef = useRef({
@@ -1082,7 +1083,10 @@ export default function Auction({
 
       const fromRect =
         heroImg?.getBoundingClientRect() ?? heroEl.getBoundingClientRect();
-      const toRect = targetEl.getBoundingClientRect();
+      const targetAvatar = targetEl.querySelector(
+        ".lobby-player__avatar"
+      ) as HTMLElement | null;
+      const toRect = (targetAvatar || targetEl).getBoundingClientRect();
       if (!fromRect.width || !fromRect.height || !toRect.width || !toRect.height) {
         return;
       }
@@ -1110,10 +1114,14 @@ export default function Auction({
       setLotFlights((prev) =>
         [...prev, { id, fromX, fromY, toX, toY, size, jump, tilt, imageUrl, name }].slice(-3)
       );
+      if (heroImg) {
+        setLotHeroFlying(true);
+      }
 
       const timer = setTimeout(() => {
         setLotFlights((prev) => prev.filter((item) => item.id !== id));
         lotFlightTimersRef.current.delete(id);
+        setLotHeroFlying(false);
       }, LOT_WIN_ANIM_MS + 120);
       lotFlightTimersRef.current.set(id, timer);
     };
@@ -2586,7 +2594,16 @@ export default function Auction({
                 </motion.div>
               )}
             </AnimatePresence>
-            <div className="lot-hero__emoji" aria-hidden="true" ref={lotHeroRef}>
+            <div
+              className={[
+                "lot-hero__emoji",
+                lotHeroFlying ? "lot-hero__emoji--flying" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              aria-hidden="true"
+              ref={lotHeroRef}
+            >
               {currentSlot?.type === "lootbox" ? (
                 <img
                   className="lot-hero__emoji-img"
@@ -3520,14 +3537,14 @@ export default function Auction({
               animate={{
                 x: [item.fromX, item.fromX, item.toX],
                 y: [item.fromY, item.fromY - item.jump, item.toY],
-                scale: [1, 1.06, 0.3],
+                scale: [1, 1.06, 0.18],
                 rotate: [0, item.tilt, 0],
-                opacity: [1, 1, 0.9],
+                opacity: [1, 1, 0.85],
               }}
               transition={{
                 duration: LOT_WIN_ANIM_MS / 1000,
                 times: [0, 0.25, 1],
-                ease: "easeInOut",
+                ease: [0.22, 0.9, 0.32, 1],
               }}
             >
               {item.imageUrl ? (

@@ -1773,6 +1773,12 @@ textarea {
   display: block;
   user-select: none;
   pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.lot-hero__emoji--flying .lot-hero__emoji-img {
+  opacity: 0.18;
+  transform: scale(0.96);
 }
 
 .lot-hero__bid {
