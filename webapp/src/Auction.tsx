@@ -305,6 +305,7 @@ export default function Auction({
   >("intro");
   const [lotFlights, setLotFlights] = useState<LotFlight[]>([]);
   const [lotHeroFlying, setLotHeroFlying] = useState(false);
+  const [ringReset, setRingReset] = useState(false);
   const [currentLotImageReady, setCurrentLotImageReady] = useState(false);
   const [landingMode, setLandingMode] = useState<"join" | "create">("join");
   const lastSyncedSettingsRef = useRef({
@@ -530,6 +531,17 @@ export default function Auction({
       setBidPanelOpen(false);
     }
   }, [isCooldownPhase]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setRingReset(true);
+    if (typeof requestAnimationFrame === "function") {
+      const frame = requestAnimationFrame(() => setRingReset(false));
+      return () => cancelAnimationFrame(frame);
+    }
+    const timeout = setTimeout(() => setRingReset(false), 0);
+    return () => clearTimeout(timeout);
+  }, [currentSlot?.index]);
 
   const countdownStepMs = useMemo(() => {
     const raw = Number(auctionState?.countdownStepMs);
@@ -1083,10 +1095,10 @@ export default function Auction({
 
       const fromRect =
         heroImg?.getBoundingClientRect() ?? heroEl.getBoundingClientRect();
-      const targetAvatar = targetEl.querySelector(
-        ".lobby-player__avatar"
+      const targetName = targetEl.querySelector(
+        ".lobby-player__name"
       ) as HTMLElement | null;
-      const toRect = (targetAvatar || targetEl).getBoundingClientRect();
+      const toRect = (targetName || targetEl).getBoundingClientRect();
       if (!fromRect.width || !fromRect.height || !toRect.width || !toRect.height) {
         return;
       }
@@ -2565,6 +2577,7 @@ export default function Auction({
                 "lot-hero__ring",
                 isUrgent ? "lot-hero__ring--active" : "",
                 isCritical ? "lot-hero__ring--critical" : "",
+                ringReset ? "lot-hero__ring--reset" : "",
               ]
                 .filter(Boolean)
                 .join(" ")}

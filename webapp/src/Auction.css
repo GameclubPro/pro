@@ -1649,6 +1649,10 @@ textarea {
   pointer-events: none;
 }
 
+.lot-hero__ring--reset {
+  transition: opacity 0.2s ease;
+}
+
 .lot-hero__ring--active {
   opacity: 1;
   animation: ring-pulse 1.1s ease-in-out infinite;
