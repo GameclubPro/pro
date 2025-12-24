@@ -2244,20 +2244,7 @@ export default function Auction({
 
     return (
       <div className="screen-body lobby-layout">
-        <section className="card card--lobby-top">
-          {isOwner && (
-            <div className="card-row card-row--tight lobby-header-actions">
-              <button
-                type="button"
-                className="icon-btn icon-btn--ghost lobby-settings"
-                aria-label="Настройки комнаты"
-                onClick={openSettings}
-              >
-                ⚙️
-              </button>
-            </div>
-          )}
-
+        <section className="card card--lobby-players">
           <div className="lobby-stats">
             <div className="lobby-stat">
               <span className="lobby-stat__label">
@@ -2278,10 +2265,6 @@ export default function Auction({
               </span>
             </div>
           </div>
-
-        </section>
-
-        <section className="card card--lobby-players">
           <div className="card-row card-row--tight lobby-players-head">
             <h3 className="title-small lobby-players-title">
               <span>Игроки</span>
@@ -2304,6 +2287,16 @@ export default function Auction({
                 />
               </div>
             </div>
+            {isOwner && (
+              <button
+                type="button"
+                className="icon-btn icon-btn--ghost lobby-settings"
+                aria-label="Настройки комнаты"
+                onClick={openSettings}
+              >
+                ⚙️
+              </button>
+            )}
           </div>
           <div className="lobby-players-list">
             {sortedPlayers.map((p) => {

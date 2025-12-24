@@ -958,11 +958,6 @@ textarea {
   overflow: hidden;
 }
 
-.lobby-header-actions {
-  justify-content: flex-end;
-  align-items: center;
-}
-
 .lobby-players-head {
   flex-wrap: wrap;
   row-gap: 6px;
@@ -1077,6 +1072,7 @@ textarea {
   flex-direction: column;
   gap: 6px;
   width: clamp(140px, 35vw, 240px);
+  margin-left: auto;
   align-items: flex-end;
 }
 
@@ -1141,7 +1137,7 @@ textarea {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 0;
 }
 
 .lobby-stat {
