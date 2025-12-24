@@ -984,7 +984,7 @@ textarea {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 6px 14px;
+  padding: 4px 14px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--accent-main) 40%, var(--border-subtle));
   background:
@@ -1038,7 +1038,7 @@ textarea {
       var(--tg-content-safe-area-inset-top, 0px),
       var(--safe-top, 0px),
       var(--safe-top-env, 0px)
-    ) - 6px
+    ) - 10px
   );
   left: 50%;
   transform: translateX(-50%);
