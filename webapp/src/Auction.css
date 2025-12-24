@@ -1039,7 +1039,7 @@ textarea {
       var(--tg-content-safe-area-inset-top, 0px),
       var(--safe-top, 0px),
       var(--safe-top-env, 0px)
-    ) - 2px
+    ) - 6px
   );
   left: 50%;
   transform: translateX(-50%);
