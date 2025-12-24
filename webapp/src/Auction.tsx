@@ -3522,7 +3522,7 @@ export default function Auction({
     if (!lotFlights.length) return null;
     const content = (
       <div className="lot-fly-layer" aria-hidden="true">
-        <AnimatePresence initial={false}>
+        <AnimatePresence>
           {lotFlights.map((item) => (
             <motion.div
               key={item.id}
