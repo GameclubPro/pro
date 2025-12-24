@@ -1034,7 +1034,7 @@ textarea {
 
 .lobby-code-floating {
   position: absolute;
-  top: calc(var(--app-inset-top) - 10px);
+  top: calc(var(--app-inset-top) - 18px);
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
