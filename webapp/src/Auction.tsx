@@ -2245,7 +2245,7 @@ export default function Auction({
     return (
       <div className="screen-body lobby-layout">
         <section className="card card--lobby-players">
-          <div className="card-row card-row--tight lobby-players-head">
+          <div className="lobby-players-head">
             <h3 className="title-small lobby-players-title">
               <span>Игроки</span>
               <span className="lobby-players-title__count">
@@ -2323,18 +2323,6 @@ export default function Auction({
                   </div>
                   <div className="lobby-player__body">
                     <div className="lobby-player__name">{name}</div>
-                    <div className="lobby-player__tags">
-                      <span
-                        className={[
-                          "lobby-status",
-                          p.ready ? "lobby-status--ready" : "lobby-status--waiting",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
-                      >
-                        {p.ready ? "Готов" : "Ждет"}
-                      </span>
-                    </div>
                   </div>
                   {isHost && (
                     <span
@@ -2524,7 +2512,7 @@ export default function Auction({
         </section>
 
         <section className="card card--players-live">
-          <div className="card-row card-row--tight">
+          <div className="players-live-head">
             <div>
               <span className="label">Игроки</span>
               <h3 className="title-small">Ставки и корзины</h3>
@@ -2589,8 +2577,6 @@ export default function Auction({
             {filteredPlayers.map((p) => {
               const name = playerDisplayName(p);
               const avatar = p.user?.photo_url || p.user?.avatar || "";
-              const balance = balances[p.id] ?? 0;
-              const bidValue = Number(currentBids[p.id] ?? 0) || null;
               const isHost = ownerPlayer?.id === p.id;
               const isSelf = myPlayerId === p.id;
               const isLeading = leadingBid?.playerId === p.id;
@@ -2616,18 +2602,6 @@ export default function Auction({
                   </div>
                   <div className="lobby-player__body">
                     <div className="lobby-player__name">{name}</div>
-                    <div className="lobby-player__tags lobby-player__tags--auction">
-                      <span className="auction-meta-tag">
-                        <span className="auction-meta-tag__icon">💰</span>
-                        {moneyFormatter.format(balance)}💰
-                      </span>
-                      {bidValue && bidValue > 0 ? (
-                        <span className="auction-meta-tag auction-meta-tag--bid">
-                          <span className="auction-meta-tag__icon">⚡</span>
-                          {moneyFormatter.format(bidValue)}💰
-                        </span>
-                      ) : null}
-                    </div>
                   </div>
                   {isHost && (
                     <span className="chip chip--host" aria-label="Хост" title="Хост комнаты">
@@ -2922,73 +2896,43 @@ export default function Auction({
             {basketItems.length === 0 && (
               <div className="basket-empty">Корзина пустая.</div>
             )}
-              {basketItems.map((item, idx) => {
+            {basketItems.map((item, idx) => {
               const key = `${item.index ?? idx}-${item.name ?? idx}`;
-              const paid = Number(item.paid ?? 0) || 0;
-              const base = Number(item.basePrice ?? 0) || 0;
-              const nominal = Number(item.nominalPrice ?? 0) || 0;
-              const value = Number(item.value ?? (paid || base)) || 0;
+              const value =
+                Number(item.value ?? item.paid ?? item.basePrice ?? 0) || 0;
               const effect = item.effect;
               const effectKind = String(effect?.kind || "");
-              const prizeName =
-                effect?.prize && typeof effect.prize === "object"
-                  ? String(effect.prize.name || "").trim()
-                  : "";
-              const prizeEmoji =
-                effect?.prize && typeof effect.prize === "object"
-                  ? String(effect.prize.emoji || "").trim()
-                  : "";
-              const prizeLabel = prizeName
-                ? `${prizeEmoji ? `${prizeEmoji} ` : ""}${prizeName}`
-                : "";
-              const effectClass =
+              const rawImageUrl =
+                typeof item.imageUrl === "string" ? item.imageUrl.trim() : "";
+              const imageUrl =
+                rawImageUrl || (item.type === "lootbox" ? LOOTBOX_FALLBACK_IMAGE_URL : "");
+              const fallbackEmoji = item.type === "lootbox" ? "🎁" : "📦";
+              const cardTone =
                 effectKind === "penalty"
-                  ? "basket-item__effect--bad"
+                  ? "basket-item--bad"
                   : effectKind === "money" || effectKind === "lot"
-                  ? "basket-item__effect--good"
+                  ? "basket-item--good"
                   : "";
-              const effectText =
-                effectKind === "penalty"
-                  ? `Штраф ${moneyFormatter.format(Math.abs(effect?.delta || 0))}💰${prizeLabel ? ` · ${prizeLabel}` : ""}`
-                  : effectKind === "money"
-                  ? `Бонус ${moneyFormatter.format(Math.abs(effect?.delta || 0))}💰${prizeLabel ? ` · ${prizeLabel}` : ""}`
-                  : effectKind === "lot"
-                  ? prizeLabel
-                    ? `Приз: ${prizeLabel}`
-                    : "Приз"
-                  : prizeLabel
-                  ? `Пусто · ${prizeLabel}`
-                  : "Пусто";
 
               return (
-                <div className="basket-item" key={key}>
-                  <div className="basket-item__head">
-                    <span className="basket-item__tag">
-                      {item.type === "lootbox" ? "Лутбокс" : "Лот"}
-                    </span>
+                <div className={["basket-item", cardTone].filter(Boolean).join(" ")} key={key}>
+                  <div className="basket-item__media">
+                    {imageUrl ? (
+                      <img src={imageUrl} alt={item.name || "Лот"} loading="lazy" />
+                    ) : (
+                      <span className="basket-item__fallback" aria-hidden>
+                        {fallbackEmoji}
+                      </span>
+                    )}
                     <span className="basket-item__price">
                       {moneyFormatter.format(value)}💰
                     </span>
                   </div>
-                  <div className="basket-item__title">{item.name || "Без названия"}</div>
-                  <div className="basket-item__meta">
-                    <span>Оплачено: {moneyFormatter.format(paid)}💰</span>
-                    {base > 0 && (
-                      <span>Старт: {moneyFormatter.format(base)}💰</span>
-                    )}
-                    {item.type === "lot" && nominal > 0 && (
-                      <span>Номинал: {moneyFormatter.format(nominal)}💰</span>
-                    )}
+                  <div className="basket-item__info">
+                    <span className="basket-item__name">
+                      {item.name || "Без названия"}
+                    </span>
                   </div>
-                  {effect && (
-                    <div
-                      className={["basket-item__effect", effectClass]
-                        .filter(Boolean)
-                        .join(" ")}
-                    >
-                      {effectText}
-                    </div>
-                  )}
                 </div>
               );
             })}
