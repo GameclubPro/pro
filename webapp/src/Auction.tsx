@@ -31,6 +31,7 @@ const LOOTBOX_SHATTER_SIZE = 240;
 const LOOTBOX_SHATTER_MIN_PIECES = 32;
 const LOOTBOX_SHATTER_MAX_PIECES = 52;
 const LOOTBOX_REVEAL_TOTAL_MS = 6_200;
+const LOT_WIN_ANIM_MS = 1_500;
 const CURRENCY_SYMBOL = "₽";
 type LootboxRarityKey = "F" | "E" | "D" | "C" | "B" | "A" | "S";
 
@@ -219,6 +220,19 @@ type LootboxRevealEvent = {
   effect: LootboxEffect;
 };
 
+type LotFlight = {
+  id: string;
+  fromX: number;
+  fromY: number;
+  toX: number;
+  toY: number;
+  size: number;
+  jump: number;
+  tilt: number;
+  imageUrl: string | null;
+  name: string;
+};
+
 type LootboxShatterPiece = {
   key: string;
   left: number;
@@ -289,6 +303,7 @@ export default function Auction({
   const [lootboxStage, setLootboxStage] = useState<
     "intro" | "shake" | "explode" | "reveal"
   >("intro");
+  const [lotFlights, setLotFlights] = useState<LotFlight[]>([]);
   const [currentLotImageReady, setCurrentLotImageReady] = useState(false);
   const [landingMode, setLandingMode] = useState<"join" | "create">("join");
   const lastSyncedSettingsRef = useRef({
@@ -308,10 +323,13 @@ export default function Auction({
   const lastLeadingPlayerRef = useRef<number | null>(null);
   const lootboxHistoryLenRef = useRef<number | null>(null);
   const lootboxConfettiFiredRef = useRef<string | null>(null);
+  const lotHistoryLenRef = useRef<number | null>(null);
+  const lotFlightTimersRef = useRef<Map<string, any>>(new Map());
   const confettiRef = useRef<any>(null);
   const lastStateVersionRef = useRef<number | null>(null);
   const connectingTimerRef = useRef<any>(null);
   const preloadedImageUrlsRef = useRef<Set<string>>(new Set());
+  const lotHeroRef = useRef<HTMLDivElement | null>(null);
 
   const moneyFormatter = useMemo(() => new Intl.NumberFormat("ru-RU"), []);
   const sanitizedAutoCode = useMemo(
@@ -1027,6 +1045,83 @@ export default function Auction({
     });
   }, [phase, safeHistory]);
 
+  const createLotFlight = useCallback((slot: any) => {
+    const winnerPlayerId = Number(slot?.winnerPlayerId);
+    if (!Number.isFinite(winnerPlayerId)) return;
+    if (typeof document === "undefined") return;
+
+    const run = () => {
+      const heroEl = lotHeroRef.current;
+      const targetEl = document.querySelector(
+        `.lobby-players-list--ingame [data-player-id="${winnerPlayerId}"]`
+      ) as HTMLElement | null;
+      if (!heroEl || !targetEl) return;
+
+      const fromRect = heroEl.getBoundingClientRect();
+      const toRect = targetEl.getBoundingClientRect();
+      if (!fromRect.width || !fromRect.height || !toRect.width || !toRect.height) {
+        return;
+      }
+
+      const baseSize = Math.min(fromRect.width, fromRect.height);
+      const size = clamp(baseSize * 0.7, 120, 220);
+      const fromX = fromRect.left + (fromRect.width - size) / 2;
+      const fromY = fromRect.top + (fromRect.height - size) / 2;
+      const toX = toRect.left + (toRect.width - size) / 2;
+      const toY = toRect.top + (toRect.height - size) / 2;
+
+      const rawImage =
+        typeof slot?.imageUrl === "string"
+          ? slot.imageUrl.trim()
+          : typeof slot?.prize?.imageUrl === "string"
+          ? slot.prize.imageUrl.trim()
+          : "";
+      const imageUrl = rawImage || null;
+      const name = String(slot?.name || "Лот");
+      const jump = Math.max(18, Math.round(size * 0.14));
+      const tilt = (Math.random() - 0.5) * 10;
+      const id = `${slot?.index ?? "lot"}-${winnerPlayerId}-${Date.now()}`;
+
+      setLotFlights((prev) =>
+        [...prev, { id, fromX, fromY, toX, toY, size, jump, tilt, imageUrl, name }].slice(-3)
+      );
+
+      const timer = setTimeout(() => {
+        setLotFlights((prev) => prev.filter((item) => item.id !== id));
+        lotFlightTimersRef.current.delete(id);
+      }, LOT_WIN_ANIM_MS + 120);
+      lotFlightTimersRef.current.set(id, timer);
+    };
+
+    requestAnimationFrame(run);
+  }, []);
+
+  useEffect(() => {
+    const len = safeHistory.length;
+    const prevLen = lotHistoryLenRef.current;
+    if (prevLen == null) {
+      lotHistoryLenRef.current = len;
+      return;
+    }
+    if (len <= prevLen) {
+      lotHistoryLenRef.current = len;
+      return;
+    }
+
+    const diff = len - prevLen;
+    lotHistoryLenRef.current = len;
+    if (diff !== 1) return;
+    if (phase === "lobby") return;
+
+    const latest = safeHistory[len - 1];
+    if (!latest) return;
+    const slotType = String(latest.type || "");
+    if (slotType === "lootbox") return;
+    if (latest.winnerPlayerId == null) return;
+
+    createLotFlight(latest);
+  }, [createLotFlight, phase, safeHistory]);
+
   useEffect(() => {
     if (!lootboxReveal) {
       setLootboxStage("intro");
@@ -1366,6 +1461,13 @@ export default function Auction({
   useEffect(() => {
     lastStateVersionRef.current = null;
   }, [room?.code]);
+
+  useEffect(() => {
+    return () => {
+      lotFlightTimersRef.current.forEach((timer) => clearTimeout(timer));
+      lotFlightTimersRef.current.clear();
+    };
+  }, []);
 
   // ---------- EFFECTS ----------
 
@@ -2454,7 +2556,7 @@ export default function Auction({
                 </motion.div>
               )}
             </AnimatePresence>
-            <div className="lot-hero__emoji" aria-hidden="true">
+            <div className="lot-hero__emoji" aria-hidden="true" ref={lotHeroRef}>
               {currentSlot?.type === "lootbox" ? (
                 <img
                   className="lot-hero__emoji-img"
@@ -2558,6 +2660,7 @@ export default function Auction({
                 <button
                   key={p.id}
                   type="button"
+                  data-player-id={p.id}
                   className={[
                     "lobby-player",
                     "lobby-player-btn",
@@ -3366,6 +3469,51 @@ export default function Auction({
     return portalTarget ? createPortal(content, portalTarget) : content;
   };
 
+  const renderLotFlightLayer = () => {
+    if (!lotFlights.length) return null;
+    const content = (
+      <div className="lot-fly-layer" aria-hidden="true">
+        <AnimatePresence initial={false}>
+          {lotFlights.map((item) => (
+            <motion.div
+              key={item.id}
+              className="lot-fly"
+              style={{ width: item.size, height: item.size }}
+              initial={{ x: item.fromX, y: item.fromY, scale: 1, opacity: 1, rotate: 0 }}
+              animate={{
+                x: [item.fromX, item.fromX, item.toX],
+                y: [item.fromY, item.fromY - item.jump, item.toY],
+                scale: [1, 1.06, 0.3],
+                rotate: [0, item.tilt, 0],
+                opacity: [1, 1, 0.9],
+              }}
+              transition={{
+                duration: LOT_WIN_ANIM_MS / 1000,
+                times: [0, 0.25, 1],
+                ease: "easeInOut",
+              }}
+            >
+              {item.imageUrl ? (
+                <img
+                  className="lot-fly__img"
+                  src={item.imageUrl}
+                  alt=""
+                  draggable={false}
+                />
+              ) : (
+                <div className="lot-fly__placeholder" />
+              )}
+              <span className="lot-fly__glow" aria-hidden="true" />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+    );
+    const portalTarget =
+      typeof document !== "undefined" ? document.body : null;
+    return portalTarget ? createPortal(content, portalTarget) : content;
+  };
+
   const appClassName = [
     "auction-app",
     showLanding ? "auction-app--landing" : "",
@@ -3413,6 +3561,7 @@ export default function Auction({
       {renderLootboxRevealModal()}
       {renderBasketModal()}
       {renderSettingsModal()}
+      {renderLotFlightLayer()}
       {renderToastStack()}
       <Confetti
         refConfetti={(instance) => {
