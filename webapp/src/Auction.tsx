@@ -2245,34 +2245,24 @@ export default function Auction({
     return (
       <div className="screen-body lobby-layout">
         <section className="card card--lobby-top">
-          <div className="card-row card-row--lobby-top">
-            <div className="lobby-header-main">
-              <div className="lobby-header-main__row">
-                <span className="lobby-header-main__players">
-                  {totalPlayers} игрок
-                  {totalPlayers === 1 ? "" : "ов"}
+          <div className="card-row card-row--tight lobby-header-row">
+            <span className="lobby-header-main__players">
+              {totalPlayers} игрок
+              {totalPlayers === 1 ? "" : "ов"}
+            </span>
+            <div className="lobby-header-progress">
+              <div className="lobby-header-progress__top">
+                <span className="lobby-header-progress__label">
+                  Готовность
                 </span>
               </div>
-              <div className="lobby-header-progress">
-                <div className="lobby-header-progress__top">
-                  <span className="lobby-header-progress__label">
-                    Готовность
-                  </span>
-                  <span className="lobby-header-progress__value">
-                    {readyCount}/{readyTarget}
-                    <span className="lobby-header-progress__percent">
-                      {readyPercent}%
-                    </span>
-                  </span>
-                </div>
-                <div className="progress progress--inline">
-                  <div
-                    className="progress__fill"
-                    style={{
-                      width: `${Math.max(6, readyPercent)}%`,
-                    }}
-                  />
-                </div>
+              <div className="progress progress--inline">
+                <div
+                  className="progress__fill"
+                  style={{
+                    width: `${Math.max(6, readyPercent)}%`,
+                  }}
+                />
               </div>
             </div>
             {isOwner && (

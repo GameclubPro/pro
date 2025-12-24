@@ -956,22 +956,11 @@ textarea {
   overflow: hidden;
 }
 
-.card-row--lobby-top {
-  align-items: flex-start;
-}
-
-.lobby-header-main {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.lobby-header-main__row {
-  display: flex;
+.lobby-header-row {
+  display: grid;
+  grid-template-columns: auto minmax(140px, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
 }
 
 .lobby-header-main__players {
@@ -1060,14 +1049,19 @@ textarea {
 .lobby-header-progress {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 4px;
+  gap: 6px;
+  margin-top: 0;
+  width: 100%;
+  max-width: 240px;
+  justify-self: end;
+  align-items: flex-end;
 }
 
 .lobby-header-progress__top {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  justify-content: flex-end;
+  width: 100%;
 }
 
 .lobby-header-progress__label {
@@ -1075,20 +1069,6 @@ textarea {
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.12em;
-}
-
-.lobby-header-progress__value {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.lobby-header-progress__percent {
-  font-size: 10px;
-  color: var(--muted);
-  letter-spacing: 0.1em;
 }
 
 .lobby-header-progress .progress {
