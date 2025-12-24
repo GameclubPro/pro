@@ -2512,7 +2512,7 @@ export default function Auction({
         </section>
 
         <section className="card card--players-live">
-          <div className="players-live-head">
+          <div className="card-row">
             <div>
               <span className="label">Игроки</span>
               <h3 className="title-small">Ставки и корзины</h3>
@@ -2924,9 +2924,6 @@ export default function Auction({
                         {fallbackEmoji}
                       </span>
                     )}
-                    <span className="basket-item__price">
-                      {moneyFormatter.format(value)}💰
-                    </span>
                   </div>
                   <div className="basket-item__info">
                     <span className="basket-item__name">

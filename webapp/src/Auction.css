@@ -1314,14 +1314,6 @@ textarea {
   letter-spacing: 0.01em;
 }
 
-.players-live-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
 /* BOTTOM BAR */
 
 .bottom-bar {
@@ -3362,35 +3354,21 @@ button:active:not(:disabled) {
   border-radius: 14px;
   overflow: hidden;
   aspect-ratio: 4 / 3;
-  background: linear-gradient(140deg, rgba(56, 189, 248, 0.16), rgba(15, 23, 42, 0.9));
+  background: transparent;
   display: grid;
   place-items: center;
+  padding: 8px;
 }
 
 .basket-item__media img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
 .basket-item__fallback {
   font-size: 28px;
-}
-
-.basket-item__price {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: rgba(2, 6, 23, 0.8);
-  border: 1px solid rgba(148, 163, 184, 0.45);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.03em;
-  color: #f8fafc;
-  backdrop-filter: blur(6px);
 }
 
 .basket-item__info {
