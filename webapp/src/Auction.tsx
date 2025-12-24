@@ -2253,18 +2253,6 @@ export default function Auction({
                   {totalPlayers === 1 ? "" : "ов"}
                 </span>
               </div>
-              <button
-                type="button"
-                className="lobby-header-main__code"
-                onClick={copyRoomCode}
-                title="Скопировать код комнаты"
-                aria-label="Скопировать код комнаты"
-              >
-                <span className="lobby-header-main__code-label">Код</span>
-                <span className="lobby-header-main__code-value">
-                  #{room?.code || "------"}
-                </span>
-              </button>
               <div className="lobby-header-progress">
                 <div className="lobby-header-progress__top">
                   <span className="lobby-header-progress__label">
@@ -3443,6 +3431,22 @@ export default function Auction({
       {showLanding ? renderLandingBag() : null}
       {showLanding ? renderLandingCoins() : null}
       <div className="screen-wrapper pt-safe">
+        {showLobby && room?.code ? (
+          <div className="lobby-code-floating">
+            <button
+              type="button"
+              className="lobby-header-main__code lobby-header-main__code--floating"
+              onClick={copyRoomCode}
+              title="Скопировать код комнаты"
+              aria-label="Скопировать код комнаты"
+            >
+              <span className="lobby-header-main__code-label">Код</span>
+              <span className="lobby-header-main__code-value">
+                #{room.code}
+              </span>
+            </button>
+          </div>
+        ) : null}
         {showLanding ? (
           renderLanding()
         ) : (
