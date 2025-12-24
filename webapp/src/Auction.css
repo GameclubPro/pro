@@ -1033,15 +1033,18 @@ textarea {
 
 .lobby-code-floating {
   position: absolute;
-  top: calc(
-    max(
-      var(--tg-content-safe-area-inset-top, 0px),
-      var(--safe-top, 0px),
-      var(--safe-top-env, 0px)
-    ) - 10px
+  --tg-safe-top: max(
+    var(--tg-safe-area-inset-top, 0px),
+    var(--safe-top-env, 0px)
   );
+  --tg-content-top: max(
+    var(--tg-content-safe-area-inset-top, 0px),
+    var(--tg-safe-top)
+  );
+  --tg-header-center: calc((var(--tg-safe-top) + var(--tg-content-top)) / 2);
+  top: max(24px, var(--tg-header-center));
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   width: 100%;
   display: flex;
   justify-content: center;
