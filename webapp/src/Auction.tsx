@@ -614,11 +614,12 @@ export default function Auction({
     return null;
   }, [auctionState?.rules?.timePerSlotSec, countdownStepMs, countdownStartFrom]);
   const ringProgress = useMemo(() => {
+    if (isCooldownPhase) return 0;
     if (timeLeftMs == null) return 0;
     const baseline = slotStartLeftMsRef.current || slotDurationMs;
     if (!baseline || baseline <= 0) return 0;
     return clamp(1 - timeLeftMs / baseline, 0, 1);
-  }, [slotDurationMs, timeLeftMs]);
+  }, [isCooldownPhase, slotDurationMs, timeLeftMs]);
   const urgencyWindowMs = countdownStepMs * Math.max(5, countdownStartFrom);
   const criticalWindowMs =
     countdownStepMs * Math.max(1, Math.min(3, countdownStartFrom));
