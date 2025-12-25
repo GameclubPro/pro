@@ -913,23 +913,25 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
       const p = list.find((x) => x.id === playerId);
       const nick = p ? nickOf(p) : "Игрок";
       const verdict = isMafia ? "МАФИЯ" : "мирный";
-      const msg = `🔎 Проверка: ${nick} — ${вердикт}`;
+      const msg = `🔎 Проверка: ${nick} — ${verdict}`;
       const tone = isMafia ? "danger" : "success";
-      // показываем сразу и сохраняем в дневной/моментальный стек, чтобы не потерять
-      toast(msg, tone);
-      enqueueNightNotice(msg, tone);
-      setActionToasts((items) => {
-        const id = `sheriff-${Date.now()}-${Math.random()}`;
-        return [
-          ...items,
-          {
-            id,
-            text: msg,
-            tone,
-            onOk: () => setActionToasts((cur) => cur.filter((x) => x.id !== id)),
-          },
-        ];
-      });
+      // показываем только днём через ActionToastStack
+      if (phaseRef.current === "DAY") {
+        setActionToasts((items) => {
+          const id = `sheriff-${Date.now()}-${Math.random()}`;
+          return [
+            ...items,
+            {
+              id,
+              text: msg,
+              tone,
+              onOk: () => setActionToasts((cur) => cur.filter((x) => x.id !== id)),
+            },
+          ];
+        });
+      } else {
+        enqueueNightNotice(msg, tone);
+      }
     });
 
     // 📰 Результат журналиста (обновлено: danger|warn|success)
@@ -1634,8 +1636,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
     sock.emit("night:act", { code: roomCode, targetPlayerId, opId }, (ack) => {
       if (ack?.ok) {
         const roleNowAck = meRef.current?.role;
-        // ⛔️ Пропуск снайпера не должен блокировать его повторный ход
-        if (!isMafia(roleNowAck) && !(roleNowAck === "SNIPER" && (targetPlayerId == null))) {
+        if (!isMafia(roleNowAck)) {
           setActedThisNight(true);
         }
         if (isMafia(roleNowAck)) {
@@ -1708,6 +1709,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
     castVote,
     mafiaTeam,
     revealedRoles,
+    actedThisNight,
   }) {
     if (!target) return [];
     const isMe = me?.roomPlayerId === target.id;
@@ -1822,6 +1824,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
       castVote,
       mafiaTeam,
       revealedRoles,
+      actedThisNight,
     });
 
     const hasActionable = acts.some(a => !a.disabled && a.tone !== "ghost");
@@ -1836,7 +1839,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
 
     haptic("light");
     setSheetTarget(p);
-  }, [phase, meWithRole, voteState, toast, haptic]);
+  }, [phase, meWithRole, voteState, toast, haptic, actNight, castVote, mafiaTeam, revealedRoles, actedThisNight]);
 
   const actionsForTarget = useMemo(() => {
     if (!sheetTarget) return [];
@@ -1849,8 +1852,9 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
       castVote,
       mafiaTeam,
       revealedRoles,
+      actedThisNight,
     });
-  }, [sheetTarget, phase, meWithRole, voteState, actedThisNight, mafiaTeam, revealedRoles]);
+  }, [sheetTarget, phase, meWithRole, voteState, actedThisNight, mafiaTeam, revealedRoles, actNight, castVote]);
 
   useEffect(() => {
     if (!sheetTarget) return;

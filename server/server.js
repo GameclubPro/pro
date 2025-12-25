@@ -760,7 +760,7 @@ async function ensureZeroRoomWithBots(ownerUser) {
       data: { code, ownerId: ownerUser.id, status: Phase.LOBBY, dayNumber: 0, game: RoomGame.MAFIA },
     });
     const ownerPlayer = await tx.roomPlayer.create({
-      data: { roomId: room.id, userId: ownerUser.id, alive: true, ready: false },
+      data: { roomId: room.id, userId: ownerUser.id, alive: true, ready: true },
     });
     const botIds = [];
     for (let i = 0; i < 11; i++) {
@@ -822,6 +822,7 @@ async function leaveOtherRooms({ userId, keepRoomId = null, onlyStatuses = [Phas
 
     // помечаем новых владельцев «готовыми» в движке
     for (const p of newOwnerPairs) {
+      try { await prisma.roomPlayer.update({ where: { id: p.newOwnerPlayerId }, data: { ready: true } }); } catch {}
       try { await mafia.setReady(p.roomId, p.newOwnerPlayerId, true); } catch {}
     }
 
@@ -1063,7 +1064,12 @@ function auctionRoomPayload(room, players) {
       phaseEndsAt: room.phaseEndsAt,
       game: room.game,
     }),
-    players: jsonSafe(mafia.toPublicPlayers(players || room.players || [], { readySet })),
+    players: jsonSafe(
+      mafia.toPublicPlayers(players || room.players || [], {
+        readySet,
+        ownerId: room.ownerId,
+      })
+    ),
   };
 }
 
@@ -1161,7 +1167,7 @@ app.post('/api/rooms', createLimiter, async (req, res) => {
         const room = await tx.room.create({
           data: { code: codeForTry, ownerId: owner.id, status: Phase.LOBBY, dayNumber: 0, phaseEndsAt: null, game },
         });
-        const ownerPlayer = await tx.roomPlayer.create({ data: { roomId: room.id, userId: owner.id, alive: true } });
+        const ownerPlayer = await tx.roomPlayer.create({ data: { roomId: room.id, userId: owner.id, alive: true, ready: true } });
         return { room, ownerPlayerId: ownerPlayer.id };
       });
 
@@ -1205,7 +1211,9 @@ app.post('/api/rooms', createLimiter, async (req, res) => {
         game: full.game,
       }),
       // owner попадёт в readySet
-      players: jsonSafe(mafia.toPublicPlayers(full.players, { readySet })),
+      players: jsonSafe(
+        mafia.toPublicPlayers(full.players, { readySet, ownerId: full.ownerId })
+      ),
       viewerIsOwner: true,
     };
 
@@ -1239,7 +1247,9 @@ app.get('/api/rooms/:code', async (req, res) => {
     let playersPublic = [];
     if (isMember) {
       const readySet = mafia.getReadySet(room.id);
-      playersPublic = jsonSafe(mafia.toPublicPlayers(room.players, { readySet }));
+      playersPublic = jsonSafe(
+        mafia.toPublicPlayers(room.players, { readySet, ownerId: room.ownerId })
+      );
     }
 
     res.json({
@@ -1328,7 +1338,12 @@ app.post('/api/rooms/:code/join', joinLimiter, async (req, res) => {
         mafia.emitRoomStateDebounced(code);
         return res.json({
           room: jsonSafe(payloadRoom),
-          players: jsonSafe(mafia.toPublicPlayers(full.players, { readySet })),
+          players: jsonSafe(
+            mafia.toPublicPlayers(full.players, {
+              readySet,
+              ownerId: full.ownerId,
+            })
+          ),
           viewerIsOwner: true,
         });
       } catch (e) {
@@ -1393,7 +1408,12 @@ app.post('/api/rooms/:code/join', joinLimiter, async (req, res) => {
     const readySet = mafia.getReadySet(result.room.id);
     res.json({
       room: jsonSafe(result.room),
-      players: jsonSafe(mafia.toPublicPlayers(result.players, { readySet })),
+      players: jsonSafe(
+        mafia.toPublicPlayers(result.players, {
+          readySet,
+          ownerId: result.room?.ownerId ?? null,
+        })
+      ),
       viewerIsOwner: result.viewerIsOwner
     });
 
@@ -1443,6 +1463,7 @@ app.post('/api/rooms/:code/leave', async (req, res) => {
         const rest = await tx.roomPlayer.findMany({ where: { roomId: room.id }, orderBy: { joinedAt: 'asc' } });
         if (rest?.[0]) {
           await tx.room.update({ where: { id: room.id }, data: { ownerId: rest[0].userId } });
+          await tx.roomPlayer.update({ where: { id: rest[0].id }, data: { ready: true } });
           newOwnerPlayerId = rest[0].id;
         }
       }
@@ -1772,7 +1793,12 @@ io.on('connection', (socket) => {
             phaseEndsAt: room.phaseEndsAt,
             game: room.game,
           }),
-          players: jsonSafe(mafia.toPublicPlayers(room.players, { readySet })),
+          players: jsonSafe(
+            mafia.toPublicPlayers(room.players, {
+              readySet,
+              ownerId: room.ownerId,
+            })
+          ),
           viewerIsOwner: room.ownerId === user.id,
         });
         try {
@@ -1934,15 +1960,6 @@ io.on('connection', (socket) => {
       if (targetPlayerId) {
         target = await prisma.roomPlayer.findUnique({ where: { id: Number(targetPlayerId) } });
         if (!target || target.roomId !== room.id) return ackErr(cb, 'Неверная цель');
-      }
-
-      // Снайпер может пропустить ход без записи
-      if (role === Role.SNIPER && !target) {
-        mafia.emitRoomStateDebounced(room.code);
-        await mafia.emitMafiaTargets(room.id);
-        const ready = await mafia.isNightReady(room.id, match.id, nightNumber);
-        if (ready) await mafia.resolveNight(room.id);
-        return ackOk(cb);
       }
 
       const existing = await prisma.nightAction.findUnique({
@@ -2128,6 +2145,7 @@ io.on('connection', (socket) => {
             const rest = await tx.roomPlayer.findMany({ where: { roomId: room.id }, orderBy: { joinedAt: 'asc' } });
             if (rest?.[0]) {
               await tx.room.update({ where: { id: room.id }, data: { ownerId: rest[0].userId } });
+              await tx.roomPlayer.update({ where: { id: rest[0].id }, data: { ready: true } });
               newOwnerPlayerId = rest[0].id;
             }
           }

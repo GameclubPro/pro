@@ -68,9 +68,10 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
     };
   }
 
-  // Теперь поддерживает опциональный readySet и читает признак готовности из БД:
+  // Теперь поддерживает опциональный readySet и ownerId:
   // ✅ единый источник правды — БД, плюс совместимость с legacy readySet
-  function toPublicPlayers(players, { readySet = null } = {}) {
+  // ✅ владелец всегда "готов"
+  function toPublicPlayers(players, { readySet = null, ownerId = null } = {}) {
     return players.map((p) => ({
       id: p.id,
       alive: p.alive,
@@ -78,7 +79,13 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
       role: null, // роли скрыты
       // Если в БД есть явное значение (true/false) — уважаем его.
       // Иначе (null/undefined) — фолбэк на in-memory readySet (совместимость).
-      ready: p.ready != null ? !!p.ready : !!(readySet && readySet.has(p.id)),
+      ready: (() => {
+        const readyRaw = p.ready != null ? !!p.ready : !!(readySet && readySet.has(p.id));
+        const ownerMatch =
+          ownerId != null &&
+          String(p.userId ?? p.user?.id) === String(ownerId);
+        return ownerMatch ? true : readyRaw;
+      })(),
     }));
   }
 
@@ -140,7 +147,10 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
         switch (role) {
           case Role.MAFIA:
           case Role.DON: {
-            const t = await randomTarget(room, [actorId]);
+            const excludeIds = room.players
+              .filter((pl) => MAFIA_ROLES.has(pl.role))
+              .map((pl) => pl.id);
+            const t = await randomTarget(room, excludeIds);
             targetId = t?.id || null;
             targetPlayer = t || null;
             break;
@@ -398,7 +408,10 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
     const room = await readRoomWithPlayersByCode(code);
     if (!room) return { error: 'room_not_found' };
 
-    const players = toPublicPlayers(room.players, { readySet: getReadySet(room.id) });
+    const players = toPublicPlayers(room.players, {
+      readySet: getReadySet(room.id),
+      ownerId: room.ownerId,
+    });
 
     const rt = roomTimers.get(room.id);
     let endsAt = rt?.endsAt;
@@ -621,8 +634,9 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
     const protDone  = done(Role.PROSTITUTE);
     const bodyDone  = done(Role.BODYGUARD);
     const journDone = done(Role.JOURNALIST);
+    const snipDone  = done(Role.SNIPER);
 
-    return !!(mafiaDone && docDone && sherDone && protDone && bodyDone && journDone);
+    return !!(mafiaDone && docDone && sherDone && protDone && bodyDone && journDone && snipDone);
   }
 
   function journalistCategory(role) {
@@ -645,6 +659,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
       case Role.MAFIA:
       case Role.DON: {
         if (!target || self === target.id) return { ok: false, error: 'Выберите живую цель' };
+        if (MAFIA_ROLES.has(target.role)) return { ok: false, error: 'Нельзя атаковать союзника' };
         return { ok: true };
       }
       case Role.DOCTOR: {
@@ -1371,7 +1386,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
     clearReadyForPlayer,
     everyoneReadyExceptOwner,
     getReadySet: (roomId) => new Set(getReadySet(roomId)), // read-only копия
-    // toPublicPlayers уже умеет принимать readySet
+    // toPublicPlayers уже умеет принимать readySet и ownerId
   };
 }
 

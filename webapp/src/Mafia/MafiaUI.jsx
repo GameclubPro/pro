@@ -13,7 +13,7 @@ import RoomMenu from "../shared/RoomMenu.jsx";
 import { HUD, Chip, TimerHUD, GameStage, FinalBanner } from "../shared/RoomHud.jsx";
 
 export { HUD, Chip, TimerHUD, GameStage, FinalBanner };
-import bgLobby from "../assets/mafia/bg-lobby.png";
+import bgLobby from "../assets/mafia/bg-lobby.webp";
 import bgNight from "../assets/mafia/bg-night.png";
 import bgDay from "../assets/mafia/bg-day.png";
 import bgVote from "../assets/mafia/bg-vote.png";
