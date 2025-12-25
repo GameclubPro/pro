@@ -12,6 +12,8 @@ import Choice from "./choice"; // «Выбор»
 import SketchBattle from "./SketchBattle"; // «Скетч-баттл»
 import Auction from "./Auction.tsx"; // 💰 «Аукцион»
 import KnyazCourt from "./KnyazCourt.jsx"; // 🏰 «Княжий суд»
+import auctionCover from "./assets/app/auction.webp";
+import mafiaCover from "./assets/app/mafia.webp";
 import { ensureAuctionSocket } from "./auction-socket";
 import { getSessionToken, setSessionToken } from "./session-token";
 
@@ -105,8 +107,8 @@ const HOME_SECTIONS = [
     gradient: "linear-gradient(135deg, rgba(14,165,233,.95), rgba(99,102,241,.95))",
     accent: "#0ea5e9",
     items: [
-      { icon: "🕵️‍♂️", name: "Мафия", desc: "день/ночь, роли, голосование", game: GAME_MAFIA },
-      { icon: "💰", name: "Аукцион", desc: "торги и лутбоксы", game: GAME_AUCTION },
+      { icon: "🕵️‍♂️", name: "Мафия", desc: "день/ночь, роли, голосование", game: GAME_MAFIA, cover: mafiaCover, imageOnly: true },
+      { icon: "💰", name: "Аукцион", desc: "торги и лутбоксы", game: GAME_AUCTION, cover: auctionCover, imageOnly: true },
       { icon: "🚪", name: "Бункер", desc: "спор и отбор (в разработке)", disabled: true },
       { icon: "🧠", name: "Викторина (командная)", desc: "раунды, очки, блиц", disabled: true },
       { icon: "📣", name: "Alias/Шляпа", desc: "объясни слово без слов", disabled: true },
@@ -977,6 +979,8 @@ function Shell({ scheme, user, status, level, games, section, setSection, onOpen
                       desc={item.desc}
                       disabled={isDisabled}
                       index={index}
+                      cover={item.cover}
+                      imageOnly={item.imageOnly}
                       action={() => (item.game ? onOpenGame(item.game) : null)}
                     />
                   );
@@ -1157,7 +1161,7 @@ function AvatarImg({ tgId, photoUrl, initials }) {
   );
 }
 
-function GameTile({ icon, name, desc, action, disabled, index }) {
+function GameTile({ icon, name, desc, action, disabled, index, cover, imageOnly }) {
   return (
     <button
       type="button"
@@ -1166,13 +1170,20 @@ function GameTile({ icon, name, desc, action, disabled, index }) {
       aria-label={name}
       role="listitem"
       disabled={disabled}
+      data-image-only={imageOnly ? "true" : "false"}
       data-disabled={disabled ? "true" : "false"}
       style={{ "--tile-delay": `${index * 40}ms` }}
     >
-      {disabled && <span className="gameTileBadge" aria-hidden>скоро</span>}
-      <span className="gameTileIcon" aria-hidden>{icon}</span>
-      <span className="gameTileName" title={name}>{name}</span>
-      <span className="gameTileDesc" title={desc}>{desc}</span>
+      {imageOnly ? (
+        <img className="gameTileCover" src={cover} alt="" decoding="async" loading="eager" />
+      ) : (
+        <>
+          {disabled && <span className="gameTileBadge" aria-hidden>скоро</span>}
+          <span className="gameTileIcon" aria-hidden>{icon}</span>
+          <span className="gameTileName" title={name}>{name}</span>
+          <span className="gameTileDesc" title={desc}>{desc}</span>
+        </>
+      )}
     </button>
   );
 }
@@ -1595,6 +1606,20 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
   transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, filter .2s ease;
   animation: tileIn .36s ease both;
   animation-delay: var(--tile-delay, 0ms);
+}
+.shell .gameTile[data-image-only="true"] {
+  padding: 0;
+  border-radius: 20px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  border-color: color-mix(in srgb, var(--text) 12%, transparent);
+}
+.shell .gameTile[data-image-only="true"]::after { display: none; }
+.shell .gameTileCover {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 .shell .gameTile::after {
   content: "";
