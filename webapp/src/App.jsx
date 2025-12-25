@@ -1597,9 +1597,17 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
   text-align: left;
   color: var(--text);
   background:
-    radial-gradient(120px 120px at 85% 15%, color-mix(in srgb, var(--mode-accent) 35%, transparent), transparent 70%),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, transparent), color-mix(in srgb, var(--surface) 55%, transparent));
-  border: 1px solid color-mix(in srgb, var(--mode-accent) 26%, transparent);
+    radial-gradient(120px 120px at 85% 15%, color-mix(in srgb, var(--mode-accent) 30%, transparent), transparent 70%) padding-box,
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, transparent), color-mix(in srgb, var(--surface) 55%, transparent)) padding-box,
+    conic-gradient(from 140deg at 50% 50%,
+      color-mix(in srgb, var(--mode-accent) 55%, transparent),
+      transparent 25%,
+      color-mix(in srgb, #ffffff 14%, transparent),
+      transparent 55%,
+      color-mix(in srgb, var(--mode-accent) 45%, transparent)) border-box;
+  background-origin: border-box;
+  background-clip: padding-box, padding-box, border-box;
+  border: 1px solid transparent;
   box-shadow: 0 16px 36px rgba(0,0,0,.12);
   backdrop-filter: blur(10px);
   aspect-ratio: 1 / 1;
@@ -1611,10 +1619,8 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
   padding: 0;
   border-radius: 20px;
   overflow: hidden;
-  background: color-mix(in srgb, var(--surface) 80%, transparent);
-  border-color: color-mix(in srgb, var(--text) 12%, transparent);
 }
-.shell .gameTile[data-image-only="true"]::after { display: none; }
+.shell .gameTile[data-image-only="true"] .gameTileCover { border-radius: inherit; }
 .shell .gameTileCover {
   width: 100%;
   height: 100%;
@@ -1626,13 +1632,14 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  border: 1px solid color-mix(in srgb, #ffffff 18%, transparent);
-  opacity: .6;
+  border: 1px solid color-mix(in srgb, #ffffff 14%, transparent);
+  opacity: .45;
   pointer-events: none;
 }
 .shell .gameTile:hover {
   transform: translateY(-2px) scale(1.01);
   box-shadow: 0 18px 48px rgba(0,0,0,.16), 0 16px 40px color-mix(in srgb, var(--mode-accent) 22%, transparent);
+  filter: saturate(1.05);
 }
 .shell .gameTile:active { transform: translateY(0) scale(.99); }
 .shell .gameTile:focus-visible {
