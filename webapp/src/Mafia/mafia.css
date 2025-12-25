@@ -1659,6 +1659,7 @@ button:focus-visible, .mf-chip:focus-visible, .mf-input:focus-visible, .mf-gs-ch
 /* Убираем «решётку» */
 .mf-tex-grate{ display:none !important; opacity:0 !important; background:none !important; -webkit-mask:none !important; mask:none !important; }
 body.mf-phase-lobby .mf-tex-grate{ opacity:0 !important; }
+body.mf-phase-lobby .mf-grid{ contain:none; }
 
 /* Нижний CTA в лобби */
 .mf-center-cta.lobby-pinned{
