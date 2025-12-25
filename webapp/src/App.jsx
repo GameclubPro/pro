@@ -908,7 +908,6 @@ function Shell({ scheme, user, status, level, games, section, setSection, onOpen
               >
                 <span className="tabEmoji" aria-hidden>{mode.emoji}</span>
                 <span className="tabLabel" title={mode.label}>{mode.label}</span>
-                <span className="tabSub" title={mode.subtitle}>{mode.subtitle}</span>
               </button>
             ))}
           </div>
@@ -936,16 +935,17 @@ function Shell({ scheme, user, status, level, games, section, setSection, onOpen
             onTouchEnd={handleTouchEnd}
           >
             <div key={activeId} className="modePanel" data-dir={switchDir}>
-              <div className="list modeList" role="list">
-                {activeMode.items.map((item) => {
+              <div className="modeGrid" role="list">
+                {activeMode.items.map((item, index) => {
                   const isDisabled = !!item.disabled || !item.game;
                   return (
-                    <ListItem
+                    <GameTile
                       key={item.name}
                       icon={item.icon}
                       name={item.name}
                       desc={item.desc}
                       disabled={isDisabled}
+                      index={index}
                       action={() => (item.game ? onOpenGame(item.game) : null)}
                     />
                   );
@@ -1061,108 +1061,22 @@ function AvatarImg({ tgId, photoUrl, initials }) {
   );
 }
 
-function ListItem({ icon, name, desc, action, disabled }) {
+function GameTile({ icon, name, desc, action, disabled, index }) {
   return (
     <button
       type="button"
-      className="listItem"
+      className="gameTile"
       onClick={disabled ? undefined : action}
       aria-label={name}
       role="listitem"
       disabled={disabled}
+      data-disabled={disabled ? "true" : "false"}
+      style={{ "--tile-delay": `${index * 40}ms` }}
     >
-      <span className="listIcon" aria-hidden>{icon}</span>
-      <span className="listText">
-        <b className="listTitle" title={name}>{name}</b>
-        <small className="hint listDesc" title={desc}>{desc}</small>
-      </span>
-      <span className="chev" aria-hidden>›</span>
-    </button>
-  );
-}
-
-function Section({ title, back, items }) {
-  return (
-    <section className="shell-section" aria-label={title}>
-      <div className="sectionHeader">
-        <button className="btn back" onClick={back} aria-label="Назад">
-          <span className="ico" aria-hidden>←</span> Назад
-        </button>
-        <h2 className="sectionTitle" title={title}>{title}</h2>
-      </div>
-      <div className="list" role="list">
-        {items.map((it) => (
-          <ListItem
-            key={it.name}
-            icon={it.icon}
-            name={it.name}
-            desc={it.desc}
-            action={it.action}
-            disabled={it.disabled}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function CategoryCard({ emoji, title, subtitle, onClick, gradient, participants }) {
-  const ref = useRef(null);
-  const rafRef = useRef(null);
-  const targetRef = useRef({ mx: 0, my: 0 });
-
-  const setTilt = (mx, my) => {
-    const el = ref.current; if (!el) return;
-    el.style.setProperty("--mx", String(mx.toFixed(3)));
-    el.style.setProperty("--my", String(my.toFixed(3)));
-  };
-  const loop = () => {
-    const el = ref.current; if (!el) return;
-    const g = getComputedStyle(el);
-    const curX = parseFloat(g.getPropertyValue("--mx") || "0") || 0;
-    const curY = parseFloat(g.getPropertyValue("--my") || "0") || 0;
-    const nextX = curX + (targetRef.current.mx - curX) * 0.18;
-    const nextY = curY + (targetRef.current.my - curY) * 0.18;
-    setTilt(nextX, nextY);
-    rafRef.current = requestAnimationFrame(() => {
-      if (Math.abs(nextX - targetRef.current.mx) < 0.001 && Math.abs(nextY - targetRef.current.my) < 0.001) {
-        cancelAnimationFrame(rafRef.current); rafRef.current = null; return;
-      }
-      loop();
-    });
-  };
-  const handleMove = (e) => {
-    const el = ref.current; if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const t = e.touches?.[0];
-    const x = (t ? t.clientX : e.clientX) - rect.left;
-    const y = (t ? t.clientY : e.clientY) - rect.top;
-    targetRef.current = { mx: (x / rect.width) * 2 - 1, my: (y / rect.height) * 2 - 1 };
-    if (!rafRef.current) loop();
-  };
-  const handleLeave = () => { targetRef.current = { mx: 0, my: 0 }; if (!rafRef.current) loop(); };
-
-  return (
-    <button
-      ref={ref}
-      className="card"
-      style={{ "--card-gradient": gradient }}
-      onClick={onClick}
-      onMouseMove={handleMove}
-      onMouseLeave={handleLeave}
-      onTouchMove={handleMove}
-      onTouchEnd={handleLeave}
-      aria-label={title}
-      role="listitem"
-    >
-      {participants && (
-        <span className="cardPill" aria-label={`Участники ${participants}`} title={`Участники ${participants}`}>
-          👥 {participants}
-        </span>
-      )}
-      <div className="cardEmoji" aria-hidden>{emoji}</div>
-      <div className="cardTitle" title={title}>{title}</div>
-      <div className="cardSub" title={subtitle}>{subtitle}</div>
+      {disabled && <span className="gameTileBadge" aria-hidden>скоро</span>}
+      <span className="gameTileIcon" aria-hidden>{icon}</span>
+      <span className="gameTileName" title={name}>{name}</span>
+      <span className="gameTileDesc" title={desc}>{desc}</span>
     </button>
   );
 }
@@ -1376,19 +1290,18 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 .shell .modeTab {
   position: relative;
   z-index: 1;
-  padding: 10px 8px;
+  padding: 10px 6px;
   border-radius: 999px;
   display: grid;
-  gap: 2px;
+  gap: 4px;
   text-align: center;
   color: color-mix(in srgb, var(--text) 80%, transparent);
   transition: color .2s ease, transform .2s ease;
 }
 .shell .modeTab[data-active="true"] { color: #fff; text-shadow: 0 6px 20px rgba(0,0,0,.25); }
 .shell .modeTab:active { transform: scale(.98); }
-.shell .tabEmoji { font-size: 16px; line-height: 1; }
-.shell .tabLabel { font-weight: 800; font-size: 12px; letter-spacing: .2px; }
-.shell .tabSub { font-size: 10px; opacity: .75; }
+.shell .tabEmoji { font-size: 18px; line-height: 1; }
+.shell .tabLabel { font-weight: 800; font-size: 12px; letter-spacing: .3px; }
 .shell .modeHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .shell .modeTitleBlock { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .shell .modeTitleText { display: grid; gap: 2px; min-width: 0; }
@@ -1410,6 +1323,93 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 @keyframes modeFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes modeInRight { from { opacity: 0; transform: translateX(16px) scale(.98); } to { opacity: 1; transform: translateX(0) scale(1); } }
 @keyframes modeInLeft { from { opacity: 0; transform: translateX(-16px) scale(.98); } to { opacity: 1; transform: translateX(0) scale(1); } }
+
+.shell .modeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(10px, 3vw, 14px);
+}
+@media (min-width: 520px) {
+  .shell .modeGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.shell .gameTile {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  padding: clamp(12px, 2.6vw, 16px);
+  border-radius: 18px;
+  text-align: left;
+  color: var(--text);
+  background:
+    radial-gradient(120px 120px at 85% 15%, color-mix(in srgb, var(--mode-accent) 35%, transparent), transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, transparent), color-mix(in srgb, var(--surface) 55%, transparent));
+  border: 1px solid color-mix(in srgb, var(--mode-accent) 26%, transparent);
+  box-shadow: 0 16px 36px rgba(0,0,0,.12);
+  backdrop-filter: blur(10px);
+  aspect-ratio: 1 / 1.08;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, filter .2s ease;
+  animation: tileIn .36s ease both;
+  animation-delay: var(--tile-delay, 0ms);
+}
+.shell .gameTile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid color-mix(in srgb, #ffffff 18%, transparent);
+  opacity: .6;
+  pointer-events: none;
+}
+.shell .gameTile:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 18px 48px rgba(0,0,0,.16), 0 16px 40px color-mix(in srgb, var(--mode-accent) 22%, transparent);
+}
+.shell .gameTile:active { transform: translateY(0) scale(.99); }
+.shell .gameTile:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--mode-accent) 70%, #fff);
+  outline-offset: 2px;
+}
+.shell .gameTile:disabled {
+  opacity: .55;
+  filter: saturate(.65);
+  cursor: not-allowed;
+}
+.shell .gameTile:disabled:hover { transform: none; box-shadow: 0 16px 36px rgba(0,0,0,.12); }
+.shell .gameTileIcon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--mode-accent) 30%, transparent), color-mix(in srgb, var(--surface) 70%, transparent));
+  border: 1px solid color-mix(in srgb, var(--mode-accent) 40%, transparent);
+  box-shadow: 0 8px 18px rgba(0,0,0,.12);
+}
+.shell .gameTileName { font-weight: 800; font-size: 14px; letter-spacing: .2px; line-height: 1.1; }
+.shell .gameTileDesc {
+  font-size: 11px;
+  color: var(--hint);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 28px;
+}
+.shell .gameTileBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 10px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  letter-spacing: .3px;
+  background: color-mix(in srgb, var(--mode-accent) 28%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mode-accent) 52%, transparent);
+  color: var(--text);
+}
+@keyframes tileIn { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
 /* Category card */
 .shell .card {
@@ -1455,11 +1455,6 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
   transition: transform .16s ease, background .16s ease, border-color .16s ease, box-shadow .16s ease; position: relative; overflow: hidden;
 }
 .shell .listItem::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background: linear-gradient(180deg, rgba(var(--accent-rgb), .95), rgba(var(--accent-rgb), .25)); border-radius: 16px 0 0 16px; opacity:.9; }
-.shell .modeList .listItem::before {
-  background: linear-gradient(180deg,
-    color-mix(in srgb, var(--mode-accent) 92%, transparent),
-    color-mix(in srgb, var(--mode-accent) 28%, transparent));
-}
 .shell .listItem:hover{ background: color-mix(in srgb, var(--surface) 85%, transparent); border-color: color-mix(in srgb, var(--text) 14%, transparent); box-shadow: 0 10px 30px rgba(0,0,0,.10); }
 .shell .listItem:disabled {
   opacity: .55;
@@ -1501,7 +1496,7 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
   .shell .chip { font-size: 11px; padding: 3px 7px; }
   .shell .card { border-radius: 16px; }
   .shell .modeTab { padding: 8px 6px; }
-  .shell .tabSub { display: none; }
+  .shell .tabLabel { font-size: 11px; }
 }
 
 /* ===== GAME CANVAS (изолированный слой) ===== */
