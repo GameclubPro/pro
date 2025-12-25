@@ -1602,7 +1602,7 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
   border: 1px solid color-mix(in srgb, var(--mode-accent) 26%, transparent);
   box-shadow: 0 16px 36px rgba(0,0,0,.12);
   backdrop-filter: blur(10px);
-  aspect-ratio: 1 / 1.08;
+  aspect-ratio: 1 / 1;
   transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, filter .2s ease;
   animation: tileIn .36s ease both;
   animation-delay: var(--tile-delay, 0ms);
