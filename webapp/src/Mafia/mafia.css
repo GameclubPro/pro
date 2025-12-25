@@ -319,8 +319,28 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   border-radius:8px;
   user-select:all; white-space:nowrap;
 }
-
-.mf-hud-actions{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; padding:4px; border-radius:10px; background: linear-gradient(180deg, rgba(24,26,30,.35), rgba(18,20,24,.25)); border:1px solid rgba(64,70,80,.65); box-shadow: 0 2px 10px rgba(0,0,0,.28) inset; }
+.mf-code-floating{
+  position:absolute;
+  --mf-safe-top: max(env(safe-area-inset-top, 0px), var(--safe-top, 0px));
+  --mf-content-top: max(var(--tg-content-safe-area-inset-top, 0px), var(--mf-safe-top));
+  --mf-header-center: calc((var(--mf-safe-top) + var(--mf-content-top)) / 2);
+  top: calc(max(24px, var(--mf-header-center)) + var(--mf-code-nudge, 0px));
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 30;
+}
+.mf-code--floating{
+  flex: 0 0 auto;
+  width: auto;
+  max-width: min(340px, calc(100% - 32px));
+  box-shadow: 0 12px 30px rgba(20,28,40,.35);
+  pointer-events: auto;
+  cursor: pointer;
+}
 
 .mf-chip{
   background:#161a1f; color:var(--mf-fg); border:1px solid var(--mf-border); border-radius:999px; padding:6px 10px; font-size:12px; line-height: 1; min-height: 30px; display:inline-flex; align-items:center; transition: background .15s ease, transform .1s ease, box-shadow .2s ease, border-color .2s ease; box-shadow: 0 2px 8px rgba(0,0,0,.25); cursor:pointer;

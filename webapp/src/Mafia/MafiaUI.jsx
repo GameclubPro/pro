@@ -236,7 +236,14 @@ function PhaseBackdrop({ phase, phaseBackgrounds, winner }) {
    Обновляет body-класс под фазу и держит корректный --mf-vh.
    ========================================================================== */
 
-export function RoomShell({ children, phase, phaseBackgrounds, winner }) {
+export function RoomShell({
+  children,
+  phase,
+  phaseBackgrounds,
+  winner,
+  code,
+  onCopy,
+}) {
   const shellRef = useRef(null);
   const rafRef = useRef(0); // rAF-троттлинг для spot-света
 
@@ -331,6 +338,23 @@ export function RoomShell({ children, phase, phaseBackgrounds, winner }) {
 
       {/* декоративные FX поверх фото */}
       <SceneFX />
+
+      {String(phase || "").toUpperCase() === "LOBBY" && code ? (
+        <div className="mf-code-floating">
+          <button
+            className="mf-code mf-code--floating"
+            onClick={onCopy}
+            type="button"
+            aria-label="Скопировать код комнаты"
+            title="Скопировать код комнаты"
+          >
+            <span className="mf-code-label">Код</span>
+            <span className="mf-code-value" dir="ltr">
+              #{code}
+            </span>
+          </button>
+        </div>
+      ) : null}
 
       <div className="mf-room">{children}</div>
     </div>

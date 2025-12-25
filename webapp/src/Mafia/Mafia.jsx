@@ -2121,25 +2121,18 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
         )}
 
         {view === "room" && (
-          <RoomShell phase={phase} winner={finalWinner || timer?.winner}>
+          <RoomShell
+            phase={phase}
+            winner={finalWinner || timer?.winner}
+            code={roomCode}
+            onCopy={copyCode}
+          >
             {/* HUD */}
             <HUD
-              code={roomCode}
-              isOwner={isOwner}
               phase={phase}
               phaseLabel={phaseLabel}
               dayNumber={dayNumber}
               timer={timer}
-              onCopy={copyCode}
-              onShare={shareRoom}
-              onRefresh={refreshRoom}
-              onLeave={askLeave}
-              canStart={
-                isOwner && phase === "LOBBY" && (roomPlayers?.length || 0) >= 4
-              }
-              onStart={startMafia}
-              iAmReady={phase === "LOBBY" ? iAmReady : false}
-              onToggleReady={!isOwner && phase === "LOBBY" ? toggleReady : undefined}
               endedLabel={phase === "ENDED" ? finalWinner || timer?.winner : undefined}
             />
 

@@ -5,15 +5,10 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
  * Keeps the original Mafia styling (mf-hud) and optional controls.
  */
 export function HUD({
-  code,
   phase,
   phaseLabel,
   dayNumber,
   timer,
-  onCopy,
-  onShare,
-  onRefresh,
-  onLeave,
   endedLabel,
   children,
 }) {
@@ -32,99 +27,31 @@ export function HUD({
     prevPhaseRef.current = phase;
   }, [phase, isLobby]);
 
-  const showCopy = typeof onCopy === "function";
-  const showShare = typeof onShare === "function";
-  const showRefresh = typeof onRefresh === "function";
-  const showLeave = typeof onLeave === "function";
+  if (isLobby) return null;
 
   return (
     <section
-      className={`mf-hud ${!isLobby ? "started" : "lobby"} ${
-        justStarted ? "just-started" : ""
-      }`}
+      className={`mf-hud started ${justStarted ? "just-started" : ""}`}
       aria-label={`Состояние: ${phaseLabel || labelByKey(phase)}`}
     >
-      {isLobby && (
-        <div className="mf-hud-row">
-          <div className="mf-code" role="group" aria-label="Код комнаты">
-            <span className="mf-code-label">код</span>
-            <span className="mf-code-value" dir="ltr">
-              {code || "—"}
-            </span>
-            {showCopy && (
-              <button
-                className="mf-chip ghost"
-                onClick={onCopy}
-                aria-label="Скопировать код"
-                type="button"
-                title="Скопировать код"
-              >
-                📄
-              </button>
-            )}
-            {showShare && (
-              <button
-                className="mf-chip ghost"
-                onClick={onShare}
-                aria-label="Поделиться"
-                type="button"
-                title="Поделиться"
-              >
-                ✈️
-              </button>
-            )}
-          </div>
-
-          {(showRefresh || showLeave) && (
-            <div className="mf-hud-actions" role="group" aria-label="Действия">
-              {showRefresh && (
-                <button
-                  className="mf-chip ghost"
-                  onClick={onRefresh}
-                  aria-label="Обновить"
-                  type="button"
-                  title="Обновить"
-                >
-                  ⟳
-                </button>
-              )}
-              {showLeave && (
-                <button
-                  className="mf-chip danger"
-                  onClick={onLeave}
-                  aria-label="Выйти"
-                  type="button"
-                  title="Выйти"
-                >
-                  ⏏
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
       {children}
 
-      {!isLobby &&
-        (String(phase).toUpperCase() === "ENDED" ? (
-          <FinalBanner label={endedLabel || timer?.winner || "Игра завершена"} />
-        ) : (
-          <GameStage
-            phase={phase}
-            dayNumber={dayNumber}
-            timer={timer}
-            animate={justStarted}
-          />
-        ))}
-
-      {!isLobby && (
-        <div className="mf-hud-hint" role="note">
-          {phase === "NIGHT" && "Ночь: действуйте выборочно и по очереди"}
-          {phase === "DAY" && "День: обсуждение и поиск мафии"}
-          {phase === "VOTE" && "Голосование: выберите игрока, которого нужно изгнать"}
-        </div>
+      {String(phase).toUpperCase() === "ENDED" ? (
+        <FinalBanner label={endedLabel || timer?.winner || "Игра завершена"} />
+      ) : (
+        <GameStage
+          phase={phase}
+          dayNumber={dayNumber}
+          timer={timer}
+          animate={justStarted}
+        />
       )}
+
+      <div className="mf-hud-hint" role="note">
+        {phase === "NIGHT" && "Ночь: действуйте выборочно и по очереди"}
+        {phase === "DAY" && "День: обсуждение и поиск мафии"}
+        {phase === "VOTE" && "Голосование: выберите игрока, которого нужно изгнать"}
+      </div>
     </section>
   );
 }
