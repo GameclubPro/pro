@@ -239,12 +239,11 @@ export function RoomShell({ children, phase, phaseBackgrounds, winner }) {
   const shellRef = useRef(null);
   const rafRef = useRef(0); // rAF-троттлинг для spot-света
 
-  // Динамический 1% вьюпорта под мобильные браузеры (fallback к 1dvh в CSS)
+  // Динамическая высота вьюпорта в px (fallback к --tg-vh/100svh в CSS)
   useEffect(() => {
     const setVh = () => {
-      const vh =
-        (window.visualViewport?.height ?? window.innerHeight) * 0.01;
-      document.documentElement.style.setProperty("--mf-vh", `${vh}px`);
+      const height = window.visualViewport?.height ?? window.innerHeight;
+      document.documentElement.style.setProperty("--mf-vh", `${height}px`);
     };
     setVh();
     window.addEventListener("resize", setVh, { passive: true });
