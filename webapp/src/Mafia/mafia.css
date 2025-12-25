@@ -831,12 +831,17 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   position:relative;
   display:block;
   width:min(100%, 280px);
+  transform-origin: center;
+  animation: mf-start-breathe 2.8s ease-in-out infinite;
+  will-change: transform;
 }
 .mf-start-img{
   display:block;
   width:min(100%, 280px);
   height:auto;
-  filter: none;
+  filter: drop-shadow(0 0 6px rgba(120,170,255,.26));
+  animation: mf-start-glow 2.8s ease-in-out infinite;
+  will-change: filter;
 }
 .mf-start-label{
   position:absolute;
@@ -851,6 +856,22 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   text-shadow: 0 2px 8px rgba(0,0,0,.6);
   white-space: nowrap;
   pointer-events:none;
+}
+@keyframes mf-start-breathe{
+  0%,100%{ transform: scale(1); }
+  50%{ transform: scale(1.02); }
+}
+@keyframes mf-start-glow{
+  0%,100%{ filter: drop-shadow(0 0 6px rgba(120,170,255,.22)); }
+  50%{ filter: drop-shadow(0 0 10px rgba(120,170,255,.34)); }
+}
+.mf-events-toggle.mf-start-toggle.disabled .mf-start-cta,
+.mf-events-toggle.mf-start-toggle[disabled] .mf-start-cta{
+  animation: none;
+}
+.mf-events-toggle.mf-start-toggle.disabled .mf-start-img,
+.mf-events-toggle.mf-start-toggle[disabled] .mf-start-img{
+  animation: none;
 }
 .mf-events-toggle.mf-ready-toggle{
   --cta-bg: linear-gradient(135deg,#202733 0%, #0d1118 60%, #0b1016 100%);
@@ -1640,7 +1661,20 @@ button:focus-visible, .mf-chip:focus-visible, .mf-input:focus-visible, .mf-gs-ch
 body.mf-phase-lobby .mf-tex-grate{ opacity:0 !important; }
 
 /* Нижний CTA в лобби */
-.mf-center-cta.lobby-pinned{ position: static; margin-top: 6px; padding-bottom: 0; z-index: 20; }
+.mf-center-cta.lobby-pinned{
+  position: sticky;
+  top: auto;
+  bottom: calc(var(--mf-safe-bottom) + 12px);
+  margin-top: 10px;
+  padding-bottom: 0;
+  z-index: 26;
+}
+.mf-center-cta.lobby-pinned .mf-events-toggle.mf-start-toggle,
+.mf-center-cta.lobby-pinned .mf-events-toggle.mf-ready-toggle{
+  position: static;
+  top: auto;
+  bottom: auto;
+}
 
 /* CTA липнет к верху (старт / готов) */
 .mf-events-toggle.mf-start-toggle,
