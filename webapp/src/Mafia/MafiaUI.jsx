@@ -529,15 +529,17 @@ export const PlayerGrid = memo(function PlayerGrid({
                         aria-label="Начать игру"
                         title={startReason || undefined}
                       >
-                        <img
-                          className="mf-start-img"
-                          src={startBtn}
-                          alt=""
-                          aria-hidden="true"
-                          decoding="async"
-                          loading="eager"
-                          draggable="false"
-                        />
+                        <span className="mf-start-cta" aria-hidden="true">
+                          <img
+                            className="mf-start-img"
+                            src={startBtn}
+                            alt=""
+                            decoding="async"
+                            loading="eager"
+                            draggable="false"
+                          />
+                          <span className="mf-start-label">Начать игру</span>
+                        </span>
                       </button>
                       <div className="mf-hint center">min4</div>
                     </>
