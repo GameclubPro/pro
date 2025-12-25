@@ -558,7 +558,17 @@ export const PlayerGrid = memo(function PlayerGrid({
                       iAmReady ? "Вы отмечены как «готов»" : "Нажмите, чтобы отметиться «готов»"
                     }
                   >
-                    {iAmReady ? "Я готов" : "Готов"}
+                    <span className="mf-start-cta" aria-hidden="true">
+                      <img
+                        className="mf-start-img"
+                        src={startBtn}
+                        alt=""
+                        decoding="async"
+                        loading="eager"
+                        draggable="false"
+                      />
+                      <span className="mf-start-label">{iAmReady ? "Не готов" : "Готов"}</span>
+                    </span>
                   </button>
                 );
               })()
