@@ -1662,11 +1662,14 @@ body.mf-phase-lobby .mf-tex-grate{ opacity:0 !important; }
 
 /* Нижний CTA в лобби */
 .mf-center-cta.lobby-pinned{
-  position: sticky;
-  top: auto;
-  bottom: calc(var(--mf-safe-bottom) + 12px);
-  margin-top: 10px;
-  padding-bottom: 0;
+  position: fixed;
+  left: 50%;
+  right: auto;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(100%, var(--mf-center-max));
+  margin: 0;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   z-index: 26;
 }
 .mf-center-cta.lobby-pinned .mf-events-toggle.mf-start-toggle,
