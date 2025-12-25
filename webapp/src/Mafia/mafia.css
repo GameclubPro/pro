@@ -830,14 +830,14 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 .mf-start-cta{
   position:relative;
   display:block;
-  width:min(100%, 280px);
+  width:min(100%, 240px);
   transform-origin: center;
   animation: mf-start-breathe 2.8s ease-in-out infinite;
   will-change: transform;
 }
 .mf-start-img{
   display:block;
-  width:min(100%, 280px);
+  width:min(100%, 240px);
   height:auto;
   filter: drop-shadow(0 0 6px rgba(120,170,255,.26));
   animation: mf-start-glow 2.8s ease-in-out infinite;
@@ -1665,8 +1665,8 @@ body.mf-phase-lobby .mf-tex-grate{ opacity:0 !important; }
   position: fixed;
   left: 50%;
   right: auto;
-  bottom: env(safe-area-inset-bottom, 0px);
-  transform: translateX(-50%);
+  bottom: 0;
+  transform: translate(-50%, 6px);
   width: min(100%, var(--mf-center-max));
   margin: 0;
   padding-bottom: 0;
