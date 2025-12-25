@@ -17,6 +17,7 @@ import bgLobby from "../assets/mafia/bg-lobby.webp";
 import bgNight from "../assets/mafia/bg-night.png";
 import bgDay from "../assets/mafia/bg-day.png";
 import bgVote from "../assets/mafia/bg-vote.png";
+import startBtn from "../assets/mafia/Start_btn.webp";
 
 // === NEW: изображения для аватарок ===
 import avaUnknown from "../assets/mafia/unknown.png";
@@ -528,7 +529,15 @@ export const PlayerGrid = memo(function PlayerGrid({
                         aria-label="Начать игру"
                         title={startReason || undefined}
                       >
-                        Начать игру
+                        <img
+                          className="mf-start-img"
+                          src={startBtn}
+                          alt=""
+                          aria-hidden="true"
+                          decoding="async"
+                          loading="eager"
+                          draggable="false"
+                        />
                       </button>
                       <div className="mf-hint center">min4</div>
                     </>

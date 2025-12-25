@@ -819,10 +819,19 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
     0 14px 28px rgba(0,0,0,.48);
 }
 .mf-events-toggle.mf-start-toggle{
-  --cta-bg: linear-gradient(135deg,#2c3948 0%, #131922 55%, #101520 100%);
-  --cta-border: linear-gradient(120deg,#6c8bd8 0%, #4cc6a8 50%, #9fb4ff 100%);
-  letter-spacing:.05em;
-  text-transform: uppercase;
+  padding:0;
+  border:none;
+  background:none;
+  box-shadow:none;
+  letter-spacing:normal;
+  text-transform:none;
+}
+.mf-events-toggle.mf-start-toggle::before{ display:none; }
+.mf-start-img{
+  display:block;
+  width:min(100%, 280px);
+  height:auto;
+  filter: drop-shadow(0 10px 22px rgba(0,0,0,.45));
 }
 .mf-events-toggle.mf-ready-toggle{
   --cta-bg: linear-gradient(135deg,#202733 0%, #0d1118 60%, #0b1016 100%);
