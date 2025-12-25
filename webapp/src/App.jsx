@@ -95,6 +95,61 @@ function stripInviteFromUrl() {
 /* ВКЛЮЧЁН фолбэк автопоиска активной комнаты */
 const ENABLE_ACTIVE_ROOM_AUTOPROBE = true;
 
+const HOME_SECTIONS = [
+  {
+    id: "party",
+    label: "Мультиплеер",
+    subtitle: "комнаты и роли",
+    emoji: "🎉",
+    participants: "4–12",
+    gradient: "linear-gradient(135deg, rgba(14,165,233,.95), rgba(99,102,241,.95))",
+    accent: "#0ea5e9",
+    items: [
+      { icon: "🕵️‍♂️", name: "Мафия", desc: "день/ночь, роли, голосование", game: GAME_MAFIA },
+      { icon: "💰", name: "Аукцион", desc: "торги и лутбоксы", game: GAME_AUCTION },
+      { icon: "🚪", name: "Бункер", desc: "спор и отбор (в разработке)", disabled: true },
+      { icon: "🧠", name: "Викторина (командная)", desc: "раунды, очки, блиц", disabled: true },
+      { icon: "📣", name: "Alias/Шляпа", desc: "объясни слово без слов", disabled: true },
+    ],
+  },
+  {
+    id: "local",
+    label: "На одном устройстве",
+    subtitle: "быстрые мини-игры",
+    emoji: "🎮",
+    participants: "2–12",
+    gradient: "linear-gradient(135deg, rgba(34,197,94,.95), rgba(20,184,166,.9))",
+    accent: "#22c55e",
+    items: [
+      { icon: "🎭", name: "Крокодил", desc: "покажи — не говори", game: "crocodile" },
+      { icon: "🧩", name: "Обьясни слово", desc: "угадай по намёкам", game: "associations" },
+      { icon: "🏰", name: "Княжий суд", desc: "допросы и приговор", game: "knyaz" },
+      { icon: "❓", name: "Блиц-викторина", desc: "быстро и на счёт", game: "quiz" },
+      { icon: "✍️", name: "Скетч-баттл", desc: "рисуй за 30 сек", game: "sketch" },
+      { icon: "⚖️", name: "Выбор", desc: "два варианта — один выбор", game: "choice" },
+    ],
+  },
+  {
+    id: "love",
+    label: "Для влюблённых",
+    subtitle: "вопросы и челленджи",
+    emoji: "💞",
+    participants: "2",
+    gradient: "linear-gradient(135deg, rgba(244,114,182,.95), rgba(250,204,21,.9))",
+    accent: "#f472b6",
+    items: [
+      { icon: "💬", name: "36 вопросов", desc: "сближает мягко и честно", game: "questions" },
+      { icon: "🔥", name: "Правда/Действие", desc: "романтика или перчинка", game: "truthordare" },
+      { icon: "🧩", name: "Совместимость", desc: "мини-квесты на совпадения", game: "compatibility" },
+    ],
+  },
+];
+const DEFAULT_HOME_SECTION = HOME_SECTIONS[0].id;
+const HOME_SECTION_INDEX = HOME_SECTIONS.reduce((acc, item, idx) => {
+  acc[item.id] = idx;
+  return acc;
+}, {});
+
 export default function App() {
   // ---- Core ----
   const [user, setUser] = useState(null);
@@ -102,7 +157,7 @@ export default function App() {
 
   // route = { kind: 'shell' } | { kind: 'game', name: 'mafia'|'auction'|'crocodile'|'associations'|'quiz'|'questions'|'truthordare'|'compatibility'|'choice'|'sketch' }
   const [route, setRoute] = useState({ kind: "shell" });
-  const [section, setSection] = useState("home"); // home | party | local | love
+  const [section, setSection] = useState(DEFAULT_HOME_SECTION); // party | local | love
 
   // геймификация
   const [level, setLevel] = useState(() => Number(localStorage.getItem("pt_level") || 1));
@@ -779,88 +834,129 @@ export default function App() {
 /* ===================== SHELL (оболочка) ===================== */
 
 function Shell({ scheme, user, status, level, games, section, setSection, onOpenGame }) {
+  const activeId = HOME_SECTION_INDEX[section] != null ? section : DEFAULT_HOME_SECTION;
+  const activeIndex = HOME_SECTION_INDEX[activeId] ?? 0;
+  const activeMode = HOME_SECTIONS[activeIndex];
+  const [switchDir, setSwitchDir] = useState(0);
+
+  const switchTo = useCallback(
+    (nextId, dirHint = null) => {
+      if (nextId === activeId) return;
+      const nextIndex = HOME_SECTION_INDEX[nextId] ?? 0;
+      const dir = dirHint ?? (nextIndex > activeIndex ? 1 : -1);
+      setSwitchDir(dir);
+      setSection(nextId);
+    },
+    [activeId, activeIndex, setSection]
+  );
+  const switchBy = useCallback(
+    (offset) => {
+      const nextIndex = (activeIndex + offset + HOME_SECTIONS.length) % HOME_SECTIONS.length;
+      switchTo(HOME_SECTIONS[nextIndex].id, offset);
+    },
+    [activeIndex, switchTo]
+  );
+
+  const swipeRef = useRef({ x: 0, y: 0, t: 0 });
+  const handleTouchStart = useCallback((event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    swipeRef.current = { x: touch.clientX, y: touch.clientY, t: Date.now() };
+  }, []);
+  const handleTouchEnd = useCallback(
+    (event) => {
+      const touch = event.changedTouches?.[0];
+      if (!touch) return;
+      const dx = touch.clientX - swipeRef.current.x;
+      const dy = touch.clientY - swipeRef.current.y;
+      const dt = Date.now() - swipeRef.current.t;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy) * 1.2 || dt > 800) return;
+      if (dx < 0) switchBy(1);
+      else switchBy(-1);
+    },
+    [switchBy]
+  );
+
+  const homeVars = useMemo(
+    () => ({
+      "--mode-accent": activeMode.accent,
+      "--mode-gradient": activeMode.gradient,
+      "--tab-count": String(HOME_SECTIONS.length),
+      "--active-index": String(activeIndex),
+    }),
+    [activeMode, activeIndex]
+  );
+
   return (
     <div className="shell">
       <ShellBackdrop scheme={scheme} />
       <div className="wrap">
         <Header user={user} status={status} level={level} games={games} />
 
-        {/* HOME */}
-        {section === "home" && (
-          <div className="grid" role="list">
-            <CategoryCard
-              emoji="🎉"
-              title="Мультиплеер"
-              subtitle="комнаты и роли"
-              participants="4–12"
-              gradient="linear-gradient(135deg, rgba(14,165,233,.9), rgba(99,102,241,.9))"
-              onClick={() => setSection("party")}
-            />
-            <CategoryCard
-              emoji="🎮"
-              title="На одном устройстве"
-              subtitle="быстрые мини-игры"
-              participants="2–12"
-              gradient="linear-gradient(135deg, rgba(34,197,94,.95), rgba(20,184,166,.9))"
-              onClick={() => setSection("local")}
-            />
-            <CategoryCard
-              emoji="💞"
-              title="Для влюблённых"
-              subtitle="вопросы и челленджи"
-              participants="2"
-              gradient="linear-gradient(135deg, rgba(244,114,182,.95), rgba(250,204,21,.9))"
-              onClick={() => setSection("love")}
-            />
+        <div className="homeHub" style={homeVars}>
+          <div className="modeTabs" role="tablist" aria-label="Категории">
+            <span className="modeIndicator" aria-hidden />
+            {HOME_SECTIONS.map((mode) => (
+              <button
+                key={mode.id}
+                type="button"
+                className="modeTab"
+                role="tab"
+                aria-selected={activeId === mode.id}
+                data-active={activeId === mode.id}
+                onClick={() => switchTo(mode.id)}
+              >
+                <span className="tabEmoji" aria-hidden>{mode.emoji}</span>
+                <span className="tabLabel" title={mode.label}>{mode.label}</span>
+                <span className="tabSub" title={mode.subtitle}>{mode.subtitle}</span>
+              </button>
+            ))}
           </div>
-        )}
 
-        {/* PARTY */}
-        {section === "party" && (
-          <Section
-            title="Мультиплеер"
-            back={() => setSection("home")}
-            items={[
-              { icon: "🕵️‍♂️", name: "Мафия", desc: "день/ночь, роли, голосование", action: () => onOpenGame("mafia") },
-              { icon: "💰", name: "Аукцион", desc: "торги и лутбоксы", action: () => onOpenGame("auction") },
-              { icon: "🚪", name: "Бункер", desc: "спор и отбор (в разработке)", action: () => null },
-              { icon: "🧠", name: "Викторина (командная)", desc: "раунды, очки, блиц", action: () => null },
-              { icon: "📣", name: "Alias/Шляпа", desc: "объясни слово без слов", action: () => null },
-            ]}
-          />
-        )}
+          <div className="modeHeader">
+            <div className="modeTitleBlock">
+              <span className="modeEmoji" aria-hidden>{activeMode.emoji}</span>
+              <div className="modeTitleText">
+                <div className="modeTitle" title={activeMode.label}>{activeMode.label}</div>
+                <div className="modeSubtitle" title={activeMode.subtitle}>{activeMode.subtitle}</div>
+              </div>
+            </div>
+            {activeMode.participants && (
+              <span className="modePill" aria-label={`Участники ${activeMode.participants}`} title={`Участники ${activeMode.participants}`}>
+                👥 {activeMode.participants}
+              </span>
+            )}
+          </div>
 
-        {/* LOCAL */}
-        {section === "local" && (
-          <Section
-            title="На одном устройстве"
-            back={() => setSection("home")}
-            items={[
-              { icon: "🎭", name: "Крокодил", desc: "покажи — не говори", action: () => onOpenGame("crocodile") },
-              { icon: "🧩", name: "Обьясни слово", desc: "угадай по намёкам", action: () => onOpenGame("associations") },
-              { icon: "🏰", name: "Княжий суд", desc: "допросы и приговор", action: () => onOpenGame("knyaz") },
-              { icon: "❓", name: "Блиц-викторина", desc: "быстро и на счёт", action: () => onOpenGame("quiz") },
-              { icon: "✍️", name: "Скетч-баттл", desc: "рисуй за 30 сек", action: () => onOpenGame("sketch") },
-              { icon: "⚖️", name: "Выбор", desc: "два варианта — один выбор", action: () => onOpenGame("choice") },
-            ]}
-          />
-        )}
-
-        {/* LOVE */}
-        {section === "love" && (
-          <Section
-            title="Для влюблённых"
-            back={() => setSection("home")}
-            items={[
-              { icon: "💬", name: "36 вопросов", desc: "сближает мягко и честно", action: () => onOpenGame("questions") },
-              { icon: "🔥", name: "Правда/Действие", desc: "романтика или перчинка", action: () => onOpenGame("truthordare") },
-              { icon: "🧩", name: "Совместимость", desc: "мини-квесты на совпадения", action: () => onOpenGame("compatibility") },
-            ]}
-          />
-        )}
+          <div
+            className="modeBody"
+            role="tabpanel"
+            aria-label={activeMode.label}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            <div key={activeId} className="modePanel" data-dir={switchDir}>
+              <div className="list modeList" role="list">
+                {activeMode.items.map((item) => {
+                  const isDisabled = !!item.disabled || !item.game;
+                  return (
+                    <ListItem
+                      key={item.name}
+                      icon={item.icon}
+                      name={item.name}
+                      desc={item.desc}
+                      disabled={isDisabled}
+                      action={() => (item.game ? onOpenGame(item.game) : null)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
 
         <BottomBar
-          onHome={() => setSection("home")}
+          onHome={() => switchTo(DEFAULT_HOME_SECTION)}
           onInvite={() => {
             // Используем deep link, чтобы WebApp открылся внутри Telegram с валидным initData
             const shareUrl = `https://t.me/${BOT_USERNAME}?startapp=${encodeURIComponent(STARTAPP_PAYLOAD)}`;
@@ -965,6 +1061,26 @@ function AvatarImg({ tgId, photoUrl, initials }) {
   );
 }
 
+function ListItem({ icon, name, desc, action, disabled }) {
+  return (
+    <button
+      type="button"
+      className="listItem"
+      onClick={disabled ? undefined : action}
+      aria-label={name}
+      role="listitem"
+      disabled={disabled}
+    >
+      <span className="listIcon" aria-hidden>{icon}</span>
+      <span className="listText">
+        <b className="listTitle" title={name}>{name}</b>
+        <small className="hint listDesc" title={desc}>{desc}</small>
+      </span>
+      <span className="chev" aria-hidden>›</span>
+    </button>
+  );
+}
+
 function Section({ title, back, items }) {
   return (
     <section className="shell-section" aria-label={title}>
@@ -976,14 +1092,14 @@ function Section({ title, back, items }) {
       </div>
       <div className="list" role="list">
         {items.map((it) => (
-          <button key={it.name} className="listItem" onClick={it.action} aria-label={it.name} role="listitem">
-            <span className="listIcon" aria-hidden>{it.icon}</span>
-            <span className="listText">
-              <b className="listTitle" title={it.name}>{it.name}</b>
-              <small className="hint listDesc" title={it.desc}>{it.desc}</small>
-            </span>
-            <span className="chev" aria-hidden>›</span>
-          </button>
+          <ListItem
+            key={it.name}
+            icon={it.icon}
+            name={it.name}
+            desc={it.desc}
+            action={it.action}
+            disabled={it.disabled}
+          />
         ))}
       </div>
     </section>
@@ -1230,6 +1346,71 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
   align-items: stretch;
 }
 
+/* Home switcher */
+.shell .homeHub {
+  display: grid;
+  gap: clamp(12px, 2.2vh, 16px);
+  margin-top: clamp(6px, 1vh, 12px);
+}
+.shell .modeTabs {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--tab-count), minmax(0, 1fr));
+  padding: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+  box-shadow: 0 8px 24px rgba(0,0,0,.10);
+  overflow: hidden;
+}
+.shell .modeIndicator {
+  position: absolute;
+  inset: 4px;
+  width: calc((100% - 8px) / var(--tab-count));
+  transform: translateX(calc(var(--active-index) * 100%));
+  background: var(--mode-gradient);
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.16), 0 0 0 1px rgba(255,255,255,.25) inset;
+  transition: transform .28s cubic-bezier(.2,.8,.2,1), width .28s ease;
+}
+.shell .modeTab {
+  position: relative;
+  z-index: 1;
+  padding: 10px 8px;
+  border-radius: 999px;
+  display: grid;
+  gap: 2px;
+  text-align: center;
+  color: color-mix(in srgb, var(--text) 80%, transparent);
+  transition: color .2s ease, transform .2s ease;
+}
+.shell .modeTab[data-active="true"] { color: #fff; text-shadow: 0 6px 20px rgba(0,0,0,.25); }
+.shell .modeTab:active { transform: scale(.98); }
+.shell .tabEmoji { font-size: 16px; line-height: 1; }
+.shell .tabLabel { font-weight: 800; font-size: 12px; letter-spacing: .2px; }
+.shell .tabSub { font-size: 10px; opacity: .75; }
+.shell .modeHeader { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.shell .modeTitleBlock { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.shell .modeTitleText { display: grid; gap: 2px; min-width: 0; }
+.shell .modeEmoji { font-size: 22px; line-height: 1; }
+.shell .modeTitle { font-size: 18px; font-weight: 900; letter-spacing: .2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shell .modeSubtitle { font-size: 12px; color: var(--hint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shell .modePill {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mode-accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mode-accent) 40%, transparent);
+  color: var(--text);
+}
+.shell .modeBody { position: relative; touch-action: pan-y; }
+.shell .modePanel { animation: modeFade .26s ease; }
+.shell .modePanel[data-dir="1"] { animation-name: modeInRight; }
+.shell .modePanel[data-dir="-1"] { animation-name: modeInLeft; }
+@keyframes modeFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes modeInRight { from { opacity: 0; transform: translateX(16px) scale(.98); } to { opacity: 1; transform: translateX(0) scale(1); } }
+@keyframes modeInLeft { from { opacity: 0; transform: translateX(-16px) scale(.98); } to { opacity: 1; transform: translateX(0) scale(1); } }
+
 /* Category card */
 .shell .card {
   --mx: 0; --my: 0;
@@ -1274,7 +1455,19 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
   transition: transform .16s ease, background .16s ease, border-color .16s ease, box-shadow .16s ease; position: relative; overflow: hidden;
 }
 .shell .listItem::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background: linear-gradient(180deg, rgba(var(--accent-rgb), .95), rgba(var(--accent-rgb), .25)); border-radius: 16px 0 0 16px; opacity:.9; }
+.shell .modeList .listItem::before {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--mode-accent) 92%, transparent),
+    color-mix(in srgb, var(--mode-accent) 28%, transparent));
+}
 .shell .listItem:hover{ background: color-mix(in srgb, var(--surface) 85%, transparent); border-color: color-mix(in srgb, var(--text) 14%, transparent); box-shadow: 0 10px 30px rgba(0,0,0,.10); }
+.shell .listItem:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.shell .listItem:disabled:hover { background: color-mix(in srgb, var(--surface) 100%, transparent); border-color: color-mix(in srgb, var(--text) 10%, transparent); }
+.shell .listItem:disabled .chev { opacity: .3; }
 .shell .listIcon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: color-mix(in srgb, var(--surface) 80%, transparent); border: 1px solid color-mix(in srgb, var(--text) 12%, transparent); font-size: 22px; }
 .shell .listText { display:grid; gap: 2px; line-height: 1.15; min-width: 0; }
 .shell .listTitle { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 800; color: var(--text); }
@@ -1307,6 +1500,8 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 @media (max-width: 360px) {
   .shell .chip { font-size: 11px; padding: 3px 7px; }
   .shell .card { border-radius: 16px; }
+  .shell .modeTab { padding: 8px 6px; }
+  .shell .tabSub { display: none; }
 }
 
 /* ===== GAME CANVAS (изолированный слой) ===== */
