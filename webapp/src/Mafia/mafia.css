@@ -836,7 +836,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   display:block;
   width:min(100%, 280px);
   height:auto;
-  filter: drop-shadow(0 10px 22px rgba(0,0,0,.45));
+  filter: none;
 }
 .mf-start-label{
   position:absolute;
@@ -844,8 +844,8 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   top:56%;
   transform: translate(-50%, -50%);
   color:#eef3f9;
-  font-weight:900;
-  font-size: clamp(12px, 3.6vw, 18px);
+  font-weight:1000;
+  font-size: clamp(13px, 3.9vw, 19px);
   letter-spacing:.08em;
   text-transform: uppercase;
   text-shadow: 0 2px 8px rgba(0,0,0,.6);
