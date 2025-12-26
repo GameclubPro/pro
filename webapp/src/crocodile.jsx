@@ -666,8 +666,6 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
           <Round
             current={current}
             word={state.word}
-            tip={state.tip}
-            hints={state.settings.hints}
             wordsLeft={wordsLeft}
             wordsTotal={wordsTotal}
             timePct={timePct}
@@ -1193,8 +1191,6 @@ function SwitchCard({ current, mode, round, totalRounds, wordsRemaining, onBegin
 function Round({
   current,
   word,
-  tip,
-  hints,
   wordsLeft,
   wordsTotal,
   timePct,
@@ -1237,7 +1233,7 @@ function Round({
           onTogglePause={onPauseToggle}
         />
 
-        <WordCard word={word} tip={tip} hints={hints} masked={isMasked} />
+        <WordCard word={word} masked={isMasked} />
       </div>
 
       <div className="actions-bar">
@@ -1380,7 +1376,7 @@ function TimerPacman({
   );
 }
 
-function WordCard({ word, tip, hints, masked = false }) {
+function WordCard({ word, masked = false }) {
   const mainText = masked ? "Смена хода" : word?.word || "Готовимся...";
 
   return (
@@ -1391,13 +1387,8 @@ function WordCard({ word, tip, hints, masked = false }) {
       exit={{ opacity: 0, y: -10 }}
       layout
     >
+      <div className="word-visual" aria-hidden="true" />
       <div className="word-main">{mainText}</div>
-      {!masked && hints && tip && (
-        <div className="word-tip">
-          <Sparkles size={14} />
-          {tip}
-        </div>
-      )}
     </motion.div>
   );
 }
