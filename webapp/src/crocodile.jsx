@@ -1387,7 +1387,9 @@ function WordCard({ word, masked = false }) {
       exit={{ opacity: 0, y: -10 }}
       layout
     >
-      <div className="word-visual" aria-hidden="true" />
+      <div className="word-visual" aria-hidden="true">
+        <img src={crocoHead} alt="" className="word-visual-img" />
+      </div>
       <div className="word-footer">
         <div className="word-main">{mainText}</div>
       </div>

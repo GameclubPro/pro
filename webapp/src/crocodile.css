@@ -1729,10 +1729,10 @@
   border-radius: var(--croco-radius-l);
   border: 1px solid rgba(255, 255, 255, 0.12);
   background:
-    linear-gradient(160deg, rgba(5, 11, 9, 0.96), rgba(8, 16, 12, 0.98));
+    linear-gradient(170deg, rgba(6, 12, 10, 0.96), rgba(8, 16, 12, 0.99));
   box-shadow: var(--croco-shadow-strong);
   display: grid;
-  grid-template-rows: minmax(170px, 1fr) auto;
+  grid-template-rows: minmax(180px, 1fr) auto;
   gap: 0;
   align-content: stretch;
   backdrop-filter: blur(6px);
@@ -1744,42 +1744,15 @@
 .word-visual {
   width: 100%;
   min-height: clamp(170px, 28vh, 250px);
+  display: grid;
+  place-items: center;
+  padding: clamp(14px, 3.4vw, 22px);
   background:
     radial-gradient(80% 120% at 20% 10%, rgba(34, 197, 94, 0.42), transparent 60%),
     radial-gradient(120% 140% at 80% 0%, rgba(14, 165, 233, 0.32), transparent 55%),
     radial-gradient(120% 160% at 50% 120%, rgba(15, 118, 110, 0.22), transparent 60%),
     linear-gradient(160deg, rgba(10, 18, 16, 0.98), rgba(6, 12, 10, 0.95));
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  position: relative;
-  overflow: hidden;
-}
-
-.word-visual::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(circle at 30% 35%, rgba(255, 255, 255, 0.18), transparent 55%),
-    radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.12), transparent 60%),
-    repeating-linear-gradient(
-      120deg,
-      rgba(255, 255, 255, 0.05) 0 2px,
-      transparent 2px 14px
-    );
-  opacity: 0.7;
-}
-
-.word-visual::after {
-  content: "";
-  position: absolute;
-  left: 12%;
-  top: 12%;
-  width: 68%;
-  height: 68%;
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.12), transparent 65%);
-  opacity: 0.6;
 }
 
 .word-card.is-masked {
@@ -1790,13 +1763,28 @@
   filter: saturate(0.5) brightness(0.8);
 }
 
+.word-card.is-masked .word-visual-img {
+  opacity: 0.35;
+  filter: grayscale(0.6) blur(1px);
+}
+
+.word-visual-img {
+  width: min(70%, 260px);
+  max-height: min(24vh, 220px);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.35));
+}
+
 .word-footer {
   width: 100%;
-  padding: clamp(16px, 4vw, 26px);
+  padding: clamp(16px, 4.5vw, 28px);
+  min-height: clamp(90px, 18vh, 150px);
   background:
-    linear-gradient(180deg, rgba(6, 10, 12, 0.1), rgba(6, 10, 12, 0.72));
+    linear-gradient(180deg, rgba(6, 10, 12, 0.12), rgba(6, 10, 12, 0.86));
   display: grid;
-  align-content: end;
+  place-items: center;
+  text-align: center;
 }
 
 .word-main {
@@ -2130,6 +2118,12 @@
   }
   .word-visual {
     min-height: clamp(140px, 22vh, 200px);
+  }
+  .word-visual-img {
+    max-height: min(20vh, 180px);
+  }
+  .word-footer {
+    min-height: clamp(72px, 16vh, 120px);
   }
   .card.hero.switch-card {
     min-height: 38vh;
