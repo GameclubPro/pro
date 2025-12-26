@@ -738,7 +738,7 @@
   position: fixed;
   inset: 0;
   --croco-safe-top-extra: 12px;
-  --croco-settings-top-gap: 10px;
+  --croco-settings-top-gap: clamp(8px, 1.5vh, 16px);
   --croco-safe-top: calc(
     max(
       var(--app-inset-top),
@@ -764,7 +764,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: calc(var(--croco-safe-top) + var(--croco-settings-top-gap)) var(--croco-safe-left) var(--croco-safe-bottom) var(--croco-safe-right);
+  padding: var(--croco-safe-top) var(--croco-safe-left) var(--croco-safe-bottom) var(--croco-safe-right);
   z-index: 1200;
   overflow: hidden;
 }
@@ -773,6 +773,7 @@
   position: relative;
   width: min(600px, calc(100% - 12px));
   max-width: min(600px, calc(100% - 12px));
+  margin-top: var(--croco-settings-top-gap);
   border-radius: 18px;
   padding: 16px;
   background:
@@ -783,7 +784,7 @@
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
   overflow-x: hidden;
   overflow-y: auto;
-  max-height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom) - 20px);
+  max-height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom) - var(--croco-settings-top-gap) - 20px);
   will-change: transform, opacity;
   transform: translateZ(0);
   margin: 0;
@@ -1083,12 +1084,12 @@
 
 @media (max-width: 768px) {
   .croco-settings-overlay {
-    padding: calc(var(--croco-safe-top) + var(--croco-settings-top-gap)) var(--croco-safe-left) calc(8px + var(--croco-safe-bottom)) var(--croco-safe-right);
+    padding: var(--croco-safe-top) var(--croco-safe-left) calc(8px + var(--croco-safe-bottom)) var(--croco-safe-right);
   }
   .croco-settings-window {
     width: min(600px, calc(100% - 10px));
     max-width: min(600px, calc(100% - 10px));
-    max-height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom));
+    max-height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom) - var(--croco-settings-top-gap));
     border-radius: 18px;
     padding: 14px 12px 16px;
     box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
