@@ -899,22 +899,6 @@ function Setup({
           >
             <div className="croco-settings-shell">
               <div className="croco-settings-head">
-                <div className="croco-settings-head-copy">
-                  <div className="croco-settings-title">Настройки</div>
-                  <div className="croco-settings-subtitle">Матч / Колода / Эффекты</div>
-                </div>
-                <motion.button
-                  className="croco-settings-close"
-                  whileTap={{ scale: 0.95 }}
-                  whileHover={{ rotate: 4 }}
-                  onClick={() => setSettingsOpen(false)}
-                  aria-label="Закрыть настройки"
-                >
-                  <X size={16} />
-                </motion.button>
-              </div>
-
-              <div className="croco-settings-body">
                 <nav
                   className="croco-settings-nav"
                   aria-label="Разделы"
@@ -981,7 +965,18 @@ function Setup({
                     </span>
                   </button>
                 </nav>
+                <motion.button
+                  className="croco-settings-close"
+                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ rotate: 4 }}
+                  onClick={() => setSettingsOpen(false)}
+                  aria-label="Закрыть настройки"
+                >
+                  <X size={16} />
+                </motion.button>
+              </div>
 
+              <div className="croco-settings-body">
                 <div className="croco-settings-content">
                   <section
                     id="croco-settings-match"
@@ -991,19 +986,6 @@ function Setup({
                     tabIndex={0}
                     hidden={activeSettings !== "match"}
                   >
-                    <div className="croco-settings-section-head">
-                      <div>
-                        <div className="croco-settings-section-title">Ритм матча</div>
-                        <div className="croco-settings-section-sub">Таймер и лимит слов</div>
-                      </div>
-                      <div className="croco-settings-kpi">
-                        <span className="croco-settings-kpi-label">Сейчас</span>
-                        <span className="croco-settings-kpi-value">
-                          {settings.roundSeconds}s / {settings.wordsPerTeam} слов
-                        </span>
-                      </div>
-                    </div>
-
                     <div className="croco-settings-cards">
                       <div className="croco-setting-card is-accent">
                         <div className="croco-setting-row">
@@ -1071,17 +1053,6 @@ function Setup({
                     tabIndex={0}
                     hidden={activeSettings !== "words"}
                   >
-                    <div className="croco-settings-section-head">
-                      <div>
-                        <div className="croco-settings-section-title">Колода слов</div>
-                        <div className="croco-settings-section-sub">Пакеты и свои слова</div>
-                      </div>
-                      <div className="croco-settings-total">
-                        <span className="croco-settings-total-label">Активно</span>
-                        <span className="croco-settings-total-value">{wordPool.length}</span>
-                      </div>
-                    </div>
-
                     <div className="croco-settings-pack-grid">
                       {packOptions.map((p) => {
                         const active = selectedPacks.includes(p.key);
@@ -1101,7 +1072,6 @@ function Setup({
                               </span>
                               <span className="croco-pack-text">
                                 <span className="croco-pack-title">{p.label}</span>
-                                <span className="croco-pack-meta">{p.meta}</span>
                               </span>
                               <span className="croco-pack-count">{count}</span>
                             </div>
@@ -1177,13 +1147,6 @@ function Setup({
                     tabIndex={0}
                     hidden={activeSettings !== "effects"}
                   >
-                    <div className="croco-settings-section-head">
-                      <div>
-                        <div className="croco-settings-section-title">Эффекты</div>
-                        <div className="croco-settings-section-sub">Звук и динамика</div>
-                      </div>
-                    </div>
-
                     <div className="croco-toggle-grid">
                       <button
                         className={`croco-toggle ${settings.autoDifficulty ? "is-on" : ""}`}
@@ -1223,7 +1186,6 @@ function Setup({
                   <RefreshCw size={16} />
                   Сбросить
                 </button>
-                <div className="croco-settings-footnote">Сохраняется автоматически</div>
                 <motion.button
                   className="croco-settings-done"
                   whileTap={{ scale: 0.97 }}
