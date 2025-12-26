@@ -15,7 +15,6 @@ import {
   Users,
   Wand2,
   Zap,
-  X,
   Volume2,
 } from "lucide-react";
 import {
@@ -458,14 +457,10 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   useEffect(() => {
     if (!setBackHandler) return undefined;
     setBackHandler(() => {
-      if (state.stage === "round") {
-        dispatch({ type: state.running ? "PAUSE" : "RESUME" });
-        return;
-      }
       goBack?.();
     });
     return () => setBackHandler(null);
-  }, [setBackHandler, state.stage, state.running, goBack]);
+  }, [setBackHandler, goBack]);
 
   useEffect(() => {
     if (state.stage === "summary" && !progressGiven.current) {
@@ -641,7 +636,6 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
         {visibleStage === "round" && (
           <Round
             current={current}
-            mode={state.settings.mode}
             word={state.word}
             tip={state.tip}
             hints={state.settings.hints}
@@ -655,7 +649,6 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
               dispatch({ type: state.running ? "PAUSE" : "RESUME" })
             }
             onAnswer={mark}
-            onExit={goBack}
             lastResult={state.lastResult}
             showTimeoutPrompt={timeoutPrompt}
             onTimeoutAnswer={handleTimeoutAnswer}
@@ -1170,7 +1163,6 @@ function SwitchCard({ current, mode, round, totalRounds, wordsRemaining, onBegin
 
 function Round({
   current,
-  mode,
   word,
   tip,
   hints,
@@ -1182,7 +1174,6 @@ function Round({
   isPaused,
   onPauseToggle,
   onAnswer,
-  onExit,
   lastResult,
   showTimeoutPrompt,
   onTimeoutAnswer,
@@ -1196,37 +1187,12 @@ function Round({
 
   return (
     <div className="round">
-      <div className="round-meta">
-        <div className="round-meta-main">
-          <div className="round-left">
-            <div className="bubble small" style={{ background: current?.color }}>
-              {current?.emoji}
-            </div>
-            <div className="round-text">
-              <div className="round-mode">{mode === "teams" ? "Команды" : "Соло"}</div>
-              <div className="round-name">{current?.name}</div>
-            </div>
-          </div>
-          <span className="round-pill">{`Слова ${roundProgress}`}</span>
-        </div>
-        {onExit && (
-          <motion.button
-            className="round-exit"
-            whileTap={{ scale: 0.97 }}
-            whileHover={{ translateY: -1 }}
-            onClick={onExit}
-          >
-            <X size={14} />
-            Выйти
-          </motion.button>
-        )}
-      </div>
-
       <TimerPacman
         pct={timePct}
         seconds={seconds}
         running={running}
         current={current}
+        roundProgress={roundProgress}
         dimmed={showTimeoutPrompt}
         onTogglePause={onPauseToggle}
       />
@@ -1296,7 +1262,15 @@ function Round({
   );
 }
 
-function TimerPacman({ pct, seconds, running, current, dimmed = false, onTogglePause }) {
+function TimerPacman({
+  pct,
+  seconds,
+  running,
+  current,
+  roundProgress,
+  dimmed = false,
+  onTogglePause,
+}) {
   const safePct = clamp(pct ?? 0, 0, 1);
   const remainingPct = Math.round(safePct * 100);
   const trackInsetPct = 4;
@@ -1318,6 +1292,7 @@ function TimerPacman({ pct, seconds, running, current, dimmed = false, onToggleP
           <div className="timer-num">{seconds}s</div>
           <div className="timer-sub">{label}</div>
         </div>
+        <div className="pacman-round round-pill">{`Слова ${roundProgress}`}</div>
         <motion.button
           className={`pacman-pause ${running ? "" : "is-paused"}`}
           whileTap={{ scale: 0.9 }}
