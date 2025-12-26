@@ -886,7 +886,7 @@
   --croco-safe-right: max(var(--safe-right, 0px), env(safe-area-inset-right, 0px));
   --croco-vh: var(--tg-vh, 100svh);
   --croco-modal-pad-y: max(var(--croco-safe-top), var(--croco-safe-bottom), clamp(24px, 6vh, 72px));
-  --croco-modal-pad-x: max(var(--croco-safe-left), var(--croco-safe-right), 12px);
+  --croco-modal-pad-x: max(var(--croco-safe-left), var(--croco-safe-right), 0px);
   background:
     radial-gradient(160% 120% at 12% 6%, rgba(34, 197, 94, 0.22), transparent 60%),
     radial-gradient(160% 120% at 88% 12%, rgba(45, 212, 191, 0.18), transparent 60%),
@@ -907,8 +907,8 @@
 
 .croco-settings-window {
   position: relative;
-  width: min(760px, calc(100% - 12px));
-  max-width: min(760px, calc(100% - 12px));
+  width: min(760px, 100%);
+  max-width: min(760px, 100%);
   --croco-modal-max-h: min(
     calc(var(--croco-vh) - (var(--croco-modal-pad-y) * 2)),
     calc(var(--croco-vh) * 0.86)
@@ -931,15 +931,15 @@
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
   overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-gutter: stable both-edges;
-  scrollbar-color: rgba(52, 211, 153, 0.5) rgba(255, 255, 255, 0.04);
+  scrollbar-width: none;
+  scrollbar-gutter: auto;
+  -ms-overflow-style: none;
   display: block;
 }
 
 .croco-settings-window.croco-settings-window--crocodile {
-  width: min(760px, calc(100% - 12px));
-  max-width: min(760px, calc(100% - 12px));
+  width: min(760px, 100%);
+  max-width: min(760px, 100%);
   height: auto;
   max-height: var(--croco-modal-max-h);
   margin: 0;
@@ -967,24 +967,23 @@
 }
 
 .croco-settings-window::-webkit-scrollbar {
-  width: 10px;
+  width: 0;
+  height: 0;
 }
 
 .croco-settings-window::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 12px;
-  border: 1px solid var(--croco-border);
+  background: transparent;
+  border: none;
 }
 
 .croco-settings-window::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(52, 211, 153, 0.9), rgba(34, 197, 94, 0.85));
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.35);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .croco-settings-window::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(52, 211, 153, 0.95), rgba(34, 197, 94, 0.9));
+  background: transparent;
 }
 
 .croco-settings-shell {
@@ -1040,6 +1039,12 @@
   display: grid;
   gap: 10px;
   align-content: start;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.croco-settings-nav::-webkit-scrollbar {
+  height: 0;
 }
 
 .croco-settings-tab {
@@ -1423,23 +1428,54 @@
 
 @media (max-width: 768px) {
   .croco-settings-overlay {
-    padding: var(--croco-modal-pad-y) var(--croco-modal-pad-x);
+    --croco-modal-pad-x: 0px;
+    padding: 0;
+    place-items: stretch;
   }
   .croco-settings-window {
-    width: min(720px, calc(100% - 10px));
-    max-width: min(720px, calc(100% - 10px));
-    max-height: calc(var(--croco-vh) - (var(--croco-modal-pad-y) * 2));
-    border-radius: 20px;
-    padding: 14px 12px 16px;
-    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
+    width: 100%;
+    max-width: 100%;
+    height: var(--croco-vh);
+    max-height: var(--croco-vh);
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    overflow: hidden;
   }
   .croco-settings-window.croco-settings-window--crocodile {
-    width: min(720px, calc(100% - 10px));
-    max-width: min(720px, calc(100% - 10px));
-    max-height: calc(var(--croco-vh) - (var(--croco-modal-pad-y) * 2));
+    width: 100%;
+    max-width: 100%;
+    height: var(--croco-vh);
+    max-height: var(--croco-vh);
+  }
+  .croco-settings-window::after {
+    display: none;
+  }
+  .croco-settings-shell {
+    min-height: 100%;
+    gap: 0;
+    grid-template-rows: auto 1fr auto;
+  }
+  .croco-settings-head {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    padding: 14px 16px;
+    background: rgba(9, 14, 22, 0.96);
+    backdrop-filter: blur(10px) saturate(1.2);
   }
   .croco-settings-body {
     grid-template-columns: 1fr;
+    padding: 10px 16px 18px;
+    overflow: auto;
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .croco-settings-body::-webkit-scrollbar {
+    width: 0;
+    height: 0;
   }
   .croco-settings-nav {
     grid-auto-flow: column;
@@ -1447,6 +1483,13 @@
     grid-template-columns: none;
     overflow-x: auto;
     padding-bottom: 6px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: rgba(9, 14, 22, 0.92);
+    backdrop-filter: blur(8px) saturate(1.1);
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
   .croco-settings-tab {
     min-width: 160px;
@@ -1459,6 +1502,12 @@
   .croco-settings-footer {
     flex-direction: column;
     align-items: stretch;
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    background: rgba(9, 14, 22, 0.96);
+    backdrop-filter: blur(10px) saturate(1.2);
+    padding: 12px 16px 16px;
   }
   .croco-settings-footnote {
     text-align: center;
