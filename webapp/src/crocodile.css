@@ -762,9 +762,8 @@
     radial-gradient(120% 120% at 85% 20%, rgba(52, 211, 153, 0.14), transparent),
     rgba(4, 10, 16, 0.72);
   backdrop-filter: blur(6px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   padding: var(--croco-modal-pad-y) var(--croco-modal-pad-x);
   z-index: 1200;
   overflow: hidden;
@@ -774,6 +773,10 @@
   position: relative;
   width: min(600px, calc(100% - 12px));
   max-width: min(600px, calc(100% - 12px));
+  --croco-modal-max-h: min(
+    calc(var(--croco-vh) - (var(--croco-modal-pad-y) * 2)),
+    calc(var(--croco-vh) * 0.78)
+  );
   border-radius: 18px;
   padding: 16px;
   background:
@@ -784,7 +787,7 @@
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
   overflow-x: hidden;
   overflow-y: auto;
-  max-height: calc(var(--croco-vh) - (var(--croco-modal-pad-y) * 2));
+  max-height: var(--croco-modal-max-h);
   will-change: transform, opacity;
   transform: translateZ(0);
   margin: 0;
