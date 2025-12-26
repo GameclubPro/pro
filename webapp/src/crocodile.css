@@ -738,7 +738,6 @@
   position: fixed;
   inset: 0;
   --croco-safe-top-extra: 12px;
-  --croco-settings-top-gap: clamp(8px, 1.5vh, 16px);
   --croco-safe-top: calc(
     max(
       var(--app-inset-top),
@@ -762,7 +761,7 @@
     rgba(4, 10, 16, 0.72);
   backdrop-filter: blur(6px);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   padding: var(--croco-safe-top) var(--croco-safe-left) var(--croco-safe-bottom) var(--croco-safe-right);
   z-index: 1200;
@@ -773,7 +772,6 @@
   position: relative;
   width: min(600px, calc(100% - 12px));
   max-width: min(600px, calc(100% - 12px));
-  margin-top: var(--croco-settings-top-gap);
   border-radius: 18px;
   padding: 16px;
   background:
@@ -784,7 +782,7 @@
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
   overflow-x: hidden;
   overflow-y: auto;
-  max-height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom) - var(--croco-settings-top-gap) - 20px);
+  max-height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom) - 20px);
   will-change: transform, opacity;
   transform: translateZ(0);
   margin: 0;
@@ -1089,7 +1087,7 @@
   .croco-settings-window {
     width: min(600px, calc(100% - 10px));
     max-width: min(600px, calc(100% - 10px));
-    max-height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom) - var(--croco-settings-top-gap));
+    max-height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom));
     border-radius: 18px;
     padding: 14px 12px 16px;
     box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
