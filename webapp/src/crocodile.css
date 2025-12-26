@@ -769,6 +769,12 @@
   overflow: hidden;
 }
 
+.croco-settings-overlay.croco-settings-overlay--crocodile {
+  display: grid;
+  place-items: center;
+  padding: var(--croco-modal-pad-y) var(--croco-modal-pad-x);
+}
+
 .croco-settings-window {
   position: relative;
   width: min(600px, calc(100% - 12px));
@@ -801,6 +807,14 @@
   padding-right: 18px;
   display: flex;
   flex-direction: column;
+}
+
+.croco-settings-window.croco-settings-window--crocodile {
+  width: min(600px, calc(100% - 12px));
+  max-width: min(600px, calc(100% - 12px));
+  height: auto;
+  max-height: var(--croco-modal-max-h);
+  margin: 0;
 }
 
 .croco-settings-window::before {
@@ -1096,6 +1110,11 @@
     border-radius: 18px;
     padding: 14px 12px 16px;
     box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
+  }
+  .croco-settings-window.croco-settings-window--crocodile {
+    width: min(600px, calc(100% - 10px));
+    max-width: min(600px, calc(100% - 10px));
+    max-height: calc(var(--croco-vh) - (var(--croco-modal-pad-y) * 2));
   }
   .croco-settings-window .settings-head {
     flex-direction: column;
