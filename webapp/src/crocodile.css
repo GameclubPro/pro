@@ -755,7 +755,7 @@
   --croco-safe-left: max(var(--safe-left, 0px), env(safe-area-inset-left, 0px));
   --croco-safe-right: max(var(--safe-right, 0px), env(safe-area-inset-right, 0px));
   --croco-vh: var(--tg-vh, 100svh);
-  --croco-modal-pad-y: max(var(--croco-safe-top), var(--croco-safe-bottom), 16px);
+  --croco-modal-pad-y: max(var(--croco-safe-top), var(--croco-safe-bottom), clamp(24px, 6vh, 72px));
   --croco-modal-pad-x: max(var(--croco-safe-left), var(--croco-safe-right), 12px);
   background:
     radial-gradient(120% 120% at 15% 10%, rgba(34, 197, 94, 0.12), transparent),
