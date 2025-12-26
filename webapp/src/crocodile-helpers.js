@@ -97,11 +97,23 @@ export const PACKS = {
   ],
 };
 
+const dedupeWords = (words) => {
+  const seen = new Set();
+  return words.filter((word) => {
+    const key = word.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 export const parseWords = (text) =>
-  (text || "")
-    .split(/\r?\n/)
-    .map((w) => w.trim())
-    .filter(Boolean);
+  dedupeWords(
+    (text || "")
+      .split(/\r?\n/)
+      .map((w) => w.trim())
+      .filter(Boolean)
+  );
 
 const splitWordInput = (text) =>
   (text || "")
@@ -112,7 +124,7 @@ const splitWordInput = (text) =>
 export const appendCustomWords = (currentText, incoming) => {
   const additions = splitWordInput(incoming);
   if (!additions.length) return currentText || "";
-  const merged = [...parseWords(currentText), ...additions];
+  const merged = dedupeWords([...parseWords(currentText), ...additions]);
   return merged.join("\n");
 };
 
@@ -138,11 +150,12 @@ export const buildWordPool = (settings, customWords) => {
   const withLabel = (words, level) => words.map((w) => ({ id: `${level}-${w}`, word: w, level }));
   const pool = [];
   const selected = normalizePacks(settings.difficulty, customWords.length > 0);
+  const customUnique = dedupeWords(customWords);
   selected.forEach((key) => {
     if (key === "easy") pool.push(...withLabel(PACKS.easy, "easy"));
     else if (key === "medium") pool.push(...withLabel(PACKS.medium, "medium"));
     else if (key === "hard") pool.push(...withLabel(PACKS.hard, "hard"));
-    else if (key === "custom") pool.push(...withLabel(customWords, "custom"));
+    else if (key === "custom") pool.push(...withLabel(customUnique, "custom"));
   });
   return pool.length
     ? pool

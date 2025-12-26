@@ -155,15 +155,16 @@ const findNextActive = (perTeam, currentIdx, limit) => {
   return null;
 };
 
-const useHaptics = () => {
+const useHaptics = (enabled) => {
   const fire = useCallback((style = "light") => {
+    if (!enabled) return;
     const tg = window?.Telegram?.WebApp;
     try {
       tg?.HapticFeedback?.impactOccurred?.(style);
     } catch {
       /* noop */
     }
-  }, []);
+  }, [enabled]);
   return fire;
 };
 
@@ -240,6 +241,7 @@ const reducer = (state, action) => {
         settings,
         roster,
         perTeam: roster.map(() => 0),
+        streaks: roster.map(() => 0),
         activeIndex: 0,
         stage: "setup",
         timerMs: settings.roundSeconds * 1000,
@@ -250,6 +252,7 @@ const reducer = (state, action) => {
         ...state,
         roster: action.roster,
         perTeam: action.roster.map(() => 0),
+        streaks: action.roster.map(() => 0),
         activeIndex: 0,
       };
     }
@@ -264,7 +267,7 @@ const reducer = (state, action) => {
         roster,
         perTeam,
         used: [],
-        streak: 0,
+        streaks: roster.map(() => 0),
         stage: "switch",
         activeIndex: 0,
         timerMs: state.settings.roundSeconds * 1000,
@@ -306,13 +309,24 @@ const reducer = (state, action) => {
       return { ...state, running: false, isPaused: false };
     }
     case "ANSWER": {
-      const streak = action.kind === "correct" ? state.streak + 1 : 0;
+      const nextStreaks =
+        state.streaks && state.streaks.length
+          ? state.streaks.map((value, idx) =>
+              idx === state.activeIndex
+                ? action.kind === "correct"
+                  ? value + 1
+                  : 0
+                : value
+            )
+          : state.roster.map((_, idx) =>
+              idx === state.activeIndex ? (action.kind === "correct" ? 1 : 0) : 0
+            );
       return {
         ...state,
         roster: action.roster || state.roster,
         perTeam: action.perTeam || state.perTeam,
         used: action.used || state.used,
-        streak,
+        streaks: nextStreaks,
         lastResult: action.kind,
         word: action.word ?? state.word,
       };
@@ -347,7 +361,7 @@ const reducer = (state, action) => {
         word: null,
         used: [],
         perTeam: state.roster.map(() => 0),
-        streak: 0,
+        streaks: state.roster.map(() => 0),
         lastResult: null,
         activeIndex: 0,
         timerMs: state.settings.roundSeconds * 1000,
@@ -381,6 +395,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
       settings: { ...DEFAULT_SETTINGS, ...savedSettings },
       roster,
       perTeam: roster.map(() => 0),
+      streaks: roster.map(() => 0),
       stage: "setup",
       activeIndex: 0,
       timerMs: (savedSettings?.roundSeconds || DEFAULT_SETTINGS.roundSeconds) * 1000,
@@ -388,7 +403,6 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
       isPaused: false,
       word: null,
       used: [],
-      streak: 0,
       lastResult: null,
       winner: [],
       tip: TIPS[0],
@@ -398,7 +412,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   });
   const [lastStage, setLastStage] = useState("setup");
 
-  const haptic = useHaptics();
+  const haptic = useHaptics(state.settings.sound);
   const chime = useChime(state.settings.sound);
   const { short: shortBeep, long: longBeep } = useBeep(state.settings.sound);
   const progressGiven = useRef(false);
@@ -413,6 +427,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   const wordsPlayed = state.perTeam.reduce((sum, n) => sum + n, 0);
   const wordsTotal = wordsLimit * Math.max(state.roster.length, 1);
   const wordsLeft = Math.max(0, wordsTotal - wordsPlayed);
+  const wordsRemaining = Math.max(0, wordsLimit - (state.perTeam[state.activeIndex] ?? 0));
   const timePct = clamp(state.timerMs / (state.settings.roundSeconds * 1000), 0, 1);
   const roundNumber = wordsPlayed + 1;
 
@@ -458,10 +473,22 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   useEffect(() => {
     if (!setBackHandler) return undefined;
     setBackHandler(() => {
-      goBack?.();
+      const activeMatch = state.stage === "round" || state.stage === "switch";
+      if (!activeMatch) {
+        goBack?.();
+        return;
+      }
+      const shouldLeave = window.confirm("Матч не окончен. Выйти?");
+      if (shouldLeave) {
+        goBack?.();
+        return;
+      }
+      if (state.stage === "round" && state.running) {
+        dispatch({ type: "PAUSE" });
+      }
     });
     return () => setBackHandler(null);
-  }, [setBackHandler, goBack]);
+  }, [setBackHandler, goBack, state.stage, state.running]);
 
   useEffect(() => {
     if (state.stage === "summary" && !progressGiven.current) {
@@ -497,7 +524,8 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
 
   const handleBeginRound = () => {
     haptic("light");
-    const next = pickWord(wordPool, state.used, state.streak, state.settings.autoDifficulty);
+    const currentStreak = state.streaks?.[state.activeIndex] ?? 0;
+    const next = pickWord(wordPool, state.used, currentStreak, state.settings.autoDifficulty);
     const nextTip = TIPS[Math.floor(Math.random() * TIPS.length)];
     dispatch({ type: "SET_WORD", word: next, tip: nextTip });
     dispatch({ type: "BEGIN_ROUND" });
@@ -646,6 +674,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
             seconds={secondsLeft}
             running={state.running}
             isPaused={state.isPaused}
+            isMasked={isSwitching}
             onPauseToggle={() =>
               dispatch({ type: state.running ? "PAUSE" : "RESUME" })
             }
@@ -690,7 +719,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
                 mode={state.settings.mode}
                 round={roundNumber}
                 totalRounds={wordsTotal}
-                wordsRemaining={wordsLeft}
+                wordsRemaining={wordsRemaining}
                 onBegin={handleBeginRound}
               />
             </motion.div>
@@ -1017,102 +1046,102 @@ function Setup({
       {portalTarget ? createPortal(settingsModal, portalTarget) : settingsModal}
 
       <div className="setup-shell">
-        <div className="setup-panel-wrap">
-          <div className="croco-head" aria-hidden="true">
+        <div className="setup-hero" aria-hidden="true">
+          <div className="croco-head">
             <img src={crocoHead} alt="" />
           </div>
-          <div className="croco-hands hold-panel" aria-hidden="true">
+          <div className="croco-hands">
             <img src={crocoHandsLeft} alt="" className="hand hand-left" />
             <img src={crocoHandsRight} alt="" className="hand hand-right" />
           </div>
-          <div className="croco-legs" aria-hidden="true">
+          <div className="croco-legs">
             <img src={crocoLegs} alt="" />
           </div>
+        </div>
 
-          <div className="panel setup-panel">
-            <div className="setup-content">
-              <div className="panel-head with-gear">
-                <div>
-                  <div className="eyebrow">Крокодил</div>
-                  <div className="panel-title">Собери состав и жми старт</div>
-                </div>
-                <motion.button
-                  className="settings-gear"
-                  onClick={() => setSettingsOpen(true)}
-                  whileTap={{ scale: 0.92 }}
-                  whileHover={{ rotate: -4 }}
-                  aria-label="Открыть настройки"
-                >
-                  <span className="gear-inner">
-                    <Settings size={18} />
-                  </span>
-                  <span className="gear-glow" />
-                </motion.button>
+        <div className="panel setup-panel">
+          <div className="setup-content">
+            <div className="panel-head with-gear">
+              <div>
+                <div className="eyebrow">Крокодил</div>
+                <div className="panel-title">Собери состав и жми старт</div>
               </div>
-
-              <div className="chips-row">
-                <button
-                  className={`seg ${modeIsTeams ? "seg-active" : ""}`}
-                  onClick={() => switchMode("teams")}
-                >
-                  <Users size={16} />
-                  Команды
-                </button>
-                <button
-                  className={`seg ${!modeIsTeams ? "seg-active" : ""}`}
-                  onClick={() => switchMode("solo")}
-                >
-                  <Zap size={16} />
-                  Соло
-                </button>
-              </div>
-
-              <div className="roster-shell">
-                <div className="roster-list">
-                  {localRoster.map((item) => (
-                    <div className="roster-row" key={item.id}>
-                      <button
-                        className="avatar-btn"
-                        style={{ background: item.color }}
-                        onClick={() => shuffleColor(item.id)}
-                        aria-label="Сменить цвет"
-                      >
-                        {item.emoji}
-                      </button>
-                      <input
-                        value={item.name}
-                        onChange={(e) => changeName(item.id, e.target.value)}
-                        maxLength={18}
-                        aria-label="Имя"
-                      />
-                      <button
-                        className="icon-btn"
-                        onClick={() => removeMember(item.id)}
-                        disabled={localRoster.length <= minPlayers}
-                        aria-label="Удалить"
-                        title="Удалить"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
-                  <button className="ghost-line" onClick={addMember}>
-                    <Sparkles size={16} />
-                    Добавить {modeIsTeams ? "команду" : "игрока"}
-                  </button>
-                </div>
-              </div>
-
-              <motion.button className="cta" whileTap={{ scale: 0.98 }} onClick={onStart} disabled={!canStart}>
-                <Sparkles size={18} />
-                Старт
+              <motion.button
+                className="settings-gear"
+                onClick={() => setSettingsOpen(true)}
+                whileTap={{ scale: 0.92 }}
+                whileHover={{ rotate: -4 }}
+                aria-label="Открыть настройки"
+              >
+                <span className="gear-inner">
+                  <Settings size={18} />
+                </span>
+                <span className="gear-glow" />
               </motion.button>
-              {!canStart && (
-                <div className="small-meta danger">
-                  Нужно минимум 2 участника и хотя бы одно слово.
-                </div>
-              )}
             </div>
+
+            <div className="chips-row">
+              <button
+                className={`seg ${modeIsTeams ? "seg-active" : ""}`}
+                onClick={() => switchMode("teams")}
+              >
+                <Users size={16} />
+                Команды
+              </button>
+              <button
+                className={`seg ${!modeIsTeams ? "seg-active" : ""}`}
+                onClick={() => switchMode("solo")}
+              >
+                <Zap size={16} />
+                Соло
+              </button>
+            </div>
+
+            <div className="roster-shell">
+              <div className="roster-list">
+                {localRoster.map((item) => (
+                  <div className="roster-row" key={item.id}>
+                    <button
+                      className="avatar-btn"
+                      style={{ background: item.color }}
+                      onClick={() => shuffleColor(item.id)}
+                      aria-label="Сменить цвет"
+                    >
+                      {item.emoji}
+                    </button>
+                    <input
+                      value={item.name}
+                      onChange={(e) => changeName(item.id, e.target.value)}
+                      maxLength={18}
+                      aria-label="Имя"
+                    />
+                    <button
+                      className="icon-btn"
+                      onClick={() => removeMember(item.id)}
+                      disabled={localRoster.length <= minPlayers}
+                      aria-label="Удалить"
+                      title="Удалить"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+                <button className="ghost-line" onClick={addMember}>
+                  <Sparkles size={16} />
+                  Добавить {modeIsTeams ? "команду" : "игрока"}
+                </button>
+              </div>
+            </div>
+
+            <motion.button className="cta" whileTap={{ scale: 0.98 }} onClick={onStart} disabled={!canStart}>
+              <Sparkles size={18} />
+              Старт
+            </motion.button>
+            {!canStart && (
+              <div className="small-meta danger">
+                Нужно минимум 2 участника и хотя бы одно слово.
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1173,6 +1202,7 @@ function Round({
   seconds,
   running,
   isPaused,
+  isMasked = false,
   onPauseToggle,
   onAnswer,
   lastResult,
@@ -1188,37 +1218,41 @@ function Round({
 
   return (
     <div className="round">
-      <TimerPacman
-        pct={timePct}
-        seconds={seconds}
-        running={running}
-        current={current}
-        roundProgress={roundProgress}
-        dimmed={showTimeoutPrompt}
-        onTogglePause={onPauseToggle}
-      />
+      <div className="round-stack">
+        <TimerPacman
+          pct={timePct}
+          seconds={seconds}
+          running={running}
+          current={current}
+          roundProgress={roundProgress}
+          dimmed={showTimeoutPrompt}
+          onTogglePause={onPauseToggle}
+        />
 
-      <WordCard word={word} tip={tip} hints={hints} lastResult={lastResult} />
+      <WordCard word={word} tip={tip} hints={hints} lastResult={lastResult} masked={isMasked} />
+      </div>
 
-      <div className="actions-grid">
-        <motion.button
-          className="option-btn"
-          whileTap={{ scale: 0.98 }}
-          onClick={() => onAnswer(true)}
-          disabled={!word || showTimeoutPrompt}
-        >
-          <Check size={18} />
-          Угадали
-        </motion.button>
-        <motion.button
-          className="option-btn secondary"
-          whileTap={{ scale: 0.98 }}
-          onClick={() => onAnswer(false)}
-          disabled={!word || showTimeoutPrompt}
-        >
-          <RefreshCw size={18} />
-          Пропуск
-        </motion.button>
+      <div className="actions-bar">
+        <div className="actions-grid">
+          <motion.button
+            className="option-btn"
+            whileTap={{ scale: 0.98 }}
+            onClick={() => onAnswer(true)}
+            disabled={!word || showTimeoutPrompt}
+          >
+            <Check size={18} />
+            Угадали
+          </motion.button>
+          <motion.button
+            className="option-btn secondary"
+            whileTap={{ scale: 0.98 }}
+            onClick={() => onAnswer(false)}
+            disabled={!word || showTimeoutPrompt}
+          >
+            <RefreshCw size={18} />
+            Пропуск
+          </motion.button>
+        </div>
       </div>
 
       {isPaused && (
@@ -1338,15 +1372,22 @@ function TimerPacman({
   );
 }
 
-function WordCard({ word, tip, hints, lastResult }) {
+function WordCard({ word, tip, hints, lastResult, masked = false }) {
   const resultLabel = lastResult === "correct" ? "зачёт" : "пропуск";
-  const resultClass = `pill word-result${
-    lastResult ? ` ${lastResult === "correct" ? "pill-success" : "pill-warn"}` : " is-hidden"
-  }`;
+  const resultClass = masked
+    ? "pill word-result is-hidden"
+    : `pill word-result${
+        lastResult ? ` ${lastResult === "correct" ? "pill-success" : "pill-warn"}` : " is-hidden"
+      }`;
+  const levelLabel = masked ? "..." : word?.level || "...";
+  const mainText = masked ? "Смена хода" : word?.word || "Готовимся...";
+  const subText = masked
+    ? "Передай экран следующей команде."
+    : "Покажи без слов, звуков и букв. Жестикулируй крупно.";
 
   return (
     <motion.div
-      className="word-card"
+      className={`word-card${masked ? " is-masked" : ""}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
@@ -1354,15 +1395,15 @@ function WordCard({ word, tip, hints, lastResult }) {
     >
       <div className="word-top">
         <span className="pill">
-          <Activity size={14} /> {word?.level || "..."}
+          <Activity size={14} /> {levelLabel}
         </span>
-        <span className={resultClass} aria-hidden={!lastResult}>
+        <span className={resultClass} aria-hidden={masked || !lastResult}>
           {resultLabel}
         </span>
       </div>
-      <div className="word-main">{word?.word || "Готовимся..."}</div>
-      <div className="word-sub">Покажи без слов, звуков и букв. Жестикулируй крупно.</div>
-      {hints && tip && (
+      <div className="word-main">{mainText}</div>
+      <div className="word-sub">{subText}</div>
+      {!masked && hints && tip && (
         <div className="hint-bubble">
           <Sparkles size={14} />
           {tip}

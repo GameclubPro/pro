@@ -12,6 +12,10 @@ describe("crocodile helpers", () => {
     expect(parseWords(" кот \n\nдом ")).toEqual(["кот", "дом"]);
   });
 
+  it("dedupes custom words ignoring case", () => {
+    expect(parseWords("кот\nКот\nдом\nдом")).toEqual(["кот", "дом"]);
+  });
+
   it("normalizes packs selection with custom flag", () => {
     expect(normalizePacks(["easy", "custom"], true)).toEqual(["easy", "custom"]);
     expect(normalizePacks("hard", false)).toEqual(["hard"]);
@@ -22,6 +26,7 @@ describe("crocodile helpers", () => {
     const current = "кот\nдом";
     expect(appendCustomWords(current, "лампа")).toBe("кот\nдом\nлампа");
     expect(appendCustomWords(current, "яблоко, телефон")).toBe("кот\nдом\nяблоко\nтелефон");
+    expect(appendCustomWords(current, "кот, Дом")).toBe("кот\nдом");
     expect(appendCustomWords(current, "   \n  ")).toBe("кот\nдом");
   });
 
@@ -38,5 +43,10 @@ describe("crocodile helpers", () => {
 
     const mixed = buildWordPool({ difficulty: ["custom"], wordsPerTeam: 3 }, ["ручка"]);
     expect(mixed[0]).toMatchObject({ word: "ручка", level: "custom" });
+  });
+
+  it("dedupes custom words when building pool", () => {
+    const pool = buildWordPool({ difficulty: ["custom"], wordsPerTeam: 3 }, ["кот", "Кот"]);
+    expect(pool).toHaveLength(1);
   });
 });
