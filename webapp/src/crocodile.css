@@ -1723,7 +1723,7 @@
   }
 }
 
-.word-card {
+.croco-word-card {
   position: relative;
   padding: 0;
   border-radius: var(--croco-radius-l);
@@ -1741,7 +1741,7 @@
   overflow: hidden;
 }
 
-.word-visual {
+.croco-word-visual {
   width: 100%;
   min-height: clamp(170px, 28vh, 250px);
   display: grid;
@@ -1755,20 +1755,20 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.word-card.is-masked {
+.croco-word-card.is-masked {
   background: linear-gradient(155deg, rgba(6, 12, 10, 0.92), rgba(8, 14, 12, 0.98));
 }
 
-.word-card.is-masked .word-visual {
+.croco-word-card.is-masked .croco-word-visual {
   filter: saturate(0.5) brightness(0.8);
 }
 
-.word-card.is-masked .word-visual-img {
+.croco-word-card.is-masked .croco-word-visual-img {
   opacity: 0.35;
   filter: grayscale(0.6) blur(1px);
 }
 
-.word-visual-img {
+.croco-word-visual-img {
   width: min(70%, 260px);
   max-height: min(24vh, 220px);
   height: auto;
@@ -1776,7 +1776,7 @@
   filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.35));
 }
 
-.word-footer {
+.croco-word-footer {
   width: 100%;
   padding: clamp(16px, 4.5vw, 28px);
   min-height: clamp(90px, 18vh, 150px);
@@ -1787,7 +1787,7 @@
   text-align: center;
 }
 
-.word-main {
+.croco-word-main {
   width: 100%;
   font-size: clamp(34px, 7vw, 54px);
   font-weight: 900;
@@ -2113,16 +2113,16 @@
     --croco-head-space: clamp(150px, 22vh, 210px);
     --croco-legs-space: clamp(160px, 24vh, 230px);
   }
-  .word-card {
+  .croco-word-card {
     min-height: clamp(220px, 30vh, 300px);
   }
-  .word-visual {
+  .croco-word-visual {
     min-height: clamp(140px, 22vh, 200px);
   }
-  .word-visual-img {
+  .croco-word-visual-img {
     max-height: min(20vh, 180px);
   }
-  .word-footer {
+  .croco-word-footer {
     min-height: clamp(72px, 16vh, 120px);
   }
   .card.hero.switch-card {
@@ -2243,7 +2243,7 @@
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .panel,
   .setup-panel::before,
-  .word-card,
+  .croco-word-card,
   .actions-bar,
   .croco .switch-overlay {
     backdrop-filter: none;

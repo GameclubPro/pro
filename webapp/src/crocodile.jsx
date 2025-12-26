@@ -1381,17 +1381,17 @@ function WordCard({ word, masked = false }) {
 
   return (
     <motion.div
-      className={`word-card${masked ? " is-masked" : ""}`}
+      className={`croco-word-card${masked ? " is-masked" : ""}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       layout
     >
-      <div className="word-visual" aria-hidden="true">
-        <img src={crocoHead} alt="" className="word-visual-img" />
+      <div className="croco-word-visual" aria-hidden="true">
+        <img src={crocoHead} alt="" className="croco-word-visual-img" />
       </div>
-      <div className="word-footer">
-        <div className="word-main">{mainText}</div>
+      <div className="croco-word-footer">
+        <div className="croco-word-main">{mainText}</div>
       </div>
     </motion.div>
   );
