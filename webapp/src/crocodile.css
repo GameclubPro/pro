@@ -1379,12 +1379,12 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin: calc(-1 * var(--croco-page-pad-y)) auto 0;
-  padding: 8px 14px;
+  margin: calc(-1 * (var(--croco-safe-top) + var(--croco-page-pad-y))) auto 0;
+  padding: 6px 0 0;
   border-radius: 999px;
-  border: 1px solid var(--croco-border);
-  background: rgba(6, 10, 14, 0.68);
-  box-shadow: var(--croco-shadow);
+  border: none;
+  background: transparent;
+  box-shadow: none;
   max-width: min(92vw, 520px);
 }
 
