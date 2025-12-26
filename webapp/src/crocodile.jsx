@@ -23,6 +23,7 @@ import {
   buildWordPool,
   normalizePacks,
   parseWords,
+  PACKS,
   removeCustomWordAt,
 } from "./crocodile-helpers";
 import crocoHead from "../crocohead.png";
@@ -748,12 +749,21 @@ function Setup({
 }) {
   const [localRoster, setLocalRoster] = useState(roster);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [activeSettings, setActiveSettings] = useState("match");
   const selectedPacks = useMemo(
     () => normalizePacks(settings.difficulty, customWords.length > 0),
     [settings.difficulty, customWords.length]
   );
-  const [customExpanded, setCustomExpanded] = useState(selectedPacks.includes("custom"));
   const [customInput, setCustomInput] = useState("");
+  const packCounts = useMemo(
+    () => ({
+      easy: PACKS.easy.length,
+      medium: PACKS.medium.length,
+      hard: PACKS.hard.length,
+      custom: customWords.length,
+    }),
+    [customWords.length]
+  );
   const modeIsTeams = settings.mode === "teams";
   const minPlayers = 2;
   const timerPct = clamp(((settings.roundSeconds - 20) / (120 - 20)) * 100, 0, 100);
@@ -765,8 +775,8 @@ function Setup({
   }, [roster]);
 
   useEffect(() => {
-    setCustomExpanded(selectedPacks.includes("custom"));
-  }, [selectedPacks]);
+    if (settingsOpen) setActiveSettings("match");
+  }, [settingsOpen]);
 
   const updateRoster = (next) => {
     setLocalRoster(next);
@@ -822,7 +832,6 @@ function Setup({
         : selectedPacks
       : [...selectedPacks, key];
     onChangeSetting("difficulty", next);
-    if (key === "custom") setCustomExpanded(next.includes("custom"));
   };
 
   const handleAddCustom = () => {
@@ -833,7 +842,9 @@ function Setup({
     }
     onChangeCustom(nextText);
     setCustomInput("");
-    setCustomExpanded(true);
+    if (!selectedPacks.includes("custom")) {
+      togglePack("custom");
+    }
   };
 
   const handleRemoveCustom = (index) => {
@@ -842,6 +853,35 @@ function Setup({
       onChangeCustom(nextText);
     }
   };
+
+  const updateSettingNumber = (key, value, min, max) => {
+    if (Number.isNaN(value)) return;
+    onChangeSetting(key, clamp(value, min, max));
+  };
+
+  const resetSettings = () => {
+    onChangeSetting("roundSeconds", DEFAULT_SETTINGS.roundSeconds);
+    onChangeSetting("wordsPerTeam", DEFAULT_SETTINGS.wordsPerTeam);
+    onChangeSetting("difficulty", DEFAULT_SETTINGS.difficulty);
+    onChangeSetting("autoDifficulty", DEFAULT_SETTINGS.autoDifficulty);
+    onChangeSetting("hints", DEFAULT_SETTINGS.hints);
+    onChangeSetting("sound", DEFAULT_SETTINGS.sound);
+    onChangeCustom("");
+    setCustomInput("");
+  };
+
+  const packOptions = [
+    { key: "easy", label: "Лайт", meta: "Разогрев, простые слова" },
+    { key: "medium", label: "Стандарт", meta: "Баланс сложности" },
+    { key: "hard", label: "Хард", meta: "Для опытных" },
+    {
+      key: "custom",
+      label: "Свои",
+      meta: customWords.length ? "Ваши слова" : "Добавь свои",
+    },
+  ];
+
+  const showCustom = selectedPacks.includes("custom") || customWords.length > 0;
 
   const settingsModal = (
     <AnimatePresence>
@@ -862,175 +902,331 @@ function Setup({
             transition={{ type: "tween", ease: "easeOut", duration: 0.22 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="settings-head">
-              <div>
-                <div className="settings-title">Настройки матча</div>
-                <div className="muted">таймер, слова, подсказки</div>
-              </div>
-              <motion.button
-                className="settings-close"
-                whileTap={{ scale: 0.95 }}
-                whileHover={{ rotate: 4 }}
-                onClick={() => setSettingsOpen(false)}
-                aria-label="Закрыть настройки"
-              >
-                <X size={16} />
-              </motion.button>
-            </div>
-
-            <div className="settings-grid">
-              <div className="setting-card accent">
-                <div className="setting-card-top">
-                  <span className="pill">Таймер</span>
-                  <div className="setting-number">{settings.roundSeconds}s</div>
+            <div className="croco-settings-shell">
+              <div className="croco-settings-head">
+                <div className="croco-settings-head-copy">
+                  <div className="croco-settings-title">Настройки</div>
+                  <div className="croco-settings-subtitle">Матч / Колода / Эффекты</div>
                 </div>
-                <div className="settings-slider-row">
-                  <input
-                    type="range"
-                    min={20}
-                    max={120}
-                    step={5}
-                    value={settings.roundSeconds}
-                    onChange={(e) => onChangeSetting("roundSeconds", Number(e.target.value))}
-                    className="settings-slider"
-                    style={{ "--slider-progress": `${timerPct}%` }}
-                  />
-                  <div className="meter-scale">
-                    <span>20с</span>
-                    <span>120с</span>
-                  </div>
-                </div>
+                <motion.button
+                  className="croco-settings-close"
+                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ rotate: 4 }}
+                  onClick={() => setSettingsOpen(false)}
+                  aria-label="Закрыть настройки"
+                >
+                  <X size={16} />
+                </motion.button>
               </div>
 
-              <div className="setting-card glass">
-                <div className="setting-card-top">
-                  <span className="pill">Слова на команду</span>
-                  <div className="setting-number">{settings.wordsPerTeam}</div>
-                </div>
-                <div className="settings-slider-row">
-                  <input
-                    type="range"
-                    min={3}
-                    max={30}
-                    step={1}
-                    value={settings.wordsPerTeam}
-                    onChange={(e) => onChangeSetting("wordsPerTeam", Number(e.target.value))}
-                    className="settings-slider"
-                    style={{ "--slider-progress": `${wordsPct}%` }}
-                  />
-                  <div className="meter-scale">
-                    <span>3</span>
-                    <span>30</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+              <div className="croco-settings-body">
+                <nav className="croco-settings-nav" aria-label="Разделы">
+                  <button
+                    className={`croco-settings-tab ${activeSettings === "match" ? "is-active" : ""}`}
+                    onClick={() => setActiveSettings("match")}
+                    aria-pressed={activeSettings === "match"}
+                    aria-controls="croco-settings-match"
+                  >
+                    <span className="croco-settings-tab-ico">
+                      <Activity size={16} />
+                    </span>
+                    <span className="croco-settings-tab-text">
+                      <span className="croco-settings-tab-title">Матч</span>
+                      <span className="croco-settings-tab-sub">Темп и таймер</span>
+                    </span>
+                  </button>
+                  <button
+                    className={`croco-settings-tab ${activeSettings === "words" ? "is-active" : ""}`}
+                    onClick={() => setActiveSettings("words")}
+                    aria-pressed={activeSettings === "words"}
+                    aria-controls="croco-settings-words"
+                  >
+                    <span className="croco-settings-tab-ico">
+                      <Wand2 size={16} />
+                    </span>
+                    <span className="croco-settings-tab-text">
+                      <span className="croco-settings-tab-title">Колода</span>
+                      <span className="croco-settings-tab-sub">Пакеты и слова</span>
+                    </span>
+                  </button>
+                  <button
+                    className={`croco-settings-tab ${activeSettings === "effects" ? "is-active" : ""}`}
+                    onClick={() => setActiveSettings("effects")}
+                    aria-pressed={activeSettings === "effects"}
+                    aria-controls="croco-settings-effects"
+                  >
+                    <span className="croco-settings-tab-ico">
+                      <Volume2 size={16} />
+                    </span>
+                    <span className="croco-settings-tab-text">
+                      <span className="croco-settings-tab-title">Эффекты</span>
+                      <span className="croco-settings-tab-sub">Звук и авто-сложность</span>
+                    </span>
+                  </button>
+                </nav>
 
-          <div className="settings-block">
-              <div className="section-header">
-                <div className="section-title">Колода слов</div>
-                <span className="pill">Всего: {wordPool.length}</span>
-              </div>
-              <div className="pack-grid">
-                {[
-                  { key: "easy", label: "Лайт" },
-                  { key: "medium", label: "Стандарт" },
-                  { key: "hard", label: "Хард" },
-                  { key: "custom", label: "Свои" },
-                ].map((p) => {
-                  const active = selectedPacks.includes(p.key);
-                  return (
-                    // несколько паков можно выбрать одновременно
-                    <button
-                      key={p.key}
-                      className={`pack-chip ${active ? "pack-active" : ""}`}
-                      onClick={() => togglePack(p.key)}
-                      aria-pressed={active}
-                    >
-                      <div className="pack-top">
-                        <span className="pack-sticker" aria-hidden>{PACK_STICKERS[p.key]}</span>
-                        <span className="pack-label">{p.label}</span>
-                        {active && (
-                          <span className="pill check-pill" aria-label="Пак выбран">
-                            <Check size={14} />
-                          </span>
-                        )}
+                <div className="croco-settings-content">
+                  <section
+                    id="croco-settings-match"
+                    className={`croco-settings-section ${activeSettings === "match" ? "is-active" : ""}`}
+                  >
+                    <div className="croco-settings-section-head">
+                      <div>
+                        <div className="croco-settings-section-title">Ритм матча</div>
+                        <div className="croco-settings-section-sub">Таймер и лимит слов</div>
                       </div>
-                    </button>
-                  );
-                })}
-              </div>
-              {customExpanded && (
-                <div className="custom-block">
-                  <div className="custom-add-row">
-                    <input
-                      className="croco-textarea custom-input"
-                      value={customInput}
-                      onChange={(e) => setCustomInput(e.target.value)}
-                      placeholder="Новое слово"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleAddCustom();
-                        }
-                      }}
-                    />
-                    <motion.button
-                      className="add-chip"
-                      whileTap={{ scale: 0.96 }}
-                      onClick={handleAddCustom}
-                      aria-label="Добавить слово"
-                    >
-                      +
-                    </motion.button>
-                  </div>
-                  <div className="custom-chips">
-                    {customWords.map((word, idx) => (
-                      <span key={`${word}-${idx}`} className="custom-chip">
-                        <span className="chip-word">{word}</span>
-                        <button
-                          className="chip-remove"
-                          onClick={() => handleRemoveCustom(idx)}
-                          aria-label={`Удалить слово ${word}`}
-                        >
-                          <X size={12} />
-                        </button>
-                      </span>
-                    ))}
-                    {!customWords.length && <div className="custom-empty">Добавь слова через +</div>}
-                  </div>
-                  <div className="small-meta">
-                    {customWords.length} своих слов. Всего в колоде: {wordPool.length}. Каждое слово добавляется отдельной кнопкой.
-                  </div>
-                </div>
-              )}
-            </div>
+                      <div className="croco-settings-kpi">
+                        <span className="croco-settings-kpi-label">Сейчас</span>
+                        <span className="croco-settings-kpi-value">
+                          {settings.roundSeconds}s / {settings.wordsPerTeam} слов
+                        </span>
+                      </div>
+                    </div>
 
-            <div className="settings-toggles">
-              <button
-                className={`toggle-chip ${settings.hints ? "on" : ""}`}
-                onClick={() => onChangeSetting("hints", !settings.hints)}
-              >
-                <Sparkles size={16} />
-                Подсказки и табу
-                <span className="toggle-dot" />
-              </button>
-              <button
-                className={`toggle-chip ${settings.autoDifficulty ? "on" : ""}`}
-                onClick={() => onChangeSetting("autoDifficulty", !settings.autoDifficulty)}
-              >
-                <Activity size={16} />
-                Авто-сложность
-                <span className="toggle-dot" />
-              </button>
-              <button
-                className={`toggle-chip ${settings.sound ? "on" : ""}`}
-                onClick={() => onChangeSetting("sound", !settings.sound)}
-              >
-                <Volume2 size={16} />
-                Звук и вибро
-                <span className="toggle-dot" />
-              </button>
+                    <div className="croco-settings-cards">
+                      <div className="croco-setting-card is-accent">
+                        <div className="croco-setting-row">
+                          <div className="croco-setting-label">Время раунда</div>
+                          <div className="croco-setting-value">
+                            <input
+                              type="number"
+                              min={20}
+                              max={120}
+                              step={5}
+                              inputMode="numeric"
+                              value={settings.roundSeconds}
+                              onChange={(e) =>
+                                updateSettingNumber("roundSeconds", Number(e.target.value), 20, 120)
+                              }
+                              className="croco-setting-input"
+                              aria-label="Время раунда"
+                            />
+                            <span className="croco-setting-unit">сек</span>
+                          </div>
+                        </div>
+                        <input
+                          type="range"
+                          min={20}
+                          max={120}
+                          step={5}
+                          value={settings.roundSeconds}
+                          onChange={(e) =>
+                            onChangeSetting("roundSeconds", Number(e.target.value))
+                          }
+                          className="croco-range"
+                          style={{ "--range-progress": `${timerPct}%` }}
+                        />
+                        <div className="croco-range-scale">
+                          <span>20</span>
+                          <span>120</span>
+                        </div>
+                      </div>
+
+                      <div className="croco-setting-card">
+                        <div className="croco-setting-row">
+                          <div className="croco-setting-label">Слова на команду</div>
+                          <div className="croco-setting-value">
+                            <input
+                              type="number"
+                              min={3}
+                              max={30}
+                              step={1}
+                              inputMode="numeric"
+                              value={settings.wordsPerTeam}
+                              onChange={(e) =>
+                                updateSettingNumber("wordsPerTeam", Number(e.target.value), 3, 30)
+                              }
+                              className="croco-setting-input"
+                              aria-label="Слова на команду"
+                            />
+                            <span className="croco-setting-unit">шт</span>
+                          </div>
+                        </div>
+                        <input
+                          type="range"
+                          min={3}
+                          max={30}
+                          step={1}
+                          value={settings.wordsPerTeam}
+                          onChange={(e) =>
+                            onChangeSetting("wordsPerTeam", Number(e.target.value))
+                          }
+                          className="croco-range"
+                          style={{ "--range-progress": `${wordsPct}%` }}
+                        />
+                        <div className="croco-range-scale">
+                          <span>3</span>
+                          <span>30</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="croco-settings-info">
+                      <span className="croco-info-dot" aria-hidden />
+                      Чем меньше время, тем динамичнее раунд.
+                    </div>
+                  </section>
+
+                  <section
+                    id="croco-settings-words"
+                    className={`croco-settings-section ${activeSettings === "words" ? "is-active" : ""}`}
+                  >
+                    <div className="croco-settings-section-head">
+                      <div>
+                        <div className="croco-settings-section-title">Колода слов</div>
+                        <div className="croco-settings-section-sub">Пакеты и свои слова</div>
+                      </div>
+                      <div className="croco-settings-total">
+                        <span className="croco-settings-total-label">Активно</span>
+                        <span className="croco-settings-total-value">{wordPool.length}</span>
+                      </div>
+                    </div>
+
+                    <div className="croco-settings-pack-grid">
+                      {packOptions.map((p) => {
+                        const active = selectedPacks.includes(p.key);
+                        const count = packCounts[p.key] ?? 0;
+                        return (
+                          <button
+                            key={p.key}
+                            className={`croco-pack-card${active ? " is-active" : ""}${
+                              p.key === "custom" && !count ? " is-empty" : ""
+                            }`}
+                            onClick={() => togglePack(p.key)}
+                            aria-pressed={active}
+                          >
+                            <div className="croco-pack-top">
+                              <span className="croco-pack-sticker" aria-hidden>
+                                {PACK_STICKERS[p.key]}
+                              </span>
+                              <span className="croco-pack-text">
+                                <span className="croco-pack-title">{p.label}</span>
+                                <span className="croco-pack-meta">{p.meta}</span>
+                              </span>
+                              <span className="croco-pack-count">{count}</span>
+                            </div>
+                            {active && (
+                              <span className="croco-pack-check" aria-hidden>
+                                <Check size={14} />
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {showCustom && (
+                      <div className="croco-custom-shell">
+                        <div className="croco-custom-head">
+                          <div className="croco-custom-title">Свои слова</div>
+                          <div className="croco-custom-sub">
+                            Каждое слово добавляется отдельно
+                          </div>
+                        </div>
+                        <div className="croco-custom-row">
+                          <input
+                            className="croco-custom-input"
+                            value={customInput}
+                            onChange={(e) => setCustomInput(e.target.value)}
+                            placeholder="Новое слово"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleAddCustom();
+                              }
+                            }}
+                          />
+                          <motion.button
+                            className="croco-custom-add"
+                            whileTap={{ scale: 0.96 }}
+                            onClick={handleAddCustom}
+                            aria-label="Добавить слово"
+                          >
+                            +
+                          </motion.button>
+                        </div>
+                        <div className="croco-custom-chips">
+                          {customWords.map((word, idx) => (
+                            <span key={`${word}-${idx}`} className="croco-custom-chip">
+                              <span className="croco-chip-word">{word}</span>
+                              <button
+                                className="croco-chip-remove"
+                                onClick={() => handleRemoveCustom(idx)}
+                                aria-label={`Удалить слово ${word}`}
+                              >
+                                <X size={12} />
+                              </button>
+                            </span>
+                          ))}
+                          {!customWords.length && (
+                            <div className="croco-custom-empty">Добавь слова через +</div>
+                          )}
+                        </div>
+                        <div className="croco-custom-meta">
+                          {customWords.length} своих слов. В активной колоде: {wordPool.length}.
+                        </div>
+                      </div>
+                    )}
+                  </section>
+
+                  <section
+                    id="croco-settings-effects"
+                    className={`croco-settings-section ${activeSettings === "effects" ? "is-active" : ""}`}
+                  >
+                    <div className="croco-settings-section-head">
+                      <div>
+                        <div className="croco-settings-section-title">Эффекты</div>
+                        <div className="croco-settings-section-sub">Звук и динамика</div>
+                      </div>
+                    </div>
+
+                    <div className="croco-toggle-grid">
+                      <button
+                        className={`croco-toggle ${settings.autoDifficulty ? "is-on" : ""}`}
+                        onClick={() => onChangeSetting("autoDifficulty", !settings.autoDifficulty)}
+                        aria-pressed={settings.autoDifficulty}
+                      >
+                        <div className="croco-toggle-top">
+                          <Activity size={16} />
+                          <div className="croco-toggle-title">Авто-сложность</div>
+                        </div>
+                        <div className="croco-toggle-sub">
+                          Чем дольше серия, тем сложнее слова.
+                        </div>
+                        <span className="croco-toggle-dot" />
+                      </button>
+                      <button
+                        className={`croco-toggle ${settings.sound ? "is-on" : ""}`}
+                        onClick={() => onChangeSetting("sound", !settings.sound)}
+                        aria-pressed={settings.sound}
+                      >
+                        <div className="croco-toggle-top">
+                          <Volume2 size={16} />
+                          <div className="croco-toggle-title">Звук и вибро</div>
+                        </div>
+                        <div className="croco-toggle-sub">
+                          Эффекты таймера и успеха раунда.
+                        </div>
+                        <span className="croco-toggle-dot" />
+                      </button>
+                    </div>
+                  </section>
+                </div>
+              </div>
+
+              <div className="croco-settings-footer">
+                <button className="croco-settings-reset" onClick={resetSettings}>
+                  <RefreshCw size={16} />
+                  Сбросить
+                </button>
+                <div className="croco-settings-footnote">Сохраняется автоматически</div>
+                <motion.button
+                  className="croco-settings-done"
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => setSettingsOpen(false)}
+                >
+                  Готово
+                </motion.button>
+              </div>
             </div>
           </motion.div>
         </motion.div>

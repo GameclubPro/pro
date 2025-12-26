@@ -424,7 +424,7 @@
   .croco-hands.hold-panel .hand {
     width: clamp(100px, 34vw, 150px);
   }
-  .pack-grid {
+  .croco-settings-pack-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -629,100 +629,157 @@
   font-weight: 800;
 }
 
-.pack-grid {
+.croco-settings-pack-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
-.pack-chip {
-  border-radius: 14px;
+.croco-pack-card {
+  position: relative;
+  padding: 12px;
+  border-radius: 16px;
   border: 1px solid var(--croco-border);
   background: rgba(255, 255, 255, 0.04);
   color: var(--croco-fg);
-  padding: 12px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
   gap: 10px;
   text-align: left;
   box-shadow: var(--croco-shadow);
-  position: relative;
-  overflow: hidden;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
-.pack-top {
-  display: flex;
-  align-items: center;
+.croco-pack-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.35);
+}
+
+.croco-pack-card.is-active {
+  background: linear-gradient(135deg, rgba(31, 238, 156, 0.2), rgba(46, 211, 255, 0.2));
+  color: #041017;
+  border-color: transparent;
+  box-shadow: 0 18px 48px rgba(31, 238, 156, 0.32);
+}
+
+.croco-pack-card.is-empty {
+  border-style: dashed;
+}
+
+.croco-pack-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 10px;
-  flex: 1;
+  align-items: center;
 }
 
-.pack-label {
-  font-weight: 900;
-  letter-spacing: 0.01em;
-}
-
-.pack-sticker {
+.croco-pack-sticker {
   width: 38px;
   height: 38px;
   border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--croco-border);
   font-size: 18px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.pack-active {
-  border-color: #1fee9c;
-  box-shadow: 0 14px 40px rgba(31, 238, 156, 0.3), var(--croco-shadow);
+.croco-pack-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
-.check-pill {
-  padding: 6px;
-  border-color: rgba(31, 238, 156, 0.6);
-  background: rgba(31, 238, 156, 0.15);
-  color: #c8f7dc;
+.croco-pack-title {
+  font-weight: 900;
+  letter-spacing: 0.01em;
 }
 
-.custom-block {
-  margin-top: 8px;
-  padding: 10px;
-  border-radius: 12px;
+.croco-pack-meta {
+  color: var(--croco-muted);
+  font-size: 12px;
+}
+
+.croco-pack-count {
+  min-width: 36px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 12px;
+  border: 1px solid var(--croco-border);
+  background: rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+
+.croco-pack-card.is-active .croco-pack-meta {
+  color: rgba(4, 16, 23, 0.65);
+}
+
+.croco-pack-card.is-active .croco-pack-count {
+  border-color: rgba(4, 16, 23, 0.2);
+  background: rgba(4, 16, 23, 0.12);
+}
+
+.croco-pack-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(4, 16, 23, 0.2);
+  color: #041017;
+}
+
+.croco-custom-shell {
+  padding: 12px;
+  border-radius: 16px;
   border: 1px dashed var(--croco-border);
   background: rgba(255, 255, 255, 0.04);
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
-.croco-textarea {
-  width: 100%;
-  border-radius: 12px;
-  border: 1px solid var(--croco-border);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--croco-fg);
-  padding: 12px;
-  font-family: inherit;
-  font-size: 14px;
-  min-height: 120px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+.croco-custom-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.croco-textarea.custom-input {
-  min-height: 0;
-  height: 44px;
+.croco-custom-title {
+  font-weight: 800;
 }
 
-.custom-add-row {
+.croco-custom-sub {
+  color: var(--croco-muted);
+  font-size: 12px;
+}
+
+.croco-custom-row {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px;
 }
 
-.add-chip {
+.croco-custom-input {
+  width: 100%;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--croco-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--croco-fg);
+  padding: 0 12px;
+  font-family: inherit;
+  font-size: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.croco-custom-add {
   width: 44px;
   height: 44px;
   border-radius: 12px;
@@ -734,13 +791,13 @@
   box-shadow: 0 12px 28px rgba(31, 238, 156, 0.28);
 }
 
-.custom-chips {
+.croco-custom-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
-.custom-chip {
+.croco-custom-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -752,12 +809,12 @@
   max-width: 100%;
 }
 
-.chip-word {
+.croco-chip-word {
   font-weight: 700;
   overflow-wrap: anywhere;
 }
 
-.chip-remove {
+.croco-chip-remove {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -769,10 +826,15 @@
   color: var(--croco-fg);
 }
 
-.custom-empty {
+.croco-custom-empty {
   color: var(--croco-muted);
   font-size: 13px;
   padding: 8px 0;
+}
+
+.croco-custom-meta {
+  color: var(--croco-muted);
+  font-size: 12px;
 }
 
 .small-meta {
@@ -826,10 +888,10 @@
   --croco-modal-pad-y: max(var(--croco-safe-top), var(--croco-safe-bottom), clamp(24px, 6vh, 72px));
   --croco-modal-pad-x: max(var(--croco-safe-left), var(--croco-safe-right), 12px);
   background:
-    radial-gradient(120% 120% at 15% 10%, rgba(34, 197, 94, 0.12), transparent),
-    radial-gradient(120% 120% at 85% 20%, rgba(52, 211, 153, 0.14), transparent),
-    rgba(4, 10, 16, 0.72);
-  backdrop-filter: blur(6px);
+    radial-gradient(160% 120% at 12% 6%, rgba(34, 197, 94, 0.22), transparent 60%),
+    radial-gradient(160% 120% at 88% 12%, rgba(45, 212, 191, 0.18), transparent 60%),
+    linear-gradient(180deg, rgba(4, 10, 16, 0.68), rgba(4, 10, 16, 0.92));
+  backdrop-filter: blur(14px) saturate(1.15);
   display: grid;
   place-items: center;
   padding: var(--croco-modal-pad-y) var(--croco-modal-pad-x);
@@ -845,20 +907,20 @@
 
 .croco-settings-window {
   position: relative;
-  width: min(600px, calc(100% - 12px));
-  max-width: min(600px, calc(100% - 12px));
+  width: min(760px, calc(100% - 12px));
+  max-width: min(760px, calc(100% - 12px));
   --croco-modal-max-h: min(
     calc(var(--croco-vh) - (var(--croco-modal-pad-y) * 2)),
-    calc(var(--croco-vh) * 0.78)
+    calc(var(--croco-vh) * 0.86)
   );
-  border-radius: 18px;
-  padding: 16px;
+  border-radius: 24px;
+  padding: 18px;
   background:
-    radial-gradient(140% 140% at 85% 0%, rgba(34, 197, 94, 0.18), transparent),
-    radial-gradient(140% 140% at 0% 20%, rgba(52, 211, 153, 0.16), transparent),
-    rgba(9, 15, 24, 0.95);
+    radial-gradient(160% 140% at 85% 0%, rgba(34, 197, 94, 0.2), transparent 60%),
+    radial-gradient(160% 140% at 0% 20%, rgba(45, 212, 191, 0.18), transparent 65%),
+    rgba(9, 14, 22, 0.96);
   border: 1px solid var(--croco-border);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 26px 90px rgba(0, 0, 0, 0.56);
   overflow-x: hidden;
   overflow-y: auto;
   max-height: var(--croco-modal-max-h);
@@ -872,14 +934,12 @@
   scrollbar-width: thin;
   scrollbar-gutter: stable both-edges;
   scrollbar-color: rgba(52, 211, 153, 0.5) rgba(255, 255, 255, 0.04);
-  padding-right: 18px;
-  display: flex;
-  flex-direction: column;
+  display: block;
 }
 
 .croco-settings-window.croco-settings-window--crocodile {
-  width: min(600px, calc(100% - 12px));
-  max-width: min(600px, calc(100% - 12px));
+  width: min(760px, calc(100% - 12px));
+  max-width: min(760px, calc(100% - 12px));
   height: auto;
   max-height: var(--croco-modal-max-h);
   margin: 0;
@@ -889,7 +949,9 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(120% 120% at 50% -10%, rgba(255, 255, 255, 0.05), transparent 50%);
+  background:
+    radial-gradient(120% 120% at 50% -10%, rgba(255, 255, 255, 0.06), transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 40%);
   pointer-events: none;
 }
 
@@ -900,7 +962,7 @@
   display: block;
   height: 18px;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(7, 12, 18, 0), rgba(7, 12, 18, 0.6));
+  background: linear-gradient(180deg, rgba(7, 12, 18, 0), rgba(7, 12, 18, 0.7));
   margin-top: 8px;
 }
 
@@ -925,20 +987,37 @@
   background: linear-gradient(180deg, rgba(52, 211, 153, 0.95), rgba(34, 197, 94, 0.9));
 }
 
-.croco-settings-window .settings-head {
+.croco-settings-shell {
+  display: grid;
+  gap: 16px;
+}
+
+.croco-settings-head-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.croco-settings-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--croco-border);
 }
 
-.croco-settings-window .settings-title {
-  font-size: 20px;
+.croco-settings-title {
+  font-size: 22px;
   font-weight: 900;
+  letter-spacing: 0.01em;
 }
 
-.croco-settings-window .settings-close {
+.croco-settings-subtitle {
+  font-size: 13px;
+  color: var(--croco-muted);
+}
+
+.croco-settings-close {
   width: 36px;
   height: 36px;
   border-radius: 12px;
@@ -950,65 +1029,214 @@
   box-shadow: var(--croco-shadow);
 }
 
-.croco-settings-window .settings-grid {
-  margin-top: 12px;
+.croco-settings-body {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.croco-settings-nav {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.croco-settings-tab {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--croco-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--croco-fg);
+  text-align: left;
+  font-weight: 700;
+  box-shadow: var(--croco-shadow);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.croco-settings-tab:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+}
+
+.croco-settings-tab.is-active {
+  background: linear-gradient(135deg, #1fee9c, #2ed3ff);
+  color: #041017;
+  border-color: transparent;
+}
+
+.croco-settings-tab-ico {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--croco-border);
+}
+
+.croco-settings-tab.is-active .croco-settings-tab-ico {
+  background: rgba(4, 16, 23, 0.16);
+  border-color: rgba(4, 16, 23, 0.18);
+}
+
+.croco-settings-tab-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.croco-settings-tab-title {
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.croco-settings-tab-sub {
+  font-size: 12px;
+  color: var(--croco-muted);
+}
+
+.croco-settings-tab.is-active .croco-settings-tab-sub {
+  color: rgba(4, 16, 23, 0.65);
+}
+
+.croco-settings-content {
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.croco-settings-section {
+  display: none;
+  gap: 14px;
+}
+
+.croco-settings-section.is-active {
+  display: grid;
+  animation: croco-settings-fade 0.2s ease;
+}
+
+.croco-settings-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.croco-settings-section-title {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.croco-settings-section-sub {
+  font-size: 12px;
+  color: var(--croco-muted);
+}
+
+.croco-settings-kpi,
+.croco-settings-total {
+  display: grid;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--croco-border);
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 12px;
+}
+
+.croco-settings-kpi-label,
+.croco-settings-total-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--croco-muted);
+}
+
+.croco-settings-kpi-value,
+.croco-settings-total-value {
+  font-weight: 800;
+}
+
+.croco-settings-cards {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
-.croco-settings-window .setting-card {
+.croco-setting-card {
   position: relative;
   padding: 14px;
   border-radius: 16px;
-  background: var(--croco-surface-2);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--croco-border);
   box-shadow: var(--croco-shadow);
   display: grid;
-  gap: 8px;
-  overflow: hidden;
+  gap: 10px;
 }
 
-.croco-settings-window .setting-card.accent {
-  background:
-    linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(52, 211, 153, 0.12)),
-    var(--croco-surface-2);
-  border-color: color-mix(in srgb, var(--croco-border) 60%, rgba(34, 197, 94, 0.45));
+.croco-setting-card.is-accent {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.16), rgba(46, 211, 255, 0.12));
 }
 
-.croco-settings-window .setting-card.glass {
-  background:
-    linear-gradient(135deg, rgba(31, 238, 156, 0.1), rgba(46, 211, 255, 0.06)),
-    rgba(17, 26, 38, 0.9);
-  border-color: color-mix(in srgb, var(--croco-border) 60%, rgba(31, 238, 156, 0.35));
-}
-
-.croco-settings-window .setting-card-top {
+.croco-setting-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
 
-.croco-settings-window .setting-number {
-  padding: 6px 10px;
-  border-radius: 12px;
-  border: 1px solid var(--croco-border);
-  background: rgba(255, 255, 255, 0.06);
-  font-weight: 900;
+.croco-setting-label {
+  font-weight: 700;
 }
 
-.croco-settings-window .settings-slider-row {
-  display: grid;
+.croco-setting-value {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
 }
 
-.croco-settings-window .settings-slider {
-  --slider-progress: 50%;
+.croco-setting-input {
+  width: 64px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--croco-border);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  text-align: center;
+  font-weight: 800;
+}
+
+.croco-setting-input::-webkit-outer-spin-button,
+.croco-setting-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.croco-setting-input {
+  -moz-appearance: textfield;
+}
+
+.croco-setting-unit {
+  font-size: 12px;
+  color: var(--croco-muted);
+}
+
+.croco-range {
+  --range-progress: 50%;
   width: 100%;
   height: 14px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #34d399 0%, #22c55e var(--slider-progress), rgba(255, 255, 255, 0.08) var(--slider-progress));
+  background: linear-gradient(
+    90deg,
+    #34d399 0%,
+    #22c55e var(--range-progress),
+    rgba(255, 255, 255, 0.08) var(--range-progress)
+  );
   border: 1px solid var(--croco-border);
   outline: none;
   -webkit-appearance: none;
@@ -1016,13 +1244,13 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
-.croco-settings-window .settings-slider::-webkit-slider-runnable-track {
+.croco-range::-webkit-slider-runnable-track {
   height: 12px;
   border-radius: 999px;
   background: transparent;
 }
 
-.croco-settings-window .settings-slider::-webkit-slider-thumb {
+.croco-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 22px;
@@ -1034,13 +1262,13 @@
   margin-top: -6px;
 }
 
-.croco-settings-window .settings-slider::-moz-range-track {
+.croco-range::-moz-range-track {
   height: 12px;
   border-radius: 999px;
   background: transparent;
 }
 
-.croco-settings-window .settings-slider::-moz-range-thumb {
+.croco-range::-moz-range-thumb {
   width: 22px;
   height: 22px;
   border-radius: 50%;
@@ -1049,52 +1277,12 @@
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35), 0 0 0 4px rgba(34, 197, 94, 0.22);
 }
 
-.croco-settings-window .settings-slider:focus-visible {
+.croco-range:focus-visible {
   outline: 2px solid rgba(34, 197, 94, 0.6);
   outline-offset: 2px;
 }
 
-.croco-settings-window .meter {
-  display: grid;
-  gap: 6px;
-}
-
-.croco-settings-window .meter-track {
-  position: relative;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--croco-border);
-  overflow: hidden;
-}
-
-.croco-settings-window .meter-track.alt {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.croco-settings-window .meter-fill {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, #34d399, #22c55e);
-}
-
-.croco-settings-window .meter-fill.alt {
-  background: linear-gradient(90deg, #2dd4bf, #22c55e);
-}
-
-.croco-settings-window .meter-thumb {
-  position: absolute;
-  top: 50%;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #fff;
-  transform: translate(-50%, -50%);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
-  border: 2px solid #041017;
-}
-
-.croco-settings-window .meter-scale {
+.croco-range-scale {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1102,69 +1290,135 @@
   font-size: 12px;
 }
 
-.croco-settings-window .setting-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.croco-settings-window .setting-actions button {
-  height: 42px;
-  border-radius: 12px;
-  border: 1px solid var(--croco-border-strong);
-  background: rgba(255, 255, 255, 0.06);
-  color: #fff;
-  font-weight: 800;
-  box-shadow: var(--croco-shadow);
-}
-
-.croco-settings-window .settings-toggles {
-  margin-top: 10px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.croco-settings-window .toggle-chip {
-  display: inline-flex;
+.croco-settings-info {
+  display: flex;
   align-items: center;
   gap: 8px;
-  justify-content: flex-start;
-  width: 100%;
-  padding: 12px;
-  border-radius: 14px;
+  color: var(--croco-muted);
+  font-size: 12px;
+}
+
+.croco-info-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.9);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.18);
+}
+
+.croco-toggle-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.croco-toggle {
+  position: relative;
+  padding: 12px 14px;
+  border-radius: 16px;
   border: 1px solid var(--croco-border);
-  background: rgba(255, 255, 255, 0.06);
-  font-weight: 800;
+  background: rgba(255, 255, 255, 0.05);
   color: var(--croco-fg);
+  text-align: left;
+  display: grid;
+  gap: 8px;
   box-shadow: var(--croco-shadow);
 }
 
-.croco-settings-window .toggle-chip.on {
+.croco-toggle.is-on {
   background: linear-gradient(135deg, #1fee9c, #2ed3ff);
   color: #041017;
-  border: none;
-  box-shadow: 0 14px 40px rgba(46, 211, 255, 0.35);
+  border-color: transparent;
 }
 
-.croco-settings-window .toggle-dot {
+.croco-toggle-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+
+.croco-toggle-title {
+  font-weight: 800;
+}
+
+.croco-toggle-sub {
+  font-size: 12px;
+  color: var(--croco-muted);
+}
+
+.croco-toggle.is-on .croco-toggle-sub {
+  color: rgba(4, 16, 23, 0.65);
+}
+
+.croco-toggle-dot {
+  position: absolute;
+  top: 12px;
+  right: 12px;
   width: 10px;
   height: 10px;
   border-radius: 50%;
   background: currentColor;
-  opacity: 0.75;
-  margin-left: auto;
+  opacity: 0.7;
 }
 
-.croco-settings-window .toggle-chip.on .toggle-dot {
-  background: rgba(0, 0, 0, 0.65);
-  opacity: 1;
+.croco-settings-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--croco-border);
+  flex-wrap: wrap;
 }
 
-.croco-settings-window .settings-block {
-  margin-top: 12px;
-  display: grid;
-  gap: 10px;
+.croco-settings-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--croco-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--croco-fg);
+  font-weight: 800;
+}
+
+.croco-settings-done {
+  min-width: 120px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--croco-primary);
+  color: #041017;
+  font-weight: 900;
+}
+
+.croco-settings-footnote {
+  color: var(--croco-muted);
+  font-size: 12px;
+}
+
+.croco-settings-tab:focus-visible,
+.croco-settings-close:focus-visible,
+.croco-pack-card:focus-visible,
+.croco-toggle:focus-visible,
+.croco-settings-reset:focus-visible,
+.croco-settings-done:focus-visible,
+.croco-custom-add:focus-visible,
+.croco-custom-input:focus-visible {
+  outline: 2px solid rgba(34, 197, 94, 0.6);
+  outline-offset: 2px;
+}
+
+@keyframes croco-settings-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 768px) {
@@ -1172,35 +1426,42 @@
     padding: var(--croco-modal-pad-y) var(--croco-modal-pad-x);
   }
   .croco-settings-window {
-    width: min(600px, calc(100% - 10px));
-    max-width: min(600px, calc(100% - 10px));
+    width: min(720px, calc(100% - 10px));
+    max-width: min(720px, calc(100% - 10px));
     max-height: calc(var(--croco-vh) - (var(--croco-modal-pad-y) * 2));
-    border-radius: 18px;
+    border-radius: 20px;
     padding: 14px 12px 16px;
     box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
   }
   .croco-settings-window.croco-settings-window--crocodile {
-    width: min(600px, calc(100% - 10px));
-    max-width: min(600px, calc(100% - 10px));
+    width: min(720px, calc(100% - 10px));
+    max-width: min(720px, calc(100% - 10px));
     max-height: calc(var(--croco-vh) - (var(--croco-modal-pad-y) * 2));
   }
-  .croco-settings-window .settings-head {
+  .croco-settings-body {
+    grid-template-columns: 1fr;
+  }
+  .croco-settings-nav {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(160px, 1fr);
+    grid-template-columns: none;
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+  .croco-settings-tab {
+    min-width: 160px;
+  }
+  .croco-settings-cards,
+  .croco-toggle-grid,
+  .croco-settings-pack-grid {
+    grid-template-columns: 1fr;
+  }
+  .croco-settings-footer {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
   }
-  .croco-settings-window .settings-close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-  }
-  .croco-settings-window .settings-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .croco-settings-window .settings-toggles {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .croco-settings-window .setting-card {
-    padding: 12px;
+  .croco-settings-footnote {
+    text-align: center;
   }
 }
 
@@ -1898,17 +2159,6 @@
   gap: 10px;
 }
 
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
-  border-radius: 12px;
-  background: rgba(6, 10, 12, 0.7);
-  font-size: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
 
 .winners {
   display: inline-flex;
@@ -2097,7 +2347,7 @@
   .chips-row {
     grid-template-columns: 1fr;
   }
-  .pack-grid {
+  .croco-settings-pack-grid {
     grid-template-columns: 1fr;
   }
   .actions-grid {
@@ -2200,9 +2450,6 @@
     justify-items: center;
     text-align: center;
   }
-  .croco-settings-window .setting-actions {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2218,6 +2465,13 @@
   .settings-gear {
     transition: none;
   }
+  .croco-settings-section.is-active {
+    animation: none;
+  }
+  .croco-settings-tab,
+  .croco-pack-card {
+    transition: none;
+  }
 }
 
 @supports not (color: color-mix(in srgb, #000 50%, #fff)) {
@@ -2227,9 +2481,7 @@
   .round-pill,
   .pacman-meta,
   .pacman-pause,
-  .pacman-track,
-  .croco-settings-window .setting-card.accent,
-  .croco-settings-window .setting-card.glass {
+  .pacman-track {
     border: 1px solid var(--croco-border-strong);
   }
   .round-exit {
