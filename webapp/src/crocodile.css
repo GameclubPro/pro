@@ -1937,6 +1937,24 @@
   .croco .ghost-btn {
     padding: 8px 10px;
   }
+  .pacman-meta {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 6px 8px;
+  }
+  .pacman-pause {
+    display: none;
+  }
+  .pacman-round {
+    min-width: 0;
+    justify-self: end;
+  }
+  .round-pill {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .timer-num {
+    font-size: 26px;
+  }
 }
 
 @media (max-width: 360px) {
