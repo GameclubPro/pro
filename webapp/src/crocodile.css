@@ -866,7 +866,7 @@
 .croco-settings-window .settings-grid {
   margin-top: 12px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: 1fr;
   gap: 12px;
 }
 
@@ -1034,7 +1034,7 @@
 .croco-settings-window .settings-toggles {
   margin-top: 10px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: 1fr;
   gap: 10px;
 }
 
@@ -1937,9 +1937,6 @@
     grid-template-columns: 1fr;
     justify-items: center;
     text-align: center;
-  }
-  .croco .pack-grid {
-    grid-template-columns: 1fr;
   }
   .croco-settings-window .setting-actions {
     grid-template-columns: 1fr;
