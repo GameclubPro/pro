@@ -641,14 +641,43 @@
   position: relative;
   padding: 12px;
   border-radius: 16px;
-  border: 1px solid var(--croco-border);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    rgba(9, 14, 22, 0.68);
   color: var(--croco-fg);
   display: grid;
   gap: 10px;
   text-align: left;
-  box-shadow: var(--croco-shadow);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.croco-pack-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(31, 238, 156, 0.6), rgba(46, 211, 255, 0.6));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.croco-pack-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .croco-pack-card:hover {
@@ -657,10 +686,21 @@
 }
 
 .croco-pack-card.is-active {
-  background: linear-gradient(135deg, rgba(31, 238, 156, 0.2), rgba(46, 211, 255, 0.2));
-  color: #041017;
-  border-color: transparent;
-  box-shadow: 0 18px 48px rgba(31, 238, 156, 0.32);
+  background:
+    radial-gradient(140% 120% at 0% 0%, rgba(31, 238, 156, 0.24), transparent 60%),
+    radial-gradient(140% 120% at 100% 0%, rgba(46, 211, 255, 0.2), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02)),
+    rgba(9, 14, 22, 0.76);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(46, 211, 255, 0.32),
+    0 12px 30px rgba(31, 238, 156, 0.22);
+  backdrop-filter: blur(8px) saturate(1.2);
+}
+
+.croco-pack-card.is-active::before {
+  opacity: 1;
 }
 
 .croco-pack-card.is-empty {
@@ -709,9 +749,18 @@
   text-align: center;
 }
 
+.croco-pack-card.is-active .croco-pack-sticker {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 8px 20px rgba(31, 238, 156, 0.2);
+}
+
 .croco-pack-card.is-active .croco-pack-count {
-  border-color: rgba(4, 16, 23, 0.2);
-  background: rgba(4, 16, 23, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--croco-fg);
 }
 
 .croco-pack-check {
@@ -723,8 +772,14 @@
   border-radius: 999px;
   display: grid;
   place-items: center;
-  background: rgba(4, 16, 23, 0.2);
-  color: #041017;
+  background: rgba(9, 14, 22, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--croco-fg);
+  backdrop-filter: blur(6px) saturate(1.1);
+}
+
+.croco-pack-card.is-active .croco-pack-check {
+  box-shadow: 0 10px 24px rgba(31, 238, 156, 0.25);
 }
 
 .croco-custom-shell {
