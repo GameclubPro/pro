@@ -679,7 +679,6 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
               dispatch({ type: state.running ? "PAUSE" : "RESUME" })
             }
             onAnswer={mark}
-            lastResult={state.lastResult}
             showTimeoutPrompt={timeoutPrompt}
             onTimeoutAnswer={handleTimeoutAnswer}
           />
@@ -1205,7 +1204,6 @@ function Round({
   isMasked = false,
   onPauseToggle,
   onAnswer,
-  lastResult,
   showTimeoutPrompt,
   onTimeoutAnswer,
 }) {
@@ -1219,6 +1217,16 @@ function Round({
   return (
     <div className="round">
       <div className="round-stack">
+        <div className="round-team" aria-live="polite">
+          <span
+            className="round-team-badge"
+            style={{ background: current?.color || "#111826" }}
+            aria-hidden
+          >
+            {current?.emoji || "🦎"}
+          </span>
+          <span className="round-team-name">{current?.name || "Команда"}</span>
+        </div>
         <TimerPacman
           pct={timePct}
           seconds={seconds}
@@ -1229,7 +1237,7 @@ function Round({
           onTogglePause={onPauseToggle}
         />
 
-      <WordCard word={word} tip={tip} hints={hints} lastResult={lastResult} masked={isMasked} />
+        <WordCard word={word} tip={tip} hints={hints} masked={isMasked} />
       </div>
 
       <div className="actions-bar">
@@ -1372,18 +1380,8 @@ function TimerPacman({
   );
 }
 
-function WordCard({ word, tip, hints, lastResult, masked = false }) {
-  const resultLabel = lastResult === "correct" ? "зачёт" : "пропуск";
-  const resultClass = masked
-    ? "pill word-result is-hidden"
-    : `pill word-result${
-        lastResult ? ` ${lastResult === "correct" ? "pill-success" : "pill-warn"}` : " is-hidden"
-      }`;
-  const levelLabel = masked ? "..." : word?.level || "...";
+function WordCard({ word, tip, hints, masked = false }) {
   const mainText = masked ? "Смена хода" : word?.word || "Готовимся...";
-  const subText = masked
-    ? "Передай экран следующей команде."
-    : "Покажи без слов, звуков и букв. Жестикулируй крупно.";
 
   return (
     <motion.div
@@ -1393,18 +1391,9 @@ function WordCard({ word, tip, hints, lastResult, masked = false }) {
       exit={{ opacity: 0, y: -10 }}
       layout
     >
-      <div className="word-top">
-        <span className="pill">
-          <Activity size={14} /> {levelLabel}
-        </span>
-        <span className={resultClass} aria-hidden={masked || !lastResult}>
-          {resultLabel}
-        </span>
-      </div>
       <div className="word-main">{mainText}</div>
-      <div className="word-sub">{subText}</div>
       {!masked && hints && tip && (
-        <div className="hint-bubble">
+        <div className="word-tip">
           <Sparkles size={14} />
           {tip}
         </div>
