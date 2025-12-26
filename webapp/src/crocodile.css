@@ -886,6 +886,12 @@
   --croco-safe-left: max(var(--safe-left, 0px), env(safe-area-inset-left, 0px));
   --croco-safe-right: max(var(--safe-right, 0px), env(safe-area-inset-right, 0px));
   --croco-vh: var(--tg-vh, 100svh);
+  --croco-modal-safe-top: max(
+    var(--app-inset-top),
+    var(--tg-content-safe-area-inset-top, 0px),
+    env(safe-area-inset-top, 0px),
+    0px
+  );
   --croco-modal-pad-y: max(var(--croco-safe-top), var(--croco-safe-bottom), clamp(24px, 6vh, 72px));
   --croco-modal-pad-x: max(var(--croco-safe-left), var(--croco-safe-right), 0px);
   background:
@@ -1440,7 +1446,7 @@
     position: sticky;
     top: 0;
     z-index: 3;
-    padding: 14px 16px;
+    padding: calc(10px + var(--croco-modal-safe-top)) 16px 12px;
     background: rgba(9, 14, 22, 0.96);
     backdrop-filter: blur(10px) saturate(1.2);
   }
