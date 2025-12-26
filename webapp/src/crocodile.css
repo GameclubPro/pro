@@ -1028,6 +1028,7 @@
 }
 
 .croco-settings-nav {
+  position: relative;
   display: grid;
   gap: 10px;
   align-content: start;
@@ -1037,6 +1038,10 @@
 
 .croco-settings-nav::-webkit-scrollbar {
   height: 0;
+}
+
+.croco-settings-indicator {
+  display: none;
 }
 
 .croco-settings-tab {
@@ -1464,21 +1469,69 @@
     height: 0;
   }
   .croco-settings-nav {
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(160px, 1fr);
-    grid-template-columns: none;
-    overflow-x: auto;
-    padding-bottom: 6px;
+    grid-template-columns: repeat(var(--croco-tab-count), minmax(0, 1fr));
+    padding: 4px;
+    border-radius: 999px;
+    background: rgba(9, 14, 22, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
     position: sticky;
     top: 0;
     z-index: 2;
-    background: rgba(9, 14, 22, 0.92);
-    backdrop-filter: blur(8px) saturate(1.1);
-    margin-bottom: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 10px;
   }
+
+  .croco-settings-indicator {
+    display: block;
+    position: absolute;
+    inset: 4px;
+    width: calc((100% - 8px) / var(--croco-tab-count));
+    transform: translateX(calc(var(--croco-tab-index) * 100%));
+    background: linear-gradient(135deg, #1fee9c, #2ed3ff);
+    border-radius: 999px;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
   .croco-settings-tab {
-    min-width: 160px;
+    min-width: 0;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    gap: 4px;
+    padding: 8px 4px;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    z-index: 1;
+  }
+
+  .croco-settings-tab.is-active {
+    background: transparent;
+    color: #041017;
+  }
+
+  .croco-settings-tab-ico {
+    width: 22px;
+    height: 22px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .croco-settings-tab.is-active .croco-settings-tab-ico {
+    background: rgba(4, 16, 23, 0.18);
+    border-color: rgba(4, 16, 23, 0.2);
+  }
+
+  .croco-settings-tab-title {
+    font-size: 11px;
+  }
+
+  .croco-settings-tab-sub {
+    display: none;
+  }
   }
   .croco-settings-cards,
   .croco-toggle-grid,
@@ -2505,6 +2558,9 @@
   }
   .croco-settings-tab,
   .croco-pack-card {
+    transition: none;
+  }
+  .croco-settings-indicator {
     transition: none;
   }
 }

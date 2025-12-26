@@ -920,7 +920,15 @@ function Setup({
               </div>
 
               <div className="croco-settings-body">
-                <nav className="croco-settings-nav" aria-label="Разделы">
+                <nav
+                  className="croco-settings-nav"
+                  aria-label="Разделы"
+                  style={{
+                    "--croco-tab-count": 3,
+                    "--croco-tab-index": activeSettings === "match" ? 0 : activeSettings === "words" ? 1 : 2,
+                  }}
+                >
+                  <span className="croco-settings-indicator" aria-hidden="true" />
                   <button
                     className={`croco-settings-tab ${activeSettings === "match" ? "is-active" : ""}`}
                     onClick={() => setActiveSettings("match")}
