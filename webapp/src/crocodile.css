@@ -738,7 +738,6 @@
   position: fixed;
   inset: 0;
   --croco-safe-top-extra: 12px;
-  --croco-modal-gap: clamp(16px, 4vh, 40px);
   --croco-safe-top: calc(
     max(
       var(--app-inset-top),
@@ -756,6 +755,8 @@
   --croco-safe-left: max(var(--safe-left, 0px), env(safe-area-inset-left, 0px));
   --croco-safe-right: max(var(--safe-right, 0px), env(safe-area-inset-right, 0px));
   --croco-vh: var(--tg-vh, 100svh);
+  --croco-modal-pad-y: max(var(--croco-safe-top), var(--croco-safe-bottom), 16px);
+  --croco-modal-pad-x: max(var(--croco-safe-left), var(--croco-safe-right), 12px);
   background:
     radial-gradient(120% 120% at 15% 10%, rgba(34, 197, 94, 0.12), transparent),
     radial-gradient(120% 120% at 85% 20%, rgba(52, 211, 153, 0.14), transparent),
@@ -764,7 +765,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--croco-safe-top) var(--croco-safe-left) var(--croco-safe-bottom) var(--croco-safe-right);
+  padding: var(--croco-modal-pad-y) var(--croco-modal-pad-x);
   z-index: 1200;
   overflow: hidden;
 }
@@ -783,7 +784,7 @@
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
   overflow-x: hidden;
   overflow-y: auto;
-  max-height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom) - (var(--croco-modal-gap) * 2));
+  max-height: calc(var(--croco-vh) - (var(--croco-modal-pad-y) * 2));
   will-change: transform, opacity;
   transform: translateZ(0);
   margin: 0;
@@ -1083,12 +1084,12 @@
 
 @media (max-width: 768px) {
   .croco-settings-overlay {
-    padding: var(--croco-safe-top) var(--croco-safe-left) var(--croco-safe-bottom) var(--croco-safe-right);
+    padding: var(--croco-modal-pad-y) var(--croco-modal-pad-x);
   }
   .croco-settings-window {
     width: min(600px, calc(100% - 10px));
     max-width: min(600px, calc(100% - 10px));
-    max-height: calc(var(--croco-vh) - var(--croco-safe-top) - var(--croco-safe-bottom) - (var(--croco-modal-gap) * 2));
+    max-height: calc(var(--croco-vh) - (var(--croco-modal-pad-y) * 2));
     border-radius: 18px;
     padding: 14px 12px 16px;
     box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
