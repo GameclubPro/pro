@@ -738,6 +738,7 @@
   position: fixed;
   inset: 0;
   --croco-safe-top-extra: 12px;
+  --croco-settings-top-gap: 10px;
   --croco-safe-top: calc(
     max(
       var(--app-inset-top),
@@ -763,7 +764,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: var(--croco-safe-top) var(--croco-safe-left) var(--croco-safe-bottom) var(--croco-safe-right);
+  padding: calc(var(--croco-safe-top) + var(--croco-settings-top-gap)) var(--croco-safe-left) var(--croco-safe-bottom) var(--croco-safe-right);
   z-index: 1200;
   overflow: hidden;
 }
@@ -1082,7 +1083,7 @@
 
 @media (max-width: 768px) {
   .croco-settings-overlay {
-    padding: calc(8px + var(--croco-safe-top)) var(--croco-safe-left) calc(8px + var(--croco-safe-bottom)) var(--croco-safe-right);
+    padding: calc(var(--croco-safe-top) + var(--croco-settings-top-gap)) var(--croco-safe-left) calc(8px + var(--croco-safe-bottom)) var(--croco-safe-right);
   }
   .croco-settings-window {
     width: min(600px, calc(100% - 10px));
