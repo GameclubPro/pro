@@ -1046,102 +1046,102 @@ function Setup({
       {portalTarget ? createPortal(settingsModal, portalTarget) : settingsModal}
 
       <div className="setup-shell">
-        <div className="setup-hero" aria-hidden="true">
-          <div className="croco-head">
+        <div className="setup-panel-wrap">
+          <div className="croco-head" aria-hidden="true">
             <img src={crocoHead} alt="" />
           </div>
-          <div className="croco-hands">
+          <div className="croco-hands hold-panel" aria-hidden="true">
             <img src={crocoHandsLeft} alt="" className="hand hand-left" />
             <img src={crocoHandsRight} alt="" className="hand hand-right" />
           </div>
-          <div className="croco-legs">
+          <div className="croco-legs" aria-hidden="true">
             <img src={crocoLegs} alt="" />
           </div>
-        </div>
 
-        <div className="panel setup-panel">
-          <div className="setup-content">
-            <div className="panel-head with-gear">
-              <div>
-                <div className="eyebrow">Крокодил</div>
-                <div className="panel-title">Собери состав и жми старт</div>
+          <div className="panel setup-panel">
+            <div className="setup-content">
+              <div className="panel-head with-gear">
+                <div>
+                  <div className="eyebrow">Крокодил</div>
+                  <div className="panel-title">Собери состав и жми старт</div>
+                </div>
+                <motion.button
+                  className="settings-gear"
+                  onClick={() => setSettingsOpen(true)}
+                  whileTap={{ scale: 0.92 }}
+                  whileHover={{ rotate: -4 }}
+                  aria-label="Открыть настройки"
+                >
+                  <span className="gear-inner">
+                    <Settings size={18} />
+                  </span>
+                  <span className="gear-glow" />
+                </motion.button>
               </div>
-              <motion.button
-                className="settings-gear"
-                onClick={() => setSettingsOpen(true)}
-                whileTap={{ scale: 0.92 }}
-                whileHover={{ rotate: -4 }}
-                aria-label="Открыть настройки"
-              >
-                <span className="gear-inner">
-                  <Settings size={18} />
-                </span>
-                <span className="gear-glow" />
-              </motion.button>
-            </div>
 
-            <div className="chips-row">
-              <button
-                className={`seg ${modeIsTeams ? "seg-active" : ""}`}
-                onClick={() => switchMode("teams")}
-              >
-                <Users size={16} />
-                Команды
-              </button>
-              <button
-                className={`seg ${!modeIsTeams ? "seg-active" : ""}`}
-                onClick={() => switchMode("solo")}
-              >
-                <Zap size={16} />
-                Соло
-              </button>
-            </div>
-
-            <div className="roster-shell">
-              <div className="roster-list">
-                {localRoster.map((item) => (
-                  <div className="roster-row" key={item.id}>
-                    <button
-                      className="avatar-btn"
-                      style={{ background: item.color }}
-                      onClick={() => shuffleColor(item.id)}
-                      aria-label="Сменить цвет"
-                    >
-                      {item.emoji}
-                    </button>
-                    <input
-                      value={item.name}
-                      onChange={(e) => changeName(item.id, e.target.value)}
-                      maxLength={18}
-                      aria-label="Имя"
-                    />
-                    <button
-                      className="icon-btn"
-                      onClick={() => removeMember(item.id)}
-                      disabled={localRoster.length <= minPlayers}
-                      aria-label="Удалить"
-                      title="Удалить"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                ))}
-                <button className="ghost-line" onClick={addMember}>
-                  <Sparkles size={16} />
-                  Добавить {modeIsTeams ? "команду" : "игрока"}
+              <div className="chips-row">
+                <button
+                  className={`seg ${modeIsTeams ? "seg-active" : ""}`}
+                  onClick={() => switchMode("teams")}
+                >
+                  <Users size={16} />
+                  Команды
+                </button>
+                <button
+                  className={`seg ${!modeIsTeams ? "seg-active" : ""}`}
+                  onClick={() => switchMode("solo")}
+                >
+                  <Zap size={16} />
+                  Соло
                 </button>
               </div>
-            </div>
 
-            <motion.button className="cta" whileTap={{ scale: 0.98 }} onClick={onStart} disabled={!canStart}>
-              <Sparkles size={18} />
-              Старт
-            </motion.button>
-            {!canStart && (
-              <div className="small-meta danger">
-                Нужно минимум 2 участника и хотя бы одно слово.
+              <div className="roster-shell">
+                <div className="roster-list">
+                  {localRoster.map((item) => (
+                    <div className="roster-row" key={item.id}>
+                      <button
+                        className="avatar-btn"
+                        style={{ background: item.color }}
+                        onClick={() => shuffleColor(item.id)}
+                        aria-label="Сменить цвет"
+                      >
+                        {item.emoji}
+                      </button>
+                      <input
+                        value={item.name}
+                        onChange={(e) => changeName(item.id, e.target.value)}
+                        maxLength={18}
+                        aria-label="Имя"
+                      />
+                      <button
+                        className="icon-btn"
+                        onClick={() => removeMember(item.id)}
+                        disabled={localRoster.length <= minPlayers}
+                        aria-label="Удалить"
+                        title="Удалить"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                  <button className="ghost-line" onClick={addMember}>
+                    <Sparkles size={16} />
+                    Добавить {modeIsTeams ? "команду" : "игрока"}
+                  </button>
+                </div>
               </div>
-            )}
+
+              <motion.button className="cta" whileTap={{ scale: 0.98 }} onClick={onStart} disabled={!canStart}>
+                <Sparkles size={18} />
+                Старт
+              </motion.button>
+              {!canStart && (
+                <div className="small-meta danger">
+                  Нужно минимум 2 участника и хотя бы одно слово.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

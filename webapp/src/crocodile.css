@@ -251,27 +251,26 @@
   display: grid;
   justify-items: center;
   align-content: start;
-  gap: clamp(14px, 3vw, 22px);
+  gap: clamp(12px, 3vw, 20px);
+  --croco-head-space: clamp(180px, 26vh, 280px);
+  --croco-legs-space: clamp(200px, 30vh, 320px);
+  padding-top: var(--croco-head-space);
+  padding-bottom: var(--croco-legs-space);
 }
 
-.setup-hero {
+.setup-panel-wrap {
   position: relative;
-  width: min(100%, 600px);
-  aspect-ratio: 5 / 4;
-  min-height: clamp(220px, 40vw, 360px);
+  width: min(100%, 760px);
   display: grid;
-  place-items: center;
-  padding: clamp(6px, 1.8vw, 14px);
-  overflow: visible;
-  pointer-events: none;
+  justify-items: center;
 }
 
-.setup-hero .croco-head {
+.croco-head {
   position: absolute;
   left: 50%;
-  top: 4%;
-  transform: translateX(-50%);
-  width: clamp(240px, 68%, 340px);
+  top: 0;
+  transform: translate(-50%, -100%);
+  width: clamp(260px, 70vw, 360px);
   pointer-events: none;
   filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.45));
   z-index: 4;
@@ -283,47 +282,60 @@
   height: auto;
 }
 
-.setup-hero .croco-hands {
+.croco-hands {
   position: absolute;
-  left: 50%;
-  top: 40%;
-  transform: translateX(-50%);
-  width: min(100%, 620px);
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: clamp(8px, 2vw, 18px);
-  padding: 0 clamp(10px, 4vw, 22px);
+  justify-content: center;
+  align-items: center;
   pointer-events: none;
   z-index: 3;
 }
 
 .croco-hands img {
   display: block;
-  width: clamp(120px, 34vw, 180px);
-  max-width: 45%;
+  width: min(96%, 460px);
+  max-width: 96vw;
   height: auto;
   filter:
     drop-shadow(0 0 2px rgba(0, 0, 0, 0.6)) /* тонкий контур вокруг рук */
     drop-shadow(0 10px 26px rgba(0, 0, 0, 0.26));
 }
 
-.setup-hero .croco-hands .hand-left {
-  transform: translateX(-8%) rotate(-2deg);
-}
-
-.setup-hero .croco-hands .hand-right {
-  transform: translateX(8%) rotate(3deg);
-}
-
-.setup-hero .croco-legs {
-  position: absolute;
+.croco-hands.hold-panel {
+  top: clamp(92px, 18vw, 142px);
   left: 50%;
-  bottom: -6%;
   transform: translateX(-50%);
-  width: min(120%, 740px);
+  width: calc(100% + clamp(96px, 20vw, 240px));
+  max-width: none;
+  padding: 0 clamp(24px, 6vw, 38px);
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: clamp(6px, 2vw, 18px);
+}
+
+.croco-hands.hold-panel .hand {
+  width: clamp(120px, 22vw, 180px);
+  max-width: 36%;
+  flex-shrink: 0;
+}
+
+.croco-hands.hold-panel .hand-left {
+  transform: translate(-24%, -6px) rotate(-2deg);
+}
+
+.croco-hands.hold-panel .hand-right {
+  transform: translate(24%, -4px) rotate(3deg);
+}
+
+.croco-legs {
+  position: absolute;
+  left: 64%;
+  top: 100%;
+  transform: translate(-50%, 0%);
+  width: min(108%, 770px);
+  max-width: 940px;
   pointer-events: none;
-  z-index: 2;
+  z-index: 3;
 }
 
 .croco-legs img {
@@ -376,29 +388,41 @@
 }
 
 @media (max-width: 768px) {
-  .setup-hero {
-    width: min(100%, 520px);
-    aspect-ratio: 4 / 3;
+  .setup-shell {
+    --croco-head-space: clamp(170px, 24vh, 240px);
+    --croco-legs-space: clamp(180px, 26vh, 260px);
   }
-  .setup-hero .croco-hands {
-    top: 42%;
-    padding: 0 clamp(8px, 6vw, 20px);
+  .setup-panel-wrap .croco-hands.hold-panel {
+    top: clamp(86px, 21vw, 138px);
+    width: calc(100% + clamp(72px, 20vw, 186px));
+    max-width: none;
+    padding: 0 clamp(16px, 7vw, 28px);
+    gap: clamp(6px, 3vw, 16px);
   }
-  .setup-hero .croco-legs {
-    bottom: -10%;
-    width: min(128%, 640px);
+  .setup-panel-wrap .croco-hands.hold-panel .hand {
+    width: clamp(110px, 28vw, 160px);
+    max-width: 40%;
+  }
+  .setup-panel-wrap .croco-hands.hold-panel .hand-left {
+    transform: translate(-26%, -4px) rotate(-2deg);
+  }
+  .setup-panel-wrap .croco-hands.hold-panel .hand-right {
+    transform: translate(26%, -2px) rotate(3deg);
+  }
+  .croco-legs {
+    left: 66%;
+    transform: translate(-50%, 0%);
+    width: min(112%, 640px);
+    max-width: 800px;
   }
 }
 
 @media (max-width: 480px) {
-  .setup-hero {
-    min-height: clamp(200px, 52vw, 280px);
+  .croco-head {
+    width: clamp(210px, 72vw, 280px);
   }
-  .setup-hero .croco-head {
-    width: clamp(210px, 72%, 280px);
-  }
-  .croco-hands img {
-    width: clamp(100px, 42vw, 150px);
+  .croco-hands.hold-panel .hand {
+    width: clamp(100px, 34vw, 150px);
   }
   .pack-grid {
     grid-template-columns: 1fr;
@@ -2043,8 +2067,9 @@
 }
 
 @media (max-height: 680px) {
-  .setup-hero {
-    min-height: clamp(180px, 30vw, 260px);
+  .setup-shell {
+    --croco-head-space: clamp(150px, 22vh, 210px);
+    --croco-legs-space: clamp(160px, 24vh, 230px);
   }
   .word-card {
     min-height: clamp(160px, 24vh, 220px);
@@ -2058,6 +2083,10 @@
 }
 
 @media (max-height: 560px) {
+  .setup-shell {
+    --croco-head-space: clamp(130px, 20vh, 180px);
+    --croco-legs-space: clamp(140px, 22vh, 200px);
+  }
   .pacman-track {
     height: 24px;
   }
