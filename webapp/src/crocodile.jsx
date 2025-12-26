@@ -15,6 +15,7 @@ import {
   Users,
   Wand2,
   Zap,
+  X,
   Volume2,
 } from "lucide-react";
 import {
