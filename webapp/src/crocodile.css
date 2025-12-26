@@ -548,6 +548,7 @@
   gap: 8px;
   max-height: min(42vh, 360px);
   overflow-y: auto;
+  overflow-y: overlay;
   padding-right: 4px;
   scrollbar-width: thin;
   scrollbar-color: rgba(52, 211, 153, 0.4) transparent;
@@ -932,7 +933,6 @@
   touch-action: pan-y;
   overscroll-behavior: contain;
   scrollbar-width: none;
-  scrollbar-gutter: auto;
   -ms-overflow-style: none;
   display: block;
 }
