@@ -1388,7 +1388,9 @@ function WordCard({ word, masked = false }) {
       layout
     >
       <div className="word-visual" aria-hidden="true" />
-      <div className="word-main">{mainText}</div>
+      <div className="word-footer">
+        <div className="word-main">{mainText}</div>
+      </div>
     </motion.div>
   );
 }
