@@ -21,6 +21,7 @@
   --croco-safe-bottom: max(var(--safe-bottom, 12px), env(safe-area-inset-bottom, 0px), 12px);
   --croco-safe-left: max(var(--safe-left, 0px), env(safe-area-inset-left, 0px));
   --croco-safe-right: max(var(--safe-right, 0px), env(safe-area-inset-right, 0px));
+  --croco-stage-top: calc(var(--croco-safe-top) + var(--app-pad-y, 12px));
   --croco-vh: var(--tg-vh, 100svh);
   min-height: var(--croco-vh);
   color: var(--croco-fg);
@@ -103,6 +104,11 @@
 
 .croco-wrap.pt-safe {
   padding-top: 0;
+}
+
+.croco[data-stage="round"] .croco-wrap.pt-safe,
+.croco[data-stage="summary"] .croco-wrap.pt-safe {
+  padding-top: var(--croco-stage-top);
 }
 
 .croco .switch-overlay {

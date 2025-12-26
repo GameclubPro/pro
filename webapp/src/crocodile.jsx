@@ -617,7 +617,7 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   const visibleStage = isSwitching ? lastStage : state.stage;
 
   return (
-    <div className="croco">
+    <div className="croco" data-stage={visibleStage}>
       <div className="croco-bg" aria-hidden>
         <span className="blob one" />
         <span className="blob two" />
