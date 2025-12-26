@@ -5,9 +5,7 @@ import Confetti from "react-canvas-confetti";
 import {
   Activity,
   Check,
-  Minus,
   Pause,
-  Plus,
   Play,
   RefreshCw,
   Settings,
@@ -856,11 +854,6 @@ function Setup({
     }
   };
 
-  const stepSetting = (key, delta, min, max) => {
-    const nextValue = clamp((settings[key] ?? 0) + delta, min, max);
-    onChangeSetting(key, nextValue);
-  };
-
   const resetSettings = () => {
     onChangeSetting("roundSeconds", DEFAULT_SETTINGS.roundSeconds);
     onChangeSetting("wordsPerTeam", DEFAULT_SETTINGS.wordsPerTeam);
@@ -884,8 +877,6 @@ function Setup({
   ];
 
   const showCustom = selectedPacks.includes("custom") || customWords.length > 0;
-  const timerPresets = [30, 45, 60, 90];
-  const wordsPresets = [6, 8, 10, 15];
 
   const settingsModal = (
     <AnimatePresence>
@@ -1013,66 +1004,13 @@ function Setup({
                       </div>
                     </div>
 
-                    <div className="croco-settings-presets">
-                      <div className="croco-preset-group">
-                        <div className="croco-preset-label">Таймер</div>
-                        <div className="croco-preset-row">
-                          {timerPresets.map((value) => (
-                            <button
-                              key={`timer-${value}`}
-                              type="button"
-                              className={`croco-preset-btn${settings.roundSeconds === value ? " is-active" : ""}`}
-                              onClick={() => onChangeSetting("roundSeconds", value)}
-                              aria-pressed={settings.roundSeconds === value}
-                            >
-                              {value}с
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="croco-preset-group">
-                        <div className="croco-preset-label">Слова</div>
-                        <div className="croco-preset-row">
-                          {wordsPresets.map((value) => (
-                            <button
-                              key={`words-${value}`}
-                              type="button"
-                              className={`croco-preset-btn${settings.wordsPerTeam === value ? " is-active" : ""}`}
-                              onClick={() => onChangeSetting("wordsPerTeam", value)}
-                              aria-pressed={settings.wordsPerTeam === value}
-                            >
-                              {value}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
                     <div className="croco-settings-cards">
                       <div className="croco-setting-card is-accent">
                         <div className="croco-setting-row">
                           <div className="croco-setting-label">Время раунда</div>
-                          <div className="croco-setting-stepper" role="group" aria-label="Время раунда">
-                            <button
-                              type="button"
-                              className="croco-stepper-btn"
-                              onClick={() => stepSetting("roundSeconds", -5, 20, 120)}
-                              aria-label="Уменьшить время"
-                            >
-                              <Minus size={16} />
-                            </button>
-                            <div className="croco-stepper-value">
-                              {settings.roundSeconds}
-                              <span className="croco-stepper-unit">сек</span>
-                            </div>
-                            <button
-                              type="button"
-                              className="croco-stepper-btn"
-                              onClick={() => stepSetting("roundSeconds", 5, 20, 120)}
-                              aria-label="Увеличить время"
-                            >
-                              <Plus size={16} />
-                            </button>
+                          <div className="croco-setting-value">
+                            {settings.roundSeconds}
+                            <span className="croco-setting-unit">сек</span>
                           </div>
                         </div>
                         <input
@@ -1096,27 +1034,9 @@ function Setup({
                       <div className="croco-setting-card">
                         <div className="croco-setting-row">
                           <div className="croco-setting-label">Слова на команду</div>
-                          <div className="croco-setting-stepper" role="group" aria-label="Слова на команду">
-                            <button
-                              type="button"
-                              className="croco-stepper-btn"
-                              onClick={() => stepSetting("wordsPerTeam", -1, 3, 30)}
-                              aria-label="Уменьшить количество слов"
-                            >
-                              <Minus size={16} />
-                            </button>
-                            <div className="croco-stepper-value">
-                              {settings.wordsPerTeam}
-                              <span className="croco-stepper-unit">шт</span>
-                            </div>
-                            <button
-                              type="button"
-                              className="croco-stepper-btn"
-                              onClick={() => stepSetting("wordsPerTeam", 1, 3, 30)}
-                              aria-label="Увеличить количество слов"
-                            >
-                              <Plus size={16} />
-                            </button>
+                          <div className="croco-setting-value">
+                            {settings.wordsPerTeam}
+                            <span className="croco-setting-unit">шт</span>
                           </div>
                         </div>
                         <input

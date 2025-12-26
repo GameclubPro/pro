@@ -1135,47 +1135,6 @@
   color: rgba(4, 16, 23, 0.65);
 }
 
-.croco-settings-presets {
-  display: grid;
-  gap: 10px;
-}
-
-.croco-preset-group {
-  display: grid;
-  gap: 6px;
-}
-
-.croco-preset-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--croco-muted);
-}
-
-.croco-preset-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
-  gap: 8px;
-}
-
-.croco-preset-btn {
-  padding: 8px 6px;
-  border-radius: 999px;
-  border: 1px solid var(--croco-border);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--croco-fg);
-  font-weight: 800;
-  font-size: 12px;
-  box-shadow: var(--croco-shadow);
-}
-
-.croco-preset-btn.is-active {
-  background: var(--croco-primary);
-  color: #041017;
-  border-color: transparent;
-  box-shadow: 0 12px 30px rgba(34, 197, 94, 0.3);
-}
-
 .croco-settings-content {
   min-width: 0;
   display: grid;
@@ -1266,38 +1225,18 @@
   font-weight: 700;
 }
 
-.croco-setting-stepper {
+.croco-setting-value {
   display: inline-flex;
-  align-items: center;
+  align-items: baseline;
   gap: 6px;
-  padding: 4px;
-  border-radius: 12px;
-  border: 1px solid var(--croco-border);
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.croco-stepper-btn {
-  width: 32px;
-  height: 32px;
+  padding: 4px 8px;
   border-radius: 10px;
   border: 1px solid var(--croco-border);
   background: rgba(255, 255, 255, 0.08);
-  color: inherit;
-  display: grid;
-  place-items: center;
-}
-
-.croco-stepper-value {
-  min-width: 60px;
-  text-align: center;
   font-weight: 900;
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 4px;
 }
 
-.croco-stepper-unit {
+.croco-setting-unit {
   font-size: 11px;
   color: var(--croco-muted);
   font-weight: 700;
@@ -1479,8 +1418,6 @@
 .croco-settings-close:focus-visible,
 .croco-pack-card:focus-visible,
 .croco-toggle:focus-visible,
-.croco-stepper-btn:focus-visible,
-.croco-preset-btn:focus-visible,
 .croco-settings-reset:focus-visible,
 .croco-settings-done:focus-visible,
 .croco-custom-add:focus-visible,
