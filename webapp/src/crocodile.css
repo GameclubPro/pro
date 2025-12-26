@@ -101,6 +101,10 @@
   align-content: start;
 }
 
+.croco-wrap.pt-safe {
+  padding-top: 0;
+}
+
 .croco .switch-overlay {
   position: fixed;
   inset: 0;
