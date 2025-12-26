@@ -5,7 +5,9 @@ import Confetti from "react-canvas-confetti";
 import {
   Activity,
   Check,
+  Minus,
   Pause,
+  Plus,
   Play,
   RefreshCw,
   Settings,
@@ -854,9 +856,9 @@ function Setup({
     }
   };
 
-  const updateSettingNumber = (key, value, min, max) => {
-    if (Number.isNaN(value)) return;
-    onChangeSetting(key, clamp(value, min, max));
+  const stepSetting = (key, delta, min, max) => {
+    const nextValue = clamp((settings[key] ?? 0) + delta, min, max);
+    onChangeSetting(key, nextValue);
   };
 
   const resetSettings = () => {
@@ -882,6 +884,8 @@ function Setup({
   ];
 
   const showCustom = selectedPacks.includes("custom") || customWords.length > 0;
+  const timerPresets = [30, 45, 60, 90];
+  const wordsPresets = [6, 8, 10, 15];
 
   const settingsModal = (
     <AnimatePresence>
@@ -923,6 +927,8 @@ function Setup({
                 <nav
                   className="croco-settings-nav"
                   aria-label="Разделы"
+                  role="tablist"
+                  aria-orientation="horizontal"
                   style={{
                     "--croco-tab-count": 3,
                     "--croco-tab-index": activeSettings === "match" ? 0 : activeSettings === "words" ? 1 : 2,
@@ -932,8 +938,12 @@ function Setup({
                   <button
                     className={`croco-settings-tab ${activeSettings === "match" ? "is-active" : ""}`}
                     onClick={() => setActiveSettings("match")}
-                    aria-pressed={activeSettings === "match"}
+                    type="button"
+                    role="tab"
+                    id="croco-settings-tab-match"
+                    aria-selected={activeSettings === "match"}
                     aria-controls="croco-settings-match"
+                    tabIndex={activeSettings === "match" ? 0 : -1}
                   >
                     <span className="croco-settings-tab-ico">
                       <Activity size={16} />
@@ -946,8 +956,12 @@ function Setup({
                   <button
                     className={`croco-settings-tab ${activeSettings === "words" ? "is-active" : ""}`}
                     onClick={() => setActiveSettings("words")}
-                    aria-pressed={activeSettings === "words"}
+                    type="button"
+                    role="tab"
+                    id="croco-settings-tab-words"
+                    aria-selected={activeSettings === "words"}
                     aria-controls="croco-settings-words"
+                    tabIndex={activeSettings === "words" ? 0 : -1}
                   >
                     <span className="croco-settings-tab-ico">
                       <Wand2 size={16} />
@@ -960,8 +974,12 @@ function Setup({
                   <button
                     className={`croco-settings-tab ${activeSettings === "effects" ? "is-active" : ""}`}
                     onClick={() => setActiveSettings("effects")}
-                    aria-pressed={activeSettings === "effects"}
+                    type="button"
+                    role="tab"
+                    id="croco-settings-tab-effects"
+                    aria-selected={activeSettings === "effects"}
                     aria-controls="croco-settings-effects"
+                    tabIndex={activeSettings === "effects" ? 0 : -1}
                   >
                     <span className="croco-settings-tab-ico">
                       <Volume2 size={16} />
@@ -977,6 +995,10 @@ function Setup({
                   <section
                     id="croco-settings-match"
                     className={`croco-settings-section ${activeSettings === "match" ? "is-active" : ""}`}
+                    role="tabpanel"
+                    aria-labelledby="croco-settings-tab-match"
+                    tabIndex={0}
+                    hidden={activeSettings !== "match"}
                   >
                     <div className="croco-settings-section-head">
                       <div>
@@ -991,25 +1013,66 @@ function Setup({
                       </div>
                     </div>
 
+                    <div className="croco-settings-presets">
+                      <div className="croco-preset-group">
+                        <div className="croco-preset-label">Таймер</div>
+                        <div className="croco-preset-row">
+                          {timerPresets.map((value) => (
+                            <button
+                              key={`timer-${value}`}
+                              type="button"
+                              className={`croco-preset-btn${settings.roundSeconds === value ? " is-active" : ""}`}
+                              onClick={() => onChangeSetting("roundSeconds", value)}
+                              aria-pressed={settings.roundSeconds === value}
+                            >
+                              {value}с
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="croco-preset-group">
+                        <div className="croco-preset-label">Слова</div>
+                        <div className="croco-preset-row">
+                          {wordsPresets.map((value) => (
+                            <button
+                              key={`words-${value}`}
+                              type="button"
+                              className={`croco-preset-btn${settings.wordsPerTeam === value ? " is-active" : ""}`}
+                              onClick={() => onChangeSetting("wordsPerTeam", value)}
+                              aria-pressed={settings.wordsPerTeam === value}
+                            >
+                              {value}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="croco-settings-cards">
                       <div className="croco-setting-card is-accent">
                         <div className="croco-setting-row">
                           <div className="croco-setting-label">Время раунда</div>
-                          <div className="croco-setting-value">
-                            <input
-                              type="number"
-                              min={20}
-                              max={120}
-                              step={5}
-                              inputMode="numeric"
-                              value={settings.roundSeconds}
-                              onChange={(e) =>
-                                updateSettingNumber("roundSeconds", Number(e.target.value), 20, 120)
-                              }
-                              className="croco-setting-input"
-                              aria-label="Время раунда"
-                            />
-                            <span className="croco-setting-unit">сек</span>
+                          <div className="croco-setting-stepper" role="group" aria-label="Время раунда">
+                            <button
+                              type="button"
+                              className="croco-stepper-btn"
+                              onClick={() => stepSetting("roundSeconds", -5, 20, 120)}
+                              aria-label="Уменьшить время"
+                            >
+                              <Minus size={16} />
+                            </button>
+                            <div className="croco-stepper-value">
+                              {settings.roundSeconds}
+                              <span className="croco-stepper-unit">сек</span>
+                            </div>
+                            <button
+                              type="button"
+                              className="croco-stepper-btn"
+                              onClick={() => stepSetting("roundSeconds", 5, 20, 120)}
+                              aria-label="Увеличить время"
+                            >
+                              <Plus size={16} />
+                            </button>
                           </div>
                         </div>
                         <input
@@ -1033,21 +1096,27 @@ function Setup({
                       <div className="croco-setting-card">
                         <div className="croco-setting-row">
                           <div className="croco-setting-label">Слова на команду</div>
-                          <div className="croco-setting-value">
-                            <input
-                              type="number"
-                              min={3}
-                              max={30}
-                              step={1}
-                              inputMode="numeric"
-                              value={settings.wordsPerTeam}
-                              onChange={(e) =>
-                                updateSettingNumber("wordsPerTeam", Number(e.target.value), 3, 30)
-                              }
-                              className="croco-setting-input"
-                              aria-label="Слова на команду"
-                            />
-                            <span className="croco-setting-unit">шт</span>
+                          <div className="croco-setting-stepper" role="group" aria-label="Слова на команду">
+                            <button
+                              type="button"
+                              className="croco-stepper-btn"
+                              onClick={() => stepSetting("wordsPerTeam", -1, 3, 30)}
+                              aria-label="Уменьшить количество слов"
+                            >
+                              <Minus size={16} />
+                            </button>
+                            <div className="croco-stepper-value">
+                              {settings.wordsPerTeam}
+                              <span className="croco-stepper-unit">шт</span>
+                            </div>
+                            <button
+                              type="button"
+                              className="croco-stepper-btn"
+                              onClick={() => stepSetting("wordsPerTeam", 1, 3, 30)}
+                              aria-label="Увеличить количество слов"
+                            >
+                              <Plus size={16} />
+                            </button>
                           </div>
                         </div>
                         <input
@@ -1077,6 +1146,10 @@ function Setup({
                   <section
                     id="croco-settings-words"
                     className={`croco-settings-section ${activeSettings === "words" ? "is-active" : ""}`}
+                    role="tabpanel"
+                    aria-labelledby="croco-settings-tab-words"
+                    tabIndex={0}
+                    hidden={activeSettings !== "words"}
                   >
                     <div className="croco-settings-section-head">
                       <div>
@@ -1179,6 +1252,10 @@ function Setup({
                   <section
                     id="croco-settings-effects"
                     className={`croco-settings-section ${activeSettings === "effects" ? "is-active" : ""}`}
+                    role="tabpanel"
+                    aria-labelledby="croco-settings-tab-effects"
+                    tabIndex={0}
+                    hidden={activeSettings !== "effects"}
                   >
                     <div className="croco-settings-section-head">
                       <div>
