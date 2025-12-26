@@ -887,7 +887,7 @@ function Setup({
     <AnimatePresence>
       {settingsOpen && (
         <motion.div
-          className="croco-settings-overlay croco-settings-overlay--crocodile"
+          className="croco-settings-overlay--crocodile"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -895,7 +895,7 @@ function Setup({
           onClick={() => setSettingsOpen(false)}
         >
           <motion.div
-            className="croco-settings-window croco-settings-window--crocodile"
+            className="croco-settings-window--crocodile"
             initial={{ y: 30, opacity: 0, scale: 0.98 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 14, opacity: 0, scale: 0.98 }}

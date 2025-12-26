@@ -865,7 +865,7 @@
   cursor: not-allowed;
 }
 
-.croco-settings-overlay {
+.croco-settings-overlay--crocodile {
   position: fixed;
   inset: 0;
   --croco-safe-top-extra: 12px;
@@ -900,13 +900,7 @@
   overflow: hidden;
 }
 
-.croco-settings-overlay.croco-settings-overlay--crocodile {
-  display: grid;
-  place-items: center;
-  padding: var(--croco-modal-pad-y) var(--croco-modal-pad-x);
-}
-
-.croco-settings-window {
+.croco-settings-window--crocodile {
   position: relative;
   width: min(760px, 100%);
   max-width: min(760px, 100%);
@@ -937,15 +931,7 @@
   display: block;
 }
 
-.croco-settings-window.croco-settings-window--crocodile {
-  width: min(760px, 100%);
-  max-width: min(760px, 100%);
-  height: auto;
-  max-height: var(--croco-modal-max-h);
-  margin: 0;
-}
-
-.croco-settings-window::before {
+.croco-settings-window--crocodile::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -955,7 +941,7 @@
   pointer-events: none;
 }
 
-.croco-settings-window::after {
+.croco-settings-window--crocodile::after {
   content: "";
   position: sticky;
   bottom: -1px;
@@ -966,23 +952,23 @@
   margin-top: 8px;
 }
 
-.croco-settings-window::-webkit-scrollbar {
+.croco-settings-window--crocodile::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
 
-.croco-settings-window::-webkit-scrollbar-track {
+.croco-settings-window--crocodile::-webkit-scrollbar-track {
   background: transparent;
   border: none;
 }
 
-.croco-settings-window::-webkit-scrollbar-thumb {
+.croco-settings-window--crocodile::-webkit-scrollbar-thumb {
   background: transparent;
   border: none;
   box-shadow: none;
 }
 
-.croco-settings-window::-webkit-scrollbar-thumb:hover {
+.croco-settings-window--crocodile::-webkit-scrollbar-thumb:hover {
   background: transparent;
 }
 
@@ -1427,12 +1413,12 @@
 }
 
 @media (max-width: 768px) {
-  .croco-settings-overlay {
+  .croco-settings-overlay--crocodile {
     --croco-modal-pad-x: 0px;
     padding: 0;
     place-items: stretch;
   }
-  .croco-settings-window {
+  .croco-settings-window--crocodile {
     width: 100%;
     max-width: 100%;
     height: var(--croco-vh);
@@ -1442,13 +1428,7 @@
     box-shadow: none;
     overflow: hidden;
   }
-  .croco-settings-window.croco-settings-window--crocodile {
-    width: 100%;
-    max-width: 100%;
-    height: var(--croco-vh);
-    max-height: var(--croco-vh);
-  }
-  .croco-settings-window::after {
+  .croco-settings-window--crocodile::after {
     display: none;
   }
   .croco-settings-shell {
