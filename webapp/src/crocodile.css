@@ -1582,9 +1582,10 @@
 }
 
 .word-top {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 8px;
+  column-gap: 8px;
 }
 
 .word-main {
@@ -1727,6 +1728,16 @@
   background: rgba(239, 68, 68, 0.15);
   border-color: rgba(239, 68, 68, 0.5);
   color: #fecdd3;
+}
+
+.word-result {
+  justify-self: end;
+  min-width: 7ch;
+  text-align: center;
+}
+
+.word-result.is-hidden {
+  visibility: hidden;
 }
 
 .winners {

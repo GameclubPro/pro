@@ -1339,6 +1339,11 @@ function TimerPacman({
 }
 
 function WordCard({ word, tip, hints, lastResult }) {
+  const resultLabel = lastResult === "correct" ? "зачёт" : "пропуск";
+  const resultClass = `pill word-result${
+    lastResult ? ` ${lastResult === "correct" ? "pill-success" : "pill-warn"}` : " is-hidden"
+  }`;
+
   return (
     <motion.div
       className="word-card"
@@ -1351,11 +1356,9 @@ function WordCard({ word, tip, hints, lastResult }) {
         <span className="pill">
           <Activity size={14} /> {word?.level || "..."}
         </span>
-        {lastResult && (
-          <span className={`pill ${lastResult === "correct" ? "pill-success" : "pill-warn"}`}>
-            {lastResult === "correct" ? "зачёт" : "пропуск"}
-          </span>
-        )}
+        <span className={resultClass} aria-hidden={!lastResult}>
+          {resultLabel}
+        </span>
       </div>
       <div className="word-main">{word?.word || "Готовимся..."}</div>
       <div className="word-sub">Покажи без слов, звуков и букв. Жестикулируй крупно.</div>
