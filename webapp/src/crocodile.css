@@ -2375,8 +2375,6 @@
   50% { opacity: 0.55; }
   100% { transform: translateX(40%); opacity: 0.2; }
 }
-}
-
 .croco-word-footer {
   width: 100%;
   padding: clamp(16px, 4.5vw, 28px);
