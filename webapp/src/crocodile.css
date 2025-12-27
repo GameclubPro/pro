@@ -156,6 +156,10 @@
   padding-top: calc(var(--croco-safe-top) + var(--croco-page-pad-y));
 }
 
+.croco[data-stage="setup"] .croco-wrap.pt-safe {
+  padding-top: 0;
+}
+
 .croco[data-stage="round"] .croco-wrap.pt-safe,
 .croco[data-stage="summary"] .croco-wrap.pt-safe {
   padding-top: calc(var(--croco-safe-top) + var(--croco-page-pad-y));
@@ -252,7 +256,8 @@
   justify-items: center;
   align-content: start;
   gap: clamp(12px, 3vw, 20px);
-  --croco-head-space: clamp(180px, 26vh, 280px);
+  --croco-head-size: clamp(170px, 46vw, 235px);
+  --croco-head-space: calc(var(--croco-head-size) * 0.97);
   --croco-legs-space: clamp(200px, 30vh, 320px);
   padding-top: var(--croco-head-space);
   padding-bottom: var(--croco-legs-space);
@@ -270,7 +275,7 @@
   left: 50%;
   top: 0;
   transform: translate(-50%, -100%);
-  width: clamp(170px, 46vw, 235px);
+  width: var(--croco-head-size);
   pointer-events: none;
   filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.45));
   z-index: 4;
@@ -392,7 +397,6 @@
 
 @media (max-width: 768px) {
   .setup-shell {
-    --croco-head-space: clamp(170px, 24vh, 240px);
     --croco-legs-space: clamp(180px, 26vh, 260px);
   }
   .setup-panel-wrap .croco-hands.hold-panel {
@@ -421,8 +425,8 @@
 }
 
 @media (max-width: 480px) {
-  .croco-head {
-    width: clamp(140px, 47vw, 182px);
+  .setup-shell {
+    --croco-head-size: clamp(140px, 47vw, 182px);
   }
   .croco-hands.hold-panel .hand {
     width: clamp(72px, 24.7vw, 109px);
@@ -2700,7 +2704,7 @@
 
 @media (max-height: 680px) {
   .setup-shell {
-    --croco-head-space: clamp(150px, 22vh, 210px);
+    --croco-head-size: clamp(155px, 22vh, 216px);
     --croco-legs-space: clamp(160px, 24vh, 230px);
   }
   .croco-word-card {
@@ -2725,7 +2729,7 @@
 
 @media (max-height: 560px) {
   .setup-shell {
-    --croco-head-space: clamp(130px, 20vh, 180px);
+    --croco-head-size: clamp(134px, 20vh, 186px);
     --croco-legs-space: clamp(140px, 22vh, 200px);
   }
   .pacman-track {
