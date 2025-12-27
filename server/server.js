@@ -1291,6 +1291,70 @@ app.post('/api/crocodile/import', requireAdmin, async (req, res) => {
   }
 });
 
+app.patch('/api/crocodile/words', requireAdmin, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const items = Array.isArray(body.items) ? body.items : [];
+    if (!items.length) {
+      return res.status(400).json({ ok: false, error: 'empty_items' });
+    }
+
+    let updated = 0;
+    let missing = 0;
+    let skipped = 0;
+
+    for (const item of items) {
+      if (!item || typeof item !== 'object') {
+        skipped += 1;
+        continue;
+      }
+
+      const data = {};
+      if (Object.prototype.hasOwnProperty.call(item, 'imageUrl')) {
+        data.imageUrl = normalizeImageUrl(item.imageUrl);
+      }
+      if (Object.prototype.hasOwnProperty.call(item, 'pack')) {
+        data.pack = normalizePack(item.pack);
+      }
+      if (Object.prototype.hasOwnProperty.call(item, 'active')) {
+        data.active = item.active === true;
+      }
+      if (!Object.keys(data).length) {
+        skipped += 1;
+        continue;
+      }
+
+      let where = null;
+      if (item.id != null && Number.isFinite(Number(item.id))) {
+        where = { id: Number(item.id) };
+      } else {
+        const wordRaw = String(item.word || '').trim();
+        if (!wordRaw) {
+          skipped += 1;
+          continue;
+        }
+        const difficultyKey = normalizeDifficultyKey(item.difficulty) || 'easy';
+        const difficultyEnum = CROCO_LEVEL_TO_ENUM[difficultyKey];
+        if (!difficultyEnum) {
+          skipped += 1;
+          continue;
+        }
+        const wordKey = normalizeWordKey(wordRaw).slice(0, 191);
+        where = { wordKey, difficulty: difficultyEnum };
+      }
+
+      const result = await prisma.crocodileWord.updateMany({ where, data });
+      if (result.count > 0) updated += result.count;
+      else missing += 1;
+    }
+
+    return res.json({ ok: true, updated, missing, skipped, total: items.length });
+  } catch (e) {
+    console.error('PATCH /api/crocodile/words', e);
+    return res.status(500).json({ ok: false, error: 'failed' });
+  }
+});
+
 /* ============================ Self → активная комната пользователя ============================ */
 app.get('/api/self/active-room', async (req, res) => {
   try {
