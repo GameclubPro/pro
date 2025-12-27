@@ -156,6 +156,10 @@
   padding-top: calc(var(--croco-safe-top) + var(--croco-page-pad-y));
 }
 
+.croco[data-stage="setup"] .croco-wrap.pt-safe {
+  padding-top: 0;
+}
+
 .croco[data-stage="round"] .croco-wrap.pt-safe,
 .croco[data-stage="summary"] .croco-wrap.pt-safe {
   padding-top: calc(var(--croco-safe-top) + var(--croco-page-pad-y));
@@ -258,6 +262,10 @@
   padding-bottom: var(--croco-legs-space);
 }
 
+.croco[data-stage="setup"] .setup-shell {
+  padding-top: 0;
+}
+
 .setup-panel-wrap {
   position: relative;
   width: min(100%, 760px);
@@ -274,6 +282,10 @@
   pointer-events: none;
   filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.45));
   z-index: 4;
+}
+
+.croco[data-stage="setup"] .croco-head {
+  transform: translate(-50%, 0);
 }
 
 .croco-head img {
