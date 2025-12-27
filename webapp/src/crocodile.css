@@ -256,8 +256,9 @@
   justify-items: center;
   align-content: start;
   gap: clamp(12px, 3vw, 20px);
+  --croco-head-scale: 1.1;
   --croco-head-size: clamp(170px, 46vw, 235px);
-  --croco-head-space: calc(var(--croco-head-size) * 0.97);
+  --croco-head-space: calc(var(--croco-head-size) * var(--croco-head-scale) * 0.97);
   --croco-legs-space: clamp(200px, 30vh, 320px);
   padding-top: var(--croco-head-space);
   padding-bottom: var(--croco-legs-space);
@@ -275,7 +276,7 @@
   left: 50%;
   top: 0;
   transform: translate(-50%, -100%);
-  width: var(--croco-head-size);
+  width: calc(var(--croco-head-size) * var(--croco-head-scale));
   pointer-events: none;
   filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.45));
   z-index: 4;
