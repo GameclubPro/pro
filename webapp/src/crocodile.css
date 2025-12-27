@@ -317,8 +317,10 @@
 }
 
 .croco-hands.hold-panel img {
-  width: 75%;
-  max-width: 75%;
+  width: 100%;
+  max-width: 100%;
+  transform: scale(0.75);
+  transform-origin: center top;
 }
 
 .croco-legs {
