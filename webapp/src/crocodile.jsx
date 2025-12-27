@@ -429,6 +429,8 @@ export default function Crocodile({ apiBase, initData, goBack, onProgress, setBa
   const [remoteWords, setRemoteWords] = useState([]);
   const [remoteCounts, setRemoteCounts] = useState(null);
   const [remoteStatus, setRemoteStatus] = useState(API_BASE ? "loading" : "disabled");
+  const preloadedUrlsRef = useRef(new Set());
+  const lastPrefetchWordRef = useRef(null);
 
   const getInitData = useCallback(() => initData || window?.Telegram?.WebApp?.initData || "", [initData]);
   const fetchJSON = useCallback(
@@ -473,6 +475,26 @@ export default function Crocodile({ apiBase, initData, goBack, onProgress, setBa
       }
     },
     [API_BASE, getInitData]
+  );
+
+  const preloadImage = useCallback((url) => {
+    if (!url || preloadedUrlsRef.current.has(url) || typeof Image === "undefined") return;
+    const img = new Image();
+    img.decoding = "async";
+    img.src = url;
+    preloadedUrlsRef.current.add(url);
+  }, []);
+
+  const schedulePrefetch = useCallback(
+    (url) => {
+      if (!url) return;
+      if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+        window.requestIdleCallback(() => preloadImage(url), { timeout: 1200 });
+      } else {
+        setTimeout(() => preloadImage(url), 80);
+      }
+    },
+    [preloadImage]
   );
 
   const customWords = useMemo(() => parseWords(state.customText), [state.customText]);
@@ -596,6 +618,33 @@ export default function Crocodile({ apiBase, initData, goBack, onProgress, setBa
       cancelled = true;
     };
   }, [API_BASE, selectedDifficulties, remotePoolSize, fetchJSON]);
+
+  useEffect(() => {
+    if (state.stage !== "round") return;
+    const currentId = state.word?.id;
+    if (!currentId) return;
+    if (lastPrefetchWordRef.current === currentId) return;
+    lastPrefetchWordRef.current = currentId;
+
+    const used = state.word?.id ? [...state.used, state.word.id] : state.used;
+    const currentStreak = state.streaks?.[state.activeIndex] ?? 0;
+    let nextCandidate = pickWord(wordPool, used, currentStreak, state.settings.autoDifficulty);
+    if (!nextCandidate || nextCandidate.id === currentId || !nextCandidate.imageUrl) {
+      nextCandidate = wordPool.find(
+        (item) => item?.imageUrl && item.id !== currentId && !used.includes(item.id)
+      );
+    }
+    schedulePrefetch(nextCandidate?.imageUrl);
+  }, [
+    state.stage,
+    state.word?.id,
+    state.used,
+    state.streaks,
+    state.activeIndex,
+    state.settings.autoDifficulty,
+    wordPool,
+    schedulePrefetch,
+  ]);
 
   useEffect(() => {
     if (state.stage !== "switch") {
@@ -1704,12 +1753,18 @@ function TimerPacman({
 
 function WordCard({ word, masked = false }) {
   const mainText = masked ? "Смена хода" : word?.word || "Готовимся...";
-  const [imageOk, setImageOk] = useState(true);
-  const imageUrl = !masked && imageOk ? word?.imageUrl : null;
+  const imageUrl = !masked ? word?.imageUrl : null;
+  const [imageStatus, setImageStatus] = useState(imageUrl ? "loading" : "idle");
 
   useEffect(() => {
-    setImageOk(true);
-  }, [word?.imageUrl]);
+    if (!imageUrl) {
+      setImageStatus("idle");
+      return;
+    }
+    setImageStatus("loading");
+  }, [imageUrl]);
+
+  const showPlaceholder = !imageUrl || imageStatus !== "ready";
 
   return (
     <motion.div
@@ -1720,15 +1775,30 @@ function WordCard({ word, masked = false }) {
       layout
     >
       <div className="croco-word-visual" aria-hidden="true">
-        {imageUrl ? (
+        <div
+          className={`croco-word-placeholder${
+            showPlaceholder ? "" : " is-hidden"
+          }${imageStatus === "error" ? " is-error" : ""}`}
+        >
+          <div className="croco-word-placeholder-core">
+            <span className="croco-word-placeholder-ring" />
+            <span className="croco-word-placeholder-orb" />
+            <span className="croco-word-placeholder-dot" />
+          </div>
+          <span className="croco-word-placeholder-sheen" />
+        </div>
+        {imageUrl && (
           <img
             src={imageUrl}
             alt=""
-            className="croco-word-visual-img is-photo"
-            onError={() => setImageOk(false)}
+            className={`croco-word-visual-img is-photo${
+              imageStatus === "ready" ? " is-ready" : ""
+            }`}
+            onLoad={() => setImageStatus("ready")}
+            onError={() => setImageStatus("error")}
+            loading="eager"
+            decoding="async"
           />
-        ) : (
-          <img src={crocoHead} alt="" className="croco-word-visual-img" />
         )}
       </div>
       <div className="croco-word-footer">
