@@ -156,6 +156,10 @@
   padding-top: calc(var(--croco-safe-top) + var(--croco-page-pad-y));
 }
 
+.croco[data-stage="setup"] .croco-wrap.pt-safe {
+  padding-top: 0;
+}
+
 .croco[data-stage="round"] .croco-wrap.pt-safe,
 .croco[data-stage="summary"] .croco-wrap.pt-safe {
   padding-top: calc(var(--croco-safe-top) + var(--croco-page-pad-y));
@@ -256,6 +260,10 @@
   --croco-legs-space: clamp(200px, 30vh, 320px);
   padding-top: var(--croco-head-space);
   padding-bottom: var(--croco-legs-space);
+}
+
+.croco[data-stage="setup"] .setup-shell {
+  padding-top: 0;
 }
 
 .setup-panel-wrap {
