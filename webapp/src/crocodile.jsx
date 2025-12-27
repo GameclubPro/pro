@@ -5,6 +5,7 @@ import Confetti from "react-canvas-confetti";
 import {
   Activity,
   Check,
+  ChevronDown,
   Pause,
   Play,
   RefreshCw,
@@ -957,6 +958,9 @@ function Setup({
   const [localRoster, setLocalRoster] = useState(roster);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activeSettings, setActiveSettings] = useState("match");
+  const [difficultyMenuOpen, setDifficultyMenuOpen] = useState(false);
+  const difficultyTriggerRef = useRef(null);
+  const difficultyMenuRef = useRef(null);
   const selectedPacks = useMemo(
     () => normalizePacks(settings.difficulty, customWords.length > 0),
     [settings.difficulty, customWords.length]
@@ -976,6 +980,30 @@ function Setup({
   useEffect(() => {
     if (settingsOpen) setActiveSettings("match");
   }, [settingsOpen]);
+
+  useEffect(() => {
+    if (settingsOpen) setDifficultyMenuOpen(false);
+  }, [settingsOpen]);
+
+  useEffect(() => {
+    if (!difficultyMenuOpen) return undefined;
+    const handlePointer = (event) => {
+      if (difficultyTriggerRef.current?.contains(event.target)) return;
+      if (difficultyMenuRef.current?.contains(event.target)) return;
+      setDifficultyMenuOpen(false);
+    };
+    const handleKey = (event) => {
+      if (event.key === "Escape") setDifficultyMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointer);
+    document.addEventListener("touchstart", handlePointer);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handlePointer);
+      document.removeEventListener("touchstart", handlePointer);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [difficultyMenuOpen]);
 
   const updateRoster = (next) => {
     setLocalRoster(next);
@@ -1033,6 +1061,21 @@ function Setup({
     onChangeSetting("difficulty", next);
   };
 
+  const applyDifficulty = (option) => {
+    if (!option) return;
+    if (option.id === "custom") {
+      onChangeSetting("difficulty", ["custom"]);
+      setDifficultyMenuOpen(false);
+      return;
+    }
+    const basePacks = option.id === "mix" ? ["easy", "medium", "hard"] : option.packs;
+    const next = selectedPacks.includes("custom")
+      ? [...basePacks, "custom"]
+      : basePacks;
+    onChangeSetting("difficulty", next);
+    setDifficultyMenuOpen(false);
+  };
+
   const handleAddCustom = () => {
     const nextText = appendCustomWords(customText, customInput);
     if (nextText === (customText || "")) {
@@ -1076,6 +1119,51 @@ function Setup({
   ];
 
   const showCustom = selectedPacks.includes("custom") || customWords.length > 0;
+  const baseSelected = selectedPacks.filter((p) => p !== "custom");
+  const baseSelectedKey = baseSelected.length === 1 ? baseSelected[0] : null;
+  const baseMixed = baseSelected.length > 1;
+  const customOnly = selectedPacks.length === 1 && selectedPacks[0] === "custom";
+  const difficultyOptions = [
+    {
+      id: "mix",
+      label: "Микс",
+      emoji: "🎲",
+      packs: ["easy", "medium", "hard"],
+      desc: "Лайт + стандарт + хард",
+    },
+    { id: "easy", label: "Лайт", emoji: PACK_STICKERS.easy, packs: ["easy"], desc: "Лёгкие слова" },
+    {
+      id: "medium",
+      label: "Стандарт",
+      emoji: PACK_STICKERS.medium,
+      packs: ["medium"],
+      desc: "Баланс сложности",
+    },
+    { id: "hard", label: "Хард", emoji: PACK_STICKERS.hard, packs: ["hard"], desc: "Сложнее" },
+    ...(showCustom
+      ? [
+          {
+            id: "custom",
+            label: "Свои",
+            emoji: PACK_STICKERS.custom,
+            packs: ["custom"],
+            desc: "Твой список",
+          },
+        ]
+      : []),
+  ];
+  const currentDifficulty =
+    baseSelected.length > 1
+      ? difficultyOptions.find((d) => d.id === "mix")
+      : baseSelected.length === 1
+        ? difficultyOptions.find((d) => d.id === baseSelected[0])
+        : selectedPacks.includes("custom")
+          ? difficultyOptions.find((d) => d.id === "custom")
+          : difficultyOptions.find((d) => d.id === "mix");
+  const currentDifficultyLabel = currentDifficulty?.label || "Микс";
+  const currentDifficultyEmoji = currentDifficulty?.emoji || "🎲";
+  const showCustomSuffix =
+    selectedPacks.includes("custom") && currentDifficulty?.id !== "custom";
 
   const settingsModal = (
     <AnimatePresence>
@@ -1464,6 +1552,68 @@ function Setup({
                   <Zap size={16} />
                   Соло
                 </button>
+              </div>
+
+              <div className="section-header croco-diff-row">
+                <div className="section-title">Сложность</div>
+                <div className="croco-diff-pill">
+                  <motion.button
+                    ref={difficultyTriggerRef}
+                    className={`croco-diff-pill-btn ${difficultyMenuOpen ? "open" : ""}`}
+                    whileTap={{ scale: 0.97 }}
+                    whileHover={{ y: -1 }}
+                    onClick={() => setDifficultyMenuOpen((prev) => !prev)}
+                    aria-haspopup="listbox"
+                    aria-expanded={difficultyMenuOpen}
+                    type="button"
+                  >
+                    <span className="croco-diff-emoji">{currentDifficultyEmoji}</span>
+                    <span className="croco-diff-pill-label">
+                      {currentDifficultyLabel}
+                      {showCustomSuffix ? " + свои" : ""}
+                    </span>
+                    <ChevronDown size={14} className="croco-diff-caret" />
+                  </motion.button>
+                  <AnimatePresence>
+                    {difficultyMenuOpen ? (
+                      <motion.div
+                        ref={difficultyMenuRef}
+                        className="croco-diff-menu"
+                        role="listbox"
+                        initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                        transition={{ duration: 0.16 }}
+                      >
+                        {difficultyOptions.map((d) => {
+                          const active =
+                            d.id === "mix"
+                              ? baseMixed
+                              : d.id === "custom"
+                                ? customOnly
+                                : baseSelectedKey === d.id;
+                          return (
+                            <button
+                              key={d.id}
+                              className={`croco-diff-menu-item ${active ? "on" : ""}`}
+                              onClick={() => applyDifficulty(d)}
+                              aria-pressed={active}
+                              role="option"
+                              type="button"
+                            >
+                              <span className="croco-diff-emoji tiny">{d.emoji}</span>
+                              <div className="croco-diff-menu-labels">
+                                <span className="croco-diff-menu-title">{d.label}</span>
+                                <span className="croco-diff-menu-sub">{d.desc}</span>
+                              </div>
+                              {active ? <Check size={14} /> : null}
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
+                </div>
               </div>
 
               <div className="roster-shell">
