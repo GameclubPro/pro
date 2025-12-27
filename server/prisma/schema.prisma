@@ -42,6 +42,12 @@ enum RoomGame {
   AUCTION
 }
 
+enum CrocodileDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   tgUserId  BigInt?  @unique
@@ -219,4 +225,21 @@ model AuctionLot {
 
   @@index([categoryId])
   @@index([active])
+}
+
+model CrocodileWord {
+  id         Int                 @id @default(autoincrement())
+  word       String              @db.VarChar(191)
+  wordKey    String              @db.VarChar(191)
+  difficulty CrocodileDifficulty @default(EASY)
+  pack       String?             @db.VarChar(191)
+  imageUrl   String?             @db.Text
+  active     Boolean             @default(true)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  @@unique([wordKey, difficulty])
+  @@index([difficulty])
+  @@index([active])
+  @@index([pack])
 }

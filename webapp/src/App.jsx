@@ -155,7 +155,6 @@ const HOME_SECTION_INDEX = HOME_SECTIONS.reduce((acc, item, idx) => {
 export default function App() {
   // ---- Core ----
   const [user, setUser] = useState(null);
-  const [status, setStatus] = useState("⏳ Проверяем API…");
 
   // route = { kind: 'shell' } | { kind: 'game', name: 'mafia'|'auction'|'crocodile'|'associations'|'quiz'|'questions'|'truthordare'|'compatibility'|'choice'|'sketch' }
   const [route, setRoute] = useState({ kind: "shell" });
@@ -637,13 +636,6 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.kind, tg]);
 
-  // ---- API health ----
-  useEffect(() => {
-    fetch(`${API_BASE}/health`)
-      .then((r) => setStatus(r.ok ? "✅ API доступен" : "❌ Ошибка API"))
-      .catch(() => setStatus("❌ Сервер недоступен"));
-  }, []);
-
   // ---- Helpers ----
   const bumpProgress = () => {
     const nextGames = games + 1;
@@ -768,10 +760,6 @@ export default function App() {
       {route.kind === "shell" ? (
         <Shell
           scheme={scheme}
-          user={user}
-          status={status}
-          games={games}
-          level={level}
           section={section}
           setSection={setSection}
           onOpenGame={openGame}
@@ -801,7 +789,13 @@ export default function App() {
             />
           )}
           {route.name === "crocodile" && (
-            <Crocodile goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
+            <Crocodile
+              apiBase={API_BASE}
+              initData={effectiveInitData}
+              goBack={closeGame}
+              onProgress={bumpProgress}
+              setBackHandler={setBackHandler}
+            />
           )}
           {route.name === "associations" && (
             <Associations goBack={closeGame} onProgress={bumpProgress} setBackHandler={setBackHandler} />
@@ -835,13 +829,11 @@ export default function App() {
 
 /* ===================== SHELL (оболочка) ===================== */
 
-function Shell({ scheme, user, status, level, games, section, setSection, onOpenGame }) {
+function Shell({ scheme, section, setSection, onOpenGame }) {
   const activeId = HOME_SECTION_INDEX[section] != null ? section : DEFAULT_HOME_SECTION;
   const activeIndex = HOME_SECTION_INDEX[activeId] ?? 0;
   const activeMode = HOME_SECTIONS[activeIndex];
   const [switchDir, setSwitchDir] = useState(0);
-  const [headerCollapsed, setHeaderCollapsed] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
 
   const switchTo = useCallback(
     (nextId, dirHint = null) => {
@@ -860,9 +852,6 @@ function Shell({ scheme, user, status, level, games, section, setSection, onOpen
     },
     [activeIndex, switchTo]
   );
-
-  const openProfile = useCallback(() => setProfileOpen(true), []);
-  const closeProfile = useCallback(() => setProfileOpen(false), []);
 
   const swipeRef = useRef({ x: 0, y: 0, t: 0 });
   const handleTouchStart = useCallback((event) => {
@@ -884,16 +873,6 @@ function Shell({ scheme, user, status, level, games, section, setSection, onOpen
     [switchBy]
   );
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const top = window.scrollY || document.documentElement.scrollTop || 0;
-      setHeaderCollapsed(top > 24);
-    };
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   const homeVars = useMemo(
     () => ({
       "--mode-accent": activeMode.accent,
@@ -907,25 +886,7 @@ function Shell({ scheme, user, status, level, games, section, setSection, onOpen
   return (
     <div className="shell">
       <ShellBackdrop scheme={scheme} />
-      <ProfilePill user={user} level={level} visible={headerCollapsed} onOpen={openProfile} />
-      <ProfileSheet
-        open={profileOpen}
-        onClose={closeProfile}
-        user={user}
-        status={status}
-        level={level}
-        games={games}
-      />
       <div className="wrap">
-        <Header
-          user={user}
-          status={status}
-          level={level}
-          games={games}
-          collapsed={headerCollapsed}
-          onOpenProfile={openProfile}
-        />
-
         <div className="homeHub" style={homeVars}>
           <div className="modeTabs" role="tablist" aria-label="Категории">
             <span className="modeIndicator" aria-hidden />
@@ -1029,138 +990,6 @@ function GameCanvas({ children }) {
 }
 
 /* ===================== UI элементов оболочки ===================== */
-
-function Header({ user, status, level, games, collapsed, onOpenProfile }) {
-  const initials = (user?.first_name || "Гость").slice(0, 1).toUpperCase();
-  // Telegram numeric id, если вдруг пришло что-то иное — не используем прокси
-  const tgId = user?.id && /^\d+$/.test(String(user.id)) ? String(user.id) : null;
-
-  return (
-    <header className="shell-header" data-collapsed={collapsed ? "true" : "false"} role="banner" aria-label="Профиль">
-      <div className="profile">
-        <button type="button" className="profileTrigger" onClick={onOpenProfile} aria-label="Открыть профиль">
-          <span className="avatar" aria-hidden>
-            <AvatarImg tgId={tgId} photoUrl={user?.photo_url || ""} initials={initials} />
-          </span>
-        </button>
-        <div className="who">
-          <div className="name" title={user?.first_name || "Гость"}>{user?.first_name || "Гость"}</div>
-          <div className="meta">
-            <span className="chip">Уровень {level}</span>
-            <span className="sep">•</span>
-            <span className="chip">Игр: {games}</span>
-          </div>
-        </div>
-      </div>
-      <div className="status" aria-live="polite">{status}</div>
-    </header>
-  );
-}
-
-function ProfilePill({ user, level, visible, onOpen }) {
-  const initials = (user?.first_name || "Гость").slice(0, 1).toUpperCase();
-  const tgId = user?.id && /^\d+$/.test(String(user.id)) ? String(user.id) : null;
-
-  return (
-    <div className="profilePill" data-visible={visible ? "true" : "false"} aria-hidden={!visible}>
-      <button type="button" className="profilePillBtn" onClick={onOpen} aria-label="Открыть профиль">
-        <span className="pillAvatar" aria-hidden>
-          <AvatarImg tgId={tgId} photoUrl={user?.photo_url || ""} initials={initials} />
-        </span>
-        <span className="pillName" title={user?.first_name || "Гость"}>{user?.first_name || "Гость"}</span>
-        <span className="pillDot" aria-hidden>•</span>
-        <span className="pillLevel">Ур. {level}</span>
-      </button>
-    </div>
-  );
-}
-
-function ProfileSheet({ open, onClose, user, status, level, games }) {
-  const initials = (user?.first_name || "Гость").slice(0, 1).toUpperCase();
-  const tgId = user?.id && /^\d+$/.test(String(user.id)) ? String(user.id) : null;
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const handleKey = (event) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKey);
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKey);
-    };
-  }, [open, onClose]);
-
-  if (!open) return null;
-
-  return (
-    <div className="profileSheet" role="dialog" aria-modal="true" aria-label="Профиль" onClick={onClose}>
-      <div className="profileSheetCard" onClick={(event) => event.stopPropagation()}>
-        <span className="profileSheetHandle" aria-hidden />
-        <div className="profileSheetHead">
-          <div className="profileSheetAvatar" aria-hidden>
-            <AvatarImg tgId={tgId} photoUrl={user?.photo_url || ""} initials={initials} />
-          </div>
-          <div className="profileSheetTitle">
-            <div className="profileSheetName" title={user?.first_name || "Гость"}>{user?.first_name || "Гость"}</div>
-            <div className="profileSheetMeta">ID Telegram: {tgId || "—"}</div>
-          </div>
-          <button type="button" className="profileSheetClose" onClick={onClose} aria-label="Закрыть">
-            ✕
-          </button>
-        </div>
-        <div className="profileSheetStats">
-          <span className="profileSheetChip">Уровень {level}</span>
-          <span className="profileSheetChip">Игр: {games}</span>
-        </div>
-        <div className="profileSheetStatus" aria-live="polite">{status}</div>
-      </div>
-    </div>
-  );
-}
-
-// Надёжная картинка аватара: пробуем прокси /avatar/:tgId → fallback на photo_url → инициалы
-function AvatarImg({ tgId, photoUrl, initials }) {
-  const triedProxy = useRef(false);
-  const [src, setSrc] = useState(() => (tgId ? `${API_BASE}/avatar/${tgId}` : (photoUrl || "")));
-
-  useEffect(() => {
-    if (tgId) {
-      setSrc(`${API_BASE}/avatar/${tgId}`);
-      triedProxy.current = true;
-    } else {
-      setSrc(photoUrl || "");
-      triedProxy.current = false;
-    }
-  }, [tgId, photoUrl]);
-
-  if (!src) {
-    return <span>{initials}</span>;
-  }
-
-  return (
-    <img
-      src={src}
-      alt=""
-      referrerPolicy="no-referrer"
-      decoding="async"
-      loading="eager"
-      onError={() => {
-        if (triedProxy.current && photoUrl) {
-          // Прокси не сработал — пробуем прямую ссылку из Telegram
-          setSrc(photoUrl);
-          triedProxy.current = false;
-        } else {
-          // Совсем не загрузилось — показываем инициалы
-          setSrc("");
-        }
-      }}
-      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-    />
-  );
-}
-
 function GameTile({ icon, name, desc, action, disabled, index, cover, imageOnly }) {
   return (
     <button
@@ -1328,181 +1157,6 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 }
 
 /* Header */
-.shell .shell-header {
-  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: clamp(10px, 2.2vw, 14px);
-  margin: clamp(8px, 1.8vh, 12px) 0 clamp(8px, 1.6vh, 10px);
-  padding: clamp(8px, 1.6vh, 11px) clamp(10px, 2.2vw, 14px);
-  background: color-mix(in srgb, var(--surface) 100%, transparent);
-  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
-  border-radius: 18px;
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--text) 6%, transparent) inset, 0 10px 30px rgba(0,0,0,.10);
-  backdrop-filter: blur(12px);
-  position: relative;
-  overflow: hidden;
-  max-height: 120px;
-  transition: max-height .32s ease, margin .32s ease, padding .32s ease, opacity .2s ease, transform .2s ease, border-color .2s ease, box-shadow .2s ease;
-}
-.shell .shell-header[data-collapsed="true"] {
-  max-height: 0;
-  margin: 0;
-  padding: 0;
-  opacity: 0;
-  transform: translateY(-8px) scale(.98);
-  border-color: transparent;
-  border-width: 0;
-  box-shadow: none;
-}
-.shell .profile { display:flex; align-items:center; gap: clamp(8px, 2vw, 12px); min-width:0; }
-.shell .profileTrigger { padding: 0; border-radius: 14px; display: inline-grid; place-items: center; }
-.shell .profileTrigger:focus-visible { outline: 2px solid color-mix(in srgb, rgb(var(--accent-rgb)) 70%, #ffffff); outline-offset: 2px; }
-.shell .avatar { width: clamp(36px, 5.6vw, 42px); height: clamp(36px, 5.6vw, 42px); border-radius: 12px; overflow:hidden; display:grid; place-items:center; color:#000; font-weight:800; font-size: clamp(16px, 2.4vw, 18px);
-  background: conic-gradient(from 220deg at 50% 50%, #60a5fa, #a78bfa, #22d3ee, #60a5fa);
-  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
-  box-shadow: 0 6px 20px rgba(0,0,0,.12);
-}
-.shell .avatar img { width:100%; height:100%; object-fit:cover; display:block; }
-.shell .who { min-width:0; }
-.shell .name { font-size: clamp(16px, 2.6vw, 19px); font-weight: 900; letter-spacing:.2px; line-height:1.1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.shell .meta { display:flex; align-items:center; gap:8px; margin-top:2px; flex-wrap: wrap; }
-.shell .chip { font-size: 11px; padding: 4px 8px; border-radius: 999px; letter-spacing:.2px; color: var(--text);
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
-  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
-}
-.shell .sep { opacity:.6; }
-.shell .status {
-  font-size: 11px;
-  color: var(--hint);
-  text-align: right;
-  padding: 4px 8px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
-  max-width: clamp(120px, 28vw, 200px);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Profile pill + sheet */
-.shell .profilePill {
-  position: fixed;
-  top: calc(var(--safe-top) + 6px);
-  left: var(--app-inset-left);
-  right: var(--app-inset-right);
-  display: flex;
-  justify-content: center;
-  z-index: 60;
-  pointer-events: none;
-  opacity: 0;
-  transform: translateY(-8px);
-  transition: opacity .2s ease, transform .2s ease;
-}
-.shell .profilePill[data-visible="true"] { opacity: 1; transform: translateY(0); }
-.shell .profilePillBtn {
-  pointer-events: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 86%, transparent);
-  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
-  box-shadow: 0 10px 26px rgba(0,0,0,.12);
-  backdrop-filter: blur(12px);
-}
-.shell .profilePillBtn:focus-visible { outline: 2px solid color-mix(in srgb, rgb(var(--accent-rgb)) 70%, #ffffff); outline-offset: 2px; }
-.shell .pillAvatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 9px;
-  overflow: hidden;
-  display: grid;
-  place-items: center;
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
-  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
-}
-.shell .pillAvatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.shell .pillName {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: .2px;
-  max-width: 120px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.shell .pillDot { opacity: .5; }
-.shell .pillLevel { font-size: 11px; color: var(--hint); }
-
-.shell .profileSheet {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: rgba(8,10,14,.55);
-  backdrop-filter: blur(6px);
-  z-index: 200;
-}
-.shell .profileSheetCard {
-  width: 100%;
-  max-width: 520px;
-  padding: 12px 16px calc(16px + var(--safe-bottom));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 100%, transparent), color-mix(in srgb, var(--surface) 70%, transparent));
-  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
-  border-radius: 22px 22px 0 0;
-  box-shadow: 0 -24px 60px rgba(0,0,0,.35);
-  max-height: calc(100svh - var(--safe-top));
-  overflow: auto;
-}
-.shell .profileSheetHandle {
-  width: 38px;
-  height: 4px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--text) 16%, transparent);
-  display: block;
-  margin: 4px auto 10px;
-}
-.shell .profileSheetHead { display: flex; align-items: center; gap: 12px; }
-.shell .profileSheetAvatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
-  background: color-mix(in srgb, var(--surface) 85%, transparent);
-}
-.shell .profileSheetAvatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.shell .profileSheetTitle { min-width: 0; flex: 1; }
-.shell .profileSheetName { font-weight: 900; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.shell .profileSheetMeta { font-size: 12px; color: var(--hint); margin-top: 2px; }
-.shell .profileSheetClose {
-  width: 32px;
-  height: 32px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface) 80%, transparent);
-  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
-  display: grid;
-  place-items: center;
-}
-.shell .profileSheetStats { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-.shell .profileSheetChip {
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 75%, transparent);
-  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
-}
-.shell .profileSheetStatus {
-  margin-top: 12px;
-  font-size: 12px;
-  color: var(--hint);
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--surface) 80%, transparent);
-  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
-}
-
 /* Grid карточек */
 .shell .grid {
   display: grid;
@@ -1769,12 +1423,9 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 .shell .dockCTA:hover { transform: translateY(-1px); box-shadow: 0 12px 36px rgba(0,0,0,.12), 0 16px 50px rgba(var(--accent-rgb), .14); }
 
 @media (max-width: 360px) {
-  .shell .chip { font-size: 11px; padding: 3px 7px; }
   .shell .card { border-radius: 16px; }
   .shell .modeTab { padding: 8px 6px; }
   .shell .tabLabel { font-size: 11px; }
-  .shell .profilePillBtn { padding: 5px 8px; gap: 6px; }
-  .shell .pillName { max-width: 90px; }
 }
 
 /* ===== GAME CANVAS (изолированный слой) ===== */

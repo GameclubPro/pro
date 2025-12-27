@@ -639,6 +639,22 @@
   gap: 12px;
 }
 
+.croco-pack-status {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--croco-border);
+  background: rgba(9, 14, 22, 0.72);
+  color: var(--croco-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.croco-pack-status.is-error {
+  border-color: color-mix(in srgb, var(--croco-red) 45%, rgba(255, 255, 255, 0.12));
+  color: color-mix(in srgb, var(--croco-red) 65%, var(--croco-muted));
+}
+
 .croco-pack-card {
   position: relative;
   padding: 12px;
@@ -2256,6 +2272,14 @@
   height: auto;
   object-fit: contain;
   filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.35));
+}
+
+.croco-word-visual-img.is-photo {
+  width: min(86%, 320px);
+  max-height: min(30vh, 260px);
+  border-radius: 18px;
+  object-fit: cover;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.38);
 }
 
 .croco-word-footer {

@@ -26,6 +26,7 @@ import {
   PACKS,
   removeCustomWordAt,
 } from "./crocodile-helpers";
+import { getSessionToken } from "./session-token";
 import crocoHead from "../crocohead.png";
 import crocoHandsLeft from "../crocohandsleft.png";
 import crocoHandsRight from "../crocohandsright.png";
@@ -78,6 +79,9 @@ const PACK_STICKERS = {
 };
 
 const ADVANCE_DELAY_MS = 1500;
+const REMOTE_POOL_MULTIPLIER = 2;
+const REMOTE_POOL_MIN = 60;
+const REMOTE_POOL_MAX = 1200;
 
 const randomId = () =>
   (typeof crypto !== "undefined" && crypto.randomUUID
@@ -375,7 +379,7 @@ const reducer = (state, action) => {
   }
 };
 
-export default function Crocodile({ goBack, onProgress, setBackHandler }) {
+export default function Crocodile({ apiBase, initData, goBack, onProgress, setBackHandler }) {
   const savedSettings = useMemo(() => readPersisted(STORAGE_KEYS.settings, DEFAULT_SETTINGS), []);
   const savedRoster = useMemo(() => readPersisted(STORAGE_KEYS.roster, null), []);
   const savedCustom = useMemo(
@@ -421,10 +425,102 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   const confettiRef = useRef(null);
   const [timeoutPrompt, setTimeoutPrompt] = useState(false);
   const lastBeepSecondRef = useRef(null);
+  const API_BASE = useMemo(() => normalizeApiBase(apiBase), [apiBase]);
+  const [remoteWords, setRemoteWords] = useState([]);
+  const [remoteCounts, setRemoteCounts] = useState(null);
+  const [remoteStatus, setRemoteStatus] = useState(API_BASE ? "loading" : "disabled");
+
+  const getInitData = useCallback(() => initData || window?.Telegram?.WebApp?.initData || "", [initData]);
+  const fetchJSON = useCallback(
+    async (
+      path,
+      { method = "GET", body, headers = {}, includeInitHeader = false, timeoutMs = 12000 } = {}
+    ) => {
+      if (!API_BASE) throw new Error("api_base_empty");
+      const url = `${API_BASE}${path}`;
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), timeoutMs);
+
+      const finalHeaders = { Accept: "application/json, text/plain, */*", ...headers };
+      if (body !== undefined) finalHeaders["Content-Type"] = "application/json";
+
+      const token = getSessionToken();
+      if (token) finalHeaders["Authorization"] = `Bearer ${token}`;
+      if (includeInitHeader) {
+        const id = getInitData();
+        if (id) finalHeaders["X-Telegram-Init-Data"] = id;
+      }
+
+      try {
+        const resp = await fetch(url, {
+          method,
+          mode: "cors",
+          credentials: "omit",
+          cache: "no-store",
+          redirect: "follow",
+          referrerPolicy: "no-referrer",
+          headers: finalHeaders,
+          body: body !== undefined ? JSON.stringify(body) : undefined,
+          signal: controller.signal,
+        });
+        if (!resp.ok) throw new Error(`http_${resp.status}`);
+        const ct = resp.headers.get("content-type") || "";
+        if (ct.includes("application/json")) return resp.json();
+        const text = await resp.text();
+        return text ? JSON.parse(text) : null;
+      } finally {
+        clearTimeout(t);
+      }
+    },
+    [API_BASE, getInitData]
+  );
 
   const customWords = useMemo(() => parseWords(state.customText), [state.customText]);
-  const wordPool = useMemo(() => buildWordPool(state.settings, customWords), [state.settings, customWords]);
+  const selectedPacks = useMemo(
+    () => normalizePacks(state.settings.difficulty, customWords.length > 0),
+    [state.settings.difficulty, customWords.length]
+  );
+  const selectedDifficulties = useMemo(
+    () => selectedPacks.filter((pack) => pack !== "custom"),
+    [selectedPacks]
+  );
   const wordsLimit = clamp(state.settings.wordsPerTeam, 3, 30);
+  const remotePoolSize = useMemo(() => {
+    const teams = Math.max(state.roster.length, 1);
+    return clamp(teams * wordsLimit * REMOTE_POOL_MULTIPLIER, REMOTE_POOL_MIN, REMOTE_POOL_MAX);
+  }, [state.roster.length, wordsLimit]);
+  const remotePacks = useMemo(() => {
+    if (!remoteWords.length) return null;
+    const packs = { easy: [], medium: [], hard: [] };
+    remoteWords.forEach((item) => {
+      const level = String(item?.difficulty || "").toLowerCase();
+      if (!packs[level]) return;
+      packs[level].push({
+        id: item.id,
+        word: item.word,
+        imageUrl: item.imageUrl || null,
+      });
+    });
+    return packs;
+  }, [remoteWords]);
+  const packCounts = useMemo(() => {
+    const fallback = {
+      easy: PACKS.easy.length,
+      medium: PACKS.medium.length,
+      hard: PACKS.hard.length,
+    };
+    return {
+      easy: remoteCounts?.easy ?? fallback.easy,
+      medium: remoteCounts?.medium ?? fallback.medium,
+      hard: remoteCounts?.hard ?? fallback.hard,
+      custom: customWords.length,
+    };
+  }, [remoteCounts, customWords.length]);
+  const packsSource = remoteStatus === "ready" && remotePacks ? remotePacks : PACKS;
+  const wordPool = useMemo(
+    () => buildWordPool(state.settings, customWords, packsSource),
+    [state.settings, customWords, packsSource]
+  );
   const wordsPlayed = state.perTeam.reduce((sum, n) => sum + n, 0);
   const wordsTotal = wordsLimit * Math.max(state.roster.length, 1);
   const wordsLeft = Math.max(0, wordsTotal - wordsPlayed);
@@ -445,6 +541,61 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
   useEffect(() => {
     persist(STORAGE_KEYS.custom, state.customText);
   }, [state.customText]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!API_BASE) return () => {};
+
+    fetchJSON("/api/crocodile/stats", { includeInitHeader: true })
+      .then((data) => {
+        if (cancelled) return;
+        if (data?.ok && data.counts) setRemoteCounts(data.counts);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [API_BASE, fetchJSON]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!API_BASE) {
+      setRemoteStatus("disabled");
+      return () => {};
+    }
+    if (!selectedDifficulties.length) {
+      setRemoteStatus("disabled");
+      setRemoteWords([]);
+      return () => {};
+    }
+
+    setRemoteStatus("loading");
+    const params = new URLSearchParams();
+    params.set("difficulty", selectedDifficulties.join(","));
+    params.set("limit", String(remotePoolSize));
+    params.set("balanced", "1");
+    params.set("includeCounts", "1");
+
+    fetchJSON(`/api/crocodile/words?${params.toString()}`, { includeInitHeader: true })
+      .then((data) => {
+        if (cancelled) return;
+        if (data?.ok) {
+          setRemoteWords(Array.isArray(data.items) ? data.items : []);
+          if (data.counts) setRemoteCounts(data.counts);
+          setRemoteStatus("ready");
+          return;
+        }
+        setRemoteStatus("error");
+      })
+      .catch(() => {
+        if (!cancelled) setRemoteStatus("error");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [API_BASE, selectedDifficulties, remotePoolSize, fetchJSON]);
 
   useEffect(() => {
     if (state.stage !== "switch") {
@@ -631,7 +782,8 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
     dispatch({ type: "RESTART" });
   };
 
-  const canStart = state.roster.length >= 2 && wordPool.length > 0;
+  const awaitingRemote = API_BASE && selectedDifficulties.length > 0 && remoteStatus === "loading";
+  const canStart = state.roster.length >= 2 && wordPool.length > 0 && !awaitingRemote;
   const secondsLeft = Math.ceil(state.timerMs / 1000);
 
   const handleTimeoutAnswer = (isCorrect) => {
@@ -660,6 +812,9 @@ export default function Crocodile({ goBack, onProgress, setBackHandler }) {
             wordPool={wordPool}
             customWords={customWords}
             canStart={canStart}
+            packCounts={packCounts}
+            remoteStatus={remoteStatus}
+            remoteEnabled={Boolean(API_BASE)}
           />
         )}
 
@@ -746,6 +901,9 @@ function Setup({
   wordPool,
   customWords,
   canStart,
+  packCounts,
+  remoteStatus,
+  remoteEnabled,
 }) {
   const [localRoster, setLocalRoster] = useState(roster);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -755,15 +913,7 @@ function Setup({
     [settings.difficulty, customWords.length]
   );
   const [customInput, setCustomInput] = useState("");
-  const packCounts = useMemo(
-    () => ({
-      easy: PACKS.easy.length,
-      medium: PACKS.medium.length,
-      hard: PACKS.hard.length,
-      custom: customWords.length,
-    }),
-    [customWords.length]
-  );
+  const showRemoteStatus = remoteEnabled && (remoteStatus === "loading" || remoteStatus === "error");
   const modeIsTeams = settings.mode === "teams";
   const minPlayers = 2;
   const timerPct = clamp(((settings.roundSeconds - 20) / (120 - 20)) * 100, 0, 100);
@@ -1084,6 +1234,17 @@ function Setup({
                         );
                       })}
                     </div>
+                    {showRemoteStatus && (
+                      <div
+                        className={`croco-pack-status${
+                          remoteStatus === "error" ? " is-error" : ""
+                        }`}
+                      >
+                        {remoteStatus === "loading"
+                          ? "Загружаем словарь..."
+                          : "Словарь недоступен, используем локальный набор."}
+                      </div>
+                    )}
 
                     {showCustom && (
                       <div className="croco-custom-shell">
@@ -1298,7 +1459,9 @@ function Setup({
               </motion.button>
               {!canStart && (
                 <div className="small-meta danger">
-                  Нужно минимум 2 участника и хотя бы одно слово.
+                  {remoteEnabled && remoteStatus === "loading"
+                    ? "Загружаем слова из облака."
+                    : "Нужно минимум 2 участника и хотя бы одно слово."}
                 </div>
               )}
             </div>
@@ -1541,6 +1704,12 @@ function TimerPacman({
 
 function WordCard({ word, masked = false }) {
   const mainText = masked ? "Смена хода" : word?.word || "Готовимся...";
+  const [imageOk, setImageOk] = useState(true);
+  const imageUrl = !masked && imageOk ? word?.imageUrl : null;
+
+  useEffect(() => {
+    setImageOk(true);
+  }, [word?.imageUrl]);
 
   return (
     <motion.div
@@ -1551,7 +1720,16 @@ function WordCard({ word, masked = false }) {
       layout
     >
       <div className="croco-word-visual" aria-hidden="true">
-        <img src={crocoHead} alt="" className="croco-word-visual-img" />
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt=""
+            className="croco-word-visual-img is-photo"
+            onError={() => setImageOk(false)}
+          />
+        ) : (
+          <img src={crocoHead} alt="" className="croco-word-visual-img" />
+        )}
       </div>
       <div className="croco-word-footer">
         <div className="croco-word-main">{mainText}</div>
@@ -1609,4 +1787,19 @@ function Summary({ roster, winners, wordsPerTeam, onRematch, onReset, onMenu }) 
       </button>
     </motion.div>
   );
+}
+
+function normalizeApiBase(input) {
+  try {
+    let s = String(input || "").trim();
+    if (!s) return "";
+    if (!/^https?:\/\//i.test(s)) {
+      const base = (typeof window !== "undefined" ? window.location.origin : "").replace(/\/$/, "");
+      s = s.startsWith("/") ? `${base}${s}` : `${base}/${s}`;
+    }
+    if (s.endsWith("/")) s = s.slice(0, -1);
+    return s;
+  } catch {
+    return String(input || "");
+  }
 }

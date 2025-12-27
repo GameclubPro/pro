@@ -7,6 +7,7 @@ require('dotenv').config();
 require('express-async-errors');
 
 const http = require('http');
+const path = require('path');
 const express = require('express');
 const compression = require('compression');
 const cors = require('cors');
@@ -15,10 +16,12 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const { Server: SocketIOServer } = require('socket.io');
 const { Telegraf } = require('telegraf');
-const { PrismaClient, Phase, Role, VoteType, RoomGame } = require('@prisma/client');
+const { PrismaClient, Phase, Role, VoteType, RoomGame, CrocodileDifficulty } = require('@prisma/client');
 const { verifyInitData, parseUser, parseInitData } = require('./verifyInitData');
 const { Readable } = require('stream');
 const { randomInt, randomUUID } = require('crypto');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const jwt = require('jsonwebtoken');
 const { z } = require('zod');
 
@@ -36,6 +39,14 @@ const {
   WEBAPP_ORIGIN,
   WEBHOOK_SECRET_PATH,
   WEBHOOK_SECRET_TOKEN,
+  S3_ENDPOINT = '',
+  S3_REGION = 'us-east-1',
+  S3_BUCKET = '',
+  S3_ACCESS_KEY = '',
+  S3_SECRET_KEY = '',
+  S3_PUBLIC_BASE_URL = '',
+  S3_FORCE_PATH_STYLE = '0',
+  CROCODILE_ADMIN_KEY = '',
   NODE_ENV = 'production',
   MENU_BUTTON_URL = '',
   MENU_BUTTON_TEXT = '',
@@ -195,6 +206,101 @@ async function authEither(req, { allowStale = false } = {}) {
   const user = await upsertTgUser(tg);
   return { ok: true, user };
 }
+
+/* ============================ Crocodile words + S3 ============================ */
+const CROCO_LEVELS = ['easy', 'medium', 'hard'];
+const CROCO_LEVEL_TO_ENUM = {
+  easy: CrocodileDifficulty.EASY,
+  medium: CrocodileDifficulty.MEDIUM,
+  hard: CrocodileDifficulty.HARD,
+};
+const CROCO_ENUM_TO_LEVEL = {
+  EASY: 'easy',
+  MEDIUM: 'medium',
+  HARD: 'hard',
+};
+
+const S3_ENABLED = !!(S3_ENDPOINT && S3_BUCKET && S3_ACCESS_KEY && S3_SECRET_KEY);
+const s3Client = S3_ENABLED
+  ? new S3Client({
+      region: S3_REGION || 'us-east-1',
+      endpoint: S3_ENDPOINT,
+      credentials: { accessKeyId: S3_ACCESS_KEY, secretAccessKey: S3_SECRET_KEY },
+      forcePathStyle: S3_FORCE_PATH_STYLE === '1',
+    })
+  : null;
+
+const s3PublicBase = String(S3_PUBLIC_BASE_URL || '').replace(/\/+$/, '');
+const buildS3PublicUrl = (key) => {
+  if (!key) return null;
+  if (s3PublicBase) return `${s3PublicBase}/${key}`;
+  if (!S3_ENDPOINT || !S3_BUCKET) return null;
+  const base = String(S3_ENDPOINT).replace(/\/+$/, '');
+  if (S3_FORCE_PATH_STYLE === '1') return `${base}/${S3_BUCKET}/${key}`;
+  try {
+    const u = new URL(base);
+    return `${u.protocol}//${S3_BUCKET}.${u.host}/${key}`;
+  } catch {
+    return `${base}/${S3_BUCKET}/${key}`;
+  }
+};
+
+const normalizeWordKey = (word) =>
+  String(word || '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+const parseList = (value) =>
+  String(value || '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+
+const normalizeDifficultyKey = (value) => {
+  const key = String(value || '').trim().toLowerCase();
+  return CROCO_LEVELS.includes(key) ? key : null;
+};
+
+const splitWordsText = (text) =>
+  String(text || '')
+    .split(/[\r\n,]+/)
+    .map((w) => w.trim())
+    .filter(Boolean);
+
+const normalizePack = (value) => {
+  const pack = String(value || '').trim();
+  return pack ? pack.toLowerCase().slice(0, 191) : null;
+};
+
+const normalizeImageUrl = (value) => {
+  const url = String(value || '').trim();
+  return url ? url.slice(0, 1000) : null;
+};
+
+const clampInt = (value, min, max, fallback) => {
+  const n = parseInt(value, 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+};
+
+const shuffleInPlace = (items) => {
+  for (let i = items.length - 1; i > 0; i -= 1) {
+    const j = randomInt(0, i + 1);
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return items;
+};
+
+const requireAdmin = (req, res, next) => {
+  if (!CROCODILE_ADMIN_KEY) {
+    return res.status(501).json({ ok: false, error: 'admin_key_not_configured' });
+  }
+  const headerKey = String(req.headers['x-admin-key'] || '').trim();
+  const bearer = readBearer(req);
+  const token = headerKey || bearer || '';
+  if (!token || token !== CROCODILE_ADMIN_KEY) {
+    return res.status(403).json({ ok: false, error: 'forbidden' });
+  }
+  return next();
+};
 
 /* ============================ Redis (optional) ============================ */
 let redis = null;
@@ -413,7 +519,7 @@ app.use((req, res, next) => {
 app.use(morgan(NODE_ENV === 'production' ? 'combined' : 'dev', {
   skip: (req) => req.path === '/health' || req.path === '/db-health',
 }));
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 /* ============================ CORS ============================ */
 function parseExtraOrigins(str) {
@@ -952,6 +1058,236 @@ app.get('/avatar/user/:userId', avatarLimiter, async (req, res) => {
   } catch (e) {
     console.error('avatar by userId error:', e?.message || e);
     return res.status(500).end();
+  }
+});
+
+/* ============================ Crocodile словарь ============================ */
+app.get('/api/crocodile/stats', async (req, res) => {
+  try {
+    const auth = await authEither(req, { allowStale: true });
+    if (!auth.ok) return res.status(auth.http || 401).json({ ok: false, error: auth.error });
+
+    const where = { active: true };
+    const rows = await prisma.crocodileWord.groupBy({
+      by: ['difficulty'],
+      where,
+      _count: { _all: true },
+    });
+    const counts = { easy: 0, medium: 0, hard: 0 };
+    for (const row of rows) {
+      const key = CROCO_ENUM_TO_LEVEL[row.difficulty];
+      if (key) counts[key] = row._count._all;
+    }
+    const total = await prisma.crocodileWord.count({ where });
+
+    return res.json({ ok: true, counts, total });
+  } catch (e) {
+    console.error('GET /api/crocodile/stats', e);
+    return res.status(500).json({ ok: false, error: 'failed' });
+  }
+});
+
+app.get('/api/crocodile/words', async (req, res) => {
+  try {
+    const auth = await authEither(req, { allowStale: true });
+    if (!auth.ok) return res.status(auth.http || 401).json({ ok: false, error: auth.error });
+
+    const rawDifficulty = parseList(req.query.difficulty);
+    const difficultyKeys = rawDifficulty.filter((d) => CROCO_LEVELS.includes(d));
+    const selected = difficultyKeys.length ? difficultyKeys : CROCO_LEVELS;
+    const difficultyEnums = selected.map((d) => CROCO_LEVEL_TO_ENUM[d]).filter(Boolean);
+    const packs = parseList(req.query.pack);
+    const limit = clampInt(req.query.limit, 1, 2000, 300);
+    const balanced = String(req.query.balanced || '1') !== '0';
+    const includeCounts = String(req.query.includeCounts || '') === '1';
+
+    const baseWhere = {
+      active: true,
+      ...(packs.length ? { pack: { in: packs } } : {}),
+      ...(difficultyEnums.length ? { difficulty: { in: difficultyEnums } } : {}),
+    };
+
+    const total = await prisma.crocodileWord.count({ where: baseWhere });
+
+    const sampleWords = async (where, take) => {
+      const available = await prisma.crocodileWord.count({ where });
+      if (!available) return { items: [], total: 0 };
+      const safeTake = Math.min(take, available);
+      const skip = available > safeTake ? randomInt(0, available - safeTake + 1) : 0;
+      const items = await prisma.crocodileWord.findMany({
+        where,
+        take: safeTake,
+        skip,
+        orderBy: { id: 'asc' },
+      });
+      return { items, total: available };
+    };
+
+    let items = [];
+    if (balanced && difficultyEnums.length > 1) {
+      const per = Math.ceil(limit / difficultyEnums.length);
+      for (const diff of difficultyEnums) {
+        const result = await sampleWords({ ...baseWhere, difficulty: diff }, per);
+        items.push(...result.items);
+      }
+    } else {
+      const result = await sampleWords(baseWhere, limit);
+      items = result.items;
+    }
+
+    shuffleInPlace(items);
+    if (items.length > limit) items = items.slice(0, limit);
+
+    const payloadItems = items.map((row) => ({
+      id: row.id,
+      word: row.word,
+      difficulty: CROCO_ENUM_TO_LEVEL[row.difficulty] || 'easy',
+      imageUrl: row.imageUrl || null,
+      pack: row.pack || null,
+    }));
+
+    const response = { ok: true, total, items: payloadItems };
+
+    if (includeCounts) {
+      const countsWhere = {
+        active: true,
+        ...(packs.length ? { pack: { in: packs } } : {}),
+      };
+      const rows = await prisma.crocodileWord.groupBy({
+        by: ['difficulty'],
+        where: countsWhere,
+        _count: { _all: true },
+      });
+      const counts = { easy: 0, medium: 0, hard: 0 };
+      for (const row of rows) {
+        const key = CROCO_ENUM_TO_LEVEL[row.difficulty];
+        if (key) counts[key] = row._count._all;
+      }
+      response.counts = counts;
+    }
+
+    return res.json(response);
+  } catch (e) {
+    console.error('GET /api/crocodile/words', e);
+    return res.status(500).json({ ok: false, error: 'failed' });
+  }
+});
+
+app.post('/api/crocodile/upload-url', requireAdmin, async (req, res) => {
+  try {
+    if (!s3Client) {
+      return res.status(503).json({ ok: false, error: 's3_not_configured' });
+    }
+    const { filename, contentType } = req.body || {};
+    const type = String(contentType || '').trim();
+    if (!type || !type.startsWith('image/')) {
+      return res.status(400).json({ ok: false, error: 'invalid_content_type' });
+    }
+
+    const name = String(filename || '').trim();
+    const extFromName = path.extname(name).toLowerCase();
+    const extFromType = type.includes('/') ? `.${type.split('/')[1].toLowerCase()}` : '';
+    const ext = extFromName || extFromType || '.bin';
+    const datePrefix = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
+    const key = `crocodile/${datePrefix}/${randomUUID()}${ext}`;
+
+    const command = new PutObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: key,
+      ContentType: type,
+    });
+
+    const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 });
+    const publicUrl = buildS3PublicUrl(key);
+
+    return res.json({
+      ok: true,
+      uploadUrl,
+      publicUrl,
+      key,
+      bucket: S3_BUCKET,
+      contentType: type,
+    });
+  } catch (e) {
+    console.error('POST /api/crocodile/upload-url', e);
+    return res.status(500).json({ ok: false, error: 'failed' });
+  }
+});
+
+app.post('/api/crocodile/import', requireAdmin, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const defaultDifficulty = normalizeDifficultyKey(body.difficulty) || 'easy';
+    const defaultPack = normalizePack(body.pack);
+
+    let items = Array.isArray(body.items) ? body.items : [];
+    if (!items.length && typeof body.text === 'string') {
+      items = splitWordsText(body.text).map((word) => ({
+        word,
+        difficulty: defaultDifficulty,
+        pack: defaultPack,
+      }));
+    }
+
+    if (!items.length) {
+      return res.status(400).json({ ok: false, error: 'empty_items' });
+    }
+
+    const prepared = [];
+    const seen = new Set();
+    for (const item of items) {
+      const wordRaw = String(item.word || '').trim();
+      if (!wordRaw) continue;
+      const word = wordRaw.slice(0, 191);
+      if (!word) continue;
+
+      const difficultyKey = normalizeDifficultyKey(item.difficulty) || defaultDifficulty;
+      const difficultyEnum = CROCO_LEVEL_TO_ENUM[difficultyKey];
+      if (!difficultyEnum) continue;
+
+      const wordKey = normalizeWordKey(word).slice(0, 191);
+      const uniq = `${wordKey}:${difficultyKey}`;
+      if (seen.has(uniq)) continue;
+      seen.add(uniq);
+
+      const pack = normalizePack(item.pack ?? defaultPack);
+      const imageUrl = normalizeImageUrl(item.imageUrl);
+      const active = item.active === false ? false : true;
+
+      prepared.push({
+        word,
+        wordKey,
+        difficulty: difficultyEnum,
+        pack,
+        imageUrl,
+        active,
+      });
+    }
+
+    if (!prepared.length) {
+      return res.status(400).json({ ok: false, error: 'no_valid_items' });
+    }
+
+    const chunkSize = 1000;
+    let created = 0;
+    for (let i = 0; i < prepared.length; i += chunkSize) {
+      const chunk = prepared.slice(i, i + chunkSize);
+      const result = await prisma.crocodileWord.createMany({
+        data: chunk,
+        skipDuplicates: true,
+      });
+      created += result.count || 0;
+    }
+
+    return res.json({
+      ok: true,
+      created,
+      skipped: prepared.length - created,
+      total: prepared.length,
+    });
+  } catch (e) {
+    console.error('POST /api/crocodile/import', e);
+    return res.status(500).json({ ok: false, error: 'failed' });
   }
 });
 
