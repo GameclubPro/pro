@@ -314,8 +314,8 @@
 }
 
 .croco-hands.hold-panel .hand {
-  width: clamp(120px, 22vw, 180px);
-  max-width: 36%;
+  width: clamp(102px, 18.7vw, 153px);
+  max-width: 31%;
   flex-shrink: 0;
 }
 
@@ -350,7 +350,7 @@
   z-index: 2;
   overflow: visible;
   padding: clamp(16px, 3.5vw, 22px);
-  width: min(90%, 760px);
+  width: min(85%, 760px);
   background: transparent;
   border-color: transparent;
   box-shadow: none;
@@ -375,7 +375,7 @@
   z-index: 2;
   display: grid;
   gap: var(--croco-gap);
-  width: 90%;
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -402,8 +402,8 @@
     gap: clamp(6px, 3vw, 16px);
   }
   .setup-panel-wrap .croco-hands.hold-panel .hand {
-    width: clamp(110px, 28vw, 160px);
-    max-width: 40%;
+    width: clamp(94px, 23.8vw, 136px);
+    max-width: 34%;
   }
   .setup-panel-wrap .croco-hands.hold-panel .hand-left {
     transform: translate(-30%, -4px) rotate(-2deg);
@@ -424,7 +424,7 @@
     width: clamp(140px, 47vw, 182px);
   }
   .croco-hands.hold-panel .hand {
-    width: clamp(100px, 34vw, 150px);
+    width: clamp(85px, 29vw, 128px);
   }
   .croco-settings-pack-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
