@@ -319,13 +319,13 @@
   content: "";
   position: absolute;
   left: 50%;
-  bottom: clamp(-10px, -1.6vw, -6px);
+  bottom: clamp(-18px, -2.6vw, -12px);
   transform: translateX(-50%);
-  width: min(92%, 720px);
-  height: clamp(28px, 6vw, 56px);
-  background: radial-gradient(50% 100% at 50% 0%, rgba(0, 0, 0, 0.55), transparent 70%);
-  filter: blur(12px);
-  opacity: 0.75;
+  width: min(95%, 760px);
+  height: clamp(44px, 8.5vw, 84px);
+  background: radial-gradient(55% 100% at 50% 0%, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0) 72%);
+  filter: blur(16px);
+  opacity: 0.9;
   pointer-events: none;
   z-index: 0;
 }
