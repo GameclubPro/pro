@@ -284,6 +284,11 @@
   z-index: 4;
 }
 
+.croco[data-stage="setup"] .croco-head {
+  top: clamp(12px, 2.4vw, 18px);
+  transform: translate(-50%, -35%);
+}
+
 .croco-head img {
   display: block;
   width: 100%;
