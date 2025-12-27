@@ -1218,8 +1218,8 @@ function Setup({
             <img src={crocoLegs} alt="" />
           </div>
 
-          <div className="panel setup-panel">
-            <div className="setup-content">
+          <div className="croco-setup-panel">
+            <div className="croco-setup-content">
               <div className="panel-head with-gear">
                 <div>
                   <div className="eyebrow">Крокодил</div>

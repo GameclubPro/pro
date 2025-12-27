@@ -345,7 +345,7 @@
   filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.24));
 }
 
-.setup-panel {
+.croco-setup-panel {
   position: relative;
   z-index: 2;
   overflow: visible;
@@ -357,7 +357,7 @@
   isolation: isolate;
 }
 
-.setup-panel::before {
+.croco-setup-panel::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -370,7 +370,7 @@
   z-index: 1;
 }
 
-.setup-panel .setup-content {
+.croco-setup-panel .croco-setup-content {
   position: relative;
   z-index: 2;
   display: grid;
@@ -437,7 +437,7 @@
   gap: 6px;
   margin-bottom: 8px;
 }
-.setup-panel .panel-head.with-gear {
+.croco-setup-panel .panel-head.with-gear {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -2575,7 +2575,7 @@
   .actions-grid {
     grid-template-columns: 1fr;
   }
-  .setup-panel {
+  .croco-setup-panel {
     padding: clamp(14px, 4vw, 18px);
   }
 }
@@ -2719,7 +2719,7 @@
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .panel,
-  .setup-panel::before,
+  .croco-setup-panel::before,
   .croco-word-card,
   .actions-bar,
   .croco .switch-overlay {
