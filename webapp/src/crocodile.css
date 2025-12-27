@@ -296,6 +296,8 @@
   width: min(96%, 460px);
   max-width: 96vw;
   height: auto;
+  position: relative;
+  z-index: 1;
   filter:
     drop-shadow(0 0 2px rgba(0, 0, 0, 0.6)) /* тонкий контур вокруг рук */
     drop-shadow(0 10px 26px rgba(0, 0, 0, 0.26));
@@ -311,6 +313,21 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: clamp(6px, 2vw, 18px);
+}
+
+.croco-hands.hold-panel::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: clamp(-10px, -1.6vw, -6px);
+  transform: translateX(-50%);
+  width: min(92%, 720px);
+  height: clamp(28px, 6vw, 56px);
+  background: radial-gradient(50% 100% at 50% 0%, rgba(0, 0, 0, 0.55), transparent 70%);
+  filter: blur(12px);
+  opacity: 0.75;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .croco-hands.hold-panel .hand {
