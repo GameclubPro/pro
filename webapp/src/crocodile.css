@@ -305,11 +305,14 @@
 }
 
 .croco-hands.hold-panel {
+  --croco-hands-overhang: 50%;
   top: clamp(92px, 18vw, 142px);
   left: 50%;
   transform: translateX(-50%);
-  width: min(88%, 640px);
-  max-width: 100%;
+  width: calc(
+    100% + var(--croco-hands-overhang) + var(--croco-hands-overhang)
+  );
+  max-width: none;
   padding: 0;
   box-sizing: border-box;
   justify-content: center;
@@ -344,7 +347,7 @@
   z-index: 2;
   overflow: visible;
   padding: clamp(16px, 3.5vw, 22px);
-  width: min(85%, 760px);
+  width: 100%;
   background: transparent;
   border-color: transparent;
   box-shadow: none;
@@ -389,8 +392,6 @@
   }
   .setup-panel-wrap .croco-hands.hold-panel {
     top: clamp(86px, 21vw, 138px);
-    width: min(90%, 560px);
-    max-width: 100%;
     padding: 0;
   }
   .croco-legs {
