@@ -320,11 +320,11 @@
 }
 
 .croco-hands.hold-panel .hand-left {
-  transform: translate(-24%, -6px) rotate(-2deg);
+  transform: translate(-28%, -6px) rotate(-2deg);
 }
 
 .croco-hands.hold-panel .hand-right {
-  transform: translate(24%, -4px) rotate(3deg);
+  transform: translate(28%, -4px) rotate(3deg);
 }
 
 .croco-legs {
@@ -350,7 +350,7 @@
   z-index: 2;
   overflow: visible;
   padding: clamp(16px, 3.5vw, 22px);
-  width: min(100%, 760px);
+  width: min(90%, 760px);
   background: transparent;
   border-color: transparent;
   box-shadow: none;
@@ -404,10 +404,10 @@
     max-width: 40%;
   }
   .setup-panel-wrap .croco-hands.hold-panel .hand-left {
-    transform: translate(-26%, -4px) rotate(-2deg);
+    transform: translate(-30%, -4px) rotate(-2deg);
   }
   .setup-panel-wrap .croco-hands.hold-panel .hand-right {
-    transform: translate(26%, -2px) rotate(3deg);
+    transform: translate(30%, -2px) rotate(3deg);
   }
   .croco-legs {
     left: 66%;
