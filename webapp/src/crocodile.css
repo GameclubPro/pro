@@ -270,7 +270,7 @@
   left: 50%;
   top: 0;
   transform: translate(-50%, -100%);
-  width: clamp(260px, 70vw, 360px);
+  width: clamp(130px, 35vw, 180px);
   pointer-events: none;
   filter: drop-shadow(0 14px 34px rgba(0, 0, 0, 0.45));
   z-index: 4;
@@ -421,7 +421,7 @@
 
 @media (max-width: 480px) {
   .croco-head {
-    width: clamp(210px, 72vw, 280px);
+    width: clamp(105px, 36vw, 140px);
   }
   .croco-hands.hold-panel .hand {
     width: clamp(100px, 34vw, 150px);
