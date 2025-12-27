@@ -1421,8 +1421,6 @@ function Setup({
             <img src={crocoHead} alt="" />
           </div>
           <div className="croco-hands hold-panel" aria-hidden="true">
-            <span className="hand-shadow left" />
-            <span className="hand-shadow right" />
             <img src={crocoHandsLeft} alt="" className="hand hand-left" />
             <img src={crocoHandsRight} alt="" className="hand hand-right" />
           </div>

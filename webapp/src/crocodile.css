@@ -296,11 +296,6 @@
   width: min(96%, 460px);
   max-width: 96vw;
   height: auto;
-  position: relative;
-  z-index: 1;
-  filter:
-    drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55)) /* тонкий контур вокруг рук */
-    drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
 }
 
 .croco-hands.hold-panel {
@@ -315,24 +310,6 @@
   gap: clamp(6px, 2vw, 18px);
 }
 
-.croco-hands.hold-panel .hand-shadow {
-  position: absolute;
-  bottom: clamp(-8px, -1.4vw, -4px);
-  width: clamp(96px, 20vw, 150px);
-  height: clamp(20px, 4.5vw, 36px);
-  background: radial-gradient(60% 80% at 50% 50%, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0) 70%);
-  opacity: 0.95;
-  pointer-events: none;
-  z-index: 0;
-}
-
-.croco-hands.hold-panel .hand-shadow.left {
-  left: clamp(24px, 6vw, 38px);
-}
-
-.croco-hands.hold-panel .hand-shadow.right {
-  right: clamp(24px, 6vw, 38px);
-}
 
 
 .croco-hands.hold-panel .hand {
@@ -344,11 +321,11 @@
 }
 
 .croco-hands.hold-panel .hand-left {
-  transform: translate(-28%, -6px) rotate(-2deg);
+  transform: translate(-28%, -6px) rotate(-10deg);
 }
 
 .croco-hands.hold-panel .hand-right {
-  transform: translate(28%, -4px) rotate(3deg);
+  transform: translate(28%, -4px) rotate(10deg);
 }
 
 .croco-legs {
@@ -425,19 +402,15 @@
     padding: 0 clamp(16px, 7vw, 28px);
     gap: clamp(6px, 3vw, 16px);
   }
-  .setup-panel-wrap .croco-hands.hold-panel .hand-shadow {
-    width: clamp(88px, 22vw, 138px);
-    height: clamp(18px, 5vw, 34px);
-  }
   .setup-panel-wrap .croco-hands.hold-panel .hand {
     width: clamp(80px, 20.2vw, 116px);
     max-width: 29%;
   }
   .setup-panel-wrap .croco-hands.hold-panel .hand-left {
-    transform: translate(-30%, -4px) rotate(-2deg);
+    transform: translate(-30%, -4px) rotate(-10deg);
   }
   .setup-panel-wrap .croco-hands.hold-panel .hand-right {
-    transform: translate(30%, -2px) rotate(3deg);
+    transform: translate(30%, -2px) rotate(10deg);
   }
   .croco-legs {
     left: 50%;
