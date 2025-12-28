@@ -29,9 +29,13 @@ import {
 } from "./crocodile-helpers";
 import { getSessionToken } from "./session-token";
 import crocoHead from "./assets/crocodile/crocohead.png";
+import crocoHeadBliss from "./assets/crocodile/crocoheadbliss.png";
 import crocoHandsLeft from "./assets/crocodile/crocohandsleft.png";
+import crocoHandsLeftBliss from "./assets/crocodile/crocohandsleftbliss.png";
 import crocoHandsRight from "./assets/crocodile/crocohandsright.png";
+import crocoHandsRightBliss from "./assets/crocodile/crocohandsrightbliss.png";
 import crocoLegs from "./assets/crocodile/crocolegs.png";
+import crocoLegsBliss from "./assets/crocodile/crocolegsbliss.png";
 import "./crocodile.css";
 
 const STORAGE_KEYS = {
@@ -1063,12 +1067,7 @@ function Setup({
 
   const applyDifficulty = (option) => {
     if (!option) return;
-    if (option.id === "custom") {
-      onChangeSetting("difficulty", ["custom"]);
-      setDifficultyMenuOpen(false);
-      return;
-    }
-    const basePacks = option.id === "mix" ? ["easy", "medium", "hard"] : option.packs;
+    const basePacks = option.id === "classic" ? ["easy", "medium", "hard"] : option.packs;
     const next = selectedPacks.includes("custom")
       ? [...basePacks, "custom"]
       : basePacks;
@@ -1122,48 +1121,44 @@ function Setup({
   const baseSelected = selectedPacks.filter((p) => p !== "custom");
   const baseSelectedKey = baseSelected.length === 1 ? baseSelected[0] : null;
   const baseMixed = baseSelected.length > 1;
-  const customOnly = selectedPacks.length === 1 && selectedPacks[0] === "custom";
   const difficultyOptions = [
     {
-      id: "mix",
-      label: "Микс",
-      emoji: "🎲",
+      id: "classic",
+      label: "Классика",
+      emoji: "🎯",
       packs: ["easy", "medium", "hard"],
-      desc: "Лайт + стандарт + хард",
+      desc: "Полный набор слов",
     },
-    { id: "easy", label: "Лайт", emoji: PACK_STICKERS.easy, packs: ["easy"], desc: "Лёгкие слова" },
     {
-      id: "medium",
-      label: "Стандарт",
-      emoji: PACK_STICKERS.medium,
-      packs: ["medium"],
-      desc: "Баланс сложности",
+      id: "bliss",
+      label: "По кайфу",
+      emoji: "🌿",
+      packs: ["easy"],
+      desc: "Лёгкие слова",
     },
-    { id: "hard", label: "Хард", emoji: PACK_STICKERS.hard, packs: ["hard"], desc: "Сложнее" },
-    ...(showCustom
-      ? [
-          {
-            id: "custom",
-            label: "Свои",
-            emoji: PACK_STICKERS.custom,
-            packs: ["custom"],
-            desc: "Твой список",
-          },
-        ]
-      : []),
+    {
+      id: "hot",
+      label: "Жара 18+",
+      emoji: "🔥",
+      packs: ["hard"],
+      desc: "Самые жёсткие",
+    },
   ];
   const currentDifficulty =
-    baseSelected.length > 1
-      ? difficultyOptions.find((d) => d.id === "mix")
-      : baseSelected.length === 1
-        ? difficultyOptions.find((d) => d.id === baseSelected[0])
-        : selectedPacks.includes("custom")
-          ? difficultyOptions.find((d) => d.id === "custom")
-          : difficultyOptions.find((d) => d.id === "mix");
+    baseSelected.length === 1 && baseSelected[0] === "easy"
+      ? difficultyOptions.find((d) => d.id === "bliss")
+      : baseSelected.length === 1 && baseSelected[0] === "hard"
+        ? difficultyOptions.find((d) => d.id === "hot")
+        : difficultyOptions.find((d) => d.id === "classic");
   const currentDifficultyLabel = currentDifficulty?.label || "Микс";
   const currentDifficultyEmoji = currentDifficulty?.emoji || "🎲";
-  const showCustomSuffix =
-    selectedPacks.includes("custom") && currentDifficulty?.id !== "custom";
+  const showCustomSuffix = selectedPacks.includes("custom");
+  const isBlissMode = baseSelectedKey === "easy" && !baseMixed;
+  const isHotMode = baseSelectedKey === "hard" && !baseMixed;
+  const activeHead = isBlissMode ? crocoHeadBliss : crocoHead;
+  const activeHandsLeft = isBlissMode ? crocoHandsLeftBliss : crocoHandsLeft;
+  const activeHandsRight = isBlissMode ? crocoHandsRightBliss : crocoHandsRight;
+  const activeLegs = isBlissMode ? crocoLegsBliss : crocoLegs;
 
   const settingsModal = (
     <AnimatePresence>
@@ -1506,10 +1501,10 @@ function Setup({
       <div className="setup-shell">
         <div className="setup-panel-wrap">
           <div className="croco-head" aria-hidden="true">
-            <img src={crocoHead} alt="" />
+            <img src={activeHead} alt="" />
           </div>
           <div className="croco-legs" aria-hidden="true">
-            <img src={crocoLegs} alt="" />
+            <img src={activeLegs} alt="" />
           </div>
 
           <div className="croco-setup-panel">
@@ -1551,7 +1546,7 @@ function Setup({
               </div>
 
               <div className="section-header croco-diff-row">
-                <div className="section-title">Сложность</div>
+                <div className="section-title">Режим</div>
                 <div className="croco-diff-pill">
                   <motion.button
                     ref={difficultyTriggerRef}
@@ -1583,11 +1578,11 @@ function Setup({
                       >
                         {difficultyOptions.map((d) => {
                           const active =
-                            d.id === "mix"
-                              ? baseMixed
-                              : d.id === "custom"
-                                ? customOnly
-                                : baseSelectedKey === d.id;
+                            d.id === "bliss"
+                              ? isBlissMode
+                              : d.id === "hot"
+                                ? isHotMode
+                                : !isBlissMode && !isHotMode;
                           return (
                             <button
                               key={d.id}
@@ -1611,8 +1606,8 @@ function Setup({
                   </AnimatePresence>
                 </div>
                 <div className="croco-hands hold-panel" aria-hidden="true">
-                  <img src={crocoHandsLeft} alt="" className="hand hand-left" />
-                  <img src={crocoHandsRight} alt="" className="hand hand-right" />
+                  <img src={activeHandsLeft} alt="" className="hand hand-left" />
+                  <img src={activeHandsRight} alt="" className="hand hand-right" />
                 </div>
               </div>
 
