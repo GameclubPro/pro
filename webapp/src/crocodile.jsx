@@ -28,10 +28,10 @@ import {
   removeCustomWordAt,
 } from "./crocodile-helpers";
 import { getSessionToken } from "./session-token";
-import crocoHead from "../crocohead.png";
-import crocoHandsLeft from "../crocohandsleft.png";
-import crocoHandsRight from "../crocohandsright.png";
-import crocoLegs from "../crocolegs.png";
+import crocoHead from "./assets/crocodile/crocohead.png";
+import crocoHandsLeft from "./assets/crocodile/crocohandsleft.png";
+import crocoHandsRight from "./assets/crocodile/crocohandsright.png";
+import crocoLegs from "./assets/crocodile/crocolegs.png";
 import "./crocodile.css";
 
 const STORAGE_KEYS = {
