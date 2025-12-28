@@ -2410,9 +2410,10 @@
 
 .croco-word-visual-img {
   width: auto;
-  max-width: min(70%, 260px);
-  max-height: 100%;
   height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
   object-fit: contain;
   filter: drop-shadow(0 16px 28px rgba(0, 0, 0, 0.35));
   position: relative;
@@ -2421,7 +2422,8 @@
 
 .croco-word-visual-img.is-photo {
   width: auto;
-  max-width: min(92%, 360px);
+  height: auto;
+  max-width: 100%;
   max-height: 100%;
   border-radius: 0;
   object-fit: contain;
