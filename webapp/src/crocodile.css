@@ -510,12 +510,16 @@
   align-items: center;
   position: relative;
   overflow: visible;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  row-gap: 8px;
 }
 
 .croco-diff-pill {
   position: relative;
   flex-shrink: 0;
-  margin-left: auto;
+  width: 80%;
+  margin: 0 auto;
 }
 
 .croco-diff-pill-btn {
@@ -2816,11 +2820,11 @@
   }
   .croco-diff-row {
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
     gap: 8px;
   }
   .croco-diff-pill {
-    width: 100%;
+    width: 80%;
   }
   .croco-diff-pill-btn {
     width: 100%;
