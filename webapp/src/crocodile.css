@@ -2378,12 +2378,12 @@
 }
 
 .croco-word-visual {
+  --croco-visual-pad: clamp(14px, 3.4vw, 22px);
   width: 100%;
   height: clamp(153px, 25.2vh, 225px);
   min-height: 0;
   display: grid;
   place-items: center;
-  padding: clamp(14px, 3.4vw, 22px);
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
@@ -2393,6 +2393,17 @@
     radial-gradient(120% 160% at 50% 120%, rgba(15, 118, 110, 0.22), transparent 60%),
     linear-gradient(160deg, rgba(10, 18, 16, 0.98), rgba(6, 12, 10, 0.95));
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.croco-word-visual-inner {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: var(--croco-visual-pad);
+  box-sizing: border-box;
+  position: relative;
+  z-index: 2;
 }
 
 .croco-word-card.is-masked {

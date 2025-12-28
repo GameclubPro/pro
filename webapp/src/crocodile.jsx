@@ -1924,19 +1924,21 @@ function WordCard({ word, masked = false }) {
           </div>
           <span className="croco-word-placeholder-sheen" />
         </div>
-        {imageUrl && (
-          <img
-            src={imageUrl}
-            alt=""
-            className={`croco-word-visual-img is-photo${
-              imageStatus === "ready" ? " is-ready" : ""
-            }`}
-            onLoad={() => setImageStatus("ready")}
-            onError={() => setImageStatus("error")}
-            loading="eager"
-            decoding="async"
-          />
-        )}
+        <div className="croco-word-visual-inner">
+          {imageUrl && (
+            <img
+              src={imageUrl}
+              alt=""
+              className={`croco-word-visual-img is-photo${
+                imageStatus === "ready" ? " is-ready" : ""
+              }`}
+              onLoad={() => setImageStatus("ready")}
+              onError={() => setImageStatus("error")}
+              loading="eager"
+              decoding="async"
+            />
+          )}
+        </div>
       </div>
       <div className="croco-word-footer">
         <div className="croco-word-main">{mainText}</div>
