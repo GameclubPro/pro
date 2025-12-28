@@ -332,12 +332,12 @@
 }
 
 .croco-hands.hold-panel .hand-left {
-  transform: translate(-6px, -6px) rotate(-10deg);
+  transform: translate(-6px, -6px);
   transform-origin: center top;
 }
 
 .croco-hands.hold-panel .hand-right {
-  transform: translate(6px, -4px) rotate(10deg);
+  transform: translate(6px, -4px);
   transform-origin: center top;
 }
 
