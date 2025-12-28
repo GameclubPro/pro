@@ -28,6 +28,7 @@ import {
   removeCustomWordAt,
 } from "./crocodile-helpers";
 import { getSessionToken } from "./session-token";
+import crocoHeadClassic from "./assets/crocodile/crocohead.png";
 import crocoHeadHot from "./assets/crocodile/hotcrocohead.png";
 import crocoHeadBliss from "./assets/crocodile/crocoheadbliss.png";
 import crocoHandsLeftHot from "./assets/crocodile/hotcrocohandsleft.png";
@@ -1155,10 +1156,10 @@ function Setup({
   const showCustomSuffix = selectedPacks.includes("custom");
   const isBlissMode = baseSelectedKey === "easy" && !baseMixed;
   const isHotMode = baseSelectedKey === "hard" && !baseMixed;
-  const activeHead = isBlissMode ? crocoHeadBliss : crocoHeadHot;
-  const activeHandsLeft = isBlissMode ? crocoHandsLeftBliss : crocoHandsLeftHot;
-  const activeHandsRight = isBlissMode ? crocoHandsRightBliss : crocoHandsRightHot;
-  const activeLegs = isBlissMode ? crocoLegsBliss : crocoLegsHot;
+  const activeHead = isBlissMode ? crocoHeadBliss : isHotMode ? crocoHeadHot : crocoHeadClassic;
+  const activeHandsLeft = isHotMode ? crocoHandsLeftHot : crocoHandsLeftBliss;
+  const activeHandsRight = isHotMode ? crocoHandsRightHot : crocoHandsRightBliss;
+  const activeLegs = isHotMode ? crocoLegsHot : crocoLegsBliss;
 
   const settingsModal = (
     <AnimatePresence>
