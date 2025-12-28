@@ -1513,7 +1513,6 @@ function Setup({
               <div className="panel-head with-gear">
                 <div>
                   <div className="eyebrow">Крокодил</div>
-                  <div className="panel-title">Собери состав и жми старт</div>
                 </div>
                 <motion.button
                   className="settings-gear"
