@@ -445,11 +445,25 @@
   gap: 6px;
   margin-bottom: 8px;
 }
-.croco-setup-panel .panel-head.with-gear {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+
+.settings-gear.croco-setup-gear {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  z-index: 5;
+}
+
+.croco-setup-gear .gear-inner {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+}
+
+.croco-setup-gear .gear-glow {
+  inset: -12px;
+  opacity: 0.6;
 }
 
 .eyebrow {
