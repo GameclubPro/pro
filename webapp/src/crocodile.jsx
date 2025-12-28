@@ -1510,6 +1510,25 @@ function Setup({
 
           <div className="croco-setup-panel">
             <div className="croco-setup-content">
+              <div className="panel-head with-gear">
+                <div>
+                  <div className="eyebrow">Крокодил</div>
+                  <div className="panel-title">Собери состав и жми старт</div>
+                </div>
+                <motion.button
+                  className="settings-gear"
+                  onClick={() => setSettingsOpen(true)}
+                  whileTap={{ scale: 0.92 }}
+                  whileHover={{ rotate: -4 }}
+                  aria-label="Открыть настройки"
+                >
+                  <span className="gear-inner">
+                    <Settings size={18} />
+                  </span>
+                  <span className="gear-glow" />
+                </motion.button>
+              </div>
+
               <div className="chips-row">
                 <button
                   className={`seg ${modeIsTeams ? "seg-active" : ""}`}
@@ -1642,19 +1661,6 @@ function Setup({
               )}
             </div>
           </div>
-          <motion.button
-            className="settings-gear croco-setup-gear"
-            onClick={() => setSettingsOpen(true)}
-            whileTap={{ scale: 0.92 }}
-            whileHover={{ rotate: -4 }}
-            aria-label="Открыть настройки"
-            type="button"
-          >
-            <span className="gear-inner">
-              <Settings size={18} />
-            </span>
-            <span className="gear-glow" />
-          </motion.button>
         </div>
       </div>
     </>
