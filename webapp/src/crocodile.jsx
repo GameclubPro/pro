@@ -84,7 +84,7 @@ const PACK_STICKERS = {
   custom: "🎨",
 };
 
-const ADVANCE_DELAY_MS = 1500;
+const ADVANCE_DELAY_MS = 0;
 const REMOTE_POOL_MULTIPLIER = 2;
 const REMOTE_POOL_MIN = 60;
 const REMOTE_POOL_MAX = 1200;
@@ -1637,13 +1637,6 @@ function Setup({
                 <Sparkles size={18} />
                 Старт
               </motion.button>
-              {!canStart && (
-                <div className="small-meta danger">
-                  {remoteEnabled && remoteStatus === "loading"
-                    ? "Загружаем слова из облака."
-                    : "Нужно минимум 2 участника и хотя бы одно слово."}
-                </div>
-              )}
             </div>
           </div>
           <motion.button
@@ -1758,7 +1751,7 @@ function Round({
       <div className="actions-bar">
         <div className="actions-grid">
           <motion.button
-            className="option-btn"
+            className="option-btn success"
             whileTap={{ scale: 0.98 }}
             onClick={() => onAnswer(true)}
             disabled={!word || showTimeoutPrompt}
@@ -1767,13 +1760,13 @@ function Round({
             Угадали
           </motion.button>
           <motion.button
-            className="option-btn secondary"
+            className="option-btn danger"
             whileTap={{ scale: 0.98 }}
             onClick={() => onAnswer(false)}
             disabled={!word || showTimeoutPrompt}
           >
-            <RefreshCw size={18} />
-            Пропуск
+            <X size={18} />
+            Не угадали
           </motion.button>
         </div>
       </div>
@@ -1797,7 +1790,7 @@ function Round({
             <div className="timeout-sub">Команда успела угадать?</div>
             <div className="timeout-actions">
               <motion.button
-                className="option-btn"
+                className="option-btn success"
                 whileTap={{ scale: 0.98 }}
                 onClick={() => onTimeoutAnswer(true)}
               >
@@ -1805,11 +1798,11 @@ function Round({
                 Угадали
               </motion.button>
               <motion.button
-                className="option-btn secondary"
+                className="option-btn danger"
                 whileTap={{ scale: 0.98 }}
                 onClick={() => onTimeoutAnswer(false)}
               >
-                <RefreshCw size={18} />
+                <X size={18} />
                 Не угадали
               </motion.button>
             </div>

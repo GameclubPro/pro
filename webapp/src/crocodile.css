@@ -2368,18 +2368,18 @@
     linear-gradient(170deg, rgba(6, 12, 10, 0.96), rgba(8, 16, 12, 0.99));
   box-shadow: var(--croco-shadow-strong);
   display: grid;
-  grid-template-rows: minmax(180px, 1fr) auto;
+  grid-template-rows: minmax(162px, 1fr) auto;
   gap: 0;
   align-content: stretch;
   backdrop-filter: blur(6px);
-  min-height: clamp(260px, 36vh, 380px);
+  min-height: clamp(234px, 32.4vh, 342px);
   isolation: isolate;
   overflow: hidden;
 }
 
 .croco-word-visual {
   width: 100%;
-  min-height: clamp(170px, 28vh, 250px);
+  min-height: clamp(153px, 25.2vh, 225px);
   display: grid;
   place-items: center;
   padding: clamp(14px, 3.4vw, 22px);
@@ -2556,6 +2556,18 @@
   justify-content: center;
   gap: 8px;
   box-shadow: 0 16px 40px rgba(34, 197, 94, 0.35);
+}
+
+.option-btn.success {
+  background: var(--croco-primary);
+  color: #041017;
+  box-shadow: 0 16px 40px rgba(34, 197, 94, 0.35);
+}
+
+.option-btn.danger {
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 16px 40px rgba(239, 68, 68, 0.35);
 }
 
 .option-btn.secondary {
@@ -2756,6 +2768,18 @@
   color: #041017;
 }
 
+.croco .option-btn.success {
+  background: var(--croco-primary);
+  color: #041017;
+  box-shadow: 0 16px 40px rgba(34, 197, 94, 0.35);
+}
+
+.croco .option-btn.danger {
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 16px 40px rgba(239, 68, 68, 0.35);
+}
+
 .croco .option-btn.secondary {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
   border: 1px solid var(--croco-border);
@@ -2857,7 +2881,7 @@
     --croco-legs-space: clamp(160px, 24vh, 230px);
   }
   .croco-word-card {
-    min-height: clamp(220px, 30vh, 300px);
+    min-height: clamp(198px, 27vh, 270px);
   }
   .croco-word-visual {
     min-height: clamp(140px, 22vh, 200px);
