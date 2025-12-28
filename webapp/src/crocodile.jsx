@@ -1508,10 +1508,6 @@ function Setup({
           <div className="croco-head" aria-hidden="true">
             <img src={crocoHead} alt="" />
           </div>
-          <div className="croco-hands hold-panel" aria-hidden="true">
-            <img src={crocoHandsLeft} alt="" className="hand hand-left" />
-            <img src={crocoHandsRight} alt="" className="hand hand-right" />
-          </div>
           <div className="croco-legs" aria-hidden="true">
             <img src={crocoLegs} alt="" />
           </div>
@@ -1613,6 +1609,10 @@ function Setup({
                       </motion.div>
                     ) : null}
                   </AnimatePresence>
+                </div>
+                <div className="croco-hands hold-panel" aria-hidden="true">
+                  <img src={crocoHandsLeft} alt="" className="hand hand-left" />
+                  <img src={crocoHandsRight} alt="" className="hand hand-right" />
                 </div>
               </div>
 
