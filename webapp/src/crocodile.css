@@ -450,16 +450,16 @@
   position: absolute;
   top: 0;
   right: 0;
-  width: 40px;
-  height: 40px;
-  transform: translate(35%, -35%);
+  width: 48px;
+  height: 48px;
+  transform: translate(20%, -20%);
   z-index: 5;
 }
 
 .croco-setup-gear .gear-inner {
-  width: 28px;
-  height: 28px;
-  border-radius: 9px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
 }
 
 .croco-setup-gear .gear-glow {
@@ -2771,7 +2771,7 @@
 }
 
 .croco .settings-gear {
-  border: 1px solid var(--croco-border);
+  border: none;
   background:
     radial-gradient(120% 120% at 20% 20%, rgba(255, 255, 255, 0.08), transparent),
     var(--croco-surface);
