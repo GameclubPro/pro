@@ -2384,6 +2384,7 @@
   display: grid;
   place-items: center;
   padding: clamp(14px, 3.4vw, 22px);
+  box-sizing: border-box;
   position: relative;
   overflow: hidden;
   background:
@@ -2408,8 +2409,8 @@
 }
 
 .croco-word-visual-img {
-  width: min(70%, 260px);
-  max-width: 100%;
+  width: auto;
+  max-width: min(70%, 260px);
   max-height: 100%;
   height: auto;
   object-fit: contain;
@@ -2419,8 +2420,8 @@
 }
 
 .croco-word-visual-img.is-photo {
-  width: min(92%, 360px);
-  max-width: 100%;
+  width: auto;
+  max-width: min(92%, 360px);
   max-height: 100%;
   border-radius: 0;
   object-fit: contain;
