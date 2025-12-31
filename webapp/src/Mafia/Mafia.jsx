@@ -271,6 +271,8 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
   const apiEvents = async (code) => {
     return fetchJSON(`/api/rooms/${encodeURIComponent(code)}/events?limit=40`, { includeInitHeader: true });
   };
+  const apiEventsRef = useRef(apiEvents);
+  useEffect(() => { apiEventsRef.current = apiEvents; }, [apiEvents]);
   const apiRoomToLobby = async (code) => {
     return fetchJSON(`/api/rooms/${encodeURIComponent(code)}/to-lobby`, {
       method: "POST",
@@ -381,6 +383,42 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
   const stateEtagRef = useRef(null);
   const lastEventIdRef = useRef(null);
 
+  const eventsRefreshAtRef = useRef(0);
+  const eventsRefreshInFlightRef = useRef(false);
+
+  const refreshEvents = useCallback(async () => {
+    if (!mountedRef.current) return;
+    if (viewRef.current !== "room") return;
+    const code = roomCodeRef.current;
+    if (!code) return;
+
+    const now = Date.now();
+    if (eventsRefreshInFlightRef.current) return;
+    if (now - eventsRefreshAtRef.current < 800) return;
+
+    eventsRefreshInFlightRef.current = true;
+    eventsRefreshAtRef.current = now;
+    try {
+      const api = apiEventsRef.current;
+      const ev = await api(code);
+      if (!mountedRef.current) return;
+      const next = Array.isArray(ev?.items) ? ev.items : [];
+      setEvents((prev) => {
+        const prevLast = prev?.length ? prev[prev.length - 1]?.id : null;
+        const nextLast = next?.length ? next[next.length - 1]?.id : null;
+        return prevLast === nextLast && prev.length === next.length ? prev : next;
+      });
+      if (next?.length) {
+        const nextLast = next[next.length - 1]?.id;
+        if (Number.isFinite(Number(nextLast))) lastEventIdRef.current = Number(nextLast);
+      }
+    } catch {
+      // ignore
+    } finally {
+      eventsRefreshInFlightRef.current = false;
+    }
+  }, []);
+
   // Очередь офлайн-операций
   const pendingOpsRef = useRef([]); // [{event, payload, addedAt, attempts}]
 
@@ -397,6 +435,11 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
   useEffect(() => {
     if (eventsOpen && lastId) setLastSeenEventId(lastId);
   }, [eventsOpen, lastId]);
+
+  useEffect(() => {
+    if (!eventsOpen) return;
+    refreshEvents();
+  }, [eventsOpen, refreshEvents]);
 
   // Тоггл событий: открыть/закрыть; при открытии — сброс непрочитанного бейджа
   const toggleEvents = useCallback(() => {
@@ -512,7 +555,14 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
       // NEW: Зафиксировать ETag и lastEventId для будущего resume
       try {
         if (s?.etag) stateEtagRef.current = String(s.etag);
-        if (Number.isFinite(Number(s?.lastEventId))) lastEventIdRef.current = Number(s.lastEventId);
+        if (Number.isFinite(Number(s?.lastEventId))) {
+          const nextId = Number(s.lastEventId);
+          const prevId = Number(lastEventIdRef.current);
+          lastEventIdRef.current = nextId;
+          if (!Number.isFinite(prevId) || nextId > prevId) {
+            refreshEvents();
+          }
+        }
       } catch {}
 
       setRoomPlayers((prev) => {
@@ -596,7 +646,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
         flushNightInbox();
       }
     },
-    [toast, flushNightInbox]
+    [toast, flushNightInbox, refreshEvents]
   );
 
   // ============================== Offline queue: отправка накопленных операций ==============================
@@ -1874,16 +1924,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
       if (!alive || !mountedRef.current) return;
       await refreshRoom();
       if (!alive || !mountedRef.current) return;
-      try {
-        const ev = await apiEvents(roomCode);
-        if (!alive || !mountedRef.current) return;
-        setEvents((prev) => {
-          const next = ev?.items || [];
-          const prevLast = prev?.length ? prev[prev.length - 1]?.id : null;
-          const nextLast = next?.length ? next[next.length - 1]?.id : null;
-          return prevLast === nextLast && prev.length === next.length ? prev : next;
-        });
-      } catch { /* ignore */ }
+      await refreshEvents();
     };
 
     const id = setInterval(update, 20000);
