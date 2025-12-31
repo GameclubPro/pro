@@ -789,7 +789,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   grid-template-columns: 1fr;
   justify-items:center;
 }
-.mf-row + .mf-row{ margin-top:2px; }
+.mf-row + .mf-row{ margin-top:0; }
 .mf-slot{ display:flex; justify-content:center; min-height: 0; }
 .mf-slot.left{ justify-content:flex-start; padding-left: 10px; }
 .mf-slot.right{ justify-content:flex-end; padding-right: 10px; }
@@ -993,7 +993,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 
 /* ============================== PLAYER TILE ============================== */
 .mf-player{
-  position:relative; width: var(--mf-ava); max-width: var(--mf-ava); background:transparent; border:none; border-radius:0; padding:6px 0 12px; display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0; outline: none;
+  position:relative; width: var(--mf-ava); max-width: var(--mf-ava); background:transparent; border:none; border-radius:0; padding:6px 0 8px; display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0; outline: none;
   overflow: visible !important;
 }
 .mf-player.me .mf-nick{ text-decoration:underline; text-underline-offset:2px; }

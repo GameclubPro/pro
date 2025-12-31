@@ -421,6 +421,8 @@ export const PlayerGrid = memo(function PlayerGrid({
   onToggleVote,
   canShowVote,
 }) {
+  const gridRef = useRef(null);
+
   if (!players?.length) {
     return (
       <div className="mf-empty">
@@ -431,28 +433,66 @@ export const PlayerGrid = memo(function PlayerGrid({
 
   const resolveGridMode = useCallback(() => {
     if (typeof window === "undefined") return "compact";
-    const h = window.visualViewport?.height || window.innerHeight || 0;
-    const styles = getComputedStyle(document.documentElement);
-    const split = parseInt(styles.getPropertyValue("--mf-grid-h-split"), 10) || 720;
-    const wide = parseInt(styles.getPropertyValue("--mf-grid-h-wide"), 10) || 840;
-    if (h >= wide) return "wide";
-    if (h >= split) return "split";
+    const viewportH = window.visualViewport?.height || window.innerHeight || 0;
+    if (!viewportH) return "compact";
+
+    const gridEl = gridRef.current;
+    if (!gridEl) return "compact";
+
+    const rootStyles = getComputedStyle(document.documentElement);
+    const gridGap =
+      parseFloat(rootStyles.getPropertyValue("--mf-grid-gap")) || 12;
+
+    const playerEl = gridEl.querySelector(".mf-player");
+    let rowHeight = playerEl?.getBoundingClientRect().height || 0;
+    if (!rowHeight) {
+      const ava = parseFloat(rootStyles.getPropertyValue("--mf-ava")) || 64;
+      rowHeight = ava * 1.5 + 36;
+    }
+
+    const roomEl = gridEl.closest(".mf-room");
+    const padBottom = roomEl
+      ? parseFloat(getComputedStyle(roomEl).paddingBottom) || 0
+      : 0;
+    const gridTop = gridEl.getBoundingClientRect().top;
+    const availableHeight = Math.max(0, viewportH - gridTop - padBottom);
+    const rowsFit = Math.floor(
+      (availableHeight + gridGap) / (rowHeight + gridGap)
+    );
+
+    if (rowsFit >= 6) return "wide";
+    if (rowsFit >= 5) return "split";
     return "compact";
   }, []);
 
   const [gridMode, setGridMode] = useState(() => resolveGridMode());
+  const updateGridMode = useCallback(() => {
+    const next = resolveGridMode();
+    setGridMode((prev) => (prev === next ? prev : next));
+  }, [resolveGridMode]);
+
+  useLayoutEffect(() => {
+    updateGridMode();
+  }, [players.length, updateGridMode]);
+
   useEffect(() => {
-    const update = () => setGridMode(resolveGridMode());
+    const update = () => updateGridMode();
     update();
     window.addEventListener("resize", update, { passive: true });
     window.addEventListener("orientationchange", update, { passive: true });
     window.visualViewport?.addEventListener("resize", update, { passive: true });
+    let ro;
+    if (typeof ResizeObserver !== "undefined" && gridRef.current) {
+      ro = new ResizeObserver(update);
+      ro.observe(gridRef.current);
+    }
     return () => {
       window.removeEventListener("resize", update);
       window.removeEventListener("orientationchange", update);
       window.visualViewport?.removeEventListener("resize", update);
+      ro?.disconnect?.();
     };
-  }, [resolveGridMode]);
+  }, [updateGridMode]);
 
   const isCompact = gridMode === "compact";
   const isSplit = gridMode === "split";
@@ -540,7 +580,7 @@ export const PlayerGrid = memo(function PlayerGrid({
 
   return (
     <>
-      <section className="mf-grid" aria-label="Игроки">
+      <section className="mf-grid" aria-label="Игроки" ref={gridRef}>
         {renderRow(
           players[0],
           <div className={`mf-center-cta ${phase === "LOBBY" ? "lobby-pinned" : ""}`}>
