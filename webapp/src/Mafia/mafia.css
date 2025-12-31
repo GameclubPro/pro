@@ -1083,17 +1083,17 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 .mf-dot.ok.not-ready { background:#ef4444; }
 .mf-dot.rip{ background:var(--mf-danger); }
 
-.mf-role-badge{ position:absolute; bottom:-8px; left:50%; transform:translateX(-50%); border-radius:999px; padding:3px 8px; font-size:10px; font-weight:900; border:1px solid transparent; white-space:nowrap; backdrop-filter: blur(2px); z-index:2; }
-/* Бейджи ролей — через токены */
-.role-MAFIA      { background:#a7b2bf26; color:var(--role-mafia);      border-color:#a7b2bf44; }
-.role-DON        { background:#a7b2bf26; color:var(--role-don);        border-color:#a7b2bf44; }
-.role-DOCTOR     { background:#59d18526; color:var(--role-doctor);     border-color:#59d18544; }
-.role-SHERIFF    { background:#ffd36926; color:var(--role-sheriff);    border-color:#ffd36944; }
-.role-CIVIL      { background:#9aa4b226; color:var(--role-civil);      border-color:#9aa4b244; }
-.role-BODYGUARD  { background:#6bb6ff26; color:var(--role-bodyguard);  border-color:#6bb6ff44; }
-.role-PROSTITUTE { background:#ff7acb26; color:var(--role-prostitute); border-color:#ff7acb44; }
-.role-JOURNALIST { background:#9ea7ff26; color:var(--role-journalist); border-color:#9ea7ff44; }
-.role-SNIPER     { background:#ff9a6b26; color:var(--role-sniper);     border-color:#ff9a6b44; }
+.mf-role-badge{ position:absolute; bottom:-8px; left:50%; transform:translateX(-50%); border-radius:999px; padding:3px 8px; font-size:10px; font-weight:900; border:1px solid transparent; white-space:nowrap; z-index:2; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+/* Бейджи ролей — непрозрачные, через токены */
+.role-MAFIA      { background: color-mix(in lab, var(--role-mafia) 18%, #0f1218);      color:var(--role-mafia);      border-color: color-mix(in lab, var(--role-mafia) 55%, #0f1218); }
+.role-DON        { background: color-mix(in lab, var(--role-don) 18%, #0f1218);        color:var(--role-don);        border-color: color-mix(in lab, var(--role-don) 55%, #0f1218); }
+.role-DOCTOR     { background: color-mix(in lab, var(--role-doctor) 18%, #0f1218);     color:var(--role-doctor);     border-color: color-mix(in lab, var(--role-doctor) 55%, #0f1218); }
+.role-SHERIFF    { background: color-mix(in lab, var(--role-sheriff) 18%, #0f1218);    color:var(--role-sheriff);    border-color: color-mix(in lab, var(--role-sheriff) 55%, #0f1218); }
+.role-CIVIL      { background: color-mix(in lab, var(--role-civil) 18%, #0f1218);      color:var(--role-civil);      border-color: color-mix(in lab, var(--role-civil) 55%, #0f1218); }
+.role-BODYGUARD  { background: color-mix(in lab, var(--role-bodyguard) 18%, #0f1218);  color:var(--role-bodyguard);  border-color: color-mix(in lab, var(--role-bodyguard) 55%, #0f1218); }
+.role-PROSTITUTE { background: color-mix(in lab, var(--role-prostitute) 18%, #0f1218); color:var(--role-prostitute); border-color: color-mix(in lab, var(--role-prostitute) 55%, #0f1218); }
+.role-JOURNALIST { background: color-mix(in lab, var(--role-journalist) 18%, #0f1218); color:var(--role-journalist); border-color: color-mix(in lab, var(--role-journalist) 55%, #0f1218); }
+.role-SNIPER     { background: color-mix(in lab, var(--role-sniper) 18%, #0f1218);     color:var(--role-sniper);     border-color: color-mix(in lab, var(--role-sniper) 55%, #0f1218); }
 
 .mf-dead-onava{
   position:absolute; inset:0; display:flex; align-items:center; justify-content:center; border-radius:10px;
@@ -1102,7 +1102,10 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   text-shadow: 0 1px 2px rgba(0,0,0,.7); z-index:2; pointer-events:none;
 }
 
-.mf-nick{ width: 100%; font-weight:800; font-size:14px; line-height:1.2; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width: 0; unicode-bidi: plaintext; font-variant-east-asian: proportional-width; }
+.mf-nick{ width: 150%; max-width: 150%; font-weight:800; font-size:14px; line-height:1.2; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width: 0; unicode-bidi: plaintext; font-variant-east-asian: proportional-width; }
+.mf-slot.left .mf-player .mf-nick{ align-self:flex-start; text-align:left; }
+.mf-slot.right .mf-player .mf-nick{ align-self:flex-end; text-align:right; }
+.mf-slot.center .mf-player .mf-nick{ align-self:center; text-align:center; }
 .mf-ready-summary{ text-align:center; font-size:13px; color:#dfe3ea; opacity:.95; }
 
 /* Старый кольцевой прогресс прячем */
