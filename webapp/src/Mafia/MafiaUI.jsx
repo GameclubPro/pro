@@ -1420,32 +1420,49 @@ export function EventFeed({
   };
   const textOf = (e) => {
     const p = e.payload || {};
+    const privateNotes = Array.isArray(p.privateNotes)
+      ? p.privateNotes.filter(Boolean)
+      : [];
+    let base = null;
     // ✅ обновлён под killedIds (массив)
     if (e.phase === "NIGHT" && Array.isArray(p.killedIds)) {
       if (p.killedIds.length) {
         const names = p.killedIds.map(idToName).join(", ");
-        return `🌙 Ночью убит${
-          p.killedIds.length > 1 ? "ы" : ""
-        } ${names}`;
+        base = `🌙 Ночью убит${p.killedIds.length > 1 ? "ы" : ""} ${names}`;
+      } else {
+        base = "🌙 Ночью никто не был убит";
       }
-      return "🌙 Ночью никто не был убит";
+    } else if (e.phase === "VOTE" && p.lynchedId !== undefined) {
+      base = p.lynchedId
+        ? `⚔️ Казнён ${idToName(p.lynchedId)} (${p.lynchedRole || "?"})`
+        : "⚖️ Казни не было";
+    } else if (e.phase === "VOTE" && p.tie) {
+      base = "🟰 Ничья. Переголосование среди лидеров.";
+    } else if (e.phase === "DAY" && p.dayNumber) {
+      base = `☀️ Наступил день ${p.dayNumber}`;
+    } else if (e.phase === "NIGHT" && p.started) {
+      base = "🌘 Наступила ночь";
     }
-    if (e.phase === "VOTE" && p.lynchedId !== undefined) {
-      if (p.lynchedId)
-        return `⚔️ Казнён ${idToName(p.lynchedId)} (${
-          p.lynchedRole || "?"
-        })`;
-      return "⚖️ Казни не было";
+
+    if (privateNotes.length) {
+      if (base) return [base, ...privateNotes];
+      return privateNotes;
     }
-    if (e.phase === "VOTE" && p.tie)
-      return "🟰 Ничья. Переголосование среди лидеров.";
-    if (e.phase === "DAY" && p.dayNumber)
-      return `☀️ Наступил день ${p.dayNumber}`;
-    if (e.phase === "NIGHT" && p.started) return "🌘 Наступила ночь";
-    return null;
+    return base;
   };
   const formatted = (items || [])
-    .map((x) => ({ ...x, text: textOf(x) }))
+    .flatMap((x) => {
+      const t = textOf(x);
+      if (!t) return [];
+      if (Array.isArray(t)) {
+        return t.map((text, idx) => ({
+          ...x,
+          id: `${x.id ?? "ev"}-p${idx}`,
+          text,
+        }));
+      }
+      return [{ ...x, text: t }];
+    })
     .filter((x) => x.text);
   if (!formatted.length) return null;
 

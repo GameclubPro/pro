@@ -189,6 +189,33 @@ function sanitizeEventRow(row) {
   return { ...row, payload: sanitizeEventPayload(row.payload) };
 }
 
+function privateNotesForEvent(row, mePlayerId) {
+  if (!row || row.phase !== Phase.NIGHT || mePlayerId == null) return [];
+  const p = row.payload || {};
+  const meStr = String(mePlayerId);
+  const notes = [];
+  if (p.savedId != null && String(p.savedId) === meStr) {
+    notes.push('🩹 Вас вылечили этой ночью');
+  }
+  if (p.guardedId != null && String(p.guardedId) === meStr) {
+    notes.push('🛡️ Этой ночью вас охраняли');
+  }
+  if (Array.isArray(p.blockedActors) && p.blockedActors.some((id) => String(id) === meStr)) {
+    notes.push('🚫 Ваш ход этой ночью был заблокирован');
+  }
+  return notes;
+}
+
+function sanitizeEventRowForUser(row, mePlayerId) {
+  const base = sanitizeEventRow(row);
+  if (!base) return base;
+  const notes = privateNotesForEvent(row, mePlayerId);
+  if (notes.length) {
+    base.payload = { ...(base.payload || {}), privateNotes: notes };
+  }
+  return base;
+}
+
 // Сеттер для JWT — используем доступный секрет (основной или приложенческий)
 function selectJwtSecretForSign() {
   return JWT_SECRET || APP_JWT_SECRET || '';
@@ -1760,7 +1787,7 @@ app.get('/api/rooms/:code/events', async (req, res) => {
       orderBy: { id: 'desc' },
       take: limit,
     });
-    const items = rows.reverse().map(sanitizeEventRow);
+    const items = rows.reverse().map((row) => sanitizeEventRowForUser(row, me.id));
     res.json({ items: jsonSafe(items) });
   } catch (e) {
     console.error('GET /api/rooms/:code/events', e);
@@ -2314,7 +2341,7 @@ io.on('connection', (socket) => {
             orderBy: { id: 'asc' },
             take: 50,
           });
-          delta = delta.map(sanitizeEventRow);
+          delta = delta.map((row) => sanitizeEventRowForUser(row, me.id));
         }
         return ackOk(cb, { notModified: true, etag: state.etag, lastEventId: state.lastEventId, deltaEvents: jsonSafe(delta), activeRoles });
       }
