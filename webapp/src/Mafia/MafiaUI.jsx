@@ -1450,27 +1450,31 @@ export function EventFeed({
     }
     return base;
   };
-  const formatted = (items || [])
-    .flatMap((x) => {
-      const t = textOf(x);
-      if (!t) return [];
-      if (Array.isArray(t)) {
-        return t.map((text, idx) => ({
+  const formatted = [];
+  for (const x of items || []) {
+    const t = textOf(x);
+    if (!t) continue;
+    if (Array.isArray(t)) {
+      t.forEach((text, idx) => {
+        formatted.push({
           ...x,
           id: `${x.id ?? "ev"}-p${idx}`,
           text,
-        }));
-      }
-      return [{ ...x, text: t }];
-    })
-    .filter((x) => x.text);
+        });
+      });
+      continue;
+    }
+    formatted.push({ ...x, text: t });
+  }
+  const filtered = formatted.filter((x) => x.text);
+  if (!filtered.length) return null;
   if (!formatted.length) return null;
 
   return (
     <section id={id} className={`mf-feed ${compact ? "compact" : ""}`}>
       <div className="mf-feed-title">События</div>
       <ul className="mf-feed-list">
-        {formatted.map((e) => (
+        {filtered.map((e) => (
           <li key={e.id} className="mf-feed-item">
             {e.text}
           </li>
