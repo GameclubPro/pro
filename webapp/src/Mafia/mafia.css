@@ -78,7 +78,7 @@
   --mf-grid-row-gap: 8px;
   --mf-edge-pad: 8px;
 
-  --mf-ava: 64px;
+  --mf-ava: 66px;
 
   --mf-grid-h-split: 720px;
   --mf-grid-h-wide: 840px;
@@ -1445,9 +1445,9 @@ button:focus-visible, .mf-chip:focus-visible, .mf-input:focus-visible, .mf-gs-ch
 .sr-only{ position:absolute !important; width:1px !important; height:1px !important; padding:0 !important; margin:-1px !important; overflow:hidden !important; clip:rect(0,0,0,0) !important; white-space:nowrap !important; border:0 !important; }
 
 /* ============================== AVATAR FRAME (UNIVERSAL) ============================== */
-.mf-ava-bronze{
+  .mf-ava-bronze{
   --brz-w: clamp(2px, calc(var(--mf-ava) * .04), 5px);
-  --brz-r: calc(8px + var(--brz-w));
+  --brz-r: calc(7px + var(--brz-w));
   --brz-base: #8c6a2e;
   --brz-dark: #2a1e0d;
   --brz-light: #f2d38a;
@@ -1458,7 +1458,7 @@ button:focus-visible, .mf-chip:focus-visible, .mf-input:focus-visible, .mf-gs-ch
 }
 
 .mf-ava-bronze .mf-avatar{
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
 /* Псевдоэлементы рамки + неоновая заливка */
@@ -1690,7 +1690,7 @@ button:focus-visible, .mf-chip:focus-visible, .mf-input:focus-visible, .mf-gs-ch
   :root{ --mf-center-max: 460px; --mf-grid-gap: 10px; }
 }
 @media (max-width: 720px){
-  :root{ --mf-ava: 58px; }
+  :root{ --mf-ava: 60px; }
   .mf-menu-logo{ text-shadow: 0 0 4px rgba(0,0,0,.25); }
 }
 @media (max-width: 540px){
@@ -1698,7 +1698,7 @@ button:focus-visible, .mf-chip:focus-visible, .mf-input:focus-visible, .mf-gs-ch
 }
 @media (max-width: 480px){
   :root{
-    --mf-ava: 54px;
+    --mf-ava: 56px;
     --mf-grid-gap: 8px;
     --mf-center-col: clamp(150px, 62vw, 220px);
   }
@@ -1709,7 +1709,7 @@ button:focus-visible, .mf-chip:focus-visible, .mf-input:focus-visible, .mf-gs-ch
   :root{
     --mf-center-min: 48px;
     --mf-edge-pad: 6px;
-    --mf-ava: 50px;
+    --mf-ava: 52px;
     --mf-center-col: clamp(140px, 68vw, 200px);
   }
   .mf-slot.left{ padding-left: 6px; }
