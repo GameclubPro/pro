@@ -798,6 +798,9 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   width:100%; max-width: var(--mf-center-max); margin-inline:auto;
   align-items:center; justify-content:center;
 }
+.mf-cta-stack{
+  margin-top: var(--mf-events-clear, 40px);
+}
 .mf-inline-pair{
   display:flex;
   gap: var(--mf-grid-gap);
@@ -817,7 +820,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   --cta-bg: linear-gradient(135deg, rgba(26,30,38,.94), rgba(12,14,20,.9));
   --cta-border: linear-gradient(120deg,#7a88a2,#9db5c8);
   position:sticky;
-  top: calc(12px + var(--mf-safe-top) + var(--mf-events-clear, 24px));
+  top: calc(12px + var(--mf-safe-top) + var(--mf-events-clear, 40px));
   display:inline-flex; align-items:center; justify-content:center; gap:10px;
   padding:12px 18px; min-height:44px;
   border-radius:14px; border:1px solid transparent;
