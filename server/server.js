@@ -116,6 +116,16 @@ const VOTE_CAST_MIN_MS = 300;              // анти-спам на vote:cast
 const MAFIA_RETARGET_COOLDOWN_MS = 2000;   // минимум между сменами целей мафии (дон/мафия)
 const TEST_TG_BOT_OWNER = '5510721194';    // (legacy) тестовый пользователь
 const ZERO_CODE = '1234';                  // спец. код комнаты для автотестов (11 ботов + автодействия)
+const NIGHT_ACTION_ROLES = new Set([
+  Role.MAFIA,
+  Role.DON,
+  Role.DOCTOR,
+  Role.SHERIFF,
+  Role.BODYGUARD,
+  Role.PROSTITUTE,
+  Role.JOURNALIST,
+  Role.SNIPER,
+]);
 
 function normalizeGame(raw, fallback = DEFAULT_GAME) {
   const v = String(raw || '').trim().toUpperCase();
@@ -132,6 +142,27 @@ function gameFromReq(req, fallback = null) {
 // JSON BigInt safe
 const jsonSafe = (x) =>
   JSON.parse(JSON.stringify(x, (_, v) => (typeof v === 'bigint' ? v.toString() : v)));
+
+// Убираем скрытые ночные данные из событий при выдаче клиентам
+const SECRET_EVENT_FIELDS = new Set([
+  'mafiaTargetId',
+  'sniperTargetId',
+  'savedId',
+  'guardedId',
+  'blockedActors',
+]);
+function sanitizeEventPayload(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return payload;
+  const clean = { ...payload };
+  for (const key of SECRET_EVENT_FIELDS) {
+    if (key in clean) delete clean[key];
+  }
+  return clean;
+}
+function sanitizeEventRow(row) {
+  if (!row || !row.payload) return row;
+  return { ...row, payload: sanitizeEventPayload(row.payload) };
+}
 
 // Сеттер для JWT — используем доступный секрет (основной или приложенческий)
 function selectJwtSecretForSign() {
@@ -179,7 +210,9 @@ function verifyAny(token) {
 function readBearer(req) {
   const h = String(req.headers.authorization || '');
   const m = h.match(/^Bearer\s+(.+)$/i);
-  return m ? m[1] : null;
+  if (m) return m[1];
+  const bodyToken = req?.body?.token;
+  return typeof bodyToken === 'string' && bodyToken ? bodyToken : null;
 }
 /** Авторизация: сначала пытаемся по JWT, иначе — по Telegram initData */
 async function authEither(req, { allowStale = false } = {}) {
@@ -1702,7 +1735,8 @@ app.get('/api/rooms/:code/events', async (req, res) => {
       orderBy: { id: 'desc' },
       take: limit,
     });
-    res.json({ items: jsonSafe(rows.reverse()) });
+    const items = rows.reverse().map(sanitizeEventRow);
+    res.json({ items: jsonSafe(items) });
   } catch (e) {
     console.error('GET /api/rooms/:code/events', e);
     res.status(500).json({ error: 'failed' });
@@ -2129,9 +2163,10 @@ io.on('connection', (socket) => {
   const user = socket.data.user;
   const userRooms = new Set();
   socket.data.playerIds = socket.data.playerIds || new Set();
-  const lastNightActionAt = new Map(); // roomId -> ts
-  const lastVoteCastAt = new Map();    // roomId -> ts
-  const lastMafiaRetargetAt = new Map(); // roomId -> ts (дон/мафия)
+  const lastNightActionAt = new Map(); // roomId:userId -> ts
+  const lastVoteCastAt = new Map();    // roomId:userId -> ts
+  const lastMafiaRetargetAt = new Map(); // roomId:playerId -> ts (дон/мафия)
+  const rateKey = (roomId, userId) => `${roomId}:${userId}`;
 
   // ⚠️ Больше НЕ выполняем авто-чистку комнат/игроков на коннекте — по требованиям продукта.
 
@@ -2254,6 +2289,7 @@ io.on('connection', (socket) => {
             orderBy: { id: 'asc' },
             take: 50,
           });
+          delta = delta.map(sanitizeEventRow);
         }
         return ackOk(cb, { notModified: true, etag: state.etag, lastEventId: state.lastEventId, deltaEvents: jsonSafe(delta), activeRoles });
       }
@@ -2328,11 +2364,12 @@ io.on('connection', (socket) => {
       if (room.status !== Phase.NIGHT) return ackErr(cb, 'Сейчас не ночь');
 
       const now = Date.now();
-      const prevAct = lastNightActionAt.get(room.id) || 0;
+      const actKey = rateKey(room.id, user.id);
+      const prevAct = lastNightActionAt.get(actKey) || 0;
       if (now - prevAct < NIGHT_ACTION_MIN_MS) {
         return ackErr(cb, 'too_fast');
       }
-      lastNightActionAt.set(room.id, now);
+      lastNightActionAt.set(actKey, now);
 
       const alivePlayers = room.players.filter(p => p.alive);
       const me = alivePlayers.find(p => p.userId === user.id);
@@ -2344,6 +2381,7 @@ io.on('connection', (socket) => {
       const nightNumber = room.dayNumber + 1;
       const role = me.role;
       if (!role) return ackErr(cb, 'Роль не назначена');
+      if (!NIGHT_ACTION_ROLES.has(role)) return ackErr(cb, 'У вашей роли нет ночного действия');
 
       // Идемпотентность: если пришёл повторный opId — просто подтверждаем
       if (opId) {
@@ -2368,7 +2406,8 @@ io.on('connection', (socket) => {
       const allowRetarget = mafia.MAFIA_ROLES.has(role);
       if (existing && !allowRetarget) return ackErr(cb, 'Ход на эту ночь уже сделан');
       if (existing && allowRetarget) {
-        const last = lastMafiaRetargetAt.get(room.id) || 0;
+        const retargetKey = `${room.id}:${me.id}`;
+        const last = lastMafiaRetargetAt.get(retargetKey) || 0;
         if (Date.now() - last < MAFIA_RETARGET_COOLDOWN_MS) {
           return ackErr(cb, 'retarget_too_fast', { retryMs: MAFIA_RETARGET_COOLDOWN_MS - (Date.now() - last) });
         }
@@ -2382,7 +2421,7 @@ io.on('connection', (socket) => {
           where: { id: existing.id },
           data: { targetPlayerId: target?.id || null, role },
         });
-        lastMafiaRetargetAt.set(room.id, Date.now());
+        lastMafiaRetargetAt.set(`${room.id}:${me.id}`, Date.now());
       } else {
         await prisma.nightAction.create({
           data: { matchId: match.id, nightNumber, actorPlayerId: me.id, role, targetPlayerId: target?.id || null },
@@ -2410,11 +2449,12 @@ io.on('connection', (socket) => {
       if (room.status !== Phase.VOTE) return ackErr(cb, 'Сейчас не голосование');
 
       const now = Date.now();
-      const prevVote = lastVoteCastAt.get(room.id) || 0;
+      const voteKey = rateKey(room.id, user.id);
+      const prevVote = lastVoteCastAt.get(voteKey) || 0;
       if (now - prevVote < VOTE_CAST_MIN_MS) {
         return ackErr(cb, 'too_fast');
       }
-      lastVoteCastAt.set(room.id, now);
+      lastVoteCastAt.set(voteKey, now);
 
       const alivePlayers = room.players.filter(p => p.alive);
       const me = alivePlayers.find(p => p.userId === user.id);

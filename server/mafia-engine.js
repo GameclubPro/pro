@@ -712,7 +712,12 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
         if (!target) return { ok: true }; // пропуск допустим (без траты патрона)
         if (target.id === self) return { ok: false, error: 'Нельзя стрелять в себя' };
         const shots = await prisma.nightAction.count({
-          where: { matchId: match.id, actorPlayerId: actor.id, role: Role.SNIPER },
+          where: {
+            matchId: match.id,
+            actorPlayerId: actor.id,
+            role: Role.SNIPER,
+            targetPlayerId: { not: null },
+          },
         });
         if (shots >= 1) return { ok: false, error: 'Патрон уже израсходован' };
         return { ok: true };
@@ -1171,6 +1176,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
           const leadersClean = Array.from(new Set(leaders)); // сохраняем и "пропуск" (0), и явных лидеров
           await prisma.$transaction(async (tx) => {
             await tx.event.create({ data: { matchId: match.id, phase: Phase.VOTE, payload: { dayNumber: room.dayNumber, tie: true, round: 1, leaders: leadersClean } } });
+            await tx.event.create({ data: { matchId: match.id, phase: Phase.VOTE, payload: { dayNumber: room.dayNumber, round: 2, runoff: true, leaders: leadersClean } } });
             await tx.room.update({ where: { id: room.id }, data: { phaseEndsAt: new Date(Date.now() + VOTE_SEC * 1000) } });
           });
           schedulePhase(room.id, Phase.VOTE, VOTE_SEC, { round: 2 });

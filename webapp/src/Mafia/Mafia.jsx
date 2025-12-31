@@ -1405,10 +1405,11 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
   function sendLeaveInBg(code) {
     if (!API_BASE || !code) return;
     const id = getInitData();
+    const token = getToken();
     // 1) Пытаемся через sendBeacon (самый надёжный путь в вебвью/мобиле)
     try {
       if (navigator.sendBeacon) {
-        const blob = new Blob([JSON.stringify({ initData: id })], { type: "application/json" });
+        const blob = new Blob([JSON.stringify({ initData: id || "", token: token || "" })], { type: "application/json" });
         navigator.sendBeacon(`${API_BASE}/api/rooms/${encodeURIComponent(code)}/leave`, blob);
         return;
       }
@@ -1428,8 +1429,9 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
           "Content-Type": "application/json",
           // заголовок дублируем — сервер понимает и header и body
           ...(id ? { "X-Telegram-Init-Data": id } : {}),
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ initData: id || "" }),
+        body: JSON.stringify({ initData: id || "", token: token || "" }),
       }).catch(() => {});
     } catch {}
   }

@@ -144,3 +144,31 @@ test('isNightReady passes when sniper acted (even with null target)', async () =
   const ready = await engine.isNightReady(1, 1, 1);
   assert.equal(ready, true);
 });
+
+test('validateNightTarget counts only real sniper shots', async () => {
+  let countArgs = null;
+  const engine = makeEngine({
+    nightAction: {
+      count: async (args) => {
+        countArgs = args;
+        return 0;
+      },
+    },
+  });
+  const room = { players: [] };
+  const match = { id: 1 };
+  const actor = { id: 10, alive: true };
+  const target = { id: 11, alive: true };
+
+  const res = await engine.validateNightTarget({
+    room,
+    match,
+    actor,
+    role: enums.Role.SNIPER,
+    target,
+    nightNumber: 2,
+  });
+  assert.equal(res.ok, true);
+  assert.ok(countArgs?.where, 'count should be called for sniper shots');
+  assert.deepEqual(countArgs.where.targetPlayerId, { not: null });
+});
