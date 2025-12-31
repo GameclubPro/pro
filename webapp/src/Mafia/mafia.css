@@ -79,6 +79,9 @@
 
   --mf-ava: 64px;
 
+  --mf-grid-h-split: 720px;
+  --mf-grid-h-wide: 840px;
+
   --mf-menu-accent: var(--mf-accent);
   --mf-menu-accent2: var(--mf-accent2);
   --mf-menu-bg-dark:#121418;

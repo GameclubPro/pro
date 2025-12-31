@@ -428,23 +428,35 @@ export const PlayerGrid = memo(function PlayerGrid({
       </div>
     );
   }
-  const left = [];
-  const right = [];
-  const centerTop = []; // позиции 11/12 — между 3 и 5
-  const centerBottom = []; // позиции 9/10 — между 7 и 8
 
-  players.forEach((p, idx) => {
-    const pos = idx + 1;
-    if (pos === 9 || pos === 10) {
-      centerBottom.push(p);
-    } else if (pos === 11 || pos === 12) {
-      centerTop.push(p);
-    } else if (pos % 2 === 1) {
-      left.push(p);
-    } else {
-      right.push(p);
-    }
-  });
+  const resolveGridMode = useCallback(() => {
+    if (typeof window === "undefined") return "compact";
+    const h = window.visualViewport?.height || window.innerHeight || 0;
+    const styles = getComputedStyle(document.documentElement);
+    const split = parseInt(styles.getPropertyValue("--mf-grid-h-split"), 10) || 720;
+    const wide = parseInt(styles.getPropertyValue("--mf-grid-h-wide"), 10) || 840;
+    if (h >= wide) return "wide";
+    if (h >= split) return "split";
+    return "compact";
+  }, []);
+
+  const [gridMode, setGridMode] = useState(() => resolveGridMode());
+  useEffect(() => {
+    const update = () => setGridMode(resolveGridMode());
+    update();
+    window.addEventListener("resize", update, { passive: true });
+    window.addEventListener("orientationchange", update, { passive: true });
+    window.visualViewport?.addEventListener("resize", update, { passive: true });
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+      window.visualViewport?.removeEventListener("resize", update);
+    };
+  }, [resolveGridMode]);
+
+  const isCompact = gridMode === "compact";
+  const isSplit = gridMode === "split";
+  const isWide = gridMode === "wide";
 
   const startReason = (() => {
     if (phase !== "LOBBY" || canStart) return "";
@@ -619,17 +631,27 @@ export const PlayerGrid = memo(function PlayerGrid({
 
         {renderRow(
           players[4],
-          renderInline([players[10], players[11]]),
+          isCompact ? renderInline([players[10], players[11]]) : null,
           players[5],
           "row-3"
         )}
 
         {renderRow(
           players[6],
-          renderInline([players[8], players[9]]),
+          isCompact ? renderInline([players[8], players[9]]) : null,
           players[7],
           "row-4"
         )}
+
+        {!isCompact &&
+          renderRow(
+            players[8],
+            isSplit ? renderInline([players[10], players[11]]) : null,
+            players[9],
+            "row-5"
+          )}
+
+        {isWide && renderRow(players[10], null, players[11], "row-6")}
       </section>
 
       {phase !== "LOBBY" && (
