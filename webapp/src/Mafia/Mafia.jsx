@@ -5,7 +5,7 @@ import "./mafia.css";
 import {
   MenuView,
   RoomShell,
-  HUD,
+  TimerHUD,
   PlayerGrid,
   ActionSheet,
   VotePopup,
@@ -990,7 +990,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
         setRevealedRoles((prev) => ({ ...prev, ...rolesById }));
       }
       setPhase("ENDED");
-      // winner не приходит — finalWinner остаётся null → HUD покажет «Игра завершена»
+      // winner не приходит — finalWinner остаётся null → EndedBar покажет «Игра завершена»
     });
 
     // ====== FIXED: сохраняем победителя отдельно и пробрасываем баннер ======
@@ -2093,7 +2093,6 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
   // ✅ Больше НЕ выходим из комнаты при сворачивании/переключении.
 
   // ============================== Render ==============================
-  const phaseLabel = translatePhase(phase);
   const isVotePhase = phase === "VOTE";
   const voteRowsPresent = useMemo(
     () => Object.keys(voteState?.tally || {}).length > 0,
@@ -2127,14 +2126,21 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
             code={roomCode}
             onCopy={copyCode}
           >
-            {/* HUD */}
-            <HUD
-              phase={phase}
-              phaseLabel={phaseLabel}
-              dayNumber={dayNumber}
-              timer={timer}
-              endedLabel={phase === "ENDED" ? finalWinner || timer?.winner : undefined}
-            />
+            {phase !== "LOBBY" && phase !== "ENDED" && (
+              <div className="mf-timer-floating">
+                {timer ? (
+                  <TimerHUD timer={timer} className="mf-gs-timer-card" />
+                ) : (
+                  <div className="mf-timer mf-gs-timer-card skeleton" aria-hidden="true">
+                    <span className="mf-timer-icon">⏳</span>
+                    <span className="mf-timer-text">—</span>
+                    <div className="mf-timer-bar">
+                      <i />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Player grid */}
             <div className="mf-stage">

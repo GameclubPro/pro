@@ -342,6 +342,26 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   cursor: pointer;
 }
 
+.mf-timer-floating{
+  position: fixed;
+  --mf-safe-top: max(env(safe-area-inset-top, 0px), var(--safe-top, 0px));
+  --mf-content-top: max(var(--tg-content-safe-area-inset-top, 0px), var(--mf-safe-top));
+  --mf-header-center: calc((var(--mf-safe-top) + var(--mf-content-top)) / 2);
+  top: calc(max(20px, var(--mf-header-center)) + var(--mf-timer-nudge, 0px));
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(320px, calc(100% - 24px));
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 30;
+}
+.mf-timer-floating .mf-gs-timer-card{
+  flex: 0 0 auto;
+  width: min(320px, 100%);
+  max-width: 100%;
+}
+
 .mf-chip{
   background:#161a1f; color:var(--mf-fg); border:1px solid var(--mf-border); border-radius:999px; padding:6px 10px; font-size:12px; line-height: 1; min-height: 30px; display:inline-flex; align-items:center; transition: background .15s ease, transform .1s ease, box-shadow .2s ease, border-color .2s ease; box-shadow: 0 2px 8px rgba(0,0,0,.25); cursor:pointer;
 }
