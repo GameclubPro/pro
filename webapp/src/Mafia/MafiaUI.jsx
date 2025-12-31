@@ -413,6 +413,7 @@ export const PlayerGrid = memo(function PlayerGrid({
   eventsCount,
   eventItems,
   canStart,
+  startReason = "",
   onStart,
   voteState,
   hasUnread,
@@ -498,12 +499,6 @@ export const PlayerGrid = memo(function PlayerGrid({
   const isCompact = gridMode === "compact";
   const isSplit = gridMode === "split";
   const isWide = gridMode === "wide";
-
-  const startReason = (() => {
-    if (phase !== "LOBBY" || canStart) return "";
-    if ((players?.length || 0) < 4) return "Нужно минимум 4 игрока";
-    return "Только владелец может начать";
-  })();
 
   const votesLeft = (() => {
     const total = voteState?.alive || 0;
@@ -2328,6 +2323,17 @@ export function JoinDialog({ open, onCancel, onSubmit }) {
 
 /** Баннер состояния сети (socket) */
 export function NetBanner({ online, reconnecting }) {
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    if (online) {
+      root.style.removeProperty("--mf-net-space");
+      return;
+    }
+    root.style.setProperty("--mf-net-space", "56px");
+    return () => root.style.removeProperty("--mf-net-space");
+  }, [online]);
+
   if (online) return null;
   return (
     <div className="mf-net" role="status" aria-live="polite">

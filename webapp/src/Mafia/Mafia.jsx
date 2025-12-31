@@ -2094,6 +2094,22 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
 
   // ============================== Render ==============================
   const isVotePhase = phase === "VOTE";
+  const readyTarget = roomPlayers?.length || 0;
+  const readyCount = (roomPlayers || []).reduce((acc, p) => {
+    const isOwnerUser =
+      ownerId != null && String(p?.user?.id) === String(ownerId);
+    return acc + (p?.ready || isOwnerUser ? 1 : 0);
+  }, 0);
+  const allReady = readyTarget > 0 && readyCount >= readyTarget;
+  const canStartLobby =
+    isOwner && phase === "LOBBY" && readyTarget >= 4 && allReady;
+  const startReason = (() => {
+    if (phase !== "LOBBY" || canStartLobby) return "";
+    if (readyTarget < 4) return "Нужно минимум 4 игрока";
+    if (!isOwner) return "Только владелец может начать";
+    if (!allReady) return "Не все готовы";
+    return "Нельзя начать";
+  })();
   const voteRowsPresent = useMemo(
     () => Object.keys(voteState?.tally || {}).length > 0,
     [voteState?.tally]
@@ -2161,10 +2177,9 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
               onToggleEvents={toggleEvents}
               eventsOpen={eventsOpen}
               eventsCount={unreadCount}
-              eventItems={events}
-              canStart={
-                isOwner && phase === "LOBBY" && (roomPlayers?.length || 0) >= 4
-              }
+                eventItems={events}
+              canStart={canStartLobby}
+              startReason={startReason}
               onStart={startMafia}
               voteState={voteState}
               leaders={voteState?.leaders || []}
