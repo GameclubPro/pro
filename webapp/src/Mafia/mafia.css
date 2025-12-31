@@ -350,7 +350,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   top: calc(max(20px, var(--mf-header-center)) + var(--mf-timer-nudge, 0px));
   left: 50%;
   transform: translate(-50%, -50%);
-  width: min(320px, calc(100% - 24px));
+  width: 45%;
   display: flex;
   justify-content: center;
   pointer-events: none;
@@ -358,7 +358,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 }
 .mf-timer-floating .mf-gs-timer-card{
   flex: 0 0 auto;
-  width: min(320px, 100%);
+  width: 100%;
   max-width: 100%;
 }
 
