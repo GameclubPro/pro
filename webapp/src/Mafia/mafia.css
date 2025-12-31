@@ -347,10 +347,11 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   --mf-safe-top: max(env(safe-area-inset-top, 0px), var(--safe-top, 0px));
   --mf-content-top: max(var(--tg-content-safe-area-inset-top, 0px), var(--mf-safe-top));
   --mf-header-center: calc((var(--mf-safe-top) + var(--mf-content-top)) / 2);
+  --mf-timer-nudge: 10px;
   top: calc(max(20px, var(--mf-header-center)) + var(--mf-timer-nudge, 0px));
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 45%;
+  width: 50%;
   display: flex;
   justify-content: center;
   pointer-events: none;
