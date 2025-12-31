@@ -440,6 +440,7 @@ export const PlayerGrid = memo(function PlayerGrid({
     if (!gridEl) return "compact";
 
     const gridStyles = getComputedStyle(gridEl);
+    const rootStyles = getComputedStyle(document.documentElement);
     const gridGap =
       parseFloat(gridStyles.rowGap || gridStyles.gap) || 12;
 
