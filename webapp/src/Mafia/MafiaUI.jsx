@@ -439,9 +439,9 @@ export const PlayerGrid = memo(function PlayerGrid({
     const gridEl = gridRef.current;
     if (!gridEl) return "compact";
 
-    const rootStyles = getComputedStyle(document.documentElement);
+    const gridStyles = getComputedStyle(gridEl);
     const gridGap =
-      parseFloat(rootStyles.getPropertyValue("--mf-grid-gap")) || 12;
+      parseFloat(gridStyles.rowGap || gridStyles.gap) || 12;
 
     const playerEl = gridEl.querySelector(".mf-player");
     let rowHeight = playerEl?.getBoundingClientRect().height || 0;

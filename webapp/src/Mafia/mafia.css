@@ -75,6 +75,7 @@
   --mf-center-min: 64px;
   --mf-center-max: 520px;
   --mf-grid-gap: 12px;
+  --mf-grid-row-gap: 8px;
   --mf-edge-pad: 8px;
 
   --mf-ava: 64px;
@@ -771,7 +772,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 .mf-grid{
   display:flex;
   flex-direction:column;
-  gap: var(--mf-grid-gap);
+  gap: var(--mf-grid-row-gap, var(--mf-grid-gap));
   align-items:stretch;
   width:100%;
   contain: layout;
@@ -993,7 +994,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 
 /* ============================== PLAYER TILE ============================== */
 .mf-player{
-  position:relative; width: var(--mf-ava); max-width: var(--mf-ava); background:transparent; border:none; border-radius:0; padding:6px 0 8px; display:flex; flex-direction:column; align-items:center; gap:6px; min-width:0; outline: none;
+  position:relative; width: var(--mf-ava); max-width: var(--mf-ava); background:transparent; border:none; border-radius:0; padding:6px 0 6px; display:flex; flex-direction:column; align-items:center; gap:4px; min-width:0; outline: none;
   overflow: visible !important;
 }
 .mf-player.me .mf-nick{ text-decoration:underline; text-underline-offset:2px; }
@@ -1100,7 +1101,7 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   text-shadow: 0 1px 2px rgba(0,0,0,.7); z-index:2; pointer-events:none;
 }
 
-.mf-nick{ width: 100%; font-weight:800; font-size:14px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width: 0; unicode-bidi: plaintext; font-variant-east-asian: proportional-width; }
+.mf-nick{ width: 100%; font-weight:800; font-size:14px; line-height:1.2; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width: 0; unicode-bidi: plaintext; font-variant-east-asian: proportional-width; }
 .mf-ready-summary{ text-align:center; font-size:13px; color:#dfe3ea; opacity:.95; }
 
 /* Старый кольцевой прогресс прячем */
