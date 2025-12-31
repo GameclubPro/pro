@@ -17,7 +17,6 @@ import bgLobby from "../assets/mafia/bg-lobby.webp";
 import bgNight from "../assets/mafia/bg-night.png";
 import bgDay from "../assets/mafia/bg-day.png";
 import bgVote from "../assets/mafia/bg-vote.png";
-import startBtn from "../assets/mafia/Start_btn.webp";
 
 // === NEW: изображения для аватарок ===
 import avaUnknown from "../assets/mafia/unknown.png";
@@ -554,14 +553,6 @@ export const PlayerGrid = memo(function PlayerGrid({
                         title={startReason || undefined}
                       >
                         <span className="mf-start-cta" aria-hidden="true">
-                          <img
-                            className="mf-start-img"
-                            src={startBtn}
-                            alt=""
-                            decoding="async"
-                            loading="eager"
-                            draggable="false"
-                          />
                           <span className="mf-start-label">Начать игру</span>
                         </span>
                       </button>
@@ -583,14 +574,6 @@ export const PlayerGrid = memo(function PlayerGrid({
                     }
                   >
                     <span className="mf-start-cta" aria-hidden="true">
-                      <img
-                        className="mf-start-img"
-                        src={startBtn}
-                        alt=""
-                        decoding="async"
-                        loading="eager"
-                        draggable="false"
-                      />
                       <span className="mf-start-label">{iAmReady ? "Не готов" : "Готов"}</span>
                     </span>
                   </button>
