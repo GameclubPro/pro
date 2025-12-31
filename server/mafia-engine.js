@@ -575,7 +575,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
 
         const updated = await prisma.room.findUnique({
           where: { id: room.id },
-          include: { players: true, matches: { orderBy: { id: 'desc' }, take: 1 } }
+          include: { players: { include: { user: true } }, matches: { orderBy: { id: 'desc' }, take: 1 } }
         });
 
         // Боты сразу делают выбор до рассылки приватных self, чтобы метки мафии пришли в первом пакете
@@ -778,13 +778,13 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
 
   async function emitMafiaTargets(roomId) {
     try {
-      const room = await prisma.room.findUnique({
-        where: { id: roomId },
-        include: {
-          players: true,
-          matches: { orderBy: { id: 'desc' }, take: 1 },
-        }
-      });
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+      include: {
+        players: { include: { user: true } },
+        matches: { orderBy: { id: 'desc' }, take: 1 },
+      }
+    });
       if (!room) return;
 
       if (!room.matches?.length || room.status !== Phase.NIGHT) {
@@ -1118,7 +1118,13 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
   async function startVote(roomId) {
     return runPhaseOnce(roomId, () =>
       withRoomLock(roomId, async () => {
-        const room = await prisma.room.findUnique({ where: { id: roomId }, include: { matches: { orderBy: { id: 'desc' }, take: 1 } } });
+        const room = await prisma.room.findUnique({
+          where: { id: roomId },
+          include: {
+            players: { include: { user: true } },
+            matches: { orderBy: { id: 'desc' }, take: 1 }
+          }
+        });
         if (!room || room.status !== Phase.DAY) return;
 
         await prisma.$transaction(async (tx) => {
@@ -1229,7 +1235,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
         const after = await prisma.room.findUnique({
           where: { id: room.id },
           include: {
-            players: true,
+            players: { include: { user: true } },
             matches: { orderBy: { id: 'desc' }, take: 1 }
           }
         });
