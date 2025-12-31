@@ -423,14 +423,7 @@ export const PlayerGrid = memo(function PlayerGrid({
   canShowVote,
 }) {
   const gridRef = useRef(null);
-
-  if (!players?.length) {
-    return (
-      <div className="mf-empty">
-        Пока пусто. Поделись кодом комнаты с друзьями.
-      </div>
-    );
-  }
+  const playersCount = players?.length || 0;
 
   const resolveGridMode = useCallback(() => {
     if (typeof window === "undefined") return "compact";
@@ -475,7 +468,7 @@ export const PlayerGrid = memo(function PlayerGrid({
 
   useLayoutEffect(() => {
     updateGridMode();
-  }, [players.length, updateGridMode]);
+  }, [playersCount, updateGridMode]);
 
   useEffect(() => {
     const update = () => updateGridMode();
@@ -499,6 +492,14 @@ export const PlayerGrid = memo(function PlayerGrid({
   const isCompact = gridMode === "compact";
   const isSplit = gridMode === "split";
   const isWide = gridMode === "wide";
+
+  if (!playersCount) {
+    return (
+      <div className="mf-empty">
+        Пока пусто. Поделись кодом комнаты с друзьями.
+      </div>
+    );
+  }
 
   const votesLeft = (() => {
     const total = voteState?.alive || 0;
