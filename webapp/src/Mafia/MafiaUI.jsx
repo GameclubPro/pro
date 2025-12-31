@@ -1409,8 +1409,9 @@ export function EventFeed({
   id = "events-panel",
   compact = false,
 }) {
+  const safePlayers = Array.isArray(players) ? players : [];
   const idToName = (pid) => {
-    const p = players.find((x) => x.id === Number(pid));
+    const p = safePlayers.find((x) => x.id === Number(pid));
     return p
       ? p?.user?.firstName ||
           (p?.user?.username
@@ -1450,35 +1451,66 @@ export function EventFeed({
     }
     return base;
   };
-  const formatted = [];
+  const feedItems = [];
+  let lastDay = null;
   for (const x of items || []) {
+    const p = x?.payload || {};
+    if (x?.phase === "DAY" && p.dayNumber) {
+      const dayNum = Number(p.dayNumber);
+      if (Number.isFinite(dayNum) && dayNum !== lastDay) {
+        feedItems.push({
+          type: "sep",
+          id: `day-${dayNum}-${x.id ?? feedItems.length}`,
+          label: `День ${dayNum}`,
+        });
+        lastDay = dayNum;
+      }
+      continue;
+    }
     const t = textOf(x);
     if (!t) continue;
     if (Array.isArray(t)) {
       t.forEach((text, idx) => {
-        formatted.push({
-          ...x,
+        feedItems.push({
+          type: "event",
           id: `${x.id ?? "ev"}-p${idx}`,
           text,
         });
       });
       continue;
     }
-    formatted.push({ ...x, text: t });
+    feedItems.push({
+      type: "event",
+      id: x.id ?? `ev-${feedItems.length}`,
+      text: t,
+    });
   }
-  const filtered = formatted.filter((x) => x.text);
-  if (!filtered.length) return null;
-  if (!formatted.length) return null;
+  if (!feedItems.length) {
+    return (
+      <section id={id} className={`mf-feed empty ${compact ? "compact" : ""}`}>
+        <div className="mf-feed-title">События</div>
+        <div>Пока нет событий</div>
+      </section>
+    );
+  }
 
   return (
     <section id={id} className={`mf-feed ${compact ? "compact" : ""}`}>
       <div className="mf-feed-title">События</div>
       <ul className="mf-feed-list">
-        {filtered.map((e) => (
-          <li key={e.id} className="mf-feed-item">
-            {e.text}
-          </li>
-        ))}
+        {feedItems.map((e) =>
+          e.type === "sep" ? (
+            <li key={e.id} className="mf-feed-sep" role="separator" aria-label={e.label}>
+              <span className="mf-feed-sep-line" aria-hidden="true" />
+              <span className="mf-feed-sep-label">{e.label}</span>
+              <span className="mf-feed-sep-line" aria-hidden="true" />
+            </li>
+          ) : (
+            <li key={e.id} className="mf-feed-item">
+              {e.text}
+            </li>
+          )
+        )}
       </ul>
     </section>
   );
@@ -1489,41 +1521,9 @@ export function EventsModal({ open, onClose, players, items }) {
   const cardRef = useRef(null);
   useModalA11y(open, cardRef, onClose);
 
-  const [tab, setTab] = useState("ALL"); // ALL | NIGHT | DAY | VOTE
-
-  const filterItems = useCallback(
-    (k) => {
-      if (k === "ALL") return items || [];
-      return (items || []).filter((e) => e.phase === k);
-    },
-    [items]
-  );
-
   if (!open) return null;
 
   const stop = (e) => e.stopPropagation();
-
-  const tabs = [
-    { key: "ALL", label: "Все" },
-    { key: "NIGHT", label: "Ночь" },
-    { key: "DAY", label: "День" },
-    { key: "VOTE", label: "Голос" },
-  ];
-
-  const onKeyTabs = (e) => {
-    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
-    e.preventDefault();
-    const idx = tabs.findIndex((t) => t.key === tab);
-    if (e.key === "ArrowLeft") {
-      setTab(tabs[(idx - 1 + tabs.length) % tabs.length].key);
-    } else if (e.key === "ArrowRight") {
-      setTab(tabs[(idx + 1) % tabs.length].key);
-    } else if (e.key === "Home") {
-      setTab(tabs[0].key);
-    } else if (e.key === "End") {
-      setTab(tabs[tabs.length - 1].key);
-    }
-  };
 
   return (
     <div
@@ -1544,34 +1544,6 @@ export function EventsModal({ open, onClose, players, items }) {
             ✨ События
           </div>
 
-          <div
-            className="mf-events-filters"
-            role="tablist"
-            aria-label="Фильтр событий"
-            onKeyDown={onKeyTabs}
-          >
-            {tabs.map(({ key, label }) => {
-              const selected = tab === key;
-              const tabId = `events-tab-${key}`;
-              const panelId = `events-tabpanel-${key}`;
-              return (
-                <button
-                  key={key}
-                  id={tabId}
-                  role="tab"
-                  aria-selected={selected}
-                  aria-controls={panelId}
-                  tabIndex={selected ? 0 : -1}
-                  className={`mf-chip ${selected ? "primary" : "ghost"}`}
-                  onClick={() => setTab(key)}
-                  type="button"
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-
           <button
             className="mf-iconbtn mf-events-close"
             onClick={onClose}
@@ -1583,28 +1555,11 @@ export function EventsModal({ open, onClose, players, items }) {
         </div>
 
         <div className="mf-events-body">
-          {tabs.map(({ key }) => {
-            const tabId = `events-tab-${key}`;
-            const panelId = `events-tabpanel-${key}`;
-            const hidden = tab !== key;
-            return (
-              <div
-                key={key}
-                id={panelId}
-                role="tabpanel"
-                aria-labelledby={tabId}
-                hidden={hidden}
-              >
-                {!hidden && (
-                  <EventFeed
-                    players={players}
-                    items={filterItems(key)}
-                    id={`events-feed-${key.toLowerCase()}`}
-                  />
-                )}
-              </div>
-            );
-          })}
+          <EventFeed
+            players={players}
+            items={items || []}
+            id="events-feed-all"
+          />
         </div>
       </div>
     </div>
