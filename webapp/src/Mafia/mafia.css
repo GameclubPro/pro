@@ -1044,11 +1044,11 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 /* ============================== MAFIA MARK (цель/нож) ============================== */
 .mf-mafia-mark{
   position: absolute;
-  top: -10px;
-  right: -10px;
+  top: -12px;
+  right: -12px;
   z-index: 12; /* выше короны (5) и рамки (7) */
   pointer-events: none;
-  font-size: clamp(16px, calc(var(--mf-ava) * .42), 22px);
+  font-size: clamp(18px, calc(var(--mf-ava) * .5), 26px);
   line-height: 1;
   text-shadow: 0 1px 0 rgba(0,0,0,.5);
   filter: drop-shadow(0 2px 6px rgba(0,0,0,.45));
@@ -1066,6 +1066,13 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
 .mf-mafia-mark.don{
   color: var(--role-don);
   text-shadow: 0 0 12px rgba(223,174,87,.28), 0 1px 0 rgba(0,0,0,.4);
+}
+
+/* Подсветка цели Дона — видна только мафии ночью */
+.mf-player.don-target .mf-avatar-wrap{
+  box-shadow:
+    0 0 0 2px color-mix(in lab, var(--role-don) 70%, transparent),
+    0 0 16px rgba(223,174,87,.35);
 }
 
 /* ПИН: базовая точка + состояния (ready/ not-ready / rip) */

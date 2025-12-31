@@ -831,6 +831,7 @@ export const PlayerCard = memo(
     const progress = totalAlive ? Math.min(1, votesFor / totalAlive) : 0;
 
     const mafiaMarksEnabled = shouldShowMafiaMarks(phase, myRole);
+    const isDonTarget = mafiaMarksEnabled && mafiaMark?.hasDon && p.alive;
 
     // Классы для статуса точки: в лобби показываем «готов/не готов»
     const readyEffective =
@@ -851,7 +852,7 @@ export const PlayerCard = memo(
           isOwnerUser ? "owner" : ""
         } ${computedRevealRole ? "revealed" : ""} ${
           flipped ? "flip" : ""
-        } ${voteLocked ? "vote-locked" : ""}`}
+        } ${voteLocked ? "vote-locked" : ""} ${isDonTarget ? "don-target" : ""}`}
         onClick={handleTap}
         aria-label={`Игрок ${displayName}${!p.alive ? " — выбыл" : ""}`}
         title={voteLocked ? "Недоступен в переголосовании" : displayName}

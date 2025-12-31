@@ -114,6 +114,8 @@ const DEFAULT_GAME = RoomGame.MAFIA;
 const NIGHT_ACTION_MIN_MS = 400;           // анти-спам на night:act
 const VOTE_CAST_MIN_MS = 300;              // анти-спам на vote:cast
 const MAFIA_RETARGET_COOLDOWN_MS = 2000;   // минимум между сменами целей мафии (дон/мафия)
+const DON_WAIT_SEC = 20;                   // мафия ждёт выбора Дона (сек)
+const DON_WAIT_MS = DON_WAIT_SEC * 1000;
 const TEST_TG_BOT_OWNER = '5510721194';    // (legacy) тестовый пользователь
 const ZERO_CODE = '1234';                  // спец. код комнаты для автотестов (11 ботов + автодействия)
 const NIGHT_ACTION_ROLES = new Set([
@@ -142,6 +144,29 @@ function gameFromReq(req, fallback = null) {
 // JSON BigInt safe
 const jsonSafe = (x) =>
   JSON.parse(JSON.stringify(x, (_, v) => (typeof v === 'bigint' ? v.toString() : v)));
+
+function getNightStartMs(room) {
+  const rawEnd = room?.phaseEndsAt;
+  if (!rawEnd) return null;
+  const endsAt = rawEnd instanceof Date ? rawEnd.getTime() : new Date(rawEnd).getTime();
+  if (!Number.isFinite(endsAt)) return null;
+  const start = endsAt - NIGHT_SEC * 1000;
+  return Number.isFinite(start) ? start : null;
+}
+
+async function getDonGateStatus(room, matchId, nightNumber) {
+  const don = room?.players?.find((p) => p.alive && p.role === Role.DON);
+  if (!don) return { open: true, retryMs: 0 };
+  const donAct = await prisma.nightAction.findFirst({
+    where: { matchId, nightNumber, actorPlayerId: don.id, role: Role.DON },
+    select: { id: true },
+  });
+  if (donAct) return { open: true, retryMs: 0 };
+  const startMs = getNightStartMs(room);
+  const elapsedMs = startMs != null ? Date.now() - startMs : DON_WAIT_MS + 1;
+  if (elapsedMs >= DON_WAIT_MS) return { open: true, retryMs: 0 };
+  return { open: false, retryMs: Math.max(0, DON_WAIT_MS - elapsedMs) };
+}
 
 // Убираем скрытые ночные данные из событий при выдаче клиентам
 const SECRET_EVENT_FIELDS = new Set([
@@ -1457,7 +1482,7 @@ mafia = createMafiaEngine({
   prisma,
   io,
   enums: { Phase, Role, VoteType },
-  config: { NIGHT_SEC, DAY_SEC, VOTE_SEC },
+  config: { NIGHT_SEC, DAY_SEC, VOTE_SEC, DON_WAIT_SEC },
   withRoomLock,
   isLockError,
   redis,                         // ← пробрасываем Redis в движок
@@ -2382,6 +2407,11 @@ io.on('connection', (socket) => {
       const role = me.role;
       if (!role) return ackErr(cb, 'Роль не назначена');
       if (!NIGHT_ACTION_ROLES.has(role)) return ackErr(cb, 'У вашей роли нет ночного действия');
+
+      if (role === Role.MAFIA) {
+        const gate = await getDonGateStatus(room, match.id, nightNumber);
+        if (!gate.open) return ackErr(cb, 'wait_for_don', { retryMs: gate.retryMs });
+      }
 
       // Идемпотентность: если пришёл повторный opId — просто подтверждаем
       if (opId) {

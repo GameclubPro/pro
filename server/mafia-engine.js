@@ -33,7 +33,9 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
     NIGHT_SEC = 70,
     DAY_SEC   = 60,
     VOTE_SEC  = 60,
+    DON_WAIT_SEC = 20,
   } = config;
+  const DON_WAIT_MS = Math.max(0, Number(DON_WAIT_SEC) || 20) * 1000;
 
   // ===== Pre-game READY (Lobby) =============================================
   // roomId -> Set<roomPlayerId> «готовых» игроков (владелец не обязан быть в set)
@@ -130,17 +132,35 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
     return pool[rnd];
   }
 
+  function getNightStartMs(room) {
+    const rawEnd = room?.phaseEndsAt;
+    if (!rawEnd) return null;
+    const endsAt = rawEnd instanceof Date ? rawEnd.getTime() : new Date(rawEnd).getTime();
+    if (!Number.isFinite(endsAt)) return null;
+    const start = endsAt - NIGHT_SEC * 1000;
+    return Number.isFinite(start) ? start : null;
+  }
+
   async function autoBotNightActions(room, match, nightNumber, { onlyIfMissing = false } = {}) {
     try {
       const existing = await prisma.nightAction.findMany({ where: { matchId: match.id, nightNumber } });
       const hasAction = new Set(existing.map(a => a.actorPlayerId));
+      const donPlayer = room.players.find(p => p.alive && p.role === Role.DON);
+      const donAct = donPlayer ? existing.find(a => a.actorPlayerId === donPlayer.id && a.role === Role.DON) : null;
+      const nightStartMs = getNightStartMs(room);
+      const donWaitElapsed = nightStartMs != null ? (Date.now() - nightStartMs) : (DON_WAIT_MS + 1);
+      let donGateOpen = !donPlayer || !!donAct || donWaitElapsed >= DON_WAIT_MS;
 
-      for (const p of room.players) {
-        if (!p.alive || !isBot(p)) continue;
+      const botPlayers = room.players
+        .filter(p => p.alive && isBot(p))
+        .sort((a, b) => (a.role === Role.DON ? -1 : b.role === Role.DON ? 1 : 0));
+
+      for (const p of botPlayers) {
         if (hasAction.has(p.id) && (!MAFIA_ROLES.has(p.role) || onlyIfMissing)) continue; // при onlyIfMissing не трогаем уже сходивших
 
         const actorId = p.id;
         const role = p.role;
+        if (role === Role.MAFIA && !donGateOpen) continue;
         let targetId = null;
         let targetPlayer = null;
 
@@ -230,6 +250,8 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
                 data: { matchId: match.id, nightNumber, actorPlayerId: actorId, role, targetPlayerId: targetId },
               });
             }
+            hasAction.add(actorId);
+            if (role === Role.DON) donGateOpen = true;
           } catch (e) {
             if (!isLockError?.(e)) console.warn('autoBotNightActions failed:', e?.message || e);
           }
@@ -969,7 +991,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
         for (const v of mafiaVotes) {
           tally.set(v.targetPlayerId, (tally.get(v.targetPlayerId) || 0) + 1);
         }
-        const minVotesToKill = mafiaActors.length <= 1 ? 1 : 2; // одиночная мафия всё ещё может стрелять
+        const minVotesToKill = Math.floor(mafiaActors.length / 2) + 1; // большинство голосов мафии (включая Дона)
         let mafiaTargetId = null; let max = 0; let leaders = [];
         for (const [t, c] of tally.entries()) {
           if (c > max) { max = c; leaders = [t]; }

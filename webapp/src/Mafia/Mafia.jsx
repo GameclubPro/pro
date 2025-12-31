@@ -2318,6 +2318,10 @@ function mapServerError(code, retryMs) {
       const sec = retryMs ? Math.ceil(Number(retryMs) / 1000) : 2;
       return `Смена цели заблокирована. Подожди ${sec} c.`;
     }
+    case "wait_for_don": {
+      const sec = retryMs ? Math.ceil(Number(retryMs) / 1000) : 20;
+      return `Дон выбирает первым. Подожди ${sec} c.`;
+    }
     default: return typeof code === "string" && code ? code : "Произошла ошибка. Попробуй позже.";
   }
 }
