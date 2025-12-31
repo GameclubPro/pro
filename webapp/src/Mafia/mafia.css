@@ -1420,7 +1420,23 @@ body.mf-animating .mf-gamestage{
 }
 
 /* ============================== NET / ENDED ============================== */
-.mf-net{ position:sticky; top:0; z-index:21; display:flex; gap:8px; align-items:center; margin:8px 0; padding:8px 12px; border-radius:12px; border:1px solid #6b552a; background:rgba(59,47,24,.35); color:#ffe7b0; backdrop-filter: blur(6px); }
+.mf-net{
+  position: fixed;
+  left: 50%;
+  bottom: calc(14px + var(--mf-safe-bottom));
+  transform: translateX(-50%) translateY(6px);
+  width: min(92vw, 560px);
+  z-index: 1290;
+  display:flex; gap:8px; align-items:center;
+  margin:0; padding:8px 12px;
+  border-radius:12px; border:1px solid #6b552a;
+  background:rgba(59,47,24,.35); color:#ffe7b0;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 24px rgba(0,0,0,.35);
+  opacity:0;
+  animation: mf-net-rise .22s var(--ease-out) forwards;
+  pointer-events:none;
+}
 .mf-net .ico{ opacity:.9 }
 .mf-net .txt{ font-size:13px; }
 
@@ -1877,6 +1893,9 @@ body.mf-phase-lobby .mf-grid{ contain:none; }
 @keyframes mf-role-title-reveal{
   0% { letter-spacing:.06em; filter: blur(2px); opacity:0; }
   100% { letter-spacing:.02em; filter: blur(0); opacity:1; }
+}
+@keyframes mf-net-rise{
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 @keyframes mf-role-desc-reveal{
   0% { opacity:0; transform: translateY(6px); }
