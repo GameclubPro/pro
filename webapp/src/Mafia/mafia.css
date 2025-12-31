@@ -1446,15 +1446,19 @@ button:focus-visible, .mf-chip:focus-visible, .mf-input:focus-visible, .mf-gs-ch
 
 /* ============================== AVATAR FRAME (UNIVERSAL) ============================== */
 .mf-ava-bronze{
-  --brz-w: clamp(3px, calc(var(--mf-ava) * .06), 7px);
-  --brz-r: calc(10px + var(--brz-w));
-  --brz-base: #3b454f;
-  --brz-dark: #12161b;
-  --brz-light: #a8b2be;
-  --brz-edge: #e7edf5;
-  --brz-patina: #5b6672;
+  --brz-w: clamp(2px, calc(var(--mf-ava) * .04), 5px);
+  --brz-r: calc(8px + var(--brz-w));
+  --brz-base: #8c6a2e;
+  --brz-dark: #2a1e0d;
+  --brz-light: #f2d38a;
+  --brz-edge: #fff2c6;
+  --brz-patina: #6b5224;
   position: relative; isolation: isolate; overflow: visible !important; z-index: 7;
   transform-style: preserve-3d;
+}
+
+.mf-ava-bronze .mf-avatar{
+  border-radius: 8px;
 }
 
 /* Псевдоэлементы рамки + неоновая заливка */
@@ -1859,7 +1863,7 @@ body.mf-phase-lobby .mf-grid{ contain:none; }
     background: none !important;
   }
   .mf-ava-bronze .mf-avatar{
-    outline: 2px solid #a8b2be;
+    outline: 1px solid #e6c477;
     outline-offset: 2px;
   }
 }
