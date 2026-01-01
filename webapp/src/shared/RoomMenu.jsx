@@ -89,139 +89,130 @@ export function RoomMenu({
       maxCodeLength
     )}}`;
 
-  const caseId = String(title || "MAFIA").toUpperCase().replace(/\s+/g, "-");
+  const issueId = String(title || "MAFIA").toUpperCase().replace(/\s+/g, "-");
 
   return (
-    <section className="mf-menu v2 mf-menu-evidence" aria-label="Главное меню">
-      <header className="mf-menu-hero mf-case-hero" role="banner">
-        <div className="mf-case-meta" aria-hidden="true">
-          <span className="mf-case-label">ДОСЬЕ</span>
-          <span className="mf-case-id">№ {caseId}</span>
-          <span className="mf-case-status">ОТКРЫТО</span>
+    <section className="mf-menu v2 mf-menu-tabloid" aria-label="Главное меню">
+      <header className="mf-menu-hero mf-press-hero" role="banner">
+        <div className="mf-press-meta" aria-hidden="true">
+          <span className="mf-press-tag">ЭКСТРЕННЫЙ ВЫПУСК</span>
+          <span className="mf-press-issue">ВЫПУСК № {issueId}</span>
+          <span className="mf-press-city">ГОРОД БЕЗ СНА</span>
         </div>
         <div className="mf-menu-logo" aria-label={title}>
           {title}
         </div>
+        <div className="mf-press-rule" aria-hidden="true" />
         <p className="mf-menu-tagline">{tagline}</p>
-        <div className="mf-case-stamp" aria-hidden="true">
-          СЕКРЕТНО
+        <div className="mf-press-stamp" aria-hidden="true">
+          СРОЧНО
         </div>
-        <div className="mf-case-pin" aria-hidden="true" />
       </header>
 
-      <div className="mf-menu-board">
-        <div className="mf-menu-actions" role="group" aria-label="Действия">
-          <article className="mf-evidence-card mf-evidence-join" aria-label="Вступить по коду">
-            <div className="mf-evidence-head">
-              <span className="mf-evidence-tag">УЛИКА A</span>
-              <div className="mf-evidence-title">Вступить по коду</div>
-              <span className="mf-evidence-note">Быстрый вход</span>
-            </div>
+      <div className="mf-menu-actions mf-press-layout" role="group" aria-label="Действия">
+        <article className="mf-press-card mf-press-join" aria-label="Вступить по коду">
+          <div className="mf-press-kicker">ОБЪЯВЛЕНИЯ</div>
+          <div className="mf-press-title">Вступить по коду</div>
+          <div className="mf-press-deck">Короткий путь в город.</div>
 
-            <div className="mf-join-inline">
-              <label htmlFor="mf-join-code" className="sr-only">
-                Код комнаты
-              </label>
-              <input
-                id="mf-join-code"
-                ref={inputRef}
-                className="mf-input big"
-                placeholder={codePlaceholder}
-                inputMode="text"
-                maxLength={maxCodeLength}
-                pattern={pattern}
-                title={`${minCodeLength}–${maxCodeLength} символов: буквы и цифры без O/0/I/1`}
-                aria-invalid={activeError ? "true" : "false"}
-                value={normalized}
-                onChange={(e) => handleChange(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") submit();
-                }}
-                disabled={busy}
-                autoCapitalize="characters"
-                autoCorrect="off"
-                spellCheck={false}
-              />
-              <button
-                className="mf-btn primary big mf-join-cta"
-                onClick={submit}
-                disabled={busy}
-                type="button"
-                aria-label="Присоединиться по коду"
-              >
-                {busy ? joinBusyLabel : joinButtonLabel}
-              </button>
-            </div>
-            {activeError && (
-              <div className="mf-form-hint danger" role="alert">
-                {activeError}
-              </div>
-            )}
-
-            {!!recentRooms.length && (
-              <div className="mf-recent" role="group" aria-label="Недавние комнаты">
-                <div className="mf-recent-label">Недавние коды</div>
-                {recentRooms.slice(0, 6).map((c) => (
-                  <button
-                    key={c}
-                    className="mf-chip ghost"
-                    onClick={() => onJoin?.(String(c).toUpperCase())}
-                    type="button"
-                    title={`Подключиться: ${c}`}
-                  >
-                    {String(c).toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            )}
-          </article>
-
-          <article className="mf-evidence-card mf-evidence-create" aria-label="Создать комнату">
-            <div className="mf-evidence-head">
-              <span className="mf-evidence-tag">УЛИКА B</span>
-              <div className="mf-evidence-title">Создать комнату</div>
-              <span className="mf-evidence-note">Открыть дело</span>
-            </div>
-            <p className="mf-evidence-text">
-              Собери команду, открой новое дело и задай роли для начала игры.
-            </p>
+          <div className="mf-join-inline">
+            <label htmlFor="mf-join-code" className="sr-only">
+              Код комнаты
+            </label>
+            <input
+              id="mf-join-code"
+              ref={inputRef}
+              className="mf-input big"
+              placeholder={codePlaceholder}
+              inputMode="text"
+              maxLength={maxCodeLength}
+              pattern={pattern}
+              title={`${minCodeLength}–${maxCodeLength} символов: буквы и цифры без O/0/I/1`}
+              aria-invalid={activeError ? "true" : "false"}
+              value={normalized}
+              onChange={(e) => handleChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") submit();
+              }}
+              disabled={busy}
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+            />
             <button
-              className="mf-btn primary xl mf-create-cta"
-              onClick={onCreate}
+              className="mf-btn big mf-join-cta"
+              onClick={submit}
               disabled={busy}
               type="button"
-              aria-label="Создать комнату"
-              title="Создать новую комнату"
+              aria-label="Присоединиться по коду"
             >
-              {busy ? createBusyLabel : createButtonLabel}
+              {busy ? joinBusyLabel : joinButtonLabel}
             </button>
-            <div className="mf-evidence-stamp" aria-hidden="true">
-              OPEN CASE
+          </div>
+          {activeError && (
+            <div className="mf-form-hint danger" role="alert">
+              {activeError}
             </div>
-          </article>
-        </div>
+          )}
+
+          {!!recentRooms.length && (
+            <div className="mf-recent" role="group" aria-label="Недавние комнаты">
+              <span className="mf-recent-label">Недавние коды</span>
+              {recentRooms.slice(0, 6).map((c) => (
+                <button
+                  key={c}
+                  className="mf-chip ghost"
+                  onClick={() => onJoin?.(String(c).toUpperCase())}
+                  type="button"
+                  title={`Подключиться: ${c}`}
+                >
+                  {String(c).toUpperCase()}
+                </button>
+              ))}
+            </div>
+          )}
+        </article>
+
+        <article className="mf-press-card mf-press-create" aria-label="Создать комнату">
+          <div className="mf-press-kicker">СЕНСАЦИЯ</div>
+          <div className="mf-press-title">Создать комнату</div>
+          <div className="mf-press-deck">Открой новое дело для команды.</div>
+          <button
+            className="mf-btn primary xl mf-create-cta mf-break-cta"
+            onClick={onCreate}
+            disabled={busy}
+            type="button"
+            aria-label="Создать комнату"
+            title="Создать новую комнату"
+          >
+            {busy ? createBusyLabel : createButtonLabel}
+          </button>
+          <div className="mf-press-break" aria-hidden="true">
+            BREAK GLASS
+          </div>
+        </article>
       </div>
 
-      <section className="mf-menu-cards mf-menu-notes" aria-label="Как играть">
+      <section className="mf-menu-cards mf-press-briefs" aria-label="Кратко">
         <article className="mf-menu-card">
           <div className="ico" aria-hidden="true">
             ⚡
           </div>
-          <div className="title">Быстро</div>
-          <p className="text">Зайди, создай комнату и зови друзей — без лишних шагов.</p>
+          <div className="title">Сводка</div>
+          <p className="text">Вход по коду и старт за минуту — без лишних шагов.</p>
         </article>
         <article className="mf-menu-card">
           <div className="ico" aria-hidden="true">
             🎮
           </div>
-          <div className="title">Удобно</div>
+          <div className="title">Управление</div>
           <p className="text">Все контролы рядом, кнопки крупные, интерфейс читабельный.</p>
         </article>
         <article className="mf-menu-card">
           <div className="ico" aria-hidden="true">
             🤝
           </div>
-          <div className="title">Командно</div>
+          <div className="title">Команда</div>
           <p className="text">Собирайся с друзьями и играйте сколько хотите.</p>
         </article>
       </section>
