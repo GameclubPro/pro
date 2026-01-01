@@ -401,6 +401,7 @@ export const PlayerGrid = memo(function PlayerGrid({
   // — NEW: готовность и переключатель для текущего игрока
   iAmReady,
   onToggleReady,
+  onInvite,
   // 👇 карта «меток мафии» (прокидывается из контейнера)
   mafiaMarks,
   // 👇 публичные раскрытия ролей и «кто свой» для мафии
@@ -492,6 +493,7 @@ export const PlayerGrid = memo(function PlayerGrid({
   const isSplit = gridMode === "split";
   const isWide = gridMode === "wide";
   const showLobbyPlaceholders = String(phase || "").toUpperCase() === "LOBBY";
+  const canInvite = showLobbyPlaceholders && typeof onInvite === "function";
 
   if (!playersCount && !showLobbyPlaceholders) {
     return (
@@ -537,16 +539,38 @@ export const PlayerGrid = memo(function PlayerGrid({
     [phase, revealedRoles, mafiaTeam, myId, myRole]
   );
 
-  const renderPlaceholder = (key) => (
-    <div className="mf-player mf-player-empty" aria-hidden="true" key={key}>
-      <div className="mf-avatar-wrap mf-ava-empty">
-        <div className="mf-avatar placeholder" aria-hidden="true">
-          <span className="mf-empty-plus">+</span>
+  const renderPlaceholder = (key) => {
+    const className = `mf-player mf-player-empty ${canInvite ? "is-interactive" : ""}`;
+    const inner = (
+      <>
+        <div className="mf-avatar-wrap mf-ava-empty">
+          <div className="mf-avatar placeholder" aria-hidden="true">
+            <span className="mf-empty-plus">+</span>
+          </div>
         </div>
+        <div className="mf-nick mf-nick-empty">Слот</div>
+      </>
+    );
+    if (canInvite) {
+      return (
+        <button
+          className={className}
+          onClick={onInvite}
+          type="button"
+          aria-label="Пригласить игрока"
+          title="Пригласить игрока"
+          key={key}
+        >
+          {inner}
+        </button>
+      );
+    }
+    return (
+      <div className={className} aria-hidden="true" key={key}>
+        {inner}
       </div>
-      <div className="mf-nick mf-nick-empty">Слот</div>
-    </div>
-  );
+    );
+  };
 
   const renderSlot = (p, key) =>
     p ? (

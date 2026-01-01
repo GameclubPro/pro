@@ -1610,11 +1610,14 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
   const shareRoom = () => {
     if (!roomCode) return;
 
-    // Шарим ссылку на бота с /start → по Start бот сразу добавит в комнату.
+    const inviteText = `Подключайся к комнате: ${roomCode}`;
+
+    // Современный deep-link для Mini App (startapp → авто-вход по коду)
     const BOT_USERNAME = getBotUsername();
     if (BOT_USERNAME) {
-      const startJoin = `https://t.me/${BOT_USERNAME}?start=${encodeURIComponent("join-" + roomCode)}`;
-      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(startJoin)}&text=${encodeURIComponent("Подключайся к комнате: " + roomCode)}`;
+      const startPayload = `join-${roomCode}`;
+      const startappLink = `https://t.me/${BOT_USERNAME}?startapp=${encodeURIComponent(startPayload)}`;
+      const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(startappLink)}&text=${encodeURIComponent(inviteText)}`;
       try {
         if (tg?.openTelegramLink) tg.openTelegramLink(shareUrl);
         else window.open(shareUrl, "_blank", "noopener,noreferrer");
@@ -1626,7 +1629,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
     // Фолбэк: обычная ссылка с ?join=<code> + t.me/share/url
     const base = getPublicAppUrl() || (typeof location !== "undefined" ? location.origin : "");
     const appUrl = base ? `${base.replace(/\/+$/, "")}/?join=${encodeURIComponent(roomCode)}` : "";
-    const text = encodeURIComponent(`Подключайся к комнате: ${roomCode}`);
+    const text = encodeURIComponent(inviteText);
     const urlParam = encodeURIComponent(appUrl || (typeof location !== "undefined" ? location.origin : ""));
     const shareUrl = `https://t.me/share/url?url=${urlParam}&text=${text}`;
     try {
@@ -2213,6 +2216,7 @@ export default function Mafia({ apiBase = "", initData, goBack, onProgress, setB
                 showReady={phase === "LOBBY"}
                 iAmReady={iAmReady}
                 onToggleReady={!isOwner && phase === "LOBBY" ? toggleReady : undefined}
+                onInvite={shareRoom}
                 mafiaMarks={mafiaMarks}
                 revealedRoles={revealedRoles}
                 mafiaTeam={mafiaTeam}
