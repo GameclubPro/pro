@@ -491,8 +491,9 @@ export const PlayerGrid = memo(function PlayerGrid({
   const isCompact = gridMode === "compact";
   const isSplit = gridMode === "split";
   const isWide = gridMode === "wide";
+  const showLobbyPlaceholders = String(phase || "").toUpperCase() === "LOBBY";
 
-  if (!playersCount) {
+  if (!playersCount && !showLobbyPlaceholders) {
     return (
       <div className="mf-empty">
         Пока пусто. Поделись кодом комнаты с друзьями.
@@ -536,7 +537,18 @@ export const PlayerGrid = memo(function PlayerGrid({
     [phase, revealedRoles, mafiaTeam, myId, myRole]
   );
 
-  const renderPlayer = (p) =>
+  const renderPlaceholder = (key) => (
+    <div className="mf-player mf-player-empty" aria-hidden="true" key={key}>
+      <div className="mf-avatar-wrap mf-ava-empty">
+        <div className="mf-avatar placeholder" aria-hidden="true">
+          <span className="mf-empty-plus">+</span>
+        </div>
+      </div>
+      <div className="mf-nick mf-nick-empty">Слот</div>
+    </div>
+  );
+
+  const renderSlot = (p, key) =>
     p ? (
       <PlayerCard
         key={p.id}
@@ -552,12 +564,19 @@ export const PlayerGrid = memo(function PlayerGrid({
         revealRole={revealFor(p)}
         showReady={!!showReady}
       />
+    ) : showLobbyPlaceholders ? (
+      renderPlaceholder(key)
     ) : null;
 
   const renderRow = (left, center, right, key) => {
-    if (!left && !right && !center) return null;
-    const leftNode = renderPlayer(left) || <div className="mf-slot empty" aria-hidden="true" />;
-    const rightNode = renderPlayer(right) || <div className="mf-slot empty" aria-hidden="true" />;
+    if (!showLobbyPlaceholders && !left && !right && !center) return null;
+    const rowKey = key || "row";
+    const leftNode =
+      renderSlot(left, `${rowKey}-left`) ||
+      <div className="mf-slot empty" aria-hidden="true" />;
+    const rightNode =
+      renderSlot(right, `${rowKey}-right`) ||
+      <div className="mf-slot empty" aria-hidden="true" />;
     const centerNode = center || <div className="mf-slot empty" aria-hidden="true" />;
     return (
       <div className="mf-row" key={key}>
@@ -568,10 +587,12 @@ export const PlayerGrid = memo(function PlayerGrid({
     );
   };
 
-  const renderInline = (list) => {
-    const nodes = list.filter(Boolean);
+  const renderInline = (list, keyPrefix) => {
+    const nodes = (list || [])
+      .map((p, idx) => renderSlot(p, `${keyPrefix || "inline"}-${idx}`))
+      .filter(Boolean);
     if (!nodes.length) return null;
-    return <div className="mf-inline-pair">{nodes.map(renderPlayer)}</div>;
+    return <div className="mf-inline-pair">{nodes}</div>;
   };
 
   return (
@@ -667,14 +688,14 @@ export const PlayerGrid = memo(function PlayerGrid({
 
         {renderRow(
           players[4],
-          isCompact ? renderInline([players[10], players[11]]) : null,
+          isCompact ? renderInline([players[10], players[11]], "row-3-inline") : null,
           players[5],
           "row-3"
         )}
 
         {renderRow(
           players[6],
-          isCompact ? renderInline([players[8], players[9]]) : null,
+          isCompact ? renderInline([players[8], players[9]], "row-4-inline") : null,
           players[7],
           "row-4"
         )}
@@ -682,7 +703,7 @@ export const PlayerGrid = memo(function PlayerGrid({
         {!isCompact &&
           renderRow(
             players[8],
-            isSplit ? renderInline([players[10], players[11]]) : null,
+            isSplit ? renderInline([players[10], players[11]], "row-5-inline") : null,
             players[9],
             "row-5"
           )}
