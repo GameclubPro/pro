@@ -50,13 +50,9 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
   const MAFIA_ROLES = new Set([Role.MAFIA, Role.DON]);
 
   // 🕵️ Логика, кого шериф видит как «мафию».
-  // — при 5 игроках по договорённости Дон считается «невидимым» для шерифа
-  // — во всех остальных раскладках Дон тоже считается мафией
+  // — Дон всегда считается мафией для победы, но для шерифа он «невидим»
   function isSheriffDetectsMafia(role, playerCount) {
-    if (playerCount === 5) {
-      return role === Role.MAFIA;
-    }
-    return role === Role.MAFIA || role === Role.DON;
+    return role === Role.MAFIA;
   }
 
   function toPublicUser(u) {
