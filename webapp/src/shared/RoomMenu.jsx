@@ -193,29 +193,6 @@ export function RoomMenu({
         </article>
       </div>
 
-      <section className="mf-menu-cards mf-press-briefs" aria-label="Кратко">
-        <article className="mf-menu-card">
-          <div className="ico" aria-hidden="true">
-            ⚡
-          </div>
-          <div className="title">Сводка</div>
-          <p className="text">Вход по коду и старт за минуту — без лишних шагов.</p>
-        </article>
-        <article className="mf-menu-card">
-          <div className="ico" aria-hidden="true">
-            🎮
-          </div>
-          <div className="title">Управление</div>
-          <p className="text">Все контролы рядом, кнопки крупные, интерфейс читабельный.</p>
-        </article>
-        <article className="mf-menu-card">
-          <div className="ico" aria-hidden="true">
-            🤝
-          </div>
-          <div className="title">Команда</div>
-          <p className="text">Собирайся с друзьями и играйте сколько хотите.</p>
-        </article>
-      </section>
     </section>
   );
 }
