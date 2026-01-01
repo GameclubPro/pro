@@ -531,7 +531,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
   function composeRolesFor(n) {
     const R = Role;
     const packs = {
-      6:  [R.DON, R.MAFIA, R.SHERIFF, R.DOCTOR, R.PROSTITUTE, R.CIVIL],
+      6:  [R.DON, R.MAFIA, R.SHERIFF, R.DOCTOR, R.CIVIL, R.CIVIL],
       7:  [R.DON, R.MAFIA, R.SHERIFF, R.DOCTOR, R.BODYGUARD, R.PROSTITUTE, R.CIVIL],
       8:  [R.DON, R.MAFIA, R.SHERIFF, R.DOCTOR, R.BODYGUARD, R.PROSTITUTE, R.JOURNALIST, R.CIVIL],
       9:  [R.DON, R.MAFIA, R.MAFIA, R.SHERIFF, R.DOCTOR, R.BODYGUARD, R.PROSTITUTE, R.JOURNALIST, R.CIVIL],
