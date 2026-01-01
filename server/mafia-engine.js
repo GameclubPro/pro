@@ -537,7 +537,7 @@ function createMafiaEngine({ prisma, io, enums, config, withRoomLock, isLockErro
     };
     if (packs[n]) return [...packs[n]];
     if (n === 4) return [Role.MAFIA, Role.CIVIL, Role.CIVIL, Role.CIVIL];
-    if (n === 5) return [Role.DON, Role.MAFIA, Role.SHERIFF, Role.DOCTOR, Role.CIVIL];
+    if (n === 5) return [Role.MAFIA, Role.SHERIFF, Role.CIVIL, Role.CIVIL, Role.CIVIL];
     if (n > 12) {
       const base = packs[12].slice();
       while (base.length < n) base.push(Role.CIVIL);
