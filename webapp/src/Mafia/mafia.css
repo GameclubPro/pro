@@ -152,7 +152,23 @@ body.mf-phase-vote{
     radial-gradient(140% 160% at 100% 0%, color-mix(in lab, var(--mf-accent2) 8%, transparent), transparent 58%),
     linear-gradient(180deg, #0a0c0f 0%, #0e1116 100%);
 }
-body.mf-phase-lobby{ --mf-phase-tint: color-mix(in lab, var(--mf-accent) 14%, transparent); }
+body.mf-phase-lobby{
+  --mf-bg:#0c0a08;
+  --mf-bg2:#14100d;
+  --mf-fg:#f3eadc;
+  --mf-muted:#b8a996;
+  --mf-accent:#f0e2cf;
+  --mf-accent2:#c8a982;
+  --mf-border: color-mix(in lab, #f3eadc 18%, transparent);
+  --mf-sep: color-mix(in lab, #f3eadc 12%, transparent);
+  --mf-glass: rgba(12,10,8,.72);
+  --mf-glass-strong: rgba(12,10,8,.84);
+  --mf-phase-tint: color-mix(in lab, #f0e2cf 12%, transparent);
+  --mf-scene-bg:
+    radial-gradient(120% 140% at 0% 0%, rgba(255,255,255,.08) 0, transparent 55%),
+    radial-gradient(120% 140% at 100% 0%, rgba(210,54,46,.14) 0, transparent 60%),
+    linear-gradient(180deg, #0b0907 0%, #15110e 100%);
+}
 
 /* База */
 *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -797,7 +813,8 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   z-index:-3;
   background:
     radial-gradient(120% 140% at 0% 0%, rgba(255,255,255,.08) 0, transparent 55%),
-    radial-gradient(120% 120% at 100% 0%, rgba(255,255,255,.05) 0, transparent 55%),
+    radial-gradient(120% 140% at 100% 0%, rgba(210,54,46,.16) 0, transparent 62%),
+    radial-gradient(100% 140% at 50% 120%, rgba(210,54,46,.12) 0, transparent 60%),
     repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 4px),
     linear-gradient(180deg, var(--press-paper) 0%, var(--press-paper-2) 100%);
 }
@@ -808,8 +825,8 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   z-index:-2;
   background:
     radial-gradient(circle at 2px 2px, rgba(255,255,255,.06) 0 1px, transparent 1.4px);
-  background-size: 6px 6px;
-  opacity:.2;
+  background-size: 5px 5px;
+  opacity:.16;
   mix-blend-mode: screen;
   pointer-events:none;
 }
@@ -819,7 +836,9 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   padding: clamp(20px, 4.2vh, 40px) var(--pad-x) clamp(14px, 3.2vh, 22px);
   border-radius: 0;
   border:2px solid var(--press-black);
-  background: linear-gradient(180deg, #1b1511 0%, #221a14 100%);
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, transparent 1px 120px),
+    linear-gradient(180deg, #1b1511 0%, #221a14 100%);
   box-shadow: var(--press-shadow), inset 0 0 0 1px rgba(255,255,255,.05);
   backdrop-filter:none;
   animation: mf-press-in .55s var(--ease-out) both;
@@ -920,7 +939,9 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   padding: 14px;
   border:2px solid var(--press-black);
   border-radius: 0;
-  background: linear-gradient(180deg, #1c1511 0%, #221a14 100%);
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 5px),
+    linear-gradient(180deg, #1c1511 0%, #221a14 100%);
   box-shadow: var(--press-shadow), inset 0 0 0 1px rgba(255,255,255,.04);
   animation: mf-press-in .55s var(--ease-out) both;
   animation-delay: var(--press-delay, 0ms);
@@ -969,7 +990,8 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   padding: 8px;
   border-radius: 0;
   border:2px solid var(--press-black);
-  background: rgba(0,0,0,.35);
+  background:
+    linear-gradient(180deg, rgba(10,8,6,.68), rgba(14,11,9,.92));
   box-shadow:none;
 }
 @media (max-width: 520px){
@@ -1036,7 +1058,8 @@ body.mf-phase-vote .mf-tex-votefx{ opacity:.45; }
   bottom: 12px;
   padding: 4px 8px;
   border:2px dashed var(--press-black);
-  background: rgba(0,0,0,.35);
+  background: rgba(0,0,0,.45);
+  color: var(--press-ink);
   font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   font-size: 10px;
   letter-spacing:.22em;
@@ -2119,6 +2142,160 @@ button:focus-visible, .mf-chip:focus-visible, .mf-input:focus-visible, .mf-gs-ch
 /* ============================== OVERRIDES / CLEANUPS ======================= */
 /* ========================================================================== */
 
+/* ============================== LOBBY - NOIR PRESSROOM ===================== */
+body.mf-phase-lobby .mf-tex-phasebg{ display:none; }
+body.mf-phase-lobby .mf-tex-dayfx,
+body.mf-phase-lobby .mf-tex-nightfx,
+body.mf-phase-lobby .mf-tex-votefx{ display:none; }
+body.mf-phase-lobby .mf-tex-noise{
+  opacity:.28;
+  background:
+    radial-gradient(circle at 2px 2px, rgba(255,255,255,.06) 0 1px, transparent 1.6px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 1px, transparent 1px 3px);
+  background-size: 6px 6px, auto;
+  mix-blend-mode: screen;
+}
+body.mf-phase-lobby .mf-tex-spot{
+  background:
+    radial-gradient(70% 120% at 50% 10%, rgba(240,226,207,.12), transparent 60%);
+  opacity:.55;
+}
+body.mf-phase-lobby .mf-room-shell{
+  box-shadow:
+    inset 0 0 0 1px rgba(240,226,207,.14),
+    inset 0 0 0 2px rgba(0,0,0,.65);
+}
+body.mf-phase-lobby .mf-room{ gap: 10px; }
+body.mf-phase-lobby .mf-stage::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, transparent 1px 140px);
+  opacity:.25;
+  pointer-events:none;
+  z-index:0;
+}
+body.mf-phase-lobby .mf-code{
+  position:relative;
+  border-radius:8px;
+  border:1px solid color-mix(in lab, #f3eadc 26%, transparent);
+  background: linear-gradient(180deg, rgba(18,14,12,.94), rgba(12,10,8,.98));
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  text-transform: uppercase;
+  letter-spacing:.12em;
+  box-shadow: 0 12px 26px rgba(0,0,0,.55);
+}
+body.mf-phase-lobby .mf-code::before{
+  content:"";
+  position:absolute;
+  inset:6px;
+  border:1px dashed rgba(243,234,220,.2);
+  border-radius:6px;
+  pointer-events:none;
+}
+body.mf-phase-lobby .mf-code-label{
+  font-size:10px;
+  letter-spacing:.22em;
+  color: var(--mf-muted);
+}
+body.mf-phase-lobby .mf-code-value{
+  background: rgba(0,0,0,.35);
+  border:1px solid rgba(240,226,207,.22);
+  border-radius:6px;
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 15px;
+}
+body.mf-phase-lobby .mf-code--floating{
+  box-shadow: 0 18px 32px rgba(0,0,0,.6);
+}
+body.mf-phase-lobby .mf-center-cta.lobby-pinned{
+  padding: 4px 0 12px;
+}
+body.mf-phase-lobby .mf-center-cta.lobby-pinned::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:0;
+  transform: translateX(-50%);
+  width: min(520px, 100%);
+  height: 70px;
+  background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.65));
+  pointer-events:none;
+  z-index:-1;
+}
+body.mf-phase-lobby .mf-start-cta{
+  --mf-start-edge: rgba(240,226,207,.85);
+  --mf-start-edge-weak: rgba(210,54,46,.65);
+  --mf-start-glow: rgba(210,54,46,.18);
+  --mf-start-glow-strong: rgba(210,54,46,.35);
+  border-radius:8px;
+  background:
+    linear-gradient(180deg, #1b1511, #120f0c) padding-box,
+    linear-gradient(120deg, var(--mf-start-edge), var(--mf-start-edge-weak)) border-box;
+  border:1px solid transparent;
+  box-shadow:
+    0 12px 26px rgba(0,0,0,.65),
+    0 0 0 1px rgba(255,255,255,.05) inset,
+    0 0 16px var(--mf-start-glow);
+  animation: mf-press-pulse 3.2s ease-in-out infinite;
+}
+body.mf-phase-lobby .mf-start-cta::before{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0) 55%) top/100% 60% no-repeat,
+    repeating-linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.08) 2px, rgba(255,255,255,0) 2px, rgba(255,255,255,0) 8px);
+  opacity:.25;
+}
+body.mf-phase-lobby .mf-start-label{
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  letter-spacing:.2em;
+  font-size: clamp(11px, 3vw, 14px);
+}
+body.mf-phase-lobby .mf-events-toggle.mf-ready-toggle.ok .mf-start-cta{
+  --mf-start-glow: rgba(70,200,140,.2);
+  --mf-start-glow-strong: rgba(70,200,140,.4);
+  --mf-start-edge: rgba(180,240,210,.9);
+  --mf-start-edge-weak: rgba(70,140,110,.7);
+}
+body.mf-phase-lobby .mf-hint.center{
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 10px;
+  letter-spacing:.2em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border:1px solid var(--mf-border);
+  background: rgba(0,0,0,.35);
+}
+body.mf-phase-lobby .mf-player{
+  gap:6px;
+  padding:4px 0 6px;
+}
+body.mf-phase-lobby .mf-ava-bronze::before,
+body.mf-phase-lobby .mf-ava-bronze::after{ opacity:0; }
+body.mf-phase-lobby .mf-avatar{
+  border-radius:4px;
+  border:1px solid color-mix(in lab, #f3eadc 30%, transparent);
+  background:#0d0a08;
+  box-shadow: 0 10px 22px rgba(0,0,0,.55);
+}
+body.mf-phase-lobby .mf-nick{
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  font-size: 12px;
+  letter-spacing:.08em;
+  color: var(--mf-fg);
+}
+body.mf-phase-lobby .mf-player.me .mf-nick{
+  text-decoration-color: color-mix(in lab, #f3eadc 60%, transparent);
+}
+body.mf-phase-lobby .mf-dot.ok{
+  background: var(--mf-danger);
+  box-shadow: 0 0 0 2px rgba(10,8,6,.9);
+}
+body.mf-phase-lobby .mf-dot.ok.ready{
+  background: #27c26b;
+}
+
 /* Убираем «решётку» */
 .mf-tex-grate{ display:none !important; opacity:0 !important; background:none !important; -webkit-mask:none !important; mask:none !important; }
 body.mf-phase-lobby .mf-tex-grate{ opacity:0 !important; }
@@ -2264,6 +2441,20 @@ body.mf-phase-lobby .mf-grid{ contain:none; }
 @keyframes mf-press-stamp{
   0%{ opacity:0; transform: rotate(-10deg) scale(.92); }
   100%{ opacity:1; transform: rotate(-6deg) scale(1); }
+}
+@keyframes mf-press-pulse{
+  0%,100%{
+    box-shadow:
+      0 12px 26px rgba(0,0,0,.65),
+      0 0 0 1px rgba(255,255,255,.05) inset,
+      0 0 16px rgba(210,54,46,.18);
+  }
+  50%{
+    box-shadow:
+      0 12px 26px rgba(0,0,0,.65),
+      0 0 0 1px rgba(255,255,255,.06) inset,
+      0 0 24px rgba(210,54,46,.32);
+  }
 }
 @keyframes mf-role-title-reveal{
   0% { letter-spacing:.06em; filter: blur(2px); opacity:0; }
