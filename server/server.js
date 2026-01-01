@@ -1587,8 +1587,7 @@ function activeRolesSummary(room) {
 
 function sheriffSeesMafia(role, playerCount) {
   if (!role) return false;
-  if (playerCount === 5) return role === Role.MAFIA;
-  return role === Role.MAFIA || role === Role.DON;
+  return role === Role.MAFIA;
 }
 
 async function reemitSheriffResult({ socket, room, me }) {
