@@ -2274,6 +2274,9 @@ body.mf-phase-lobby .mf-code{
   letter-spacing:.12em;
   box-shadow: 0 16px 30px rgba(0,0,0,.6), inset 0 0 0 1px rgba(255,255,255,.04);
 }
+body.mf-phase-lobby .mf-code-floating{
+  --mf-code-nudge: 10px;
+}
 body.mf-phase-lobby .mf-code::before{
   content:"";
   position:absolute;
