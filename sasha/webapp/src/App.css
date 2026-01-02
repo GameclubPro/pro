@@ -1,0 +1,12 @@
+/* Небольшой ресет + поддержка системных скроллов */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+html, body { margin: 0; padding: 0; }
+body { background: var(--bg, #0b0f16); color: var(--fg, #e8edf5); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; }
+:root {
+  /* Telegram theme hooks */
+  --tg-bg: #0b0f16;
+  --tg-fg: #e8edf5;
+  --tg-accent: #7aa7ff;
+}
+.appWrap { min-height: 100%; }
