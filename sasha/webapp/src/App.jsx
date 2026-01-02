@@ -763,6 +763,9 @@ export default function App() {
           section={section}
           setSection={setSection}
           onOpenGame={openGame}
+          user={user}
+          level={level}
+          games={games}
         />
       ) : (
         <GameCanvas>
@@ -829,7 +832,80 @@ export default function App() {
 
 /* ===================== SHELL (оболочка) ===================== */
 
-function Shell({ scheme, section, setSection, onOpenGame }) {
+function ProfileCard({ user, level, games }) {
+  const safeLevel = Math.max(1, Number(level) || 1);
+  const safeGames = Math.max(0, Number(games) || 0);
+  const firstName = String(user?.first_name || "").trim();
+  const lastName = String(user?.last_name || "").trim();
+  const username = String(user?.username || "").trim();
+  const displayName = [firstName, lastName].filter(Boolean).join(" ").trim() || username || "Гость";
+  const handle = username ? `@${username}` : "Без username";
+  const initials = displayName
+    .replace(/^@/, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+  const progressStep = safeGames % 5;
+  const progressPct = Math.min(100, Math.max(0, Math.round((progressStep / 5) * 100)));
+  const nextLevel = safeLevel + 1;
+  const gamesToNext = 5 - progressStep;
+
+  return (
+    <section className="profileCard" aria-label="Профиль">
+      <div className="profileAvatar" data-has-photo={user?.photo_url ? "true" : "false"}>
+        {user?.photo_url ? (
+          <img src={user.photo_url} alt={displayName} decoding="async" loading="eager" />
+        ) : (
+          <span className="profileInitials">{initials || "PT"}</span>
+        )}
+      </div>
+      <div className="profileBody">
+        <div className="profileHeader">
+          <div className="profileNames">
+            <div className="profileName" title={displayName}>{displayName}</div>
+            <div className="profileHandle" title={handle}>{handle}</div>
+          </div>
+          <span className="profileBadge">Уровень {safeLevel}</span>
+        </div>
+        <div className="profileStats">
+          <div className="profileStat">
+            <span className="statValue">{safeGames}</span>
+            <span className="statLabel">сыграно</span>
+          </div>
+          <div className="profileStat">
+            <span className="statValue">{safeLevel}</span>
+            <span className="statLabel">уровень</span>
+          </div>
+          <div className="profileStat">
+            <span className="statValue">{gamesToNext}</span>
+            <span className="statLabel">до ур. {nextLevel}</span>
+          </div>
+        </div>
+        <div className="profileProgress" style={{ "--progress": `${progressPct}%` }}>
+          <div
+            className="profileProgressTrack"
+            role="progressbar"
+            aria-label="Прогресс уровня"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progressPct}
+          >
+            <span className="profileProgressFill" />
+          </div>
+          <div className="profileProgressText">
+            <span>До уровня {nextLevel} — {gamesToNext} игр</span>
+            <span>{progressPct}%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Shell({ scheme, section, setSection, onOpenGame, user, level, games }) {
   const activeId = HOME_SECTION_INDEX[section] != null ? section : DEFAULT_HOME_SECTION;
   const activeIndex = HOME_SECTION_INDEX[activeId] ?? 0;
   const activeMode = HOME_SECTIONS[activeIndex];
@@ -888,6 +964,7 @@ function Shell({ scheme, section, setSection, onOpenGame }) {
       <ShellBackdrop scheme={scheme} />
       <div className="wrap">
         <div className="homeHub" style={homeVars}>
+          <ProfileCard user={user} level={level} games={games} />
           <div className="modeTabs" role="tablist" aria-label="Категории">
             <span className="modeIndicator" aria-hidden />
             {HOME_SECTIONS.map((mode) => (
@@ -1157,6 +1234,142 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
 }
 
 /* Header */
+/* Profile */
+.shell .profileCard {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: clamp(10px, 2.8vw, 14px);
+  align-items: center;
+  padding: clamp(12px, 3vw, 16px);
+  border-radius: 20px;
+  background:
+    radial-gradient(160px 100px at 95% -10%, color-mix(in srgb, var(--mode-accent) 22%, transparent), transparent 70%),
+    linear-gradient(135deg, color-mix(in srgb, var(--surface) 96%, transparent), color-mix(in srgb, var(--surface) 60%, transparent));
+  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+  box-shadow: 0 18px 46px rgba(0,0,0,.14);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+.shell .profileCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(140deg, color-mix(in srgb, #ffffff 12%, transparent), transparent 55%);
+  opacity: .6;
+  pointer-events: none;
+}
+.shell .profileAvatar {
+  position: relative;
+  width: clamp(56px, 16vw, 70px);
+  height: clamp(56px, 16vw, 70px);
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--mode-accent) 40%, transparent), color-mix(in srgb, var(--surface) 85%, transparent));
+  border: 1px solid color-mix(in srgb, var(--mode-accent) 50%, transparent);
+  box-shadow: 0 10px 26px rgba(0,0,0,.18);
+  z-index: 1;
+}
+.shell .profileAvatar::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  border: 1px solid color-mix(in srgb, #ffffff 18%, transparent);
+  pointer-events: none;
+  opacity: .7;
+}
+.shell .profileAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.shell .profileInitials {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: .6px;
+  color: #fff;
+  text-shadow: 0 8px 16px rgba(0,0,0,.35);
+}
+.shell .profileBody { display: grid; gap: 8px; min-width: 0; z-index: 1; }
+.shell .profileHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.shell .profileNames { display: grid; gap: 2px; min-width: 0; }
+.shell .profileName {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: .2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shell .profileHandle {
+  font-size: 12px;
+  color: var(--hint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shell .profileBadge {
+  font-size: 11px;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--mode-accent) 35%, transparent), color-mix(in srgb, var(--surface) 70%, transparent));
+  border: 1px solid color-mix(in srgb, var(--mode-accent) 45%, transparent);
+  color: var(--text);
+  white-space: nowrap;
+}
+.shell .profileStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.shell .profileStat {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+}
+.shell .statValue { font-size: 13px; font-weight: 800; letter-spacing: .2px; }
+.shell .statLabel { font-size: 10px; color: var(--hint); }
+.shell .profileProgress { display: grid; gap: 6px; }
+.shell .profileProgressTrack {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-high) 80%, transparent);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+}
+.shell .profileProgressFill {
+  position: absolute;
+  inset: 0;
+  width: var(--progress, 0%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--mode-accent) 85%, #ffffff), color-mix(in srgb, var(--mode-accent) 60%, transparent));
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--mode-accent) 45%, transparent);
+}
+.shell .profileProgressText {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--hint);
+}
+
 /* Grid карточек */
 .shell .grid {
   display: grid;
@@ -1426,6 +1639,8 @@ a { color: var(--link, #0a84ff); text-decoration: none; }
   .shell .card { border-radius: 16px; }
   .shell .modeTab { padding: 8px 6px; }
   .shell .tabLabel { font-size: 11px; }
+  .shell .profileStats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .shell .profileBadge { font-size: 10px; padding: 5px 8px; }
 }
 
 /* ===== GAME CANVAS (изолированный слой) ===== */
